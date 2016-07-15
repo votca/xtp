@@ -51,5 +51,5 @@ CMakeFiles
 cmake_install.cmake
 CMakeCache.txt
 install_manifest.txt
-/netbeans/xtp_app/dist/
+netbeans/xtp_app/dist/*
 /netbeans/libxtp/dist/

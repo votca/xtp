@@ -87,6 +87,7 @@
       <itemPath>../../include/votca/xtp/apolarsite.h</itemPath>
       <itemPath>../../include/votca/xtp/atom.h</itemPath>
       <itemPath>../../include/votca/xtp/basisset.h</itemPath>
+      <itemPath>../../include/votca/xtp/bulkesp.h</itemPath>
       <itemPath>../../include/votca/xtp/calculatorfactory.h</itemPath>
       <itemPath>../../include/votca/xtp/dftengine.h</itemPath>
       <itemPath>../../include/votca/xtp/elements.h</itemPath>
@@ -153,6 +154,8 @@
       <itemPath>../../include/votca/xtp/xtpapplication.h</itemPath>
     </logicalFolder>
     <logicalFolder name="f2" displayName="QMPackages" projectFiles="true">
+      <itemPath>../../src/libxtp/qmpackages/cpmd.cc</itemPath>
+      <itemPath>../../src/libxtp/qmpackages/cpmd.h</itemPath>
       <itemPath>../../src/libxtp/qmpackages/gaussian.cc</itemPath>
       <itemPath>../../src/libxtp/qmpackages/gaussian.h</itemPath>
       <itemPath>../../src/libxtp/qmpackages/nwchem.cc</itemPath>
@@ -220,6 +223,7 @@
       <itemPath>../../src/libxtp/aoshell.cc</itemPath>
       <itemPath>../../src/libxtp/apolarsite.cc</itemPath>
       <itemPath>../../src/libxtp/bsecoupling.cc</itemPath>
+      <itemPath>../../src/libxtp/bulkesp.cc</itemPath>
       <itemPath>../../src/libxtp/esp2multipole.cc</itemPath>
       <itemPath>../../src/libxtp/espfit.cc</itemPath>
       <itemPath>../../src/libxtp/ewald2d.cc</itemPath>
@@ -347,6 +351,8 @@
       </item>
       <item path="../../include/votca/xtp/basisset.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/bulkesp.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/calculatorfactory.h"
             ex="false"
             tool="3"
@@ -408,8 +414,6 @@
       <item path="../../include/votca/xtp/molecule.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/mulliken.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="../../include/votca/xtp/nbo.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/numerical_integrations.h"
             ex="false"
@@ -609,6 +613,8 @@
       <item path="../../src/libxtp/apolarsite.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/bsecoupling.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/bulkesp.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/calculatorfactory.cc"
             ex="false"
@@ -1149,6 +1155,8 @@
       </item>
       <item path="../../include/votca/xtp/basisset.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/bulkesp.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/calculatorfactory.h"
             ex="false"
             tool="3"
@@ -1210,8 +1218,6 @@
       <item path="../../include/votca/xtp/molecule.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/mulliken.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="../../include/votca/xtp/nbo.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/numerical_integrations.h"
             ex="false"
@@ -1411,6 +1417,8 @@
       <item path="../../src/libxtp/apolarsite.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/bsecoupling.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/bulkesp.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/calculatorfactory.cc"
             ex="false"

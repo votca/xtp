@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <votca/xtp/espfit.h>
+#include <votca/xtp/bulkesp.h>
 #include <votca/xtp/mulliken.h>
 #include <votca/xtp/lowdin.h>
 #include <votca/xtp/nbo.h>

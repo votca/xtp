@@ -27,9 +27,41 @@ using namespace votca::tools;
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
     
-class Bulkesp: private Espfit{
-};
+class Bulkesp: public Espfit{
+
+public:
+
+    struct Bond{
+        QMAtom* a;
+        QMAtom* b;
+    };
     
+    struct Molecule{
+        std::vector< QMAtom* > atoms;
+        std::vector< Bond > bonds;
+    };
+    
+    
+public:
+    Bulkesp(Logger *log):Espfit(log){
+    }
+    
+    std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< QMAtom* > a, double scale);
+    
+    ub::vector<double> ComputeESP(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize);
+    
+    void Evaluate(std::vector< QMAtom* >& _atomlist, ub::matrix<double> _MO_Coefficients, AOBasis &_basis,BasisSet &bs,string gridsize, double maxBondScale);
+    
+    void FillElement2NBF(std::vector< QMAtom* >& _atomlist, BasisSet &bs);
+    
+private:
+
+    std::map<std::string,int> _element2NBF; //Number of Basis Functions for each element in the basis set
+    list<std::string> _elements;             //list of all elements in the QMatoms vector
+    
+    std::map<QMAtom*,int> MapAtom2MOCoefIndex(std::vector< QMAtom* >& _atomlist);
+};    
+  
     
 }}
 

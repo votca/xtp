@@ -48,6 +48,7 @@ public:
 
     const double     &getVdWChelpG(std::string name ) const { return _VdWChelpG.at(name); }
     const double     &getVdWMK(std::string name ) const { return _VdWMK.at(name); }
+    const double     &getCovRad(std::string name ) const { return _CovRad.at(name); }
     const double     &getNucCrgECP(std::string name) const {return _NucCrgECP.at(name); }
     const double     &getNucCrg(std::string name) const {return _NucCrg.at(name); }
     const int        &getEleNum(std::string name) const {return _EleNum.at(name); }
@@ -61,6 +62,7 @@ private:
     std::map<std::string, double> _VdWMK;
     std::map<std::string, double> _NucCrgECP;
     std::map<std::string, double> _NucCrg;
+    std::map<std::string, double> _CovRad;
     std::map<std::string, int> _EleNum;
     std::map<int, std::string> _EleName;
     
@@ -71,6 +73,7 @@ private:
         
         FillVdWChelpG();
         FillVdWMK();
+        FillCovRad();
         FillNucCrgECP();
         FillNucCrg();
         FillEleNum();
@@ -278,6 +281,32 @@ private:
         _VdWChelpG["Cl"] = 1.7;
         // _VdWChelpG["Ar"] = 2.0;
         _VdWChelpG["Ag"] = 2.0;
+    };
+    
+    inline void FillCovRad(){
+    
+        // Covalent Radii, used by BulkESP to break system into molecules
+        //data from http://pubs.rsc.org/en/content/articlehtml/2008/dt/b801115j
+        //values in Angstroms
+        _CovRad["H"]  = 0.31; 
+        _CovRad["He"] = 0.28;
+        _CovRad["Li"] = 1.28;
+        _CovRad["Be"] = 0.96;
+        _CovRad["B"]  = 0.84;
+        _CovRad["C"]  = 0.76;
+        _CovRad["N"]  = 0.71;
+        _CovRad["O"]  = 0.66;
+        _CovRad["F"]  = 0.57;
+        _CovRad["Ne"] = 0.58;
+        _CovRad["Na"] = 1.66;
+        _CovRad["Mg"] = 1.41;
+        _CovRad["Al"] = 1.21;
+        _CovRad["Si"] = 1.11;
+        _CovRad["P"]  = 1.07;
+        _CovRad["S"]  = 1.05;
+        _CovRad["Cl"] = 1.02;
+        _CovRad["Ar"] = 1.06;
+        _CovRad["Ag"] = 1.45;
     };
 };
 }}

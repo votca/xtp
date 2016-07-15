@@ -48,14 +48,14 @@ public:
    
    void setUseSVD(bool do_svd,double conditionnumber){_do_svd=do_svd;_conditionnumber=conditionnumber;}
     
-    void EvaluateAPECharges(Grid& _targetgrid, Grid& _chargepositions);
+   void EvaluateAPECharges(Grid& _targetgrid, Grid& _chargepositions);
   
-    void FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _chargepositions, double& netcharge);
-    // on grid very fast
-    void Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,std::string gridsize);
-    // not so fast
-    void Fit2Density_analytic(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis);
-private:
+   void FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _chargepositions, double& netcharge);
+   // on grid very fast
+   void Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,std::string gridsize);
+   // not so fast
+   void Fit2Density_analytic(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis);
+protected:
     
      Logger *_log;
      Elements _elements; 

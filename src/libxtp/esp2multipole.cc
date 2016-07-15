@@ -227,15 +227,8 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
             else if (_integrationmethod=="analytic")  esp.Fit2Density_analytic(_Atomlist,DMAT_tot,basis);
         }
         else if (_use_bulkESP){         
-            Espfit esp=Espfit(_log);
-            esp.setUseECPs(_use_ecp);
-            if(_do_svd){
-                esp.setUseSVD(_do_svd,_conditionnumber);
-            }
-            if (_integrationmethod=="numeric")  {
-                esp.Fit2Density(_Atomlist, DMAT_tot, basis,bs,_gridsize); 
-            }
-            else if (_integrationmethod=="analytic")  esp.Fit2Density_analytic(_Atomlist,DMAT_tot,basis);
+            Bulkesp esp=Bulkesp(_log);
+            esp.Evaluate(_Atomlist, _MO_Coefficients, basis,bs,_gridsize, 1.05); 
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;
