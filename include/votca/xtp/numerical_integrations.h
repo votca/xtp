@@ -50,6 +50,7 @@ namespace votca { namespace xtp {
             double IntegrateDensity(ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegratePotential(ub::vector<double> rvector);
+            double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             
             double getExactExchange(const std::string _functional);
             ub::matrix<double> IntegrateVXC ( ub::matrix<double>& _density_matrix, AOBasis* basis  );

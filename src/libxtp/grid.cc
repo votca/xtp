@@ -1,6 +1,7 @@
 #include <votca/xtp/grid.h>
 #include <math.h>       /* ceil */
 #include <votca/tools/constants.h>
+#include <fstream>
 
 using namespace votca::tools;
 
@@ -432,6 +433,47 @@ void Grid::setupgrid(){
     if (_sites_seg != NULL) delete _sites_seg;
     _sites_seg = new PolarSeg(0, _gridsites);
 }
+  
+
+
+
+
+void Grid::writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic, double BoxLen[3]){
+    ofstream out;
+    out.open (_filename.c_str(), ios::out | ios::trunc);
     
+    //cell dimensions
+    if(periodic && BoxLen!=NULL)
+        out << BoxLen[0] << '\t' << BoxLen[1] << '\t' << BoxLen[2] << '\n';
+    else
+        out << 0 << '\t' << 0 << '\t' << 0 << '\n';
+    
+    
+    //number of atoms
+    out << _atoms.size() << '\n';
+    
+    //atom type and coordinates
+    for (std::vector< QMAtom* >::iterator i=_atoms.begin(); i!=_atoms.end(); ++i){
+        QMAtom* a = (*i);
+        out << a->type << '\t' << a->x << '\t'<< a->y << '\t'<< a->z << '\n';
+    }
+    
+    //number of grid points
+    out << _gridpoints.size() << '\n';
+    
+    //data: x y z value
+    for(int i=0; i<_gridpoints.size(); i++){
+        //point coordinates in Bohr
+        ub::vector<double> point = _gridpoints[i]*tools::conv::nm2bohr;
+        out << point(0) << '\t' << point(1) << '\t' << point(2) << '\t' << _val(i) << '\n';
+        
+    }
+    out.flush();
+    out.close();
+    
+
+}
+
+
     
 }}

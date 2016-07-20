@@ -1413,6 +1413,38 @@ namespace votca {
             
             return result;   
         }
+        
+        double NumericalIntegration::IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]){
+            
+            double result = 0.0;
+            
+            if(density_set){
+#warning: "TODO: IntegratePotential_w_PBC() needs to do Ewald summation to be truly periodic."
+                //real space component
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                for (unsigned j = 0; j < _grid[i].size(); j++) {
+                    double dif[3];
+                    dif[0] = _grid[i][j].grid_x-rvector(0);
+                    dif[1] = _grid[i][j].grid_y-rvector(1);
+                    dif[2] = _grid[i][j].grid_z-rvector(2);
+                    for(int k=0; k<3; k++){
+                        if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+                            if(dif[k]>0)    //i.x>j.x
+                                dif[k]-=boxLen[k];
+                            else            //i.x<j.x
+                                dif[k]+=boxLen[k];
+                    }
+                    double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2]));
+                    result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
+                    }
+                }
+            } 
+           else{
+               throw std::runtime_error("Density not calculated");
+           }
+            
+            return result;   
+        }
                    
         double NumericalIntegration::IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis){   
          

@@ -21,6 +21,7 @@
 #define BULKESP_H
 
 #include <votca/xtp/espfit.h>
+#include <votca/xtp/orbitals.h>
 
 using namespace votca::tools;
 
@@ -34,6 +35,7 @@ public:
     struct Bond{
         QMAtom* a;
         QMAtom* b;
+        xtp::vec ba;
     };
     
     struct Molecule{
@@ -44,22 +46,37 @@ public:
     
 public:
     Bulkesp(Logger *log):Espfit(log){
+        periodic=false;
+        boxLen[0]=0;
+        boxLen[1]=0;
+        boxLen[2]=0;
     }
     
     std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< QMAtom* > a, double scale);
     
-    ub::vector<double> ComputeESP(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize);
+    ub::vector<double> ComputeESP(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat,
+            ub::matrix<double> &_ovmat, AOBasis &_basis,BasisSet &bs,string gridsize, Grid &_grid);
     
-    void Evaluate(std::vector< QMAtom* >& _atomlist, ub::matrix<double> _MO_Coefficients, AOBasis &_basis,BasisSet &bs,string gridsize, double maxBondScale);
+    void Evaluate(std::vector< QMAtom* >& _atomlist, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
+            AOBasis &_basis,BasisSet &bs,string gridsize, double maxBondScale,
+            std::string _state, std::string _spin, int _state_no);
     
     void FillElement2NBF(std::vector< QMAtom* >& _atomlist, BasisSet &bs);
     
 private:
 
     std::map<std::string,int> _element2NBF; //Number of Basis Functions for each element in the basis set
-    list<std::string> _elements;             //list of all elements in the QMatoms vector
+    list<std::string> _elements;            //list of all elements in the QMatoms vector
+    std::string fn_prefix;                 //prefix for output files containing potentials
+    bool periodic;                          //is the box periodic for the purposes of assigning atoms to molecules?
+    double boxLen[3];                       //dimensions of the box, assume cuboid shape
+    
     
     std::map<QMAtom*,int> MapAtom2MOCoefIndex(std::vector< QMAtom* >& _atomlist);
+    
+    ub::matrix<double> BuildDenMat(Orbitals &_orb, std::string _state, std::string _spin, int _state_no);
+    
+    ub::matrix<double> BuildOverlapMat(Orbitals &_molOrb, Orbitals &_globalOrb);
 };    
   
     

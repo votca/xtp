@@ -109,6 +109,8 @@ namespace votca { namespace xtp {
             setupgrid();
         }
         
+        void writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic=false, double BoxLen[3]=NULL);
+        
       
   private:
      

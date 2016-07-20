@@ -11,15 +11,21 @@
         <file>file:/home/jens/votca_git/src/xtp/src/libxtp/gwbse/gwbse.cc</file>
         <file>file:/home/bbaumeie/votca/src/xtp/src/libxtp/qmpackages/nwchem.cc</file>
         <group>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/include/votca/xtp/aomatrix.h</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/include/votca/xtp/basisset.h</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/src/libxtp/mulliken.cc</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/include/votca/xtp/aoshell.h</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/include/votca/xtp/aobasis.h</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/src/libxtp/aobasis.cc</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/include/votca/xtp/nbo.h</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</file>
-            <file>file:/home/jwehner/Programs/votca_dev/src/xtp/src/libxtp/aoshell.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/aomatrix.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/orbitals.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/esp2multipole.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/aobasis.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/qmpackages/cpmd.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/basisset.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/aobasis.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/espfit.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/bulkesp.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/qmpackages/cpmd.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/topology.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/esp2multipole.cc</file>
         </group>
     </open-files>
 </project-private>

@@ -53,7 +53,7 @@ void Esp2multipole::Initialize(Property* options) {
          else  throw std::runtime_error("Method not recognized. Only Mulliken and CHELPG implemented");
          }
     else _use_CHELPG=true;
-    if (!_use_mulliken){
+    if (!_use_mulliken && !_use_bulkESP){
          _integrationmethod     = options->get(key + ".integrationmethod").as<string> ();
     }
     
@@ -228,7 +228,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         }
         else if (_use_bulkESP){         
             Bulkesp esp=Bulkesp(_log);
-            esp.Evaluate(_Atomlist, _MO_Coefficients, basis,bs,_gridsize, 1.05); 
+            esp.Evaluate(_Atomlist, _orbitals, _MO_Coefficients, basis,bs,_gridsize, 1.05, _state, _spin, _state_no); 
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;
