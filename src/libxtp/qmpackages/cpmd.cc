@@ -557,6 +557,7 @@ namespace votca {
         bool Cpmd::ParseLogFile(Orbitals * _orbitals) {
             std::string _line;
             std::vector<std::string> results;
+            std::vector<vec> positions;
             
             LOG(logDEBUG, *_pLog) << "CPMD: parsing " << _log_file_name << flush;
             
@@ -587,6 +588,25 @@ namespace votca {
                     LOG(logDEBUG, *_pLog) << "Alpha electrons: " << _number_of_electrons << flush;
                 }
                 
+                /*
+                 * atomic positions
+                 */
+                if (_line.find("*** ATOMS ***") != std::string::npos) {
+                    getline(_input_file, _line);
+                    for(getline(_input_file, _line); _line.find("******")!= std::string::npos;){
+                        boost::trim(_line);
+                        boost::algorithm::split(results, _line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
+                        vec v;
+                        v.setX(boost::lexical_cast<double>(results[2]));
+                        v.setY(boost::lexical_cast<double>(results[3]));
+                        v.setZ(boost::lexical_cast<double>(results[4]));
+                        if(_projectWF)
+                            positions.push_back(v); //store positions and core charges (later))
+                        else
+                            _orbitals->AddAtom(results[1], v.getX(), v.getY(), v.getZ(), 0); //store positions only
+                    }
+                }
+                
             }
             LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
             _input_file.close();
@@ -603,9 +623,10 @@ namespace votca {
                     //iterate over elements
                     list<std::string>::iterator ite;
                     int i=0;
+                    int p=0;
                     for (ite = _elements.begin(); ite != _elements.end(); ite++, i++) {
-                        for(int a=0; a<_NA[i]; a++){
-                            _orbitals->AddAtom(*ite, 0, 0, 0, _ZV[i]); //store core charge in the atomic charge field
+                        for(int a=0; a<_NA[i]; a++, p++){
+                            _orbitals->AddAtom(*ite, positions[p].getX(), positions[p].getY(), positions[p].getZ(), _ZV[i]); //store core charge in the atomic charge field
                         }
                     }
                 }

@@ -52,6 +52,14 @@ public:
         boxLen[2]=0;
     }
     
+    void setBox(double b[3])
+    {
+        periodic=true;
+        boxLen[0]=b[0];
+        boxLen[1]=b[1];
+        boxLen[2]=b[2];
+    }
+    
     std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< QMAtom* > a, double scale);
     
     ub::vector<double> ComputeESP(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat,

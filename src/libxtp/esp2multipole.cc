@@ -75,8 +75,15 @@ void Esp2multipole::Initialize(Property* options) {
          }
     
               
-    
-  
+    if(_use_bulkESP){
+        periodic=false;
+        if ( options->exists(key+".periodic")) {
+            periodic=true;
+            boxLen[0]=options->get(key+".periodic.x").as<double>();
+            boxLen[1]=options->get(key+".periodic.y").as<double>();
+            boxLen[2]=options->get(key+".periodic.z").as<double>();
+        }
+    }
     
     // get the path to the shared folders with xml files
     char *votca_share = getenv("VOTCASHARE");    
@@ -210,7 +217,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
             mulliken.EvaluateMulliken(_Atomlist, DMAT_tot, basis, bs, _do_transition);
                 
         }   
-        if (_use_lowdin) {
+        else if (_use_lowdin) {
             Lowdin lowdin;
             lowdin.setUseECPs(_use_ecp);
             lowdin.EvaluateLowdin(_Atomlist, DMAT_tot, basis, bs, _do_transition);              

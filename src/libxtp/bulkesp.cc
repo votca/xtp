@@ -191,10 +191,6 @@ namespace votca { namespace xtp {
         // Calculating nuclear potential at gridpoints
 
         ub::vector<double> _ESPatGrid = ub::zero_vector<double>(_grid.getsize());
-        // ub::vector<double> _NucPatGrid = ub::zero_vector<double>(_gridpoints.size());
-
-        
-#warning "TODO: Need to check if overlap already exists (overlap from CPMD is better because it takes PBC into account)"
         ub::vector<double> DMATasarray=_dmat.data();
         ub::vector<double> AOOasarray=_ovmat.data();
         double N_comp=0.0;
@@ -208,6 +204,8 @@ namespace votca { namespace xtp {
 
         numway.GridSetup(gridsize,&bs,_atomlist);
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculate Densities at Numerical Grid with gridsize "<<gridsize  << flush; 
+        //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
+        //density integration should be accurate enough without making it explicitly periodic
         double N=numway.IntegrateDensity_Atomblock(_dmat,&_basis);
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculated Densities at Numerical Grid, Number of electrons is "<< N << flush; 
 
@@ -225,10 +223,21 @@ namespace votca { namespace xtp {
 
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
         //boost::progress_display show_progress( _grid.getsize() );
-        #pragma omp parallel for
-        for ( int i = 0 ; i < _grid.getsize(); i++){
-            _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
-            //++show_progress;
+        LOG(logDEBUG, *_log) << " NumericalIntegration::IntegratePotential_w_PBC(): currently ignoring long range contributions."<< endl;
+        
+        if(periodic){
+            #pragma omp parallel for
+            for ( int i = 0 ; i < _grid.getsize(); i++){
+                _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, boxLen);
+                //++show_progress;
+            }
+        }
+        else{
+            #pragma omp parallel for
+            for ( int i = 0 ; i < _grid.getsize(); i++){
+                _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
+                //++show_progress;
+            }
         }
 
         LOG(logDEBUG, *_log) << TimeStamp() << " Electron contribution calculated"  << flush; 
@@ -305,7 +314,7 @@ namespace votca { namespace xtp {
         LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): found "<< mols.size() << "molecules.\n" << flush; 
         for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m){
             
-            LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" processing molecule "<< m-mols.begin() << endl << flush; 
+            LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" processing molecule "<< m-mols.begin() << endl; 
             
             //Obtain AO data relevant to this molecule only.
             //extract basis
@@ -345,7 +354,6 @@ namespace votca { namespace xtp {
             ub::matrix<double> _m_dmat=BuildDenMat(_molOrb, _state, _spin, _state_no);
             
             //set up the overlap matrix
-#warning "TODO: Need to check if overlap already exists (overlap from CPMD is better because it takes PBC into account)"
             ub::matrix<double> _m_ovmat;
             if(periodic)
                 if(_globalOrb.hasAOOverlap())

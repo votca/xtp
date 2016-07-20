@@ -78,6 +78,11 @@ private:
     Logger*      _log;
     
     
+    //periodicity prarameters for bulkESP
+    bool periodic;
+    double boxLen[3];
+    
+    
 
 };
 
