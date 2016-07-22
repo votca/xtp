@@ -304,6 +304,14 @@ namespace votca { namespace xtp {
         
         //find the individual molecules
         std::vector<Bulkesp::Molecule> mols = BreakIntoMolecules(_atomlist, maxBondScale);
+//        //debug
+//        for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m){
+//            for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
+//                QMAtom* ap=*a;
+//                cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
+//            }
+//        }
+//        exit(0);
         
         //map elements to number of basis functions per element
         FillElement2NBF(_atomlist, bs);

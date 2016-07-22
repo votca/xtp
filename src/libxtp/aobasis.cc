@@ -316,15 +316,21 @@ void AOBasis::addReorderShell( string& start, string& target,  string& shell_typ
        
        if ( shell_type == "P" ){
            if( start == "orca" ){
-           neworder.push_back( _cur_pos + 3 );
-           neworder.push_back( _cur_pos + 1 );
-           neworder.push_back( _cur_pos + 2 );
-        }else {
-           neworder.push_back( _cur_pos + 1 );
-           neworder.push_back( _cur_pos + 2 );
-           neworder.push_back( _cur_pos + 3 );
-       
-           }
+                neworder.push_back( _cur_pos + 3 );
+                neworder.push_back( _cur_pos + 1 );
+                neworder.push_back( _cur_pos + 2 );
+            }
+//           else if(start == "cpmd"){
+//                neworder.push_back( _cur_pos + 1 );
+//                neworder.push_back( _cur_pos + 3 );
+//                neworder.push_back( _cur_pos + 2 );
+//            }
+           else {
+               neworder.push_back( _cur_pos + 1 );
+               neworder.push_back( _cur_pos + 2 );
+               neworder.push_back( _cur_pos + 3 );
+
+               }
        }   //for P
        //votca order is dxz dyz dxy d3z2-r2 dx2-y2
        if ( shell_type == "D" ){ 

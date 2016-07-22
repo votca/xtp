@@ -24,6 +24,7 @@
 #include <votca/xtp/elements.h>
 #include <votca/xtp/grid.h>
 #include <votca/xtp/aobasis.h>
+#include <votca/xtp/orbitals.h>
 
 
 /**
@@ -52,7 +53,7 @@ public:
   
    void FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _chargepositions, double& netcharge);
    // on grid very fast
-   void Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,std::string gridsize);
+   void Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,std::string gridsize, Orbitals *orb=NULL);
    // not so fast
    void Fit2Density_analytic(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis);
 protected:

@@ -156,7 +156,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
             threads=omp_get_max_threads();
 #endif
    LOG(logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
-
+                
         vector< QMAtom* > Atomlist =_orbitals.QMAtoms();
         std::vector< QMAtom* >::iterator at;
         for (at=Atomlist.begin();at<Atomlist.end();++at){
@@ -171,6 +171,8 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         
         
         ub::matrix<double> _MO_Coefficients = *(_orbitals.getOrbitals()); // this is a copy?
+        
+        
         
         //basis.ReorderMOs(_orbitals.MOCoefficients(), _orbitals.getQMpackage(), "votca" );  
         basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "votca" );  
@@ -210,7 +212,9 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
 	}
         else throw std::runtime_error("State entry not recognized");
         
+        //cout<<DMAT_tot<<endl;
         
+                
         if (_use_mulliken) {
             Mulliken mulliken;
             mulliken.setUseECPs(_use_ecp);
@@ -229,7 +233,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
                 esp.setUseSVD(_do_svd,_conditionnumber);
             }
             if (_integrationmethod=="numeric")  {
-                esp.Fit2Density(_Atomlist, DMAT_tot, basis,bs,_gridsize); 
+                esp.Fit2Density(_Atomlist, DMAT_tot, basis,bs,_gridsize, &_orbitals); 
             }
             else if (_integrationmethod=="analytic")  esp.Fit2Density_analytic(_Atomlist,DMAT_tot,basis);
         }

@@ -7,6 +7,8 @@
 #include <math.h> 
 #include <votca/tools/constants.h>
 
+#include "votca/xtp/orbitals.h"
+
 using namespace votca::tools;
 
 
@@ -70,7 +72,7 @@ void Espfit::FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _ch
        
 
 
-void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize) { 
+void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize, Orbitals *orb) { 
    
 
     
@@ -91,13 +93,46 @@ void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &
     overlap.Fill(&_basis);
     ub::vector<double> DMATasarray=_dmat.data();
     ub::vector<double> AOOasarray=overlap._aomatrix.data();
+    if(orb!=NULL) AOOasarray=orb->AOOverlap().data();
     double N_comp=0.0;
-    #pragma omp parallel for reduction(+:N_comp) 
-    for ( unsigned _i =0; _i < DMATasarray.size(); _i++ ){
-            N_comp =N_comp+ DMATasarray(_i)*AOOasarray(_i);
-        } 
+//    #pragma omp parallel for reduction(+:N_comp) 
+//    for ( unsigned _i =0; _i < DMATasarray.size(); _i++ ){
+//            N_comp =N_comp+ DMATasarray(_i)*AOOasarray(_i);
+//            if(std::abs(DMATasarray(_i)*AOOasarray(_i))>1e10)
+//                cout<<"Cought a small number"<<_i<<'\t'<<DMATasarray(_i)<<'\t'<<AOOasarray(_i)<<endl;
+//        } 
+    ub::matrix<double> AO=overlap._aomatrix;
+    for ( unsigned _i =0; _i < _dmat.size1(); _i++ ){
+        for ( unsigned _j =0; _j < _dmat.size2(); _j++ ){
+             N_comp =N_comp+ _dmat(_i,_j)*AO(_i,_j);
+        }
+    }
     
-
+    
+    
+    cout<<"\n\n\nDENSITY"<<endl;
+    cout<< _dmat <<endl;
+    cout<<"\n\n\nOVERLAP CPMD"<<endl;
+    cout<< orb->AOOverlap() <<endl;
+    cout<<"\n\n\nOVERLAP VOTCA"<<endl;
+    cout<< overlap._aomatrix <<endl;
+    ub::matrix<double> OVdif = orb->AOOverlap() - overlap._aomatrix;
+    cout<<"\n\n\nOVERLAP DIF"<<endl;
+    for(int i=0; i<OVdif.size1(); i++){
+        for(int j=0; j<OVdif.size2(); j++){
+            cout << OVdif(i,j)<<'\t';
+        }
+        cout<<"\n";
+    }
+    cout<<endl;
+    
+    
+    
+    
+    ub::matrix<double> temp=ub::prod(orb->MOCoefficients(), orb->AOOverlap());
+    ub::matrix<double> ortho=ub::prod(temp,ub::trans(orb->MOCoefficients()));
+    cout<< " pray" <<endl;
+    cout<< ortho <<endl;
     NumericalIntegration numway;
 
     numway.GridSetup(gridsize,&bs,_atomlist);

@@ -593,19 +593,40 @@ namespace votca {
                  */
                 if (_line.find("*** ATOMS ***") != std::string::npos) {
                     getline(_input_file, _line);
-                    for(getline(_input_file, _line); _line.find("******")!= std::string::npos;){
+                    do{
+                        getline(_input_file, _line);
                         boost::trim(_line);
+                        if(_line.find("******") != std::string::npos)
+                            break;
+
                         boost::algorithm::split(results, _line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
                         vec v;
                         v.setX(boost::lexical_cast<double>(results[2]));
                         v.setY(boost::lexical_cast<double>(results[3]));
                         v.setZ(boost::lexical_cast<double>(results[4]));
+                        v=v*tools::conv::bohr2ang;
                         if(_projectWF)
                             positions.push_back(v); //store positions and core charges (later))
                         else
                             _orbitals->AddAtom(results[1], v.getX(), v.getY(), v.getZ(), 0); //store positions only
-                    }
+                    }while(true);
                 }
+                
+                
+                /*
+                 * Occupied/unoccupied states
+                 */
+                if (_line.find("NUMBER OF STATES:") != std::string::npos) {
+                    boost::trim(_line);
+                    boost::algorithm::split(results, _line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
+                    int nstates = (boost::lexical_cast<int>(results[3]));
+                    getline(_input_file, _line);
+                    boost::trim(_line);
+                    boost::algorithm::split(results, _line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
+                    int nelectrons = (int) (boost::lexical_cast<double>(results[3]));
+                    _orbitals->setNumberOfLevels(nelectrons/2, nstates-(nelectrons/2));
+                }
+                
                 
             }
             LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
@@ -799,8 +820,8 @@ namespace votca {
             ov_file.close();
             LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
             
+            cout << overlap << endl;
             
-           // #warning "TODO: Reorder Overlap and MOcoeefficient matrices so that the order of basis functions (like d_xx) matches the VOTCA order."
             
             return true;
         }
