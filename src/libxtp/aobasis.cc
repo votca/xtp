@@ -59,7 +59,7 @@ void AOBasis::ReorderMOs(ub::matrix<double> &v, string start, string target )  {
           }
            
           // NWChem has some strange minus in d-functions
-          if ( start == "nwchem" || target == "nwchem" ){
+          if ( start == "nwchem" || target == "nwchem" || start == "cpmd" || target == "cpmd"){
               
               // get vector with multipliers, e.g. NWChem -> Votca (bloody sign for d_xz)
               vector<int> multiplier;
@@ -246,9 +246,16 @@ void AOBasis::addMultiplierShell(string& start, string& target, string& shell_ty
             }
 
             if (shell_type == "P") {
-                multiplier.push_back(1);
-                multiplier.push_back(1);
-                multiplier.push_back(1);
+                if(start == "cpmd"){
+                    multiplier.push_back(-1);
+                    multiplier.push_back(-1);
+                    multiplier.push_back(-1);
+                }
+                else{
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                }
             }
             if (shell_type == "D") {
                 if (start == "nwchem") {
@@ -320,11 +327,11 @@ void AOBasis::addReorderShell( string& start, string& target,  string& shell_typ
                 neworder.push_back( _cur_pos + 1 );
                 neworder.push_back( _cur_pos + 2 );
             }
-//           else if(start == "cpmd"){
-//                neworder.push_back( _cur_pos + 1 );
-//                neworder.push_back( _cur_pos + 3 );
-//                neworder.push_back( _cur_pos + 2 );
-//            }
+           else if(start == "cpmd"){
+                neworder.push_back( _cur_pos + 1 );
+                neworder.push_back( _cur_pos + 3 );
+                neworder.push_back( _cur_pos + 2 );
+            }
            else {
                neworder.push_back( _cur_pos + 1 );
                neworder.push_back( _cur_pos + 2 );

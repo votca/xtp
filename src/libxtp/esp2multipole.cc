@@ -176,6 +176,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         
         //basis.ReorderMOs(_orbitals.MOCoefficients(), _orbitals.getQMpackage(), "votca" );  
         basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "votca" );  
+        cout<<"REORDERED MO coeffs:\n"<<_MO_Coefficients<<endl;
         bool _do_transition=false;
         if(_state=="transition"){
             _do_transition=true;

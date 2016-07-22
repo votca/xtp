@@ -92,47 +92,39 @@ void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &
     overlap.Initialize(_basis._AOBasisSize);
     overlap.Fill(&_basis);
     ub::vector<double> DMATasarray=_dmat.data();
-    ub::vector<double> AOOasarray=overlap._aomatrix.data();
-    if(orb!=NULL) AOOasarray=orb->AOOverlap().data();
+    ub::vector<double> AOOasarray=overlap._aomatrix.data(); // from VOTCA
+//    if(orb!=NULL) AOOasarray=orb->AOOverlap().data();
     double N_comp=0.0;
-//    #pragma omp parallel for reduction(+:N_comp) 
-//    for ( unsigned _i =0; _i < DMATasarray.size(); _i++ ){
-//            N_comp =N_comp+ DMATasarray(_i)*AOOasarray(_i);
-//            if(std::abs(DMATasarray(_i)*AOOasarray(_i))>1e10)
-//                cout<<"Cought a small number"<<_i<<'\t'<<DMATasarray(_i)<<'\t'<<AOOasarray(_i)<<endl;
-//        } 
-    ub::matrix<double> AO=overlap._aomatrix;
-    for ( unsigned _i =0; _i < _dmat.size1(); _i++ ){
-        for ( unsigned _j =0; _j < _dmat.size2(); _j++ ){
-             N_comp =N_comp+ _dmat(_i,_j)*AO(_i,_j);
-        }
-    }
+    #pragma omp parallel for reduction(+:N_comp) 
+    for ( unsigned _i =0; _i < DMATasarray.size(); _i++ ){
+            N_comp =N_comp+ DMATasarray(_i)*AOOasarray(_i);
+    } 
+
     
     
     
-    cout<<"\n\n\nDENSITY"<<endl;
-    cout<< _dmat <<endl;
-    cout<<"\n\n\nOVERLAP CPMD"<<endl;
-    cout<< orb->AOOverlap() <<endl;
-    cout<<"\n\n\nOVERLAP VOTCA"<<endl;
-    cout<< overlap._aomatrix <<endl;
-    ub::matrix<double> OVdif = orb->AOOverlap() - overlap._aomatrix;
-    cout<<"\n\n\nOVERLAP DIF"<<endl;
-    for(int i=0; i<OVdif.size1(); i++){
-        for(int j=0; j<OVdif.size2(); j++){
-            cout << OVdif(i,j)<<'\t';
-        }
-        cout<<"\n";
-    }
-    cout<<endl;
+//    cout<<"\n\n\nDENSITY"<<endl;
+//    cout<< _dmat <<endl;
+//    cout<<"\n\n\nOVERLAP CPMD"<<endl;
+//    for(int i=0; i<orb->AOOverlap().size1(); i++){
+//        for(int j=0; j<orb->AOOverlap().size2(); j++){
+//            cout<<"("<<i<<","<<j<<")"<<" "<<orb->AOOverlap()(i,j)<<"\n";
+//        }
+//        cout<<endl;
+//    }
+//    cout<<"\n\n\n"<<endl;
+//    
+//    cout<<"\n\n\nOVERLAP VOTCA"<<endl;
+//    for(int i=0; i<overlap._aomatrix.size1(); i++){
+//        for(int j=0; j<overlap._aomatrix.size2(); j++){
+//            cout<<"("<<i<<","<<j<<")"<<" "<<overlap._aomatrix(i,j)<<"\n";
+//        }
+//        cout<<endl;
+//    }
+//    cout<<"\n\n\n"<<endl;
     
     
     
-    
-    ub::matrix<double> temp=ub::prod(orb->MOCoefficients(), orb->AOOverlap());
-    ub::matrix<double> ortho=ub::prod(temp,ub::trans(orb->MOCoefficients()));
-    cout<< " pray" <<endl;
-    cout<< ortho <<endl;
     NumericalIntegration numway;
 
     numway.GridSetup(gridsize,&bs,_atomlist);
@@ -140,6 +132,7 @@ void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &
     double N=numway.IntegrateDensity_Atomblock(_dmat,&_basis);
     LOG(logDEBUG, *_log) << TimeStamp() << " Calculated Densities at Numerical Grid, Number of electrons is "<< N << flush; 
     
+    //LOG(logDEBUG, *_log) <<"Trace of dMat*AOMat="<< N_comp <<"\tSum of integrated="<< N << flush;
     if(std::abs(N-N_comp)>0.001){
         LOG(logDEBUG, *_log) <<"=======================" << flush; 
         LOG(logDEBUG, *_log) <<"WARNING: Calculated Densities at Numerical Grid, Number of electrons "<< N <<" is far away from the the real value "<< N_comp<<", you should increase the accuracy of the integration grid."<< flush; 

@@ -375,17 +375,20 @@ bool Orbitals::Load(string file_name) {
  ub::matrix<double>& Orbitals::DensityMatrixGroundState( ub::matrix<double>& _MOs ) {   
      // first fill Density matrix, if required
     //  if ( _dmatGS.size1() != _basis_set_size ) {
+//     cout<<"occupied levels: "<<_occupied_levels<<endl;
         _dmatGS = ub::zero_matrix<double>(_basis_set_size, _basis_set_size);
+//        int count=0;
         #pragma omp parallel for
         for ( int _i=0; _i < _basis_set_size; _i++ ){
             for ( int _j=0; _j < _basis_set_size; _j++ ){
                 for ( int _level=0; _level < _occupied_levels ; _level++ ){
                  
                     _dmatGS(_i,_j) += 2.0 * _MOs( _level , _i ) * _MOs( _level , _j );
-                 
+//                    count++;
                 }
             }
          }
+//        cout<<count<<endl;
      //}    
      // return     
      return _dmatGS;  
