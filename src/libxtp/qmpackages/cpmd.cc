@@ -819,10 +819,7 @@ namespace votca {
             
             ov_file.close();
             LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
-            
-            cout << overlap << endl;
-            
-            
+                        
             return true;
         }
 

@@ -264,7 +264,13 @@ void AOBasis::addMultiplierShell(string& start, string& target, string& shell_ty
                     multiplier.push_back(1);
                     multiplier.push_back(1);
                     multiplier.push_back(1);
-                } else {
+                }else if (start == "cpmd") {
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                }else {
                     cerr << "Tried to get multipliers d-functions from package " << start << ".";
                     throw std::runtime_error("Multiplication not implemented yet!");
                 }
@@ -328,6 +334,7 @@ void AOBasis::addReorderShell( string& start, string& target,  string& shell_typ
                 neworder.push_back( _cur_pos + 2 );
             }
            else if(start == "cpmd"){
+               //cpmd order id -px -pz -py
                 neworder.push_back( _cur_pos + 1 );
                 neworder.push_back( _cur_pos + 3 );
                 neworder.push_back( _cur_pos + 2 );
@@ -361,7 +368,14 @@ void AOBasis::addReorderShell( string& start, string& target,  string& shell_typ
                neworder.push_back( _cur_pos + 1 );
                neworder.push_back( _cur_pos + 2 );
                neworder.push_back( _cur_pos + 5 ); 
-               neworder.push_back( _cur_pos + 3 );               
+               neworder.push_back( _cur_pos + 3 );           
+           }else if ( start == "cpmd") {
+               //cpmd order is dxy dxz d3z2-r2 dyz dx2-y2
+               neworder.push_back( _cur_pos + 3 ); 
+               neworder.push_back( _cur_pos + 1 );
+               neworder.push_back( _cur_pos + 4 );
+               neworder.push_back( _cur_pos + 2 ); 
+               neworder.push_back( _cur_pos + 5 ); 
             } else {
                cerr << "Tried to reorder d-functions from package " << start << ".";
                throw std::runtime_error( "Reordering not implemented yet!");
