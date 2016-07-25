@@ -104,6 +104,8 @@ private:
     std::string _functional;//BLYP, B3LYP, HCTH, LDE, etc.
     std::string _rsrt_kwds; //what parts to reuse from previous run
     std::string _pplib_path;//full path to the pseudopotential library of CPMD
+    std::string _wfOpt_input_file_name; //name of the input file for WF optimization, only used when running CPMD twice
+    std::string _wfOpt_log_file_name;
     
     
     std::map<std::string,std::string> _ppFileNames;   //pseudopotential file names indexed by element name
@@ -114,6 +116,8 @@ private:
     int _NSP;                    
     double *_ZV;             //core charge
     int *_NA, *_NUMAOR;
+    int *VOTCA2CPMD_map, *CPMD2VOTCA_map;
+    
     
     
     ub::symmetric_matrix<double>            _overlap; //overlap matrix, from OVERLAP file
@@ -129,6 +133,14 @@ private:
     int NumbfGW( std::string _shell_type);
     int NumbfQC_cart( std::string _shell_type);
     void WriteBasisSet(std::vector<Segment* > segments, ofstream &_com_file);
+    
+    int ConvAtomIndex_CPMD2VOTCA(int indx){
+        return(CPMD2VOTCA_map[indx]);
+    }
+    
+    int ConvAtomIndex_VOTCA2CPMD(int indx){
+        return(VOTCA2CPMD_map[indx]);
+    }
 
     
     

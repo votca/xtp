@@ -166,11 +166,15 @@ namespace votca {
             if(_popAnalysis) _projectWF=true;
 
             if(_projectWF && _optWF){
-                cerr << "Error: Wavefunction optimization and projection onto atom-centric orbitals can not be done together.\nCPMD would crash.\n";
-                cerr << "Do Wavefunction optimization first and then do projection/population analysis\n";
-                cerr << "in a separate run with <restart>WAVEFUNCTION</restart>\n" << flush;
-                LOG(logDEBUG, *_pLog) << "CPMD: Wavefunction optimization and projection onto atom-centric orbitals can not be done together." << flush;
-                throw std::runtime_error("Mutually exclusive options");
+                  LOG(logDEBUG, *_pLog) << "CPMD: both Wavefunction optimization and projection onto atom-centric orbitals are requested. CPMD will have to run twice." << flush;
+                  if(_rsrt){
+                      LOG(logDEBUG, *_pLog) << "CPMD: restart keywords will be ignored during Wavefunction optimization." << flush;
+                  }
+//                cerr << "Error: Wavefunction optimization and projection onto atom-centric orbitals can not be done together.\nCPMD would crash.\n";
+//                cerr << "Do Wavefunction optimization first and then do projection/population analysis\n";
+//                cerr << "in a separate run with <restart>WAVEFUNCTION</restart>\n" << flush;
+//                LOG(logDEBUG, *_pLog) << "CPMD: Wavefunction optimization and projection onto atom-centric orbitals can not be done together." << flush;
+//                throw std::runtime_error("Mutually exclusive options");
             }
 
         }
@@ -185,7 +189,26 @@ namespace votca {
 
             ofstream _com_file;
 
-            std::string _com_file_name_full = _run_dir + "/" + _input_file_name;
+            std::string _com_file_name_full = _run_dir + "/" + _input_file_name; //name
+            //if need to run CPMD twice, create new names for input and log files of the first run
+            if(_projectWF && _optWF){
+                //input
+                size_t pointpos = _input_file_name.find('.');
+                if (pointpos!=std::string::npos){
+                    _wfOpt_input_file_name=_input_file_name.substr(0,pointpos) + "_wfOpt" + _input_file_name.substr(pointpos);
+                }else{
+                _wfOpt_input_file_name=_input_file_name + "_wfOpt";
+                }
+                _com_file_name_full= _run_dir + "/" + _wfOpt_input_file_name;
+
+                //log
+                pointpos = _log_file_name.find('.');
+                if (pointpos!=std::string::npos){
+                    _wfOpt_log_file_name=_log_file_name.substr(0,pointpos) + "_wfOpt" + _log_file_name.substr(pointpos);
+                }else{
+                _wfOpt_log_file_name=_log_file_name + "_wfOpt";
+                }
+            }
 
             _com_file.open(_com_file_name_full.c_str());
 
@@ -195,18 +218,21 @@ namespace votca {
 
             //control
             _com_file << "\n&CPMD\n";
-            if(_rsrt) _com_file << "  RESTART " << _rsrt_kwds << endl;  //restart
-            if(_optWF){                                                 //optimize WF
+            if(_rsrt && !(_projectWF && _optWF)){                   //restart
+                _com_file << "  RESTART " << _rsrt_kwds << endl;  
+            }
+            if(_optWF){                                             //optimize WF
                 _com_file << "  OPTIMIZE WAVEFUNCTION" << endl;
                 _com_file << "  CONVERGENCE ORBITALS" << endl;
                 _com_file << "  " << FortranFormat(_convCutoff) << endl;
             }
-            if(_elpot){                                                 //output electrostatic potential
+            if(_elpot){                                             //output electrostatic potential
                 _com_file << "  ELECTROSTATIC POTENTIAL" << endl;
                 _com_file << "  RHOOUT" << endl;
             }
-            if(_projectWF)
+            if(_projectWF && !_optWF){
                 _com_file << "  PROPERTIES" << endl;
+            }
             _com_file << "&END" << endl;
 
             //functional
@@ -248,22 +274,25 @@ namespace votca {
             _com_file << "\n&ATOMS\n";
                 //find how many atoms of each element there are
             //list<std::string> elements;
-            for (sit = segments.begin(); sit != segments.end(); ++sit) {
+            if(_elements.empty()){ //we have not tabulated # atoms of each element yet
+                //(this is the first time this function is called)
+                for (sit = segments.begin(); sit != segments.end(); ++sit) {
 
-                _atoms = (*sit)-> Atoms();
+                    _atoms = (*sit)-> Atoms();
 
-                for (ait = _atoms.begin(); ait < _atoms.end(); ait++) {
+                    for (ait = _atoms.begin(); ait < _atoms.end(); ait++) {
 
-                    std::string element_name = (*ait)->getElement();
-                    list<std::string>::iterator ite;
-                    ite = find(_elements.begin(), _elements.end(), element_name);
-                    if (ite == _elements.end()) {            //this is the first atom of this element encountered
-                        _elements.push_back(element_name);
-                        _nAtomsOfElement[element_name]=1;
-                    }
-                    else
-                    {
-                        _nAtomsOfElement[element_name]++;
+                        std::string element_name = (*ait)->getElement();
+                        list<std::string>::iterator ite;
+                        ite = find(_elements.begin(), _elements.end(), element_name);
+                        if (ite == _elements.end()) {            //this is the first atom of this element encountered
+                            _elements.push_back(element_name);
+                            _nAtomsOfElement[element_name]=1;
+                        }
+                        else
+                        {
+                            _nAtomsOfElement[element_name]++;
+                        }
                     }
                 }
             }
@@ -324,6 +353,14 @@ namespace votca {
             
             _com_file << endl;
             _com_file.close();
+            
+            
+            //now write the output file for the second run, if necessary
+            if(_projectWF && _optWF){
+                _optWF=false;
+                WriteInputFile(segments, orbitals_guess);
+                _optWF=true;
+            }
 
             return true;
         }
@@ -480,12 +517,42 @@ namespace votca {
          * Runs the CPMD job.
          */
         bool Cpmd::Run() {
+            
+            if (std::system(NULL)){
+                std::system("rm -f LocalError*.log");
+            }
+            
+            if(_optWF && _projectWF){ //CPMD needs to run twice, once for _optWF and once for _projectWF
+                //_optWF run:
+                 LOG(logDEBUG, *_pLog) << "CPMD: running [" << _executable << " " << _wfOpt_input_file_name << "]" << flush;
+                 if (std::system(NULL)) {
+                    std::string _command;
+                    _command = "cd " + _run_dir + "; " + _executable + " " + _wfOpt_input_file_name + ">" + _wfOpt_log_file_name;
+                    std::system(_command.c_str());
 
+                    if (CheckLogFile()) {
+                        LOG(logDEBUG, *_pLog) << "CPMD: finished wavefunction optimization job. Continuing to projection onto AOs." << flush;
+                    } else {
+                        LOG(logDEBUG, *_pLog) << "CPMD: wavefunction optimization job failed" << flush;
+                        return false;
+                    }
+                    
+                    std::system("mv LocalError*.log LocalError_wfOpt*.log");
+                } else {
+                    LOG(logERROR, *_pLog) << _wfOpt_input_file_name << " failed to start" << flush;
+                    return false;
+                }
+                 
+                _optWF = false;
+                //continue as usual
+            }
+            
+            //CPMD only needs to run once, or _optWF just finished running
             LOG(logDEBUG, *_pLog) << "CPMD: running [" << _executable << " " << _input_file_name << "]" << flush;
 
             if (std::system(NULL)) {
                 std::string _command;
-                _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _input_file_name + ">" + _log_file_name;
+                _command = "cd " + _run_dir + "; " + _executable + " " + _input_file_name + ">" + _log_file_name;
                 std::system(_command.c_str());
 
                 if (CheckLogFile()) {
@@ -498,7 +565,7 @@ namespace votca {
                 LOG(logERROR, *_pLog) << _input_file_name << " failed to start" << flush;
                 return false;
             }
-
+            
             return true;
 
         }
@@ -524,6 +591,9 @@ namespace votca {
             char ch;
 
             std::string _full_name = (arg_path / _run_dir / _log_file_name).c_str();
+            if(_optWF && _projectWF){ //CPMD needs to run twice; this is the _optWF run
+                _full_name = (arg_path / _run_dir / _wfOpt_log_file_name).c_str();
+            }
             ifstream _input_file(_full_name.c_str());
 
             if (_input_file.fail()) {
