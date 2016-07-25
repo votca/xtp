@@ -10,19 +10,19 @@
   <cleanup></cleanup>
   
   <restart>WAVEFUNCTION COORDINATES LATEST</restart>
-  <optimizewf>1.0e-7</optimizewf>
-  <pwcutoff>90.0</pwcutoff>
-<!--   <elpot>1</elpot> -->
-<!--   <projectwf>1</projectwf> -->
-<!--   <basisset>6-311G-singletype</basisset> -->
-<!--   <popanalysis>1</popanalysis> -->
+  <optimizewf>1.0e-3</optimizewf>
+  <pwcutoff>150.0</pwcutoff>
+  <elpot>1</elpot>
+  <projectwf>1</projectwf>
+  <basisset>6-311G-singletype</basisset>
+  <popanalysis>1</popanalysis>
   <getmatrices>1</getmatrices>
   <symmetry>0</symmetry>
   <cell>20.0   1.0   1.0  0.0  0.0  0.0</cell>
   
   <functional>
     <name>HCTH</name>
-    <pseudopotentials help="Pseudopotential file names for each atom and their read options.">
+    <pseudopotentials help="Pseudopotential file names for each atom and their read options. These files have to be present in the run directory.">
       <O>O_MT_HCTH.psp KLEINMAN-BYLANDER</O>
       <H>H_CVB_HCTH.psp</H>
     </pseudopotentials>
