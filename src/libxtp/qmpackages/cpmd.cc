@@ -274,6 +274,7 @@ namespace votca {
             _com_file << "\n&ATOMS\n";
                 //find how many atoms of each element there are
             //list<std::string> elements;
+            int numAtoms=0;
             if(_elements.empty()){ //we have not tabulated # atoms of each element yet
                 //(this is the first time this function is called)
                 for (sit = segments.begin(); sit != segments.end(); ++sit) {
@@ -293,10 +294,17 @@ namespace votca {
                         {
                             _nAtomsOfElement[element_name]++;
                         }
+                        numAtoms++;
                     }
                 }
             }
                 //now loop over elements and store all atoms of that element
+            bool atomOrderMapSet = (VOTCA2CPMD_map!=NULL && CPMD2VOTCA_map!=NULL);
+            int Vind=0, Cind=0; //atom indexes in VOTCA and CPMD
+            if(!atomOrderMapSet){
+                VOTCA2CPMD_map=new int[numAtoms];
+                CPMD2VOTCA_map=new int[numAtoms];
+            }
             list<std::string>::iterator ite;
             for (ite = _elements.begin(); ite != _elements.end(); ite++) {
                 if(_ppFileNames.find(*ite)==_ppFileNames.end()) {
@@ -331,6 +339,7 @@ namespace votca {
                     
                     //store atomic positions
                     for (sit = segments.begin(); sit != segments.end(); ++sit) {
+                        Vind=0;
                         _atoms = (*sit)-> Atoms();
                         for (ait = _atoms.begin(); ait < _atoms.end(); ait++) {
                             if((*ait)->getElement().compare(*ite)==0){     //this element
@@ -340,7 +349,16 @@ namespace votca {
                                 _com_file << setw(12) << setiosflags(ios::fixed) << setprecision(5) << conv::nm2bohr*pos.getY() << "   ";
                                 _com_file << setw(12) << setiosflags(ios::fixed) << setprecision(5) << conv::nm2bohr*pos.getZ() << "   ";
                                 _com_file << endl;
+                                
+                                //cache the mapping between VOTCA and CPMD atomic ordering
+                                if(!atomOrderMapSet){
+                                    VOTCA2CPMD_map[Vind]=Cind;
+                                    CPMD2VOTCA_map[Cind]=Vind;
+                                    CPMD2TYPE_map[Cind]=(*ite);
+                                }
+                                Cind++;
                             }
+                            Vind++;
                         }
                     }
                 }
@@ -675,10 +693,7 @@ namespace votca {
                         v.setY(boost::lexical_cast<double>(results[3]));
                         v.setZ(boost::lexical_cast<double>(results[4]));
                         v=v*tools::conv::bohr2ang;
-                        if(_projectWF)
-                            positions.push_back(v); //store positions and core charges (later))
-                        else
-                            _orbitals->AddAtom(results[1], v.getX(), v.getY(), v.getZ(), 0); //store positions only
+                        positions.push_back(v); //store positions and core charges (later))
                     }while(true);
                 }
                 
@@ -697,37 +712,29 @@ namespace votca {
                     _orbitals->setNumberOfLevels(nelectrons/2, nstates-(nelectrons/2));
                 }
                 
+
+                
                 
             }
             LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
             _input_file.close();
             
+            //check that CPMD2TYPE_map is available
+            if(CPMD2VOTCA_map==NULL){
+                LOG(logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
+                LOG(logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
+                exit(-1);
+            }
+            
+            //store atoms to Orbitals in VOTCA's order
+            for(int v=0; v<positions.size(); v++){
+                int c = ConvAtomIndex_VOTCA2CPMD(v);
+                _orbitals->AddAtom(CPMD2TYPE_map[c], positions[c].getX(), positions[c].getY(), positions[c].getZ(), 0); //core charges don't matter, VOTCA computes them on its own
+            }
             
             if(_projectWF){
                 //MO coefficient and overlap matrices
                 if(!loadMatrices(_orbitals)) return false;
-
-                //atom info
-                if(!(_orbitals->hasQMAtoms())){ //no atoms defined for the orbitals
-                    //lets fill them in, in CPMD's order
-
-                    //iterate over elements
-                    list<std::string>::iterator ite;
-                    int i=0;
-                    int p=0;
-                    for (ite = _elements.begin(); ite != _elements.end(); ite++, i++) {
-                        for(int a=0; a<_NA[i]; a++, p++){
-                            _orbitals->AddAtom(*ite, positions[p].getX(), positions[p].getY(), positions[p].getZ(), _ZV[i]); //store core charge in the atomic charge field
-                        }
-                    }
-                }
-                else
-                {
-                    cerr << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-                    LOG(logDEBUG, *_pLog) << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-                    throw std::runtime_error("Unimplemented case");
-                    return false;
-                }
             }
             
             
@@ -750,6 +757,13 @@ namespace votca {
         
         bool Cpmd::loadMatrices(Orbitals * _orbitals)
         {
+            //sizes of int and real in whichever Fortran compiler CPMD was compiled with
+            //these should be read from the xml file
+            int F_int_size=4;
+            int F_real_size=8;
+            
+            int totAtoms=0;
+            
             //check if WFNCOEF exists
             boost::filesystem::path arg_path;
             std::string _full_name = (arg_path / _run_dir / "WFNCOEF").c_str();
@@ -763,18 +777,18 @@ namespace votca {
             //read WFNCOEF
             //variable names in all CAPS are variables from CPMD source code
             int count=0, endcount=0;
-            wf_file.read((char*)&count, 4); //bytes in this record
+            wf_file.read((char*)&count, F_int_size); //bytes in this record
             int bl=count;
 
             int NATTOT=0;
-            wf_file.read((char*)&NATTOT, 4);    //number of basis functions
-            bl-=4;
+            wf_file.read((char*)&NATTOT, F_int_size);    //number of basis functions
+            bl-=F_int_size;
             _orbitals->setBasisSetSize(NATTOT);
             LOG(logDEBUG, *_pLog) << "Basis functions: " << NATTOT << flush;
 
             _NSP=0;                  //number of atom types
-            wf_file.read((char*)&_NSP, 4);
-            bl-=4;
+            wf_file.read((char*)&_NSP, F_int_size);
+            bl-=F_int_size;
 
             //double ZV[NSP];             //core charge
             //int NA[NSP], NUMAOR[NSP];
@@ -791,43 +805,98 @@ namespace votca {
                 throw std::runtime_error("Memory allocation failed");
             for(int i=0; i<_NSP; i++)
             {
-                wf_file.read((char*)&_ZV[i], 8);     //core charge of atom type i
-                wf_file.read((char*)&_NA[i], 4);     //number of atoms of type i
-                wf_file.read((char*)&_NUMAOR[i], 4); //number of atomic orbitals of atom type i
-                bl-=8+4*2;
+                wf_file.read((char*)&_ZV[i], F_real_size);    //core charge of atom type i
+                wf_file.read((char*)&_NA[i], F_int_size);     //number of atoms of type i
+                wf_file.read((char*)&_NUMAOR[i], F_int_size); //number of atomic orbitals of atom type i
+                bl-=F_real_size+F_int_size*2;
+                
+                totAtoms+=_NA[i];
             }
             
             //check footer
-            wf_file.read((char*)&endcount, 4);
+            wf_file.read((char*)&endcount, F_int_size);
             if(bl!=0 || endcount!=count){ //number of bytes read was wrong
                 cerr << "CPMD: " << "could not parse record in "<< _full_name << endl << flush;
                 LOG(logERROR, *_pLog) << "CPMD: " << "could not parse record in "<< _full_name << flush;
                 throw std::runtime_error("IO error");
                 return false;
             }
+            
                 
             //NEW RECORD
-            wf_file.read((char*)&count, 4); //bytes in this record
+            wf_file.read((char*)&count, F_int_size); //bytes in this record
             bl=count;
 
-            int NUMORB=count/8/NATTOT;          //number of MOs (energy levels))
-            LOG(logDEBUG, *_pLog) << "number of energy levels: " << NATTOT << flush;
+            int NUMORB=count/F_real_size/NATTOT;          //number of MOs (energy levels))
+            LOG(logDEBUG, *_pLog) << "CPMD: number of energy levels: " << NATTOT << flush;
                 //resize the coefficient matrix
+            
+            
+            
+            
+            //map atomic orbitals to (CPMD) atom indeces so we can reorder the MO and Overlap matrices to VOTCA's atom order
+            LOG(logDEBUG, *_pLog) << "CPMD: Reordering orbitals."<< flush;
+            int* AO_CPMD2VOTCA_map= new int[NATTOT];
+            int* VOTCA2numAOs= new int[totAtoms];   //number of AOs for each atom in VOTCA atomic order 
+            int* VOTCA2firstAO= new int[totAtoms];  //index of first AO of each atom in VOTCA atomic order 
+            if(AO_CPMD2VOTCA_map==NULL || VOTCA2numAOs==NULL || VOTCA2firstAO==NULL){
+                throw std::runtime_error("Memory allocation failed");
+            }
+            int c=0;
+            for(int i=0; i<_NSP; i++)
+            {
+                for(int a=0; a<_NA[i]; a++){
+                    VOTCA2numAOs[ConvAtomIndex_CPMD2VOTCA(c)]=_NUMAOR[i];
+                    c++; //increment CPMD atom index
+                }
+            }
+                //find the beginning of each atom in the VOTCA order
+            int orb=0;
+            for(int v=0; v<totAtoms; v++){
+                VOTCA2firstAO[v]=orb;
+                orb+=VOTCA2numAOs[v];
+            }
+                //map each CMPD AO to a VOTCA AO
+            c=0;    //CPMD atom index
+            int co=0;
+            int vo=0;
+            for(int i=0; i<_NSP; i++)
+            {
+                for(int a=0; a<_NA[i]; a++){
+                    for(int ofst=0; ofst<_NUMAOR[i]; ofst++){
+                        int v = ConvAtomIndex_CPMD2VOTCA(c); //VOTCA atom index
+                        vo = VOTCA2firstAO[v] + ofst; //VOTCA orbital index
+                        AO_CPMD2VOTCA_map[co] = vo;
+                        
+                        co++;  //increment CPMD orbital index
+                    }
+                    c++; //increment CPMD atom index
+                }
+            }
+
+            
+            
+            
+            
+            
+            LOG(logDEBUG, *_pLog) << "CPMD: Reading MO coefficients."<< flush;
             ub::matrix<double> &mo_coefficients = _orbitals->MOCoefficients();
             mo_coefficients.resize(NUMORB, NATTOT);
-            //double XXMAT[NATTOT][NUMORB];
+            
+            //mo_coefficients need to be in VOTCA's atomic order
+            //AO reordering comes later
             double XXMAT;
             for(int i=0; i<NUMORB; i++){
                 for(int j=0; j<NATTOT; j++){  
-                    wf_file.read((char*)&XXMAT, 8);
-                    mo_coefficients(i,j)=XXMAT;
-                    bl-=8;
+                    wf_file.read((char*)&XXMAT, F_real_size);
+                    mo_coefficients(AO_CPMD2VOTCA_map[i],j)=XXMAT;
+                    bl-=F_real_size;
                 }
             }
             
             
             //check footer
-            wf_file.read((char*)&endcount, 4);
+            wf_file.read((char*)&endcount, F_int_size);
             if(bl!=0 || endcount!=count){ //number of bytes read was wrong
                 cerr << "CPMD: " << "could not parse record in "<< _full_name << endl << flush;
                 LOG(logERROR, *_pLog) << "CPMD: " << "could not parse record in "<< _full_name << endl << flush;
@@ -836,7 +905,7 @@ namespace votca {
             }
             
             wf_file.close();
-            LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
+            LOG(logDEBUG, *_pLog) << "CPMD: Done parsing" << flush;
             
             
             
@@ -852,10 +921,10 @@ namespace votca {
             
             //read OVERLAP
             count=0, endcount=0;
-            ov_file.read((char*)&count, 4); //bytes in this record
+            ov_file.read((char*)&count, F_int_size); //bytes in this record
             bl=count;
             
-            if(NATTOT*NATTOT!=count/8)
+            if(NATTOT*NATTOT!=count/F_real_size)
             {
                 cerr << "CPMD: " << "Number of basis functions in the overlap and coefficient matrices do not match."<< endl << flush;
                 LOG(logERROR, *_pLog) << "CPMD: " << "Number of basis functions in the overlap and coefficient matrices do not match."<< endl << flush;
@@ -869,17 +938,19 @@ namespace votca {
             overlap.resize(NATTOT);
             
             //read
+            //Overlap need to be in VOTCA's atomic order
+            LOG(logDEBUG, *_pLog) << "CPMD: Reading Overlap matrix."<< flush;
             double XSMAT;
             for(int i=0; i<NATTOT; i++){
                 for(int j=0; j<NATTOT; j++){  
-                    ov_file.read((char*)&XSMAT, 8);
-                    overlap(i,j)=XSMAT;
-                    bl-=8;
+                    ov_file.read((char*)&XSMAT, F_real_size);
+                    overlap(AO_CPMD2VOTCA_map[i],AO_CPMD2VOTCA_map[j])=XSMAT;
+                    bl-=F_real_size;
                 }
             }
             
             //check footer
-            ov_file.read((char*)&endcount, 4);
+            ov_file.read((char*)&endcount, F_int_size);
             if(bl!=0 || endcount!=count){ //number of bytes read was wrong
                 cerr << "CPMD: " << "could not parse record in "<< _full_name << endl << flush;
                 LOG(logERROR, *_pLog) << "CPMD: " << "could not parse record in "<< _full_name << flush;
@@ -888,8 +959,12 @@ namespace votca {
             }
             
             ov_file.close();
-            LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
-                        
+            LOG(logDEBUG, *_pLog) << "CPMD: Done parsing" << flush;
+            
+            delete[] VOTCA2numAOs;
+            delete[] VOTCA2firstAO;
+            delete[] AO_CPMD2VOTCA_map;
+            
             return true;
         }
 

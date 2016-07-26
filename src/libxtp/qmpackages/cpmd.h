@@ -63,13 +63,21 @@ public:
    bool ParseOrbitalsFile( Orbitals* _orbitals ){return true;};
    
    bool ConvertToGW( Orbitals* _orbitals ){
-       LOG(logDEBUG, *_pLog) << "CPMD: ConvertToGW is  not implemented." << flush;
+       LOG(logDEBUG, *_pLog) << "CPMD: ConvertToGW is not implemented." << flush;
        throw std::runtime_error("Not implemented ConvertToGW");
    };
       
    std::string getScratchDir( ) { return _scratch_dir; }
    
    bool loadMatrices(Orbitals * _orbitals);
+   
+   Cpmd(){
+       _ZV=NULL;
+       _NA=NULL;
+       _NUMAOR=NULL;
+       VOTCA2CPMD_map=NULL;
+       CPMD2VOTCA_map=NULL;
+   }
    
    ~Cpmd(){
        //free the memory
@@ -79,6 +87,8 @@ public:
            delete[] _NA;
            delete[] _NUMAOR;
        }
+       if(VOTCA2CPMD_map!=NULL){ delete[] VOTCA2CPMD_map;}
+       if(CPMD2VOTCA_map!=NULL){ delete[] CPMD2VOTCA_map;}
    };
    
 private:  
@@ -117,7 +127,7 @@ private:
     double *_ZV;             //core charge
     int *_NA, *_NUMAOR;
     int *VOTCA2CPMD_map, *CPMD2VOTCA_map;
-    
+    std::map<int,std::string> CPMD2TYPE_map;
     
     
     ub::symmetric_matrix<double>            _overlap; //overlap matrix, from OVERLAP file
