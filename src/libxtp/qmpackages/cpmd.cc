@@ -225,6 +225,10 @@ namespace votca {
                 _com_file << "  OPTIMIZE WAVEFUNCTION" << endl;
                 _com_file << "  CONVERGENCE ORBITALS" << endl;
                 _com_file << "  " << FortranFormat(_convCutoff) << endl;
+                _com_file << "  PCG MINIMIZE" << endl;              //use the more stable optimizer
+                _com_file << "  TIMESTEP" << endl;
+                _com_file << "   20" << endl;
+
             }
             if(_elpot){                                             //output electrostatic potential
                 _com_file << "  ELECTROSTATIC POTENTIAL" << endl;

@@ -33,7 +33,10 @@ Grid::~Grid() {
              delete *pit;
         }
         _all_gridsites.clear();
-        if (_sites_seg != NULL) delete _sites_seg;
+        //delete _sites_seg calls delete on APolarCites belonging to it
+        //but APolarCites were already deleted above. So empty _sites_seg of all APolarCites.
+        _sites_seg->clear();
+        if (_sites_seg != NULL) delete _sites_seg;  
     }
 
 Grid &Grid::operator=(const Grid & obj){
@@ -439,6 +442,12 @@ void Grid::setupgrid(){
 
 
 void Grid::writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic, double BoxLen[3]){
+    
+    if(_val.size()!=_gridpoints.size()){
+        cout<<" Grid::writeIrregularGrid(): number of grid points doesn't match number of potential values" << endl; 
+    }
+    
+    
     ofstream out;
     out.open (_filename.c_str(), ios::out | ios::trunc);
     

@@ -176,7 +176,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         
         //basis.ReorderMOs(_orbitals.MOCoefficients(), _orbitals.getQMpackage(), "votca" );  
         basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "votca" );  
-        cout<<"REORDERED MO coeffs:\n"<<_MO_Coefficients<<endl;
+        //cout<<"REORDERED MO coeffs:\n"<<_MO_Coefficients<<endl;
         bool _do_transition=false;
         if(_state=="transition"){
             _do_transition=true;
@@ -240,7 +240,11 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         }
         else if (_use_bulkESP){         
             Bulkesp esp=Bulkesp(_log);
-            esp.Evaluate(_Atomlist, _orbitals, _MO_Coefficients, basis,bs,_gridsize, 1.05, _state, _spin, _state_no); 
+            esp.setUseECPs(_use_ecp);
+            if(periodic){
+                esp.setBox(boxLen);            
+            }
+            esp.Evaluate(_Atomlist, DMAT_tot, _orbitals, _MO_Coefficients, basis,bs,_gridsize, 1.15, _state, _spin, _state_no); 
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;

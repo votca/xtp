@@ -36,11 +36,12 @@ public:
         QMAtom* a;
         QMAtom* b;
         xtp::vec ba;
+        int a_indx, b_indx;
     };
     
     struct Molecule{
         std::vector< QMAtom* > atoms;
-        std::vector< Bond > bonds;
+        std::vector< int > atomIndeces;
     };
     
     
@@ -62,10 +63,11 @@ public:
     
     std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< QMAtom* > a, double scale);
     
-    ub::vector<double> ComputeESP(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat,
-            ub::matrix<double> &_ovmat, AOBasis &_basis,BasisSet &bs,string gridsize, Grid &_grid);
+    ub::vector<double> ComputeESP(std::vector< QMAtom* > & _global_atomlist,
+            std::vector< QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
+            ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge);
     
-    void Evaluate(std::vector< QMAtom* >& _atomlist, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
+    void Evaluate(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
             AOBasis &_basis,BasisSet &bs,string gridsize, double maxBondScale,
             std::string _state, std::string _spin, int _state_no);
     

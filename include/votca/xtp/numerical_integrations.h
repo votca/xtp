@@ -49,6 +49,7 @@ namespace votca { namespace xtp {
             ub::matrix<double> numAOoverlap ( AOBasis* basis  );
             double IntegrateDensity(ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis);
+            double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(ub::vector<double> rvector);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             
