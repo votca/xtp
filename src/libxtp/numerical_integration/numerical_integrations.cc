@@ -37,6 +37,7 @@
 #include <votca/xtp/vxc_functionals.h>
 #include <iterator>
 #include <string>
+#include <math.h>
 // #include <xc.h>
 
 
@@ -1419,33 +1420,137 @@ namespace votca {
             double result = 0.0;
             
             if(density_set){
-#warning: "TODO: IntegratePotential_w_PBC() needs to do Ewald summation to be truly periodic."
-                //real space component
                 for (unsigned i = 0; i < _grid.size(); i++) {
-                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                    double dif[3];
-                    dif[0] = _grid[i][j].grid_x-rvector(0);
-                    dif[1] = _grid[i][j].grid_y-rvector(1);
-                    dif[2] = _grid[i][j].grid_z-rvector(2);
-                    for(int k=0; k<3; k++){
-                        if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
-                            if(dif[k]>0)    //i.x>j.x
-                                dif[k]-=boxLen[k];
-                            else            //i.x<j.x
-                                dif[k]+=boxLen[k];
-                    }
-                    double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2]));
-                    result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
-                    }
-                }
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+
+                        //charge at this point
+                        double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+
+                        //r-space sum
+                        double dif[3];
+                        dif[0] = _grid[i][j].grid_x-rvector(0);
+                        dif[1] = _grid[i][j].grid_y-rvector(1);
+                        dif[2] = _grid[i][j].grid_z-rvector(2);
+                        for(int k=0; k<3; k++){
+                            if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+                                if(dif[k]>0)    //i.x>j.x
+                                    dif[k]-=boxLen[k];
+                                else            //i.x<j.x
+                                    dif[k]+=boxLen[k];
+                        }
+                        double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2]));
+                        result += erfc(alpha*dist)*q/dist; 
+
+                        //k-space sum
+                        vec r(rvector(0),rvector(1),rvector(2));
+                        int nKpoints=numK[0]*numK[1]*numK[2];
+                        double* kp;
+                        for(int index=0; index<nKpoints; index++){
+                            kp = &(Kcoord[index*3]);
+                            vec K(kp[0], kp[1], kp[2]);
+                            std::complex<double> Kr(0, K*r); // ik dot r
+
+                            result+=prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
+                        }//index
+
+                        //self correction
+                        result-=2.0*(alpha/sqrt(tools::conv::Pi))*q;
+                        
+                        //dipole moment correction
+                        //This is only usefull if we have a countably infinite
+                        //sphere of periodic cells embeded in a dielectric.
+                        //If material is trully periodic ("metallic boundary 
+                        //conditions"), then this correction is 0
+                        
+                    }//j
+                }//i 
             } 
-           else{
+            else{
                throw std::runtime_error("Density not calculated");
-           }
+            }
             
             return result;   
         }
-                   
+        
+        void NumericalIntegration::FreeKspace(){
+            delete[] Rho_k;
+            delete[] Kcoord;
+            delete[] prefactor;
+        }
+        
+        
+        /**
+         * 
+         * @param _atoms
+         * @param boxLen
+         * @param Kspacing in Angstroms
+         */
+        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing){
+            //this is going to be slow, as points we have density for are not on a periodic grid,
+            //so will use simple Ewald summation, not any of the FFT methods.
+            for(int i=0; i<3; i++){
+                numK[i]=1+(boxLen[i]/Kspacing);
+                if(numK[i]%2 != 0) numK[i]++; //keep it even
+            }
+            
+            //TODO: compute alpha
+            
+            //allocate
+            int nKpoints=numK[0]*numK[1]*numK[2];
+            Rho_k=new std::complex<double>[nKpoints];
+            Kcoord=new double[nKpoints*3];
+            prefactor=new double[nKpoints];
+            
+            //fill Kcoord and prefactor
+            // [1, 2, 3, ..., N/2 -1, N/2, -N/2, -N/2 +1, -N/2 +1, ..., -3, -2, -1] (note no 0)
+            int L, M, N;
+            double ksq;
+            double* kp;
+            int index=0;
+            double invvolume = 1.0/(boxLen[0]*boxLen[1]*boxLen[2]);
+            double pre = invvolume*4.0*tools::conv::Pi;
+            double fourasq=4.0*alpha*alpha;
+            for(int l=0; l<numK[0]; l++){
+                if (l>=numK[0]/2){ L=l-numK[0];}
+                else { L=l+1;}
+                for(int m=0; m<numK[1]; m++){
+                    if (m>=numK[1]/2){ M=m-numK[1];}
+                    else { M=m+1;}
+                    for(int n=0; n<numK[2]; n++){
+                        if (N>=numK[2]/2){ N=n-numK[2];}
+                        else { N=n+1;}
+                      
+                        kp = &(Kcoord[index*3]);
+                        kp[0]=2.0*tools::conv::Pi * L /boxLen[0];
+                        kp[1]=2.0*tools::conv::Pi * M /boxLen[1];
+                        kp[2]=2.0*tools::conv::Pi * N /boxLen[2];
+                        
+                        ksq=(kp[0]*kp[0])+(kp[1]*kp[1])+(kp[2]*kp[2]);
+                        prefactor[index]=(pre/ksq) * std::exp(-ksq/fourasq);
+                        
+                        index++;
+                    }
+                }
+            }
+            
+            
+            //fill Rho_k
+            for(index=0; index<nKpoints; index++){
+                kp = &(Kcoord[index*3]);
+                vec K(kp[0], kp[1], kp[2]);
+                Rho_k[index]=0.0;
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+                        vec r(_grid[i][j].grid_x, _grid[i][j].grid_y, _grid[i][j].grid_z);
+                        std::complex<double> nKr(0, -K*r); // -ik dot r
+                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+                    }
+                }
+            }
+            
+        }
+        
+        
         double NumericalIntegration::IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis){   
          
             double result=0.0;

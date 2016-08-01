@@ -239,17 +239,25 @@ namespace votca { namespace xtp {
 
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
         //boost::progress_display show_progress( _grid.getsize() );
-        LOG(logDEBUG, *_log) << " NumericalIntegration::IntegratePotential_w_PBC(): currently ignoring long range contributions."<< endl;
         
         if(periodic){
+            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
+            numway.PrepKspaceDensity(boxLen, 0.5);
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
-                //_ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, boxLen);
-                _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
+                double BL[3];
+                BL[0]=boxLen[0]*tools::conv::ang2nm;
+                BL[1]=boxLen[1]*tools::conv::ang2nm;
+                BL[2]=boxLen[2]*tools::conv::ang2nm;
+                
+                _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
+                //_ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
                 //++show_progress;
             }
+            numway.FreeKspace();
         }
         else{
+            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
