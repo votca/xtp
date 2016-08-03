@@ -1418,19 +1418,28 @@ namespace votca {
         double NumericalIntegration::IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]){
             
             double result = 0.0;
+            double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
             
             if(density_set){
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+                //for (unsigned i = 0; i < _grid.size(); i++) {
+                    //for (unsigned j = 0; j < _grid[i].size(); j++) {
+                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
+                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
 
+                
                         //charge at this point
-                        double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
-
+                        //double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+                        double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
+                        
                         //r-space sum
                         double dif[3];
-                        dif[0] = _grid[i][j].grid_x-rvector(0);
-                        dif[1] = _grid[i][j].grid_y-rvector(1);
-                        dif[2] = _grid[i][j].grid_z-rvector(2);
+//                        dif[0] = _grid[i][j].grid_x-rvector(0);
+//                        dif[1] = _grid[i][j].grid_y-rvector(1);
+//                        dif[2] = _grid[i][j].grid_z-rvector(2);
+                        dif[0] = _Madelung_grid[i][j].grid_x-rvector(0);
+                        dif[1] = _Madelung_grid[i][j].grid_y-rvector(1);
+                        dif[2] = _Madelung_grid[i][j].grid_z-rvector(2);
+
                         for(int k=0; k<3; k++){
                             if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
                                 if(dif[k]>0)    //i.x>j.x
@@ -1438,32 +1447,60 @@ namespace votca {
                                 else            //i.x<j.x
                                     dif[k]+=boxLen[k];
                         }
-                        double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2]));
-                        result += erfc(alpha*dist)*q/dist; 
-
-                        //k-space sum
-                        vec r(rvector(0),rvector(1),rvector(2));
-                        int nKpoints=numK[0]*numK[1]*numK[2];
-                        double* kp;
-                        for(int index=0; index<nKpoints; index++){
-                            kp = &(Kcoord[index*3]);
-                            vec K(kp[0], kp[1], kp[2]);
-                            std::complex<double> Kr(0, K*r); // ik dot r
-
-                            result+=prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
-                        }//index
-
-                        //self correction
-                        result-=2.0*(alpha/sqrt(tools::conv::Pi))*q;
-                        
-                        //dipole moment correction
-                        //This is only usefull if we have a countably infinite
-                        //sphere of periodic cells embeded in a dielectric.
-                        //If material is trully periodic ("metallic boundary 
-                        //conditions"), then this correction is 0
-                        
+                        double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2])); //in bohr
+                        double potR=erfc(alpha*dist)*q/dist;
+						
+                        //cout<< std::setprecision(12)<<"dist="<<dist<<"\t q="<<q<<"\t alpha*dist="<<alpha*dist<<"\t erfc()="<<erfc(alpha*dist)<<"\t potR="<<potR<<endl;
+                        if(dist<1.0e-9){ //point is in the same spot as we are evaluating potential
+                            result-=2.0*(alpha/sqrt(tools::conv::Pi))*q; //self correction
+                        }
+                        else if(dist<=cutoff){
+                            //double potR=q/dist;
+                            result += potR;
+                        }
+						
                     }//j
                 }//i 
+				
+                cout<< "r-space sum: " <<result<<endl;
+
+                //k-space sum
+                vec r(rvector(0),rvector(1),rvector(2));
+                int nKpoints=numK[0]*numK[1]*numK[2];
+                double* kp;
+                std::complex<double> ksum=(0,0);
+                //exclude k={0,0,0} (index=0)
+                for(int index=1; index<nKpoints; index++){
+                        kp = &(Kcoord[index*3]);
+                        vec K(kp[0], kp[1], kp[2]);
+                        //if (std::abs((K*r)) < 1.0e-6)
+                                //cout<<"potK includes k=0"<<endl;
+                        std::complex<double> Kr(0, K*r); // ik dot r
+
+                        double potK=prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
+                        ksum+=prefactor[index]*(Rho_k[index]*std::exp(Kr));
+                        //if (potK!=potK) //nan check
+                                //cout<<"potK is nan"<<endl;
+                        result+=potK;
+
+                }//index
+
+
+
+                cout<< "k-space sum: " <<ksum<<endl;
+                cout<< "final Ewald sum: "<<result<<endl;
+
+                //self correction
+                //result-=2.0*(alpha/sqrt(tools::conv::Pi))*q;
+
+                //dipole moment correction
+                //This is only usefull if we have a countably infinite
+                //sphere of periodic cells embeded in a dielectric.
+                //If material is trully periodic ("metallic boundary 
+                //conditions"), then this correction is 0
+				
+                        
+
             } 
             else{
                throw std::runtime_error("Density not calculated");
@@ -1478,6 +1515,35 @@ namespace votca {
             delete[] prefactor;
         }
         
+		
+        /*
+         *	Calculate and return the Ewald coefficient (alpha) from cutoff distance
+         *	and requested tolerance.
+         *	This algorithm is based on the gromacs function calc_ewaldcoeff.
+         */
+        void NumericalIntegration::findAlpha(double Rc, double dtol){
+                double x=5.0;
+                int i=0;
+                while (true){
+                        i+=1;
+                        x*=2.0;
+                        if(erfc(x*Rc) <= dtol)
+                                break;
+                }
+
+                int n=i+60;
+                double low=0.0;
+                double high=x;
+                for (i=0; i<n; i++){
+                        x=(low+high)/2.0;
+                        if(erfc(x*Rc) > dtol)
+                                low=x;
+                        else
+                                high=x;
+                }
+
+                alpha=x;
+        }
         
         /**
          * 
@@ -1485,15 +1551,44 @@ namespace votca {
          * @param boxLen
          * @param Kspacing in Angstroms
          */
-        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing){
+        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside){
+            
+            cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
+            //fill _Madelung_grid;
+            std::vector< GridContainers::integration_grid > _Mad;
+            double a = boxLen[0]; //in bohr
+            for(int l=0; l<natomsonside; l++){
+                for(int m=0; m<natomsonside; m++){
+                    for(int n=0; n<natomsonside; n++){
+                        GridContainers::integration_grid el;
+                        el.grid_density=std::pow(-1.0, l+m+n);
+                        el.grid_weight=1.0;
+                        el.grid_x=a*l/natomsonside;
+                        el.grid_y=a*m/natomsonside;
+                        el.grid_z=a*n/natomsonside;
+                        _Mad.push_back(el);
+                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << endl;
+                    }
+                }
+            }
+            _Madelung_grid.push_back(_Mad);
+            //cout<<"points in _Mad: " <<_Mad.size() << endl;
+            //cout<<"_Mads in _Madelung_grid: " <<_Madelung_grid.size() << endl;
+            
+            
             //this is going to be slow, as points we have density for are not on a periodic grid,
             //so will use simple Ewald summation, not any of the FFT methods.
             for(int i=0; i<3; i++){
                 numK[i]=1+(boxLen[i]/Kspacing);
-                if(numK[i]%2 != 0) numK[i]++; //keep it even
+                if(numK[i]%2 == 0) numK[i]++; //keep it odd
             }
+            cout<<"numK={"<<numK[0]<<", "<<numK[1]<<", "<<numK[2]<<"}"<<endl;
             
-            //TODO: compute alpha
+            //compute alpha
+            double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
+            findAlpha(cutoff, 1.0e-25);
+            
+            cout<<"found alpha = "<< alpha <<"\t erfc(alpha*cutoff) = " << erfc(alpha*cutoff)<< endl;
             
             //allocate
             int nKpoints=numK[0]*numK[1]*numK[2];
@@ -1502,50 +1597,73 @@ namespace votca {
             prefactor=new double[nKpoints];
             
             //fill Kcoord and prefactor
-            // [1, 2, 3, ..., N/2 -1, N/2, -N/2, -N/2 +1, -N/2 +1, ..., -3, -2, -1] (note no 0)
+            // [0, 1, 2, 3, ..., N/2 -1, N/2, -N/2, -N/2 +1, -N/2 +1, ..., -3, -2, -1] (note no 0)
+            // k={0,0,0} is the very first entry (index=0)
             int L, M, N;
             double ksq;
-            double* kp;
-            int index=0;
+            
             double invvolume = 1.0/(boxLen[0]*boxLen[1]*boxLen[2]);
             double pre = invvolume*4.0*tools::conv::Pi;
             double fourasq=4.0*alpha*alpha;
+            
+            cout<<"pre=4*Pi/Volume="<<pre<<endl;
+            cout<<"fourasq=4*alpha^2="<<fourasq<<endl;
+
+            //#pragma omp parallel for
             for(int l=0; l<numK[0]; l++){
-                if (l>=numK[0]/2){ L=l-numK[0];}
-                else { L=l+1;}
+                if (l>numK[0]/2){ L=l-numK[0];}
+                else { L=l;}
+                //cout<<L<<endl;
                 for(int m=0; m<numK[1]; m++){
-                    if (m>=numK[1]/2){ M=m-numK[1];}
-                    else { M=m+1;}
+                    if (m>numK[1]/2){ M=m-numK[1];}
+                    else { M=m;}
                     for(int n=0; n<numK[2]; n++){
-                        if (N>=numK[2]/2){ N=n-numK[2];}
-                        else { N=n+1;}
-                      
-                        kp = &(Kcoord[index*3]);
+                        if (N>numK[2]/2){ N=n-numK[2];}
+                        else { N=n;}
+						
+			int index = l*(numK[1]*numK[2])+m*numK[2]+n;
+					  
+                        double* kp = &(Kcoord[index*3]);
                         kp[0]=2.0*tools::conv::Pi * L /boxLen[0];
                         kp[1]=2.0*tools::conv::Pi * M /boxLen[1];
                         kp[2]=2.0*tools::conv::Pi * N /boxLen[2];
                         
                         ksq=(kp[0]*kp[0])+(kp[1]*kp[1])+(kp[2]*kp[2]);
+//                        cout<<"{l,m,n}={"<<l<<", "<<m<<", "<<n<<"}\t";
+//                        cout<<"k={"<<kp[0]<<", "<<kp[1]<<", "<<kp[2]<<"}\tksq="<<ksq<<"\t";
+//                        cout<<"prefactor="<<(pre/ksq) * std::exp(-ksq/fourasq)<<endl;
                         prefactor[index]=(pre/ksq) * std::exp(-ksq/fourasq);
                         
-                        index++;
+                        //index++;
                     }
                 }
             }
             
             
             //fill Rho_k
-            for(index=0; index<nKpoints; index++){
-                kp = &(Kcoord[index*3]);
+            //#pragma omp parallel for
+            for(int index=0; index<nKpoints; index++){
+                double* kp = &(Kcoord[index*3]);
                 vec K(kp[0], kp[1], kp[2]);
                 Rho_k[index]=0.0;
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-                        vec r(_grid[i][j].grid_x, _grid[i][j].grid_y, _grid[i][j].grid_z);
+//                for (unsigned i = 0; i < _grid.size(); i++) {
+//                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+//                        vec r(_grid[i][j].grid_x, _grid[i][j].grid_y, _grid[i][j].grid_z);
+//                        std::complex<double> nKr(0, -K*r); // -ik dot r
+//                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+//                    }
+                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
+                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
+                        vec r(_Madelung_grid[i][j].grid_x, _Madelung_grid[i][j].grid_y, _Madelung_grid[i][j].grid_z);
                         std::complex<double> nKr(0, -K*r); // -ik dot r
-                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+                        Rho_k[index] -= _Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+//                        cout<<"k={"<<kp[0]<<", "<<kp[1]<<", "<<kp[2]<<"}\t";
+//                        cout<<"r={"<<_Madelung_grid[i][j].grid_x<<", "<<_Madelung_grid[i][j].grid_y<<", "<<_Madelung_grid[i][j].grid_z<<"}\t";
+//                        cout<<"-ikr={"<<nKr<<"}\t exp(-iKr)="<<std::exp(nKr)<<"\t Rho_k="<<Rho_k[index]<<endl;
                     }
+
                 }
+                
             }
             
         }

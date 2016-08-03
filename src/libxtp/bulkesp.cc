@@ -242,16 +242,41 @@ namespace votca { namespace xtp {
         
         if(periodic){
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
-            numway.PrepKspaceDensity(boxLen, 0.5);
-            #pragma omp parallel for
+            double BL[3];
+            BL[0]=boxLen[0]*tools::conv::ang2bohr;
+            BL[1]=boxLen[1]*tools::conv::ang2bohr;
+            BL[2]=boxLen[2]*tools::conv::ang2bohr;
+            
+            double exactMadelung=1.74756459463318;
+            
+            int natomsonside=12;
+            double numK=26;
+            double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
+            //a*= 1.14;
+            cout<< "a = "<< a << endl;
+            cout<< "nearest neighbour distance = "<< a/8.0 << endl;
+            BL[0]=a;
+            BL[1]=a;
+            BL[2]=a;
+            
+            //numway.PrepKspaceDensity(BL, 1.6);
+            numway.PrepKspaceDensity(BL, a/numK, natomsonside);
+            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
+            //#pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
-                double BL[3];
-                BL[0]=boxLen[0]*tools::conv::ang2nm;
-                BL[1]=boxLen[1]*tools::conv::ang2nm;
-                BL[2]=boxLen[2]*tools::conv::ang2nm;
+                //_ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
                 
-                _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
-                //_ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
+                ub::vector<double> madelungPoint;
+                madelungPoint.resize(3);
+//                madelungPoint(0)=a/2;
+//                madelungPoint(1)=a/2;
+//                madelungPoint(2)=a/2;
+                madelungPoint(0)=0.0;
+                madelungPoint(1)=0.0;
+                madelungPoint(2)=0.0;
+                _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
+                cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<endl;
+                exit(-1);
                 //++show_progress;
             }
             numway.FreeKspace();
@@ -330,86 +355,27 @@ namespace votca { namespace xtp {
         
         //find the individual molecules
         std::vector<Bulkesp::Molecule> mols = BreakIntoMolecules(_atomlist, maxBondScale);
-//        //debug
-//        for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m){
-//            for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
-//                QMAtom* ap=*a;
-//                cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
-//            }
-//        }
-//        exit(0);
-        
-//        //map elements to number of basis functions per element
-//        FillElement2NBF(_atomlist, bs);
-//        //map QMAtom pointers to column indeces in _MO_Coefficients
-//        std::map<QMAtom*,int> atom2MOIndex = MapAtom2MOCoefIndex(_atomlist);
         
         //loop over molecules
         LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): found "<< mols.size() << "molecules.\n" << flush; 
         for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m){
             
             LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" processing molecule "<< m-mols.begin() << endl; 
-            
-//            //Obtain AO data relevant to this molecule only.
-//            //extract basis
-//            AOBasis _m_basis;
-//            _m_basis.AOBasisFill(&bs, m->atoms);
-//            
-//            //extract MO coefficients
-//            int numorb=_global_MO_Coeffs.size1();
-//            ub::matrix<double> _m_coefs;
-//            _m_coefs.resize(numorb,_m_basis.AOBasisSize());
-//            int bfgi; //basis function global index
-//            int bfli=0; //basis function local index
-//            //loop over atoms in this molecule
-//            for(vector<QMAtom*>::iterator a = _atomlist.begin(); a != _atomlist.end(); ++a){
-//                bfgi=atom2MOIndex[(*a)];
-//                for(int i=0; i<_element2NBF[(*a)->type]; i++){//loop over basis functions of this atom
-//                    //copy MO coefficients to the molecule's matrix
-//                    ub::column(_m_coefs, bfli) = ub::column(_global_MO_Coeffs, bfgi);
-//                    bfli++;
-//                    bfgi++;
-//                }
-//            }
-//            if(bfli!=_m_basis.AOBasisSize())    //check number of basis functions
-//                throw std::runtime_error("Number of basis functions in molecule does not match that in its basis set.\n");
-//            
-//            //Set up the Orbital object for this molecule and calculate density matrix
-//            Orbitals _molOrb;
-//            _molOrb.MOCoefficients()=_m_coefs;
-//            _molOrb.setQMpackage("votca"); //MO coefs are already in votca's ordering
-//            _molOrb.setBasisSetSize(_m_basis.AOBasisSize());
-//            _molOrb.setBSEindices(_globalOrb.getBSEvmin(), _globalOrb.getBSEvmin(),
-//                    _globalOrb.getBSEcmin(), _globalOrb.getBSEcmax(), 0);
-//            _molOrb.BSESingletCoefficients()=_globalOrb.BSESingletCoefficients();
-//            _molOrb.BSETripletCoefficients()=_globalOrb.BSETripletCoefficients();
-//            
-//            //set up the density matrix
-//            ub::matrix<double> _m_dmat=BuildDenMat(_molOrb, _state, _spin, _state_no);
-//            
-//            //set up the overlap matrix
-//            ub::matrix<double> _m_ovmat;
-//            if(periodic)
-//                if(_globalOrb.hasAOOverlap())
-//                    _m_ovmat = _globalOrb.AOOverlap();
-//                else throw std::runtime_error("Periodic system, but periodic AO overlaps not present in Orbitals.");
-//            else{
-//                AOOverlap overlap;
-//                overlap.Initialize(_basis._AOBasisSize);
-//                overlap.Fill(&_basis);
-//                _m_ovmat = overlap._aomatrix;
-//            }
-            
+			
+            //veryfy atomic coordinates and units
+            for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
+                QMAtom* ap=*a;
+                cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
+            }
+			cout << "box: " << boxLen[0] << '\t' << boxLen[0] << '\t'<< boxLen[0] << endl;
+			
             //set up grid
-            // setting up grid    
-            
-            
             Grid _grid(true,false,false); //create polarsites, so we can output grid to .cube file
-            _grid.setAtomlist(&m->atoms);
-            _grid.setupCHELPgrid();
-//            _grid.setAtomlist(&_atomlist);
-//            _grid.setCubegrid(true);
-//            _grid.setupgrid();
+//            _grid.setAtomlist(&m->atoms);
+//            _grid.setupCHELPgrid();
+            _grid.setAtomlist(&_atomlist);
+            _grid.setCubegrid(true);
+            _grid.setupgrid();
             LOG(logDEBUG, *_log) << TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
             
             //calculate the ESP
@@ -417,7 +383,7 @@ namespace votca { namespace xtp {
             double netcharge=0.0;
             ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
                                                 _global_dmat, _basis, bs, gridsize, _grid, netcharge);
-            
+                
             //output
             //CHELPG grids aren't periodic and equally spaced,
             //so can't output to .cube format.

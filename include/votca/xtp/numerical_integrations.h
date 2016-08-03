@@ -52,8 +52,10 @@ namespace votca { namespace xtp {
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(ub::vector<double> rvector);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
-            void PrepKspaceDensity(double boxLen[3], double Kspacing);
+            void findAlpha(double Rc, double dtol);
+            void PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside);
             void FreeKspace(void);
+            std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
             
             double getExactExchange(const std::string _functional);
             ub::matrix<double> IntegrateVXC ( ub::matrix<double>& _density_matrix, AOBasis* basis  );
