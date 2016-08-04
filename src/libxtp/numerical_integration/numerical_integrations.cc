@@ -1462,13 +1462,13 @@ namespace votca {
                     }//j
                 }//i 
 				
-                cout<< "r-space sum: " <<result<<endl;
+                //cout<< "r-space sum: " <<result<<endl;
 
                 //k-space sum
                 vec r(rvector(0),rvector(1),rvector(2));
                 int nKpoints=numK[0]*numK[1]*numK[2];
                 double* kp;
-                std::complex<double> ksum=(0,0);
+                //std::complex<double> ksum=(0,0);
                 //exclude k={0,0,0} (index=0)
                 for(int index=1; index<nKpoints; index++){
                         kp = &(Kcoord[index*3]);
@@ -1478,7 +1478,7 @@ namespace votca {
                         std::complex<double> Kr(0, K*r); // ik dot r
 
                         double potK=prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
-                        ksum+=prefactor[index]*(Rho_k[index]*std::exp(Kr));
+                        //ksum+=prefactor[index]*(Rho_k[index]*std::exp(Kr));
                         //if (potK!=potK) //nan check
                                 //cout<<"potK is nan"<<endl;
                         result+=potK;
@@ -1487,8 +1487,8 @@ namespace votca {
 
 
 
-                cout<< "k-space sum: " <<ksum<<endl;
-                cout<< "final Ewald sum: "<<result<<endl;
+                //cout<< "k-space sum: " <<ksum<<endl;
+                //cout<< "final Ewald sum: "<<result<<endl;
 
                 //self correction
                 //result-=2.0*(alpha/sqrt(tools::conv::Pi))*q;
@@ -1555,6 +1555,7 @@ namespace votca {
             
             cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
             //fill _Madelung_grid;
+			_Madelung_grid.clear();
             std::vector< GridContainers::integration_grid > _Mad;
             double a = boxLen[0]; //in bohr
             for(int l=0; l<natomsonside; l++){
@@ -1576,19 +1577,43 @@ namespace votca {
             //cout<<"_Mads in _Madelung_grid: " <<_Madelung_grid.size() << endl;
             
             
+			
+			//compute alpha
+            double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
+            findAlpha(cutoff, 1.0e-7*cutoff);
+			double fourasq=4.0*alpha*alpha;
+            cout<<"found alpha = "<< alpha <<"\t rel err of r-sum ~ " << erfc(alpha*cutoff)/cutoff<< endl;
+			
+			
+			
             //this is going to be slow, as points we have density for are not on a periodic grid,
             //so will use simple Ewald summation, not any of the FFT methods.
+			
+			//find number of k-vectors in each lattice direction
+			double minSq=1.0e15;
             for(int i=0; i<3; i++){
-                numK[i]=1+(boxLen[i]/Kspacing);
-                if(numK[i]%2 == 0) numK[i]++; //keep it odd
+                //numK[i]=1+(boxLen[i]/Kspacing);
+                //if(numK[i]%2 == 0) numK[i]++; //keep it odd
+				
+				//find maxK
+				int maxK;
+				double maxKsq;
+				double err;
+				double twoPiL=2.0*tools::conv::Pi/boxLen[i];
+				for(maxK=2; true; maxK++){
+					maxKsq=maxK*maxK*twoPiL*twoPiL;
+					err=std::exp(-maxKsq/fourasq)/maxKsq;
+					if(err<1.0e-7){
+						break;
+					}
+				}
+
+				numK[i]=2*maxK+1;
+				minSq=min(maxKsq, minSq);
             }
             cout<<"numK={"<<numK[0]<<", "<<numK[1]<<", "<<numK[2]<<"}"<<endl;
-            
-            //compute alpha
-            double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
-            findAlpha(cutoff, 1.0e-25);
-            
-            cout<<"found alpha = "<< alpha <<"\t erfc(alpha*cutoff) = " << erfc(alpha*cutoff)<< endl;
+			cout<<"rel err of k-sum ~ " << std::exp(-minSq/fourasq)/minSq << endl;
+				
             
             //allocate
             int nKpoints=numK[0]*numK[1]*numK[2];
@@ -1604,10 +1629,9 @@ namespace votca {
             
             double invvolume = 1.0/(boxLen[0]*boxLen[1]*boxLen[2]);
             double pre = invvolume*4.0*tools::conv::Pi;
-            double fourasq=4.0*alpha*alpha;
             
-            cout<<"pre=4*Pi/Volume="<<pre<<endl;
-            cout<<"fourasq=4*alpha^2="<<fourasq<<endl;
+            //cout<<"pre=4*Pi/Volume="<<pre<<endl;
+            //cout<<"fourasq=4*alpha^2="<<fourasq<<endl;
 
             //#pragma omp parallel for
             for(int l=0; l<numK[0]; l++){

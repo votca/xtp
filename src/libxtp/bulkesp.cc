@@ -247,39 +247,55 @@ namespace votca { namespace xtp {
             BL[1]=boxLen[1]*tools::conv::ang2bohr;
             BL[2]=boxLen[2]*tools::conv::ang2bohr;
             
+            
             double exactMadelung=1.74756459463318;
+            ofstream myfile ("MadelungDif.dat");
             
             int natomsonside=12;
             double numK=26;
-            double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
-            //a*= 1.14;
-            cout<< "a = "<< a << endl;
-            cout<< "nearest neighbour distance = "<< a/8.0 << endl;
-            BL[0]=a;
-            BL[1]=a;
-            BL[2]=a;
             
-            //numway.PrepKspaceDensity(BL, 1.6);
-            numway.PrepKspaceDensity(BL, a/numK, natomsonside);
-            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
-            //#pragma omp parallel for
-            for ( int i = 0 ; i < _grid.getsize(); i++){
-                //_ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
+            for (natomsonside=2; natomsonside<=64; natomsonside+=2){
+                //for (numK=1; numK<30; numK+=2){
+                    
                 
-                ub::vector<double> madelungPoint;
-                madelungPoint.resize(3);
-//                madelungPoint(0)=a/2;
-//                madelungPoint(1)=a/2;
-//                madelungPoint(2)=a/2;
-                madelungPoint(0)=0.0;
-                madelungPoint(1)=0.0;
-                madelungPoint(2)=0.0;
-                _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
-                cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<endl;
-                exit(-1);
-                //++show_progress;
+                    double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
+                    //a*= 1.14;
+                    cout<< "a = "<< a << endl;
+                    cout<< "nearest neighbour distance = "<< a/natomsonside << endl;
+                    BL[0]=a;
+                    BL[1]=a;
+                    BL[2]=a;
+
+                    //numway.PrepKspaceDensity(BL, 1.6);
+                    numway.PrepKspaceDensity(BL, a/numK, natomsonside);
+                    //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
+                    //#pragma omp parallel for
+                    //for ( int i = 0 ; i < _grid.getsize(); i++){
+                    int i=0;
+                        //_ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
+
+                        ub::vector<double> madelungPoint;
+                        madelungPoint.resize(3);
+        //                madelungPoint(0)=a/2;
+        //                madelungPoint(1)=a/2;
+        //                madelungPoint(2)=a/2;
+                        madelungPoint(0)=0.0;
+                        madelungPoint(1)=0.0;
+                        madelungPoint(2)=0.0;
+                        _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
+                        
+                        cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
+                        myfile<<natomsonside<<" \t"<<numK<<" \t"<<_ESPatGrid(i)*(a/natomsonside) - exactMadelung <<endl;
+                        
+                        //++show_progress;
+                    //}
+                    numway.FreeKspace();
+                //}
+				//myfile<<endl;
             }
-            numway.FreeKspace();
+            myfile.close();
+            exit(-1);
+            
         }
         else{
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;

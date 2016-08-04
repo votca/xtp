@@ -26,23 +26,14 @@
         <file>file:/home/bbaumeie/votca/src/xtp/src/libxtp/qmpackages/nwchem.cc</file>
         <group>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/qmapemachine.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/ewald3d.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/ewald2d.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid_containers.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/numerical_integrations.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/grid.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/elements.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/orbitals.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/esp2multipole.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/aobasis.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/espfit.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/qmapemachine.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/bulkesp.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/ewaldnd.cc</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/esp2multipole.cc</file>
         </group>
     </open-files>
 </project-private>
