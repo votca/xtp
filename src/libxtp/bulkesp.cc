@@ -249,13 +249,14 @@ namespace votca { namespace xtp {
             
             
             double exactMadelung=1.74756459463318;
-            ofstream myfile ("MadelungDif.dat");
+            ofstream myfile ("Energy_kmax8.dat");
             
-            int natomsonside=12;
+            int natomsonside=2;
             double numK=26;
             
-            for (natomsonside=2; natomsonside<=64; natomsonside+=2){
+            //for (natomsonside=2; natomsonside<=20; natomsonside+=2){
                 //for (numK=1; numK<30; numK+=2){
+            for (double alpha=0.01; alpha<4; alpha+=0.01){
                     
                 
                     double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
@@ -267,7 +268,7 @@ namespace votca { namespace xtp {
                     BL[2]=a;
 
                     //numway.PrepKspaceDensity(BL, 1.6);
-                    numway.PrepKspaceDensity(BL, a/numK, natomsonside);
+                    numway.PrepKspaceDensity(BL, a/numK, natomsonside, alpha);
                     //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
                     //#pragma omp parallel for
                     //for ( int i = 0 ; i < _grid.getsize(); i++){
@@ -276,16 +277,21 @@ namespace votca { namespace xtp {
 
                         ub::vector<double> madelungPoint;
                         madelungPoint.resize(3);
-        //                madelungPoint(0)=a/2;
-        //                madelungPoint(1)=a/2;
-        //                madelungPoint(2)=a/2;
-                        madelungPoint(0)=0.0;
-                        madelungPoint(1)=0.0;
-                        madelungPoint(2)=0.0;
+                        madelungPoint(0)=a/natomsonside;
+                        madelungPoint(1)=a/natomsonside;
+                        madelungPoint(2)=a/natomsonside;
+                        //madelungPoint(0)=0.0;
+                        //madelungPoint(1)=0.0;
+                        //madelungPoint(2)=0.0;
+                        numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
                         cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
-                        myfile<<natomsonside<<" \t"<<numK<<" \t"<<_ESPatGrid(i)*(a/natomsonside) - exactMadelung <<endl;
+                        myfile<<natomsonside<<" \t"<<numway.numK[0]<<" \t"<<numway.alpha<<" \t"
+                                //<<std::abs(_ESPatGrid(i)*(a/natomsonside)) - exactMadelung<<" \t"
+                                <<std::abs(_ESPatGrid(i)*(a/natomsonside))<<" \t"
+                                <<numway.E_rspace<<" \t"<<numway.E_kspace<<" \t"<<numway.E_erfc
+                                <<endl;
                         
                         //++show_progress;
                     //}

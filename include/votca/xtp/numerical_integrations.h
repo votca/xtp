@@ -52,8 +52,9 @@ namespace votca { namespace xtp {
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(ub::vector<double> rvector);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
+            double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside);
+            void PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha);
             void FreeKspace(void);
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
             
@@ -79,11 +80,16 @@ namespace votca { namespace xtp {
             std::vector< std::vector< GridContainers::integration_grid > > _grid;
             double EXC;
             bool density_set;
+            
+        public:
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double *Kcoord;//k-values
             double *prefactor; //prefactors for k-space components of potential before summation
+            double E_rspace;
+            double E_kspace;
+            double E_erfc;
 
         };
 
