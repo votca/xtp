@@ -227,7 +227,8 @@ namespace votca { namespace xtp {
         
         NumericalIntegration numway;
 
-        numway.GridSetup(gridsize,&bs,_global_atomlist);
+        //numway.GridSetup(gridsize,&bs,_global_atomlist);
+        numway.GridSetup(gridsize,&bs,_local_atomlist);
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculate Densities at Numerical Grid with gridsize "<<gridsize  << flush; 
         //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
         //density integration should be accurate enough without making it explicitly periodic
@@ -249,7 +250,7 @@ namespace votca { namespace xtp {
             
             
             double exactMadelung=1.74756459463318;
-            ofstream myfile ("Energy_kmax16.dat");
+            ofstream myfile ("Water_kmax8.dat");
             
             int natomsonside=2;
             double numK=26;
@@ -289,13 +290,13 @@ namespace votca { namespace xtp {
                         madelungPoint(0)=(*(_local_atomlist.begin()))->x*tools::conv::ang2bohr;
                         madelungPoint(1)=(*(_local_atomlist.begin()))->y*tools::conv::ang2bohr;
                         madelungPoint(2)=(*(_local_atomlist.begin()))->z*tools::conv::ang2bohr;
-                        numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
+                        //numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
                         //cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
                         myfile<<natomsonside<<" \t"<<numway.numK[0]<<" \t"<<numway.alpha<<" \t"
                                 //<<std::abs(_ESPatGrid(i)*(a/natomsonside)) - exactMadelung<<" \t"
-                                <<std::abs(_ESPatGrid(i)*(a/natomsonside))<<" \t"
+                                <<std::abs(_ESPatGrid(i))<<" \t"
                                 <<numway.E_rspace<<" \t"<<numway.E_kspace<<" \t"<<numway.E_erfc
                                 <<endl;
                         
