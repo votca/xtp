@@ -283,12 +283,12 @@ namespace votca { namespace xtp {
 
                         ub::vector<double> madelungPoint;
                         madelungPoint.resize(3);
-                        madelungPoint(0)=a/natomsonside;
-                        madelungPoint(1)=a/natomsonside;
-                        madelungPoint(2)=a/natomsonside;
-                        //madelungPoint(0)=0.0;
-                        //madelungPoint(1)=0.0;
-                        //madelungPoint(2)=0.0;
+//                        madelungPoint(0)=a/natomsonside;
+//                        madelungPoint(1)=a/natomsonside;
+//                        madelungPoint(2)=a/natomsonside;
+                        madelungPoint(0)=(*(_local_atomlist.begin()))->x*tools::conv::ang2bohr;
+                        madelungPoint(1)=(*(_local_atomlist.begin()))->y*tools::conv::ang2bohr;
+                        madelungPoint(2)=(*(_local_atomlist.begin()))->z*tools::conv::ang2bohr;
                         numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
