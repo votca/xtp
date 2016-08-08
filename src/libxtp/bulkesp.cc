@@ -249,10 +249,16 @@ namespace votca { namespace xtp {
             
             
             double exactMadelung=1.74756459463318;
-            ofstream myfile ("Energy_kmax8.dat");
+            ofstream myfile ("Energy_kmax16.dat");
             
             int natomsonside=2;
             double numK=26;
+            
+            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
+                QMAtom* atom=*it;
+                atom->charge=0.5;
+            }
+            (*(_local_atomlist.begin()))->charge=-1.0;
             
             //for (natomsonside=2; natomsonside<=20; natomsonside+=2){
                 //for (numK=1; numK<30; numK+=2){
@@ -261,14 +267,14 @@ namespace votca { namespace xtp {
                 
                     double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
                     //a*= 1.14;
-                    cout<< "a = "<< a << endl;
-                    cout<< "nearest neighbour distance = "<< a/natomsonside << endl;
-                    BL[0]=a;
-                    BL[1]=a;
-                    BL[2]=a;
+//                    cout<< "a = "<< a << endl;
+//                    cout<< "nearest neighbour distance = "<< a/natomsonside << endl;
+//                    BL[0]=a;
+//                    BL[1]=a;
+//                    BL[2]=a;
 
                     //numway.PrepKspaceDensity(BL, 1.6);
-                    numway.PrepKspaceDensity(BL, a/numK, natomsonside, alpha);
+                    numway.PrepKspaceDensity(BL, a/numK, natomsonside, alpha, _local_atomlist);
                     //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
                     //#pragma omp parallel for
                     //for ( int i = 0 ; i < _grid.getsize(); i++){
@@ -286,7 +292,7 @@ namespace votca { namespace xtp {
                         numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
-                        cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
+                        //cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
                         myfile<<natomsonside<<" \t"<<numway.numK[0]<<" \t"<<numway.alpha<<" \t"
                                 //<<std::abs(_ESPatGrid(i)*(a/natomsonside)) - exactMadelung<<" \t"
                                 <<std::abs(_ESPatGrid(i)*(a/natomsonside))<<" \t"

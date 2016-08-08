@@ -38,6 +38,7 @@
 #include <iterator>
 #include <string>
 #include <math.h>
+#include <bits/stl_vector.h>
 // #include <xc.h>
 
 
@@ -1638,27 +1639,39 @@ namespace votca {
          * @param boxLen
          * @param Kspacing in Angstroms
          */
-        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha){
+        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha, std::vector< QMAtom* > & _local_atomlist){
             
             cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
             //fill _Madelung_grid;
             _Madelung_grid.clear();
             std::vector< GridContainers::integration_grid > _Mad;
-            double a = boxLen[0]; //in bohr
-            for(int l=0; l<natomsonside; l++){
-                for(int m=0; m<natomsonside; m++){
-                    for(int n=0; n<natomsonside; n++){
-                        GridContainers::integration_grid el;
-                        el.grid_density=std::pow(-1.0, l+m+n);
-                        el.grid_weight=1.0;
-                        el.grid_x=a*l/natomsonside;
-                        el.grid_y=a*m/natomsonside;
-                        el.grid_z=a*n/natomsonside;
-                        _Mad.push_back(el);
-                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << endl;
-                    }
-                }
+//            double a = boxLen[0]; //in bohr
+//            for(int l=0; l<natomsonside; l++){
+//                for(int m=0; m<natomsonside; m++){
+//                    for(int n=0; n<natomsonside; n++){
+//                        GridContainers::integration_grid el;
+//                        el.grid_density=std::pow(-1.0, l+m+n);
+//                        el.grid_weight=1.0;
+//                        el.grid_x=a*l/natomsonside;
+//                        el.grid_y=a*m/natomsonside;
+//                        el.grid_z=a*n/natomsonside;
+//                        _Mad.push_back(el);
+//                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << endl;
+//                    }
+//                }
+//            }
+//            _Mad.begin()->grid_x+=0.02;
+            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
+                GridContainers::integration_grid el;
+                QMAtom* atom=*it;
+                el.grid_density=-atom->charge;
+                el.grid_weight=1.0;
+                el.grid_x=atom->x*tools::conv::ang2bohr;
+                el.grid_y=atom->y*tools::conv::ang2bohr;
+                el.grid_z=atom->z*tools::conv::ang2bohr;
+                _Mad.push_back(el);
             }
+            
             _Madelung_grid.push_back(_Mad);
             //cout<<"points in _Mad: " <<_Mad.size() << endl;
             //cout<<"_Mads in _Madelung_grid: " <<_Madelung_grid.size() << endl;
@@ -1696,13 +1709,13 @@ namespace votca {
                     }
                 }
                 
-                maxK=8;
+                maxK=16;
 
                 numK[i]=2*maxK+1;
                 minSq=min(maxKsq, minSq);
             }
-            cout<<"numK={"<<numK[0]<<", "<<numK[1]<<", "<<numK[2]<<"}"<<endl;
-            cout<<"rel err of k-sum ~ " << std::exp(-minSq/fourasq)/minSq << endl;
+//            cout<<"numK={"<<numK[0]<<", "<<numK[1]<<", "<<numK[2]<<"}"<<endl;
+//            cout<<"rel err of k-sum ~ " << std::exp(-minSq/fourasq)/minSq << endl;
 				
             
             //allocate
@@ -1767,6 +1780,7 @@ namespace votca {
 //                        std::complex<double> nKr(0, -K*r); // -ik dot r
 //                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
 //                    }
+//                }
                 for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
                     for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
                         vec r(_Madelung_grid[i][j].grid_x, _Madelung_grid[i][j].grid_y, _Madelung_grid[i][j].grid_z);

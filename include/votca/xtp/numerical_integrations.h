@@ -54,7 +54,7 @@ namespace votca { namespace xtp {
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha);
+            void PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha, std::vector< QMAtom* > & _local_atomlist);
             void FreeKspace(void);
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
             
