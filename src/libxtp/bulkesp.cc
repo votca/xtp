@@ -263,7 +263,7 @@ namespace votca { namespace xtp {
             
             //for (natomsonside=2; natomsonside<=20; natomsonside+=2){
                 //for (numK=1; numK<30; numK+=2){
-            for (double alpha=0.01; alpha<4; alpha+=0.01){
+            for (double alpha=0.1; alpha<2; alpha+=0.2){
                     
                 
                     double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
@@ -290,7 +290,7 @@ namespace votca { namespace xtp {
                         madelungPoint(0)=(*(_local_atomlist.begin()))->x*tools::conv::ang2bohr;
                         madelungPoint(1)=(*(_local_atomlist.begin()))->y*tools::conv::ang2bohr;
                         madelungPoint(2)=(*(_local_atomlist.begin()))->z*tools::conv::ang2bohr;
-                        //numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
+                        numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
                         //cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";

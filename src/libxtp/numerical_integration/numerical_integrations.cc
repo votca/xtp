@@ -1422,12 +1422,14 @@ namespace votca {
             
             E_rspace = 0.0;
             E_kspace = 0.0;
+            double E_r=0, E_k=0;
             double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
             double vol=boxLen[0]*boxLen[1]*boxLen[2];
             
             if(density_set){
                 //for (unsigned i = 0; i < _grid.size(); i++) {
                     //for (unsigned j = 0; j < _grid[i].size(); j++) {
+                #pragma omp parallel for reduction(+:E_r)
                 for (unsigned i = 0; i < _Madelung_grid[0].size(); i++) {
                     for (unsigned j = 0; j < _Madelung_grid[0].size(); j++) {
 
@@ -1457,19 +1459,20 @@ namespace votca {
                         double ER=0.5*qi*qj*((erfc(alpha*dist)/dist) - tools::conv::Pi/(vol*vol*alpha*alpha));
 
                         if(dist<1.0e-12){ //point is in the same spot as we are evaluating potential
-                            E_rspace-=(alpha/sqrt(tools::conv::Pi))*qi*qj; //self correction
+                            E_r -= (alpha/sqrt(tools::conv::Pi))*qi*qj; //self correction
                         }
                         else if(dist<=cutoff)
                         {
-                            E_rspace += ER;
+                            E_r += ER;
                         }
 						
                     }//j
                 }//i 
-				
-                //cout<< "r-space sum: " <<result<<endl;
+                E_rspace = E_r;
+                cout<< "E: r-space sum: " <<E_rspace<<endl;
 
                 //k-space sum
+                #pragma omp parallel for reduction(+:E_k)
                 for (unsigned i = 0; i < _Madelung_grid[0].size(); i++) {
                     vec r(_Madelung_grid[0][i].grid_x,_Madelung_grid[0][i].grid_y,_Madelung_grid[0][i].grid_z);
                     double qi = -_Madelung_grid[0][i].grid_weight * _Madelung_grid[0][i].grid_density; //density is neg of charge
@@ -1482,12 +1485,13 @@ namespace votca {
 
                             
                             double EK=0.5*qi*prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
-                            E_kspace+=EK;
+                            E_k+=EK;
 
                     }//index
                 }//i
                 
-                
+                E_kspace = E_k;
+                cout<< "E: k-space sum: " <<E_kspace<<endl;
                 
                 E_erfc=erfc(alpha*cutoff);
 
@@ -1599,29 +1603,29 @@ namespace votca {
         /*
          *	Calculate and return the Ewald coefficient (alpha) from cutoff distance
          *	and requested tolerance.
-         *	This algorithm is based on the gromacs function calc_ewaldcoeff.
          */
         void NumericalIntegration::findAlpha(double Rc, double dtol){
-                double x=5.0;
-                int i=0;
-                while (true){
-                        i+=1;
+                double x=1.0;
+                int i=20;
+                while (erfc(x*Rc)/Rc > dtol){
                         x*=2.0;
-                        if(erfc(x*Rc) <= dtol)
-                                break;
+                        i++;
                 }
-
-                int n=i+60;
-                double low=0.0;
-                double high=x;
-                for (i=0; i<n; i++){
-                        x=(low+high)/2.0;
-                        if(erfc(x*Rc) > dtol)
-                                low=x;
-                        else
-                                high=x;
+                double lastx=x*2.0;
+                double newx;
+                while (true){
+                    double reldif=(erfc(x*Rc)/Rc - dtol)/dtol;
+                    if(std::abs(reldif)<1.0e-3 || i==0)
+                        break;
+                    
+                    if(reldif>0)
+                        newx=(x+lastx)*0.5;
+                    else
+                        newx=x*0.5;
+                    lastx=x;
+                    x=newx;
+                    i--;
                 }
-
                 alpha=x;
         }
         
@@ -1652,8 +1656,12 @@ namespace votca {
 
 
             
-            //fill Madelung grid with density grid
-            _Madelung_grid=_grid;
+            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop
+            for(int i=0; i<_grid.size(); i++){
+                _Mad.insert(_Mad.end(), _grid[i].begin(), _grid[i].end());
+            }
+            _Madelung_grid.push_back(_Mad);
+            //_Madelung_grid=_grid;
 
             
             
@@ -1664,7 +1672,7 @@ namespace votca {
 			
 			//compute alpha
             double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
-            //findAlpha(cutoff, 1.0e-7*cutoff);
+            //findAlpha(cutoff, 1.0e-7);
             alpha=ext_alpha;
             double fourasq=4.0*alpha*alpha;
             //cout<<"found alpha = "<< alpha <<"\t rel err of r-sum ~ " << erfc(alpha*cutoff)/cutoff<< endl;
