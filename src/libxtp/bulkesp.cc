@@ -241,20 +241,20 @@ namespace votca { namespace xtp {
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
         //boost::progress_display show_progress( _grid.getsize() );
         
-        if(periodic){
+        if(periodic && false){
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
             double BL[3];
-            BL[0]=boxLen[0]*tools::conv::ang2bohr;
-            BL[1]=boxLen[1]*tools::conv::ang2bohr;
-            BL[2]=boxLen[2]*tools::conv::ang2bohr;
+            BL[0]=boxLen[0]*tools::conv::ang2bohr;  //bohr
+            BL[1]=boxLen[1]*tools::conv::ang2bohr;  //bohr
+            BL[2]=boxLen[2]*tools::conv::ang2bohr;  //bohr
             
             
-            double exactMadelung=1.74756459463318;
-            ofstream myfile ("Water_kmax8.dat");
-            
-            int natomsonside=2;
-            double numK=26;
-            
+//            double exactMadelung=1.74756459463318;
+//            ofstream myfile ("Water_kmax8.dat");
+//            
+//            int natomsonside=2;
+//            double numK=26;
+//            
             for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
                 QMAtom* atom=*it;
                 atom->charge=0.5;
@@ -263,10 +263,10 @@ namespace votca { namespace xtp {
             
             //for (natomsonside=2; natomsonside<=20; natomsonside+=2){
                 //for (numK=1; numK<30; numK+=2){
-            for (double alpha=0.1; alpha<2; alpha+=0.2){
+//            for (double alpha=0.1; alpha<2; alpha+=0.2){
                     
                 
-                    double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
+//                    double a = 5.6402*0.5*natomsonside*tools::conv::ang2bohr;
                     //a*= 1.14;
 //                    cout<< "a = "<< a << endl;
 //                    cout<< "nearest neighbour distance = "<< a/natomsonside << endl;
@@ -275,44 +275,46 @@ namespace votca { namespace xtp {
 //                    BL[2]=a;
 
                     //numway.PrepKspaceDensity(BL, 1.6);
-                    numway.PrepKspaceDensity(BL, a/numK, natomsonside, alpha, _local_atomlist);
+                    numway.PrepKspaceDensity(BL, 0, 0, 0.5, _local_atomlist);
                     //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
                     //#pragma omp parallel for
-                    //for ( int i = 0 ; i < _grid.getsize(); i++){
-                    int i=0;
-                        //_ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
+                    for ( int i = 0 ; i < _grid.getsize(); i++){
+//                    int i=0;
+                        _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
 
-                        ub::vector<double> madelungPoint;
-                        madelungPoint.resize(3);
-//                        madelungPoint(0)=a/natomsonside;
-//                        madelungPoint(1)=a/natomsonside;
-//                        madelungPoint(2)=a/natomsonside;
-                        madelungPoint(0)=(*(_local_atomlist.begin()))->x*tools::conv::ang2bohr;
-                        madelungPoint(1)=(*(_local_atomlist.begin()))->y*tools::conv::ang2bohr;
-                        madelungPoint(2)=(*(_local_atomlist.begin()))->z*tools::conv::ang2bohr;
-                        numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
-                        _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
+//                        ub::vector<double> madelungPoint;
+//                        madelungPoint.resize(3);
+////                        madelungPoint(0)=a/natomsonside;
+////                        madelungPoint(1)=a/natomsonside;
+////                        madelungPoint(2)=a/natomsonside;
+//                        madelungPoint(0)=(*(_local_atomlist.begin()))->x*tools::conv::ang2bohr;
+//                        madelungPoint(1)=(*(_local_atomlist.begin()))->y*tools::conv::ang2bohr;
+//                        madelungPoint(2)=(*(_local_atomlist.begin()))->z*tools::conv::ang2bohr;
+//                        numway.IntegrateEnergy_w_PBC(madelungPoint, BL);
+//                        _ESPatGrid(i)=numway.IntegratePotential_w_PBC(madelungPoint, BL);
                         
                         //cout<<"Madelung constant is: "<< _ESPatGrid(i)*(a/natomsonside) <<"\n";
-                        myfile<<natomsonside<<" \t"<<numway.numK[0]<<" \t"<<numway.alpha<<" \t"
-                                //<<std::abs(_ESPatGrid(i)*(a/natomsonside)) - exactMadelung<<" \t"
-                                <<std::abs(_ESPatGrid(i))<<" \t"
-                                <<numway.E_rspace<<" \t"<<numway.E_kspace<<" \t"<<numway.E_erfc
-                                <<endl;
+//                        myfile<<natomsonside<<" \t"<<numway.numK[0]<<" \t"<<numway.alpha<<" \t"
+//                                //<<std::abs(_ESPatGrid(i)*(a/natomsonside)) - exactMadelung<<" \t"
+//                                <<std::abs(_ESPatGrid(i))<<" \t"
+//                                <<numway.E_rspace<<" \t"<<numway.E_kspace<<" \t"<<numway.E_erfc
+//                                <<endl;
                         
                         //++show_progress;
-                    //}
+                    }
                     numway.FreeKspace();
                 //}
 				//myfile<<endl;
-            }
-            myfile.close();
-            exit(-1);
+//            }
+//            myfile.close();
+//            exit(-1);
             
         }
         else{
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
-            #pragma omp parallel for
+            
+            numway.SetGridToCharges(_local_atomlist);
+            //#pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
                 //++show_progress;
@@ -322,7 +324,7 @@ namespace votca { namespace xtp {
         
         // Calculating nuclear potential at gridpoints
         ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _local_atomlist,  _grid );
-        _ESPatGrid += _NucPatGrid;
+        //_ESPatGrid += _NucPatGrid;
         LOG(logDEBUG, *_log) << TimeStamp() << " Nuclear contribution calculated"  << flush; 
 
         
@@ -396,16 +398,23 @@ namespace votca { namespace xtp {
                 QMAtom* ap=*a;
                 cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
             }
-			cout << "box: " << boxLen[0] << '\t' << boxLen[0] << '\t'<< boxLen[0] << endl;
+			cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 			
             //set up grid
-            Grid _grid(true,false,false); //create polarsites, so we can output grid to .cube file
+            Grid _grid(true,false,true); //create polarsites, so we can output grid to .cube file
 //            _grid.setAtomlist(&m->atoms);
 //            _grid.setupCHELPgrid();
+            if(periodic){
+                //_grid.setPadding(0.0);
+                _grid.setPeriodicity(boxLen);
+            }
+            //test: set inner cutoff to 0 and calculate all potentials near nuclei
+            //_grid.setCutoffs(3.0, 0.0);
             _grid.setAtomlist(&_atomlist);
             _grid.setCubegrid(true);
             _grid.setupgrid();
             LOG(logDEBUG, *_log) << TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
+            
             
             //calculate the ESP
             //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
@@ -424,12 +433,17 @@ namespace votca { namespace xtp {
             
             //store the potential in apolarsites
             for ( int i = 0 ; i < _grid.getsize(); i++){
+//                ub::vector<double> point = _grid.getGrid()[i];
+//                APolarSite* site = _grid.Sites()[i];
+//                site->setPhi(ESP(i), 0.0);
                 _grid.Sites()[i]->setPhi(ESP(i), 0.0);
             }
             //and save it to a .cube file
-//            fn.str(std::string());
-//            fn << "BulkEsp_" << m-mols.begin() << ".cube";
-//            _grid.printgridtoCubefile(fn.str());
+            if(periodic){
+                fn.str(std::string());
+                fn << "BulkEsp_" << m-mols.begin() << "_pointQ_numK16.cube";
+                _grid.printgridtoCubefile(fn.str());
+            }
             
             //TODO: fit charges
             std::vector< ub::vector<double> > _fitcenters;

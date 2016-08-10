@@ -1397,21 +1397,43 @@ namespace votca {
             return result;
         } 
             
+        double NumericalIntegration::SetGridToCharges(std::vector< QMAtom* > & _local_atomlist){
+            
+            _grid.empty();
+            int p=1;
+            std::vector< GridContainers::integration_grid > _Mad;
+            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
+                GridContainers::integration_grid el;
+                QMAtom* atom=*it;
+                el.grid_density=std::pow(-1.0,p);
+                el.grid_weight=1.0;
+                el.grid_x=atom->x*tools::conv::ang2bohr;
+                el.grid_y=atom->y*tools::conv::ang2bohr;
+                el.grid_z=atom->z*tools::conv::ang2bohr;
+                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
+                _Mad.push_back(el);
+                p++;
+            }
+            _grid.push_back(_Mad);
+            
+            return 0.0;
+        }
+        
         double NumericalIntegration::IntegratePotential(ub::vector<double> rvector){
             
             double result = 0.0;
-            
-           if(density_set){
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                    double dist=sqrt((_grid[i][j].grid_x-rvector(0))*(_grid[i][j].grid_x-rvector(0))+(_grid[i][j].grid_y-rvector(1))*(_grid[i][j].grid_y-rvector(1))+(_grid[i][j].grid_z-rvector(2))*(_grid[i][j].grid_z-rvector(2)));
-                    result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
-                    }
-                }
-            } 
-           else{
-               throw std::runtime_error("Density not calculated");
-           }
+
+            if(density_set){
+                 for (unsigned i = 0; i < _grid.size(); i++) {
+                 for (unsigned j = 0; j < _grid[i].size(); j++) {
+                     double dist=sqrt((_grid[i][j].grid_x-rvector(0))*(_grid[i][j].grid_x-rvector(0))+(_grid[i][j].grid_y-rvector(1))*(_grid[i][j].grid_y-rvector(1))+(_grid[i][j].grid_z-rvector(2))*(_grid[i][j].grid_z-rvector(2)));
+                     result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
+                     }
+                 }
+             } 
+            else{
+                throw std::runtime_error("Density not calculated");
+            }
             
             return result;   
         }
@@ -1554,7 +1576,7 @@ namespace votca {
                     }//j
                 }//i 
 				
-                cout<< "r-space sum: " <<result<<endl;
+                //cout<< "r-space sum: " <<result<<endl;
 
                 //k-space sum
                 vec r(rvector(0),rvector(1),rvector(2));
@@ -1574,8 +1596,8 @@ namespace votca {
                 result+=ksum;
 
 
-                cout<< "k-space sum: " <<ksum<<endl;
-                cout<< "final Ewald sum: "<<result<<endl;
+                //cout<< "k-space sum: " <<ksum<<endl;
+                //cout<< "final Ewald sum: "<<result<<endl;
 
                 //dipole moment correction
                 //This is only usefull if we have a countably infinite
@@ -1639,9 +1661,8 @@ namespace votca {
             
             cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
             //fill _Madelung_grid;
-            _Madelung_grid.clear();
-            std::vector< GridContainers::integration_grid > _Mad;
-
+//            _Madelung_grid.clear();
+//            std::vector< GridContainers::integration_grid > _Mad;
 //            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
 //                GridContainers::integration_grid el;
 //                QMAtom* atom=*it;
@@ -1650,18 +1671,20 @@ namespace votca {
 //                el.grid_x=atom->x*tools::conv::ang2bohr;
 //                el.grid_y=atom->y*tools::conv::ang2bohr;
 //                el.grid_z=atom->z*tools::conv::ang2bohr;
+//                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
 //                _Mad.push_back(el);
 //            }
+//            
 //            _Madelung_grid.push_back(_Mad);
-
-
             
-            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop
-            for(int i=0; i<_grid.size(); i++){
-                _Mad.insert(_Mad.end(), _grid[i].begin(), _grid[i].end());
-            }
-            _Madelung_grid.push_back(_Mad);
-            //_Madelung_grid=_grid;
+
+//
+//            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop
+//            for(int i=0; i<_grid.size(); i++){
+//                _Mad.insert(_Mad.end(), _grid[i].begin(), _grid[i].end());
+//            }
+//            _Madelung_grid.push_back(_Mad);
+            _Madelung_grid=_grid;
 
             
             
@@ -1672,11 +1695,11 @@ namespace votca {
 			
 			//compute alpha
             double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
-            //findAlpha(cutoff, 1.0e-7);
+//            findAlpha(cutoff, 1.0e-10);
             alpha=ext_alpha;
             double fourasq=4.0*alpha*alpha;
-            //cout<<"found alpha = "<< alpha <<"\t rel err of r-sum ~ " << erfc(alpha*cutoff)/cutoff<< endl;
-            cout<<"found alpha = "<< alpha <<"\t";
+            cout<<"found alpha = "<< alpha <<"\t rel err of r-sum ~ " << erfc(alpha*cutoff)/cutoff<< endl;
+//            cout<<"found alpha = "<< alpha <<"\t";
 			
 			
             //this is going to be slow, as points we have density for are not on a periodic grid,
@@ -1701,13 +1724,13 @@ namespace votca {
                     }
                 }
                 
-                maxK=8;
+                maxK=16;
 
                 numK[i]=2*maxK+1;
                 minSq=min(maxKsq, minSq);
             }
             cout<<"numK={"<<numK[0]<<", "<<numK[1]<<", "<<numK[2]<<"}"<<endl;
-//            cout<<"rel err of k-sum ~ " << std::exp(-minSq/fourasq)/minSq << endl;
+            cout<<"rel err of k-sum ~ " << std::exp(-minSq/fourasq)/minSq << endl;
 				
             
             //allocate

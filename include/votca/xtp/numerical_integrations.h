@@ -51,6 +51,7 @@ namespace votca { namespace xtp {
             double IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(ub::vector<double> rvector);
+            double SetGridToCharges(std::vector< QMAtom* > & _local_atomlist);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             void findAlpha(double Rc, double dtol);

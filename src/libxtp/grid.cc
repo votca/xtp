@@ -196,9 +196,16 @@ void Grid::printgridtoCubefile(std::string filename){
             fprintf(out, "Created by VOTCA-XTP \n");
             fprintf(out, "%lu %f %f %f \n", _atomlist->size(), _lowerbound.getX()*conv::ang2bohr,
                     _lowerbound.getY()*conv::ang2bohr,_lowerbound.getZ()*conv::ang2bohr);
-            fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacing*conv::ang2bohr); 
-            fprintf(out, "%d 0.0 %f 0.0 \n",  _ysteps, _gridspacing*conv::ang2bohr);
-            fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacing*conv::ang2bohr);
+            if(periodic){
+                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacingX*conv::ang2bohr); 
+                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps, _gridspacingY*conv::ang2bohr);
+                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacingZ*conv::ang2bohr);
+            }
+            else{
+                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacing*conv::ang2bohr); 
+                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps, _gridspacing*conv::ang2bohr);
+                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacing*conv::ang2bohr);
+            }
             
             std::vector<QMAtom* >::const_iterator ait;
             for (ait=_atomlist->begin(); ait != _atomlist->end(); ++ait) {
@@ -372,6 +379,14 @@ void Grid::setupgrid(){
         if (ztemp<zmin) zmin=ztemp;
         if (ztemp>zmax)  zmax=ztemp;
     }    
+    
+    if(periodic){
+        xmin=ymin=zmin=0.0;
+        xmax=boxX;
+        ymax=boxY;
+        zmax=boxZ;
+        _padding=0.0;
+    }
 
     _lowerbound=vec(xmin-_padding,ymin-_padding,zmin-_padding);
     vec _upperbound=vec(xmax+_padding,ymax+_padding,zmax+_padding);
@@ -384,18 +399,48 @@ void Grid::setupgrid(){
     double padding_x=(steps.getX()-_xsteps)*_gridspacing*0.5+_padding;
     double padding_y=(steps.getY()-_ysteps)*_gridspacing*0.5+_padding;
     double padding_z=(steps.getZ()-_zsteps)*_gridspacing*0.5+_padding;
+    
+    _gridspacingX=_gridspacingY=_gridspacingZ=_gridspacing;
+    
+    if(periodic){
+        //in a periodic grid we want the box to be exactly what we told it to be,
+        //so use no padding and adjust grid spacing on each axis so that the
+        //whole box divides into a grid uniformly even if the grid elements
+        //have to be non-cubic
+        padding_x=padding_y=padding_z=0.0;
+        _gridspacingX=boxX/_xsteps;
+        _gridspacingY=boxY/_ysteps;
+        _gridspacingZ=boxZ/_zsteps;
+        
+        //In the loops below, the "<=" in "i<=_xsteps" is needed for
+        //non-periodic systems to keep the potential have the same number
+        //of points to the left and right of an atom (symmetric).
+        //For a periodic system, though, we don't want a point at the
+        //end of the box, as it's the same point as at the beginning.
+        //   *--------*
+        //   |        |
+        //   |        |
+        //   |        |
+        //   *--------*
+        // '*' are all the same point.
+        //So temporarily decrease the number of points on each axis.
+        //the "<=" will act like "<"
+        _xsteps--;
+        _ysteps--;
+        _zsteps--;
+    }
 
     ub::vector<double> temppos= ub::zero_vector<double>(3);
     for(int i=0;i<=_xsteps;i++){
-        double x=xmin-padding_x+i*_gridspacing; 
+        double x=xmin-padding_x+i*_gridspacingX; 
         for(int j=0;j<=_ysteps;j++){
-            double y=ymin-padding_y+j*_gridspacing; 
+            double y=ymin-padding_y+j*_gridspacingY; 
             for(int k=0;k<=_zsteps;k++){
-                double z=zmin-padding_z+k*_gridspacing; 
+                double z=zmin-padding_z+k*_gridspacingZ; 
                 bool _is_valid = false;
                     for (std::vector<QMAtom* >::const_iterator atom = _atomlist->begin(); atom != _atomlist->end(); ++atom ) {
                         //cout << "Punkt " << x <<":"<< y << ":"<<z << endl;
-                        xtemp=(*atom)->x;
+                        xtemp=(*atom)->x; //Angstroms
                         ytemp=(*atom)->y;
                         ztemp=(*atom)->z;
                         double distance2=pow((x-xtemp),2)+pow((y-ytemp),2)+pow((z-ztemp),2);
@@ -409,23 +454,25 @@ void Grid::setupgrid(){
                         else if ( distance2<pow(_cutoff,2))  _is_valid = true;
                     }
                     if (_is_valid || _cubegrid){
-                        temppos(0)=conv::ang2nm*x;
+                        temppos(0)=conv::ang2nm*x; //Angstroms
                         temppos(1)=conv::ang2nm*y;        
                         temppos(2)=conv::ang2nm*z;   
                         if(_createpolarsites){
                             // APolarSite are in nm so convert
-                            vec temp=vec(temppos);
+                            vec temp=vec(temppos); //Angstroms
                             string name="H";
                             APolarSite *apolarsite= new APolarSite(0,name);
                             apolarsite->setRank(0);        
                             apolarsite->setQ00(0,0); // <- charge state 0 <> 'neutral'
                             apolarsite->setIsoP(0.0);
-                            apolarsite->setPos(temp);
+                            apolarsite->setPos(temp); //Angstroms
                             if(_is_valid){
                                 _gridsites.push_back(apolarsite);
                                 _gridpoints.push_back(temppos);
                                 }
-                            else {apolarsite->setIsVirtual(true);}
+                            else {
+                                apolarsite->setIsVirtual(true);
+                            }
                             _all_gridsites.push_back(apolarsite);
                             }
                         else if(!_createpolarsites){_gridpoints.push_back(temppos);}
@@ -435,6 +482,12 @@ void Grid::setupgrid(){
         }
     if (_sites_seg != NULL) delete _sites_seg;
     _sites_seg = new PolarSeg(0, _gridsites);
+    
+    if(periodic){
+        _xsteps++;
+        _ysteps++;
+        _zsteps++;
+    }
 }
   
 

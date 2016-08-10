@@ -52,14 +52,14 @@ namespace votca { namespace xtp {
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(useVdWcutoff),_useVdWcutoff_inside(useVdWcutoff_inside),_cubegrid(false),_padding(3.0),
              _createpolarsites(createpolarsites), _sites_seg(NULL), _atomlist(NULL), 
-            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0) {};
+            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),periodic(false) {};
            
         
         Grid()
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(false),_useVdWcutoff_inside(false),_cubegrid(false),_padding(3.0),
              _createpolarsites(false), _sites_seg(NULL), _atomlist(NULL),
-             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0)  {};
+             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),periodic(false)  {};
            
         
         ~Grid();
@@ -70,6 +70,7 @@ namespace votca { namespace xtp {
         
         std::vector< ub::vector<double> > &getGrid() {return _gridpoints;}
         std::vector< APolarSite* > &Sites() {return _gridsites;}
+        std::vector< APolarSite* > &AllSites() {return _all_gridsites;}
         std::vector< APolarSite*>* getSites() {return &_gridsites;} 
         PolarSeg* getSeg(){return _sites_seg;}
 
@@ -110,13 +111,20 @@ namespace votca { namespace xtp {
         }
         
         void writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic=false, double BoxLen[3]=NULL);
-        
+        void setPeriodicity(double BL[3]){
+            periodic=true;
+            boxX=BL[0];
+            boxY=BL[1];
+            boxZ=BL[2];
+            _padding=0.0;
+        }
       
   private:
      
       std::vector< ub::vector<double> > _gridpoints;
       std::vector< APolarSite* > _gridsites;
       std::vector< APolarSite* > _all_gridsites;
+      double _gridspacingX, _gridspacingY, _gridspacingZ;
       
       
       double _cutoff;
@@ -133,6 +141,9 @@ namespace votca { namespace xtp {
       std::vector< QMAtom* >* _atomlist;
       vec _lowerbound;
       int _xsteps, _ysteps, _zsteps;
+      
+      bool periodic;
+      double boxX, boxY, boxZ;
       
       
       void subdivide(const vec &v1, const vec &v2, const vec &v3, std::vector<vec> &spherepoints, const int depth);
