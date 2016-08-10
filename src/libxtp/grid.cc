@@ -196,15 +196,17 @@ void Grid::printgridtoCubefile(std::string filename){
             fprintf(out, "Created by VOTCA-XTP \n");
             fprintf(out, "%lu %f %f %f \n", _atomlist->size(), _lowerbound.getX()*conv::ang2bohr,
                     _lowerbound.getY()*conv::ang2bohr,_lowerbound.getZ()*conv::ang2bohr);
+            
+            //.cube format calls for number of voxels (points), not number of steps
             if(periodic){
-                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacingX*conv::ang2bohr); 
-                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps, _gridspacingY*conv::ang2bohr);
-                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacingZ*conv::ang2bohr);
+                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps+1, _gridspacingX*conv::ang2bohr); 
+                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps+1, _gridspacingY*conv::ang2bohr);
+                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps+1, _gridspacingZ*conv::ang2bohr);
             }
             else{
-                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacing*conv::ang2bohr); 
-                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps, _gridspacing*conv::ang2bohr);
-                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacing*conv::ang2bohr);
+                fprintf(out, "%d %f 0.0 0.0 \n", _xsteps+1, _gridspacing*conv::ang2bohr); 
+                fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps+1, _gridspacing*conv::ang2bohr);
+                fprintf(out, "%d 0.0 0.0 %f \n", _zsteps+1, _gridspacing*conv::ang2bohr);
             }
             
             std::vector<QMAtom* >::const_iterator ait;
@@ -482,12 +484,6 @@ void Grid::setupgrid(){
         }
     if (_sites_seg != NULL) delete _sites_seg;
     _sites_seg = new PolarSeg(0, _gridsites);
-    
-    if(periodic){
-        _xsteps++;
-        _ysteps++;
-        _zsteps++;
-    }
 }
   
 

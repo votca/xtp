@@ -241,7 +241,7 @@ namespace votca { namespace xtp {
         LOG(logDEBUG, *_log) << TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
         //boost::progress_display show_progress( _grid.getsize() );
         
-        if(periodic && false){
+        if(periodic){
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
             double BL[3];
             BL[0]=boxLen[0]*tools::conv::ang2bohr;  //bohr
@@ -277,7 +277,7 @@ namespace votca { namespace xtp {
                     //numway.PrepKspaceDensity(BL, 1.6);
                     numway.PrepKspaceDensity(BL, 0, 0, 0.5, _local_atomlist);
                     //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
-                    //#pragma omp parallel for
+                    #pragma omp parallel for
                     for ( int i = 0 ; i < _grid.getsize(); i++){
 //                    int i=0;
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
@@ -314,7 +314,7 @@ namespace votca { namespace xtp {
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
             
             numway.SetGridToCharges(_local_atomlist);
-            //#pragma omp parallel for
+            #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
                 //++show_progress;
@@ -439,7 +439,7 @@ namespace votca { namespace xtp {
                 _grid.Sites()[i]->setPhi(ESP(i), 0.0);
             }
             //and save it to a .cube file
-            if(periodic){
+            if(periodic||true){
                 fn.str(std::string());
                 fn << "BulkEsp_" << m-mols.begin() << "_pointQ_numK16.cube";
                 _grid.printgridtoCubefile(fn.str());
