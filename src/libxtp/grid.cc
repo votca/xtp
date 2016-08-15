@@ -63,6 +63,10 @@ Grid &Grid::operator=(const Grid & obj){
     }     
      _sites_seg = new PolarSeg(0, _gridsites);
      _atomlist=obj._atomlist;
+     _periodic = obj._periodic;
+     _boxX = obj._boxX;
+     _boxY = obj._boxY;
+     _boxZ = obj._boxZ;
      return *this;
 }
     
@@ -198,7 +202,7 @@ void Grid::printgridtoCubefile(std::string filename){
                     _lowerbound.getY()*conv::ang2bohr,_lowerbound.getZ()*conv::ang2bohr);
             
             //.cube format calls for number of voxels (points), not number of steps
-            if(periodic){
+            if(_periodic){
                 fprintf(out, "%d %f 0.0 0.0 \n", _xsteps+1, _gridspacingX*conv::ang2bohr); 
                 fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps+1, _gridspacingY*conv::ang2bohr);
                 fprintf(out, "%d 0.0 0.0 %f \n", _zsteps+1, _gridspacingZ*conv::ang2bohr);
@@ -382,11 +386,11 @@ void Grid::setupgrid(){
         if (ztemp>zmax)  zmax=ztemp;
     }    
     
-    if(periodic){
+    if(_periodic){
         xmin=ymin=zmin=0.0;
-        xmax=boxX;
-        ymax=boxY;
-        zmax=boxZ;
+        xmax=_boxX;
+        ymax=_boxY;
+        zmax=_boxZ;
         _padding=0.0;
     }
 
@@ -404,15 +408,15 @@ void Grid::setupgrid(){
     
     _gridspacingX=_gridspacingY=_gridspacingZ=_gridspacing;
     
-    if(periodic){
+    if(_periodic){
         //in a periodic grid we want the box to be exactly what we told it to be,
         //so use no padding and adjust grid spacing on each axis so that the
         //whole box divides into a grid uniformly even if the grid elements
         //have to be non-cubic
         padding_x=padding_y=padding_z=0.0;
-        _gridspacingX=boxX/_xsteps;
-        _gridspacingY=boxY/_ysteps;
-        _gridspacingZ=boxZ/_zsteps;
+        _gridspacingX=_boxX/_xsteps;
+        _gridspacingY=_boxY/_ysteps;
+        _gridspacingZ=_boxZ/_zsteps;
         
         //In the loops below, the "<=" in "i<=_xsteps" is needed for
         //non-periodic systems to keep the potential have the same number

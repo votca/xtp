@@ -277,7 +277,7 @@ namespace votca { namespace xtp {
                     //numway.PrepKspaceDensity(BL, 1.6);
                     numway.PrepKspaceDensity(BL, 0, 0, 0.5, _local_atomlist);
                     //LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
-                    #pragma omp parallel for
+                    //#pragma omp parallel for
                     for ( int i = 0 ; i < _grid.getsize(); i++){
 //                    int i=0;
                         _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
@@ -313,7 +313,7 @@ namespace votca { namespace xtp {
         else{
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
             
-            numway.SetGridToCharges(_local_atomlist);
+            //numway.SetGridToCharges(_local_atomlist);
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
@@ -324,7 +324,7 @@ namespace votca { namespace xtp {
         
         // Calculating nuclear potential at gridpoints
         ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _local_atomlist,  _grid );
-        //_ESPatGrid += _NucPatGrid;
+        _ESPatGrid += _NucPatGrid;
         LOG(logDEBUG, *_log) << TimeStamp() << " Nuclear contribution calculated"  << flush; 
 
         
@@ -401,7 +401,7 @@ namespace votca { namespace xtp {
 			cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 			
             //set up grid
-            Grid _grid(true,false,true); //create polarsites, so we can output grid to .cube file
+            Grid _grid(true,false,false); //create polarsites, so we can output grid to .cube file
 //            _grid.setAtomlist(&m->atoms);
 //            _grid.setupCHELPgrid();
             if(periodic){
@@ -409,7 +409,7 @@ namespace votca { namespace xtp {
                 _grid.setPeriodicity(boxLen);
             }
             //test: set inner cutoff to 0 and calculate all potentials near nuclei
-            //_grid.setCutoffs(3.0, 0.0);
+            _grid.setCutoffs(20.0, 0.05);
             _grid.setAtomlist(&_atomlist);
             _grid.setCubegrid(true);
             _grid.setupgrid();
@@ -439,7 +439,7 @@ namespace votca { namespace xtp {
                 _grid.Sites()[i]->setPhi(ESP(i), 0.0);
             }
             //and save it to a .cube file
-            if(periodic||true){
+            if(periodic){
                 fn.str(std::string());
                 fn << "BulkEsp_" << m-mols.begin() << "_pointQ_numK16.cube";
                 _grid.printgridtoCubefile(fn.str());

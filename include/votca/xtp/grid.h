@@ -52,14 +52,16 @@ namespace votca { namespace xtp {
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(useVdWcutoff),_useVdWcutoff_inside(useVdWcutoff_inside),_cubegrid(false),_padding(3.0),
              _createpolarsites(createpolarsites), _sites_seg(NULL), _atomlist(NULL), 
-            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),periodic(false) {};
+            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
+            _boxX(0.0), _boxY(0.0), _boxZ(0.0) {};
            
         
         Grid()
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(false),_useVdWcutoff_inside(false),_cubegrid(false),_padding(3.0),
              _createpolarsites(false), _sites_seg(NULL), _atomlist(NULL),
-             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),periodic(false)  {};
+             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
+             _boxX(0.0), _boxY(0.0), _boxZ(0.0){};
            
         
         ~Grid();
@@ -112,10 +114,10 @@ namespace votca { namespace xtp {
         
         void writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic=false, double BoxLen[3]=NULL);
         void setPeriodicity(double BL[3]){
-            periodic=true;
-            boxX=BL[0];
-            boxY=BL[1];
-            boxZ=BL[2];
+            _periodic=true;
+            _boxX=BL[0];
+            _boxY=BL[1];
+            _boxZ=BL[2];
             _padding=0.0;
         }
       
@@ -142,8 +144,8 @@ namespace votca { namespace xtp {
       vec _lowerbound;
       int _xsteps, _ysteps, _zsteps;
       
-      bool periodic;
-      double boxX, boxY, boxZ;
+      bool _periodic;
+      double _boxX, _boxY, _boxZ;
       
       
       void subdivide(const vec &v1, const vec &v2, const vec &v3, std::vector<vec> &spherepoints, const int depth);
