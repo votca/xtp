@@ -249,13 +249,14 @@ namespace votca { namespace xtp {
             BL[2]=boxLen[2]*tools::conv::ang2bohr;  //bohr
 
             numway.PrepKspaceDensity(BL, 0, 0, 0.5, _local_atomlist, _ECP);
-            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space."<< endl;
+            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
                 //++show_progress;
             }
             numway.FreeKspace();
+            LOG(logDEBUG, *_log) << TimeStamp() << "Electron and Nuclear contributions calculated"  << flush; 
         }
         else{
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
@@ -266,13 +267,15 @@ namespace votca { namespace xtp {
                 _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
                 //++show_progress;
             }
-        }
-        LOG(logDEBUG, *_log) << TimeStamp() << " Electron contribution calculated"  << flush; 
+            
+            LOG(logDEBUG, *_log) << TimeStamp() << " Electron contribution calculated"  << flush; 
         
-        // Calculating nuclear potential at gridpoints
-        //ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _local_atomlist,  _grid );
-        //_ESPatGrid += _NucPatGrid;
-        LOG(logDEBUG, *_log) << TimeStamp() << " Nuclear contribution calculated"  << flush; 
+            // Calculating nuclear potential at gridpoints
+            ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _local_atomlist,  _grid );
+            _ESPatGrid += _NucPatGrid;
+            LOG(logDEBUG, *_log) << TimeStamp() << " Nuclear contribution calculated"  << flush; 
+        }
+        
 
         
         return(_ESPatGrid);
