@@ -112,7 +112,7 @@ namespace votca { namespace xtp {
             setupgrid();
         }
         
-        void writeIrregularGrid(std::string _filename, ub::vector<double> &_val, std::vector< QMAtom* > &_atoms, bool periodic=false, double BoxLen[3]=NULL);
+        void writeIrregularGrid(std::string _filename, std::vector< QMAtom* > &_atoms, bool _ECP);
         void setPeriodicity(double BL[3]){
             _periodic=true;
             _boxX=BL[0];

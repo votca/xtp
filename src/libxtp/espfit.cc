@@ -160,7 +160,7 @@ void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &
     //store potential
     std::ostringstream fn;
     fn << "Esp.grid";
-    _grid.writeIrregularGrid(fn.str(), _ESPatGrid, _atomlist);
+    _grid.writeIrregularGrid(fn.str(), _atomlist, _ECP);
     
     
     std::vector< ub::vector<double> > _fitcenters;

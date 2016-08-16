@@ -372,13 +372,7 @@ namespace votca { namespace xtp {
             ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
                                                 _global_dmat, _basis, bs, gridsize, _grid, netcharge);
                 
-            //output
-            //CHELPG grids aren't periodic and equally spaced,
-            //so can't output to .cube format.
-            //Create own format.
-            std::ostringstream fn;
-            fn << "BulkEsp_" << m-mols.begin() << ".grid";
-            _grid.writeIrregularGrid(fn.str(), ESP, m->atoms, periodic, boxLen);
+            
             
             
             //store the potential in apolarsites
@@ -388,12 +382,23 @@ namespace votca { namespace xtp {
 //                site->setPhi(ESP(i), 0.0);
                 _grid.Sites()[i]->setPhi(ESP(i), 0.0);
             }
+            
+            
             //and save it to a .cube file
+            std::ostringstream fn;
+            fn << "BulkEsp_" << m-mols.begin() << ".grid";
             if(periodic){
                 fn.str(std::string());
                 fn << "BulkEsp_" << m-mols.begin() << "_pointQ_numK16.cube";
                 _grid.printgridtoCubefile(fn.str());
             }
+            
+            //output
+            //CHELPG grids aren't periodic and equally spaced,
+            //so can't output to .cube format.
+            //Create own format.
+            //note: just like printgridtoCubefile, this prints potential from apolar sites
+            _grid.writeIrregularGrid(fn.str(), m->atoms, _ECP);
             
             //TODO: fit charges
             std::vector< ub::vector<double> > _fitcenters;
