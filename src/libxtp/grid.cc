@@ -535,7 +535,6 @@ void Grid::writeIrregularGrid(std::string _filename, std::vector< QMAtom* > &_at
         //point coordinates in Bohr
         ub::vector<double> point = _gridpoints[i]*tools::conv::nm2bohr;
         out << point(0) << '\t' << point(1) << '\t' << point(2) << '\t' << _gridsites[i]->getPhi() <<  '\n';
-        
     }
     out.flush();
     out.close();

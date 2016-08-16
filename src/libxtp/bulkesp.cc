@@ -343,12 +343,12 @@ namespace votca { namespace xtp {
             
             LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" processing molecule "<< m-mols.begin() << endl; 
 			
-            //veryfy atomic coordinates and units
+            //verify atomic coordinates and units
             for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
                 QMAtom* ap=*a;
                 cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
             }
-			cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
+            cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 			
             //set up grid
             Grid _grid(true,false,false); //create polarsites, so we can output grid to .cube file
@@ -386,10 +386,9 @@ namespace votca { namespace xtp {
             
             //and save it to a .cube file
             std::ostringstream fn;
-            fn << "BulkEsp_" << m-mols.begin() << ".grid";
             if(periodic){
                 fn.str(std::string());
-                fn << "BulkEsp_" << m-mols.begin() << "_pointQ_numK16.cube";
+                fn << "BulkEsp_" << m-mols.begin() << ".cube";
                 _grid.printgridtoCubefile(fn.str());
             }
             
@@ -398,6 +397,9 @@ namespace votca { namespace xtp {
             //so can't output to .cube format.
             //Create own format.
             //note: just like printgridtoCubefile, this prints potential from apolar sites
+            fn.clear();
+            fn.str("");
+            fn << "BulkEsp_" << m-mols.begin() << ".grid";
             _grid.writeIrregularGrid(fn.str(), m->atoms, _ECP);
             
             //TODO: fit charges
