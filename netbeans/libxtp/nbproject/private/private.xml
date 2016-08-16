@@ -29,8 +29,7 @@
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/numerical_integrations.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/elements.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/orbitals.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/apolarsite.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/esp2multipole.h</file>
         </group>
     </open-files>

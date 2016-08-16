@@ -248,7 +248,7 @@ namespace votca { namespace xtp {
             BL[1]=boxLen[1]*tools::conv::ang2bohr;  //bohr
             BL[2]=boxLen[2]*tools::conv::ang2bohr;  //bohr
 
-            numway.PrepKspaceDensity(BL, 0, 0, 0.5, _local_atomlist, _ECP);
+            numway.PrepKspaceDensity(BL, 0.5, _local_atomlist, _ECP);
             LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
@@ -360,7 +360,7 @@ namespace votca { namespace xtp {
             }
             //test: set inner cutoff to 0 and calculate all potentials near nuclei
             //_grid.setCutoffs(20.0, 0.05);
-            _grid.setAtomlist(&_atomlist);
+            _grid.setAtomlist(&m->atoms);
             _grid.setCubegrid(true);
             _grid.setupgrid();
             LOG(logDEBUG, *_log) << TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;

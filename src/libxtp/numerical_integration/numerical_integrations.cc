@@ -1657,7 +1657,7 @@ namespace votca {
          * @param boxLen
          * @param Kspacing in Angstroms
          */
-        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha, std::vector< QMAtom* > & _local_atomlist, bool ECP){
+        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< QMAtom* > & _local_atomlist, bool ECP){
             
             cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
             
