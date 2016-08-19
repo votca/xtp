@@ -727,6 +727,7 @@ namespace votca {
             if(CPMD2VOTCA_map==NULL){
                 LOG(logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
                 LOG(logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
+                throw std::runtime_error("CPMD2TYPE_map unavailable, rerun with <tasks>input, parse</tasks>");
                 exit(-1);
             }
             
