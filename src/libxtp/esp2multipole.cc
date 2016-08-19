@@ -83,6 +83,10 @@ void Esp2multipole::Initialize(Property* options) {
             boxLen[1]=options->get(key+".periodic.y").as<double>();
             boxLen[2]=options->get(key+".periodic.z").as<double>();
         }
+        _maxBondScale=1.2;
+        if(options->exists(key+".bondscale")){
+            _maxBondScale=options->get(key+".bondscale").as<double>();
+        }
     }
     
     // get the path to the shared folders with xml files
@@ -244,7 +248,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
             if(periodic){
                 esp.setBox(boxLen);            
             }
-            esp.Evaluate(_Atomlist, DMAT_tot, _orbitals, _MO_Coefficients, basis,bs,_gridsize, 1.15, _state, _spin, _state_no); 
+            esp.Evaluate(_Atomlist, DMAT_tot, _orbitals, _MO_Coefficients, basis,bs,_gridsize, _maxBondScale, _state, _spin, _state_no); 
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;

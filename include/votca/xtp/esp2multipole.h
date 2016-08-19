@@ -78,9 +78,10 @@ private:
     Logger*      _log;
     
     
-    //periodicity prarameters for bulkESP
+    //periodicity parameters for bulkESP
     bool periodic;
     double boxLen[3];
+    double _maxBondScale;
     
     
 
