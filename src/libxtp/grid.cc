@@ -436,6 +436,7 @@ void Grid::setupgrid(){
         _zsteps--;
     }
 
+    double dif[3];
     ub::vector<double> temppos= ub::zero_vector<double>(3);
     for(int i=0;i<=_xsteps;i++){
         double x=xmin-padding_x+i*_gridspacingX; 
@@ -449,7 +450,34 @@ void Grid::setupgrid(){
                         xtemp=(*atom)->x; //Angstroms
                         ytemp=(*atom)->y;
                         ztemp=(*atom)->z;
-                        double distance2=pow((x-xtemp),2)+pow((y-ytemp),2)+pow((z-ztemp),2);
+                        
+                        dif[0]=x-xtemp;
+                        dif[1]=y-ytemp;
+                        dif[2]=z-ztemp;
+                        
+                        if(_periodic){ //adjust point to atom distance for periodicity
+                            if(std::abs(dif[0])>_boxX*0.5){ //X
+                                if(dif[0]>0)
+                                    dif[0]-=_boxX;
+                                else
+                                    dif[0]+=_boxX;
+                            }
+                            if(std::abs(dif[1])>_boxY*0.5){ //Y
+                                if(dif[1]>0)
+                                    dif[1]-=_boxY;
+                                else
+                                    dif[1]+=_boxY;
+                            }
+                            if(std::abs(dif[2])>_boxZ*0.5){ //Z
+                                if(dif[2]>0)
+                                    dif[2]-=_boxZ;
+                                else
+                                    dif[2]+=_boxZ;
+                            }
+                        }
+                        
+                        //double distance2=pow((x-xtemp),2)+pow((y-ytemp),2)+pow((z-ztemp),2);
+                        double distance2 = (dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2]);
                         if(_useVdWcutoff) _cutoff=_elements.getVdWChelpG((*atom)->type)+_shift_cutoff;
                         if(_useVdWcutoff_inside)_cutoff_inside=_elements.getVdWChelpG((*atom)->type)+_shift_cutoff_inside;
                         //cout << "Punkt " << x <<":"<< y << ":"<<z << ":"<< distance2 << ":"<< (*atom)->type <<":"<<pow(VdW,2)<< endl;
