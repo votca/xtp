@@ -66,7 +66,7 @@ protected:
      double _conditionnumber;
      
      
-    double getNetcharge( std::vector< QMAtom* >& _atoms, double N );
+    double getNetcharge( std::vector< QMAtom* >& _atoms, double N, bool _do_round=true );
  
     ub::vector<double> EvalNuclearPotential( std::vector< QMAtom* >& _atoms, Grid _grid );
    

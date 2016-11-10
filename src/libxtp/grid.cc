@@ -447,32 +447,23 @@ void Grid::setupgrid(){
                 bool _is_valid = false;
                     for (std::vector<QMAtom* >::const_iterator atom = _atomlist->begin(); atom != _atomlist->end(); ++atom ) {
                         //cout << "Punkt " << x <<":"<< y << ":"<<z << endl;
-                        xtemp=(*atom)->x; //Angstroms
-                        ytemp=(*atom)->y;
-                        ztemp=(*atom)->z;
+                        xtemp=fmod((*atom)->x, _boxX); //Angstroms
+                        ytemp=fmod((*atom)->y, _boxY);
+                        ztemp=fmod((*atom)->z, _boxZ);
                         
-                        dif[0]=x-xtemp;
-                        dif[1]=y-ytemp;
-                        dif[2]=z-ztemp;
+                        dif[0]=std::abs(x-xtemp);
+                        dif[1]=std::abs(y-ytemp);
+                        dif[2]=std::abs(z-ztemp);
                         
                         if(_periodic){ //adjust point to atom distance for periodicity
-                            if(std::abs(dif[0])>_boxX*0.5){ //X
-                                if(dif[0]>0)
-                                    dif[0]-=_boxX;
-                                else
-                                    dif[0]+=_boxX;
+                            if(dif[0]>_boxX*0.5){ //X
+                                dif[0]=_boxX-dif[0];
                             }
-                            if(std::abs(dif[1])>_boxY*0.5){ //Y
-                                if(dif[1]>0)
-                                    dif[1]-=_boxY;
-                                else
-                                    dif[1]+=_boxY;
+                            if(dif[1]>_boxY*0.5){ //Y
+                                dif[1]=_boxY-dif[1];
                             }
-                            if(std::abs(dif[2])>_boxZ*0.5){ //Z
-                                if(dif[2]>0)
-                                    dif[2]-=_boxZ;
-                                else
-                                    dif[2]+=_boxZ;
+                            if(dif[2]>_boxZ*0.5){ //X
+                                dif[2]=_boxZ-dif[2];
                             }
                         }
                         
@@ -518,7 +509,12 @@ void Grid::setupgrid(){
     _sites_seg = new PolarSeg(0, _gridsites);
 }
   
-
+void Grid::setup2D(std::vector< ub::vector<double> > points){
+    _gridpoints=points;
+    
+    if (_sites_seg != NULL) delete _sites_seg;
+    _sites_seg = new PolarSeg(0, _gridsites);
+}
 
 
 

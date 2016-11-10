@@ -23,6 +23,8 @@
 #include <votca/xtp/espfit.h>
 #include <votca/xtp/orbitals.h>
 
+
+
 using namespace votca::tools;
 
 namespace votca { namespace xtp {
@@ -51,7 +53,13 @@ public:
         boxLen[0]=0;
         boxLen[1]=0;
         boxLen[2]=0;
+		
+		dipolesLog=new std::ofstream();
     }
+	
+	~Bulkesp(){
+		delete dipolesLog;
+	}
     
     void setBox(double b[3])
     {
@@ -80,7 +88,7 @@ private:
     std::string fn_prefix;                 //prefix for output files containing potentials
     bool periodic;                          //is the box periodic for the purposes of assigning atoms to molecules?
     double boxLen[3];                       //dimensions of the box, assume cuboid shape
-    
+    std::ofstream* dipolesLog;				//file to log dipoles of all the molecules
     
     std::map<QMAtom*,int> MapAtom2MOCoefIndex(std::vector< QMAtom* >& _atomlist);
     

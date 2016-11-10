@@ -54,6 +54,7 @@ namespace votca { namespace xtp {
             double SetGridToCharges(std::vector< QMAtom* > & _local_atomlist);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
+			double CalcDipole_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             void findAlpha(double Rc, double dtol);
             void PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< QMAtom* > & _local_atomlist, bool ECP);
             void FreeKspace(void);

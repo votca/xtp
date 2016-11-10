@@ -1614,6 +1614,40 @@ namespace votca {
             
             return result;   
         }
+		
+		double NumericalIntegration::CalcDipole_w_PBC(ub::vector<double> rvector, double boxLen[3]){
+			//as a check, compute the dipole moment of the density distribution.
+			//center it on the first atom, for example.
+			
+			double dip[3]={0,0,0};
+			if(density_set){
+//                #pragma omp parallel for reduction(+:result)
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+						double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+						double dif[3];
+                        dif[0] = _grid[i][j].grid_x-rvector(0);
+                        dif[1] = _grid[i][j].grid_y-rvector(1);
+                        dif[2] = _grid[i][j].grid_z-rvector(2);
+                        for(int k=0; k<3; k++){
+                            if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+                                if(dif[k]>0)    //i.x>j.x
+                                    dif[k]-=boxLen[k];
+                                else            //i.x<j.x
+                                    dif[k]+=boxLen[k];
+                        }
+						dip[0] += dif[0] * q;
+						dip[1] += dif[1] * q;
+						dip[2] += dif[2] * q;
+					}//i
+				}//j
+			}//density
+			else{
+               throw std::runtime_error("Density not calculated");
+            }
+			return(sqrt((dip[0]*dip[0])+(dip[1]*dip[1])+(dip[2]*dip[2]))); //in Bohr*elementary charge
+		}
+				
         
         void NumericalIntegration::FreeKspace(){
             delete[] Rho_k;
@@ -1622,7 +1656,7 @@ namespace votca {
         }
         
 		
-        /*
+        /**
          *	Calculate and return the Ewald coefficient (alpha) from cutoff distance
          *	and requested tolerance.
          */
@@ -1681,7 +1715,6 @@ namespace votca {
                 _Nuc.push_back(el);
             }
             _grid.push_back(_Nuc);
-            
 
 //
 //            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop

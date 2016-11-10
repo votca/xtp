@@ -71,6 +71,7 @@ namespace votca { namespace xtp {
         Grid& operator=(const Grid &obj);
         
         std::vector< ub::vector<double> > &getGrid() {return _gridpoints;}
+        std::vector< ub::vector<double> >* getPoints() {return &_gridpoints;}
         std::vector< APolarSite* > &Sites() {return _gridsites;}
         std::vector< APolarSite* > &AllSites() {return _all_gridsites;}
         std::vector< APolarSite*>* getSites() {return &_gridsites;} 
@@ -82,6 +83,7 @@ namespace votca { namespace xtp {
         void setSpacing(double spacing){_gridspacing=spacing;}
         void setPadding(double padding){_padding=padding;}
         void setCubegrid(bool cubegrid){_cubegrid=cubegrid;_createpolarsites=true;}
+        bool getCubegrid(void){return(_cubegrid);}
         void setAtomlist(std::vector< QMAtom* >* Atomlist){_atomlist=Atomlist;}
         int  getsize(){return _gridpoints.size();}
         
@@ -101,6 +103,8 @@ namespace votca { namespace xtp {
         void setupradialgrid(int depth);
         
         void setupgrid();
+        
+        void setup2D(std::vector< ub::vector<double> > points);
        
         void setupCHELPgrid(){
             //_padding=2.8; // Additional distance from molecule to set up grid according to CHELPG paper [Journal of Computational Chemistry 11, 361, 1990]
