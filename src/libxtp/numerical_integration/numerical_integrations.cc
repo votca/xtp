@@ -26,6 +26,7 @@
 #include <votca/xtp/sphere_lebedev_rule.h>
 #include <votca/xtp/aoshell.h>
 #include<votca/tools/constants.h>
+#include <votca/xtp/elements.h>
 #ifdef LIBXC
 #include <xc.h>
 #endif
@@ -38,6 +39,7 @@
 #include <iterator>
 #include <string>
 #include <math.h>
+#include <bits/stl_vector.h>
 // #include <xc.h>
 
 
@@ -1396,21 +1398,43 @@ namespace votca {
             return result;
         } 
             
+        double NumericalIntegration::SetGridToCharges(std::vector< QMAtom* > & _local_atomlist){
+            
+            _grid.empty();
+            int p=1;
+            std::vector< GridContainers::integration_grid > _Mad;
+            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
+                GridContainers::integration_grid el;
+                QMAtom* atom=*it;
+                el.grid_density=std::pow(-1.0,p);
+                el.grid_weight=1.0;
+                el.grid_x=atom->x*tools::conv::ang2bohr;
+                el.grid_y=atom->y*tools::conv::ang2bohr;
+                el.grid_z=atom->z*tools::conv::ang2bohr;
+                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
+                _Mad.push_back(el);
+                p++;
+            }
+            _grid.push_back(_Mad);
+            
+            return 0.0;
+        }
+        
         double NumericalIntegration::IntegratePotential(ub::vector<double> rvector){
             
             double result = 0.0;
-            
-           if(density_set){
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                    double dist=sqrt((_grid[i][j].grid_x-rvector(0))*(_grid[i][j].grid_x-rvector(0))+(_grid[i][j].grid_y-rvector(1))*(_grid[i][j].grid_y-rvector(1))+(_grid[i][j].grid_z-rvector(2))*(_grid[i][j].grid_z-rvector(2)));
-                    result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
-                    }
-                }
-            } 
-           else{
-               throw std::runtime_error("Density not calculated");
-           }
+
+            if(density_set){
+                 for (unsigned i = 0; i < _grid.size(); i++) {
+                 for (unsigned j = 0; j < _grid[i].size(); j++) {
+                     double dist=sqrt((_grid[i][j].grid_x-rvector(0))*(_grid[i][j].grid_x-rvector(0))+(_grid[i][j].grid_y-rvector(1))*(_grid[i][j].grid_y-rvector(1))+(_grid[i][j].grid_z-rvector(2))*(_grid[i][j].grid_z-rvector(2)));
+                     result -= _grid[i][j].grid_weight * _grid[i][j].grid_density/dist;
+                     }
+                 }
+             } 
+            else{
+                throw std::runtime_error("Density not calculated");
+            }
             
             return result;   
         }
@@ -1421,12 +1445,14 @@ namespace votca {
             
             E_rspace = 0.0;
             E_kspace = 0.0;
+            double E_r=0, E_k=0;
             double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
             double vol=boxLen[0]*boxLen[1]*boxLen[2];
             
             if(density_set){
                 //for (unsigned i = 0; i < _grid.size(); i++) {
                     //for (unsigned j = 0; j < _grid[i].size(); j++) {
+                #pragma omp parallel for reduction(+:E_r)
                 for (unsigned i = 0; i < _Madelung_grid[0].size(); i++) {
                     for (unsigned j = 0; j < _Madelung_grid[0].size(); j++) {
 
@@ -1456,19 +1482,20 @@ namespace votca {
                         double ER=0.5*qi*qj*((erfc(alpha*dist)/dist) - tools::conv::Pi/(vol*vol*alpha*alpha));
 
                         if(dist<1.0e-12){ //point is in the same spot as we are evaluating potential
-                            E_rspace-=(alpha/sqrt(tools::conv::Pi))*qi*qj; //self correction
+                            E_r -= (alpha/sqrt(tools::conv::Pi))*qi*qj; //self correction
                         }
                         else if(dist<=cutoff)
                         {
-                            E_rspace += ER;
+                            E_r += ER;
                         }
 						
                     }//j
                 }//i 
-				
-                //cout<< "r-space sum: " <<result<<endl;
+                E_rspace = E_r;
+                cout<< "E: r-space sum: " <<E_rspace<<endl;
 
                 //k-space sum
+                #pragma omp parallel for reduction(+:E_k)
                 for (unsigned i = 0; i < _Madelung_grid[0].size(); i++) {
                     vec r(_Madelung_grid[0][i].grid_x,_Madelung_grid[0][i].grid_y,_Madelung_grid[0][i].grid_z);
                     double qi = -_Madelung_grid[0][i].grid_weight * _Madelung_grid[0][i].grid_density; //density is neg of charge
@@ -1481,12 +1508,13 @@ namespace votca {
 
                             
                             double EK=0.5*qi*prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
-                            E_kspace+=EK;
+                            E_k+=EK;
 
                     }//index
                 }//i
                 
-                
+                E_kspace = E_k;
+                cout<< "E: k-space sum: " <<E_kspace<<endl;
                 
                 E_erfc=erfc(alpha*cutoff);
 
@@ -1507,24 +1535,24 @@ namespace votca {
             double vol=boxLen[0]*boxLen[1]*boxLen[2];
             
             if(density_set){
-                //for (unsigned i = 0; i < _grid.size(); i++) {
-                    //for (unsigned j = 0; j < _grid[i].size(); j++) {
-                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
-                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
+//                #pragma omp parallel for reduction(+:result)
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+//                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
+//                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
 
-                
                         //charge at this point
-                        //double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
-                        double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
+                        double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+                        //double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
                         
                         //r-space sum
                         double dif[3];
-//                        dif[0] = _grid[i][j].grid_x-rvector(0);
-//                        dif[1] = _grid[i][j].grid_y-rvector(1);
-//                        dif[2] = _grid[i][j].grid_z-rvector(2);
-                        dif[0] = _Madelung_grid[i][j].grid_x-rvector(0);
-                        dif[1] = _Madelung_grid[i][j].grid_y-rvector(1);
-                        dif[2] = _Madelung_grid[i][j].grid_z-rvector(2);
+                        dif[0] = _grid[i][j].grid_x-rvector(0);
+                        dif[1] = _grid[i][j].grid_y-rvector(1);
+                        dif[2] = _grid[i][j].grid_z-rvector(2);
+//                        dif[0] = _Madelung_grid[i][j].grid_x-rvector(0);
+//                        dif[1] = _Madelung_grid[i][j].grid_y-rvector(1);
+//                        dif[2] = _Madelung_grid[i][j].grid_z-rvector(2);
 
                         for(int k=0; k<3; k++){
                             if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
@@ -1534,9 +1562,8 @@ namespace votca {
                                     dif[k]+=boxLen[k];
                         }
                         double dist=sqrt((dif[0]*dif[0])+(dif[1]*dif[1])+(dif[2]*dif[2])); //in bohr
-                        double potR=q*((erfc(alpha*dist)/dist) - tools::conv::Pi/(vol*vol*alpha*alpha));
-						
-                        //cout<< std::setprecision(12)<<"dist="<<dist<<"\t q="<<q<<"\t alpha*dist="<<alpha*dist<<"\t erfc()="<<erfc(alpha*dist)<<"\t potR="<<potR<<endl;
+                        double potR=q*((erfc(alpha*dist)/dist) - tools::conv::Pi/(vol*vol*alpha*alpha)); //erfc and shift everage pot to 0
+                        
                         if(dist<1.0e-12){ //point is in the same spot as we are evaluating potential
                             result-=2.0*(alpha/sqrt(tools::conv::Pi))*q; //self correction
                         }
@@ -1554,31 +1581,23 @@ namespace votca {
                 //k-space sum
                 vec r(rvector(0),rvector(1),rvector(2));
                 int nKpoints=numK[0]*numK[1]*numK[2];
-                double* kp;
-                //std::complex<double> ksum=(0,0);
+                double ksum=0.0;
                 //exclude k={0,0,0} (index=0)
+//                #pragma omp parallel for reduction(+:ksum)
                 for(int index=1; index<nKpoints; index++){
-                        kp = &(Kcoord[index*3]);
+                        double* kp = &(Kcoord[index*3]);
                         vec K(kp[0], kp[1], kp[2]);
-                        //if (std::abs((K*r)) < 1.0e-6)
-                                //cout<<"potK includes k=0"<<endl;
                         std::complex<double> Kr(0, K*r); // ik dot r
 
                         double potK=prefactor[index]*(Rho_k[index]*std::exp(Kr)).real();
-                        //ksum+=prefactor[index]*(Rho_k[index]*std::exp(Kr));
-                        //if (potK!=potK) //nan check
-                                //cout<<"potK is nan"<<endl;
-                        result+=potK;
+                        ksum+=potK;
 
                 }//index
-
+                result+=ksum;
 
 
                 //cout<< "k-space sum: " <<ksum<<endl;
                 //cout<< "final Ewald sum: "<<result<<endl;
-
-                //self correction
-                //result-=2.0*(alpha/sqrt(tools::conv::Pi))*q;
 
                 //dipole moment correction
                 //This is only usefull if we have a countably infinite
@@ -1595,6 +1614,40 @@ namespace votca {
             
             return result;   
         }
+		
+		double NumericalIntegration::CalcDipole_w_PBC(ub::vector<double> rvector, double boxLen[3]){
+			//as a check, compute the dipole moment of the density distribution.
+			//center it on the first atom, for example.
+			
+			double dip[3]={0,0,0};
+			if(density_set){
+//                #pragma omp parallel for reduction(+:result)
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+						double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+						double dif[3];
+                        dif[0] = _grid[i][j].grid_x-rvector(0);
+                        dif[1] = _grid[i][j].grid_y-rvector(1);
+                        dif[2] = _grid[i][j].grid_z-rvector(2);
+                        for(int k=0; k<3; k++){
+                            if(std::abs(dif[k])>boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+                                if(dif[k]>0)    //i.x>j.x
+                                    dif[k]-=boxLen[k];
+                                else            //i.x<j.x
+                                    dif[k]+=boxLen[k];
+                        }
+						dip[0] += dif[0] * q;
+						dip[1] += dif[1] * q;
+						dip[2] += dif[2] * q;
+					}//i
+				}//j
+			}//density
+			else{
+               throw std::runtime_error("Density not calculated");
+            }
+			return(sqrt((dip[0]*dip[0])+(dip[1]*dip[1])+(dip[2]*dip[2]))); //in Bohr*elementary charge
+		}
+				
         
         void NumericalIntegration::FreeKspace(){
             delete[] Rho_k;
@@ -1603,32 +1656,32 @@ namespace votca {
         }
         
 		
-        /*
+        /**
          *	Calculate and return the Ewald coefficient (alpha) from cutoff distance
          *	and requested tolerance.
-         *	This algorithm is based on the gromacs function calc_ewaldcoeff.
          */
         void NumericalIntegration::findAlpha(double Rc, double dtol){
-                double x=5.0;
-                int i=0;
-                while (true){
-                        i+=1;
+                double x=1.0;
+                int i=20;
+                while (erfc(x*Rc)/Rc > dtol){
                         x*=2.0;
-                        if(erfc(x*Rc) <= dtol)
-                                break;
+                        i++;
                 }
-
-                int n=i+60;
-                double low=0.0;
-                double high=x;
-                for (i=0; i<n; i++){
-                        x=(low+high)/2.0;
-                        if(erfc(x*Rc) > dtol)
-                                low=x;
-                        else
-                                high=x;
+                double lastx=x*2.0;
+                double newx;
+                while (true){
+                    double reldif=(erfc(x*Rc)/Rc - dtol)/dtol;
+                    if(std::abs(reldif)<1.0e-3 || i==0)
+                        break;
+                    
+                    if(reldif>0)
+                        newx=(x+lastx)*0.5;
+                    else
+                        newx=x*0.5;
+                    lastx=x;
+                    x=newx;
+                    i--;
                 }
-
                 alpha=x;
         }
         
@@ -1638,28 +1691,37 @@ namespace votca {
          * @param boxLen
          * @param Kspacing in Angstroms
          */
-        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double Kspacing, int natomsonside, double ext_alpha){
+        void NumericalIntegration::PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< QMAtom* > & _local_atomlist, bool ECP){
             
             cout<<"box is "<< boxLen[0] << " "<< boxLen[1] << " "<< boxLen[2] << endl;
-            //fill _Madelung_grid;
-            _Madelung_grid.clear();
-            std::vector< GridContainers::integration_grid > _Mad;
-            double a = boxLen[0]; //in bohr
-            for(int l=0; l<natomsonside; l++){
-                for(int m=0; m<natomsonside; m++){
-                    for(int n=0; n<natomsonside; n++){
-                        GridContainers::integration_grid el;
-                        el.grid_density=std::pow(-1.0, l+m+n);
-                        el.grid_weight=1.0;
-                        el.grid_x=a*l/natomsonside;
-                        el.grid_y=a*m/natomsonside;
-                        el.grid_z=a*n/natomsonside;
-                        _Mad.push_back(el);
-                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << endl;
-                    }
+            
+            //add nuclear charges to _grid to avoid having to do periodic calculations on them separately;
+            //_Madelung_grid.clear();
+            std::vector< GridContainers::integration_grid > _Nuc;
+            Elements _elements;
+            for(std::vector< QMAtom* >::iterator it=_local_atomlist.begin(); it!=_local_atomlist.end(); ++it){
+                GridContainers::integration_grid el;
+                QMAtom* atom=*it;
+                if (ECP) {
+                    el.grid_density = -_elements.getNucCrgECP(atom->type);
+                } else {
+                    el.grid_density = -_elements.getNucCrg(atom->type);
                 }
+                el.grid_weight=1.0;
+                el.grid_x=atom->x*tools::conv::ang2bohr;
+                el.grid_y=atom->y*tools::conv::ang2bohr;
+                el.grid_z=atom->z*tools::conv::ang2bohr;
+                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
+                _Nuc.push_back(el);
             }
-            _Madelung_grid.push_back(_Mad);
+            _grid.push_back(_Nuc);
+
+//
+//            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop
+//            _Madelung_grid=_grid;
+
+            
+            
             //cout<<"points in _Mad: " <<_Mad.size() << endl;
             //cout<<"_Mads in _Madelung_grid: " <<_Madelung_grid.size() << endl;
             
@@ -1667,11 +1729,11 @@ namespace votca {
 			
 			//compute alpha
             double cutoff=min(min(boxLen[0], boxLen[1]), boxLen[2])/2.0;
-            //findAlpha(cutoff, 1.0e-7*cutoff);
+//            findAlpha(cutoff, 1.0e-10);
             alpha=ext_alpha;
             double fourasq=4.0*alpha*alpha;
             cout<<"found alpha = "<< alpha <<"\t rel err of r-sum ~ " << erfc(alpha*cutoff)/cutoff<< endl;
-			
+//            cout<<"found alpha = "<< alpha <<"\t";
 			
 			
             //this is going to be slow, as points we have density for are not on a periodic grid,
@@ -1696,7 +1758,7 @@ namespace votca {
                     }
                 }
                 
-                maxK=8;
+                maxK=16;
 
                 numK[i]=2*maxK+1;
                 minSq=min(maxKsq, minSq);
@@ -1714,8 +1776,7 @@ namespace votca {
             //fill Kcoord and prefactor
             // [0, 1, 2, 3, ..., N/2 -1, N/2, -N/2, -N/2 +1, -N/2 +1, ..., -3, -2, -1] (note no 0)
             // k={0,0,0} is the very first entry (index=0)
-            int L, M, N;
-            double ksq;
+            
             
             double invvolume = 1.0/(boxLen[0]*boxLen[1]*boxLen[2]);
             double pre = invvolume*4.0*tools::conv::Pi;
@@ -1723,8 +1784,10 @@ namespace votca {
             //cout<<"pre=4*Pi/Volume="<<pre<<endl;
             //cout<<"fourasq=4*alpha^2="<<fourasq<<endl;
 
-            //#pragma omp parallel for
+            #pragma omp parallel for
             for(int l=0; l<numK[0]; l++){
+                int L, M, N;
+                double ksq;
                 if (l>numK[0]/2){ L=l-numK[0];}
                 else { L=l;}
                 //cout<<L<<endl;
@@ -1756,30 +1819,31 @@ namespace votca {
             
             
             //fill Rho_k
-            //#pragma omp parallel for
+            #pragma omp parallel for
             for(int index=0; index<nKpoints; index++){
                 double* kp = &(Kcoord[index*3]);
                 vec K(kp[0], kp[1], kp[2]);
                 Rho_k[index]=0.0;
-//                for (unsigned i = 0; i < _grid.size(); i++) {
-//                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-//                        vec r(_grid[i][j].grid_x, _grid[i][j].grid_y, _grid[i][j].grid_z);
-//                        std::complex<double> nKr(0, -K*r); // -ik dot r
-//                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
-//                    }
-                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
-                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
-                        vec r(_Madelung_grid[i][j].grid_x, _Madelung_grid[i][j].grid_y, _Madelung_grid[i][j].grid_z);
+                for (unsigned i = 0; i < _grid.size(); i++) {
+                    for (unsigned j = 0; j < _grid[i].size(); j++) {
+                        vec r(_grid[i][j].grid_x, _grid[i][j].grid_y, _grid[i][j].grid_z);
                         std::complex<double> nKr(0, -K*r); // -ik dot r
-                        Rho_k[index] -= _Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
-//                        cout<<"k={"<<kp[0]<<", "<<kp[1]<<", "<<kp[2]<<"}\t";
-//                        cout<<"r={"<<_Madelung_grid[i][j].grid_x<<", "<<_Madelung_grid[i][j].grid_y<<", "<<_Madelung_grid[i][j].grid_z<<"}\t";
-//                        cout<<"-ikr={"<<nKr<<"}\t exp(-iKr)="<<std::exp(nKr)<<"\t Rho_k="<<Rho_k[index]<<endl;
-                    }
-
-                }
+                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+                    }//j
+                }//i
                 
-            }
+//                for (unsigned i = 0; i < _Madelung_grid.size(); i++) {
+//                    for (unsigned j = 0; j < _Madelung_grid[i].size(); j++) {
+//                        vec r(_Madelung_grid[i][j].grid_x, _Madelung_grid[i][j].grid_y, _Madelung_grid[i][j].grid_z);
+//                        std::complex<double> nKr(0, -K*r); // -ik dot r
+//                        Rho_k[index] -= _Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
+////                        cout<<"k={"<<kp[0]<<", "<<kp[1]<<", "<<kp[2]<<"}\t";
+////                        cout<<"r={"<<_Madelung_grid[i][j].grid_x<<", "<<_Madelung_grid[i][j].grid_y<<", "<<_Madelung_grid[i][j].grid_z<<"}\t";
+////                        cout<<"-ikr={"<<nKr<<"}\t exp(-iKr)="<<std::exp(nKr)<<"\t Rho_k="<<Rho_k[index]<<endl;
+//                    }
+//                }
+                
+            }//index
             
         }
         

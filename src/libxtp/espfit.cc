@@ -160,7 +160,7 @@ void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &
     //store potential
     std::ostringstream fn;
     fn << "Esp.grid";
-    _grid.writeIrregularGrid(fn.str(), _ESPatGrid, _atomlist);
+    _grid.writeIrregularGrid(fn.str(), _atomlist, _ECP);
     
     
     std::vector< ub::vector<double> > _fitcenters;
@@ -212,7 +212,7 @@ ub::vector<double> Espfit::EvalNuclearPotential(std::vector< QMAtom* >& _atoms, 
     return _NucPatGrid;
 }
 
-double Espfit::getNetcharge( std::vector< QMAtom* >& _atoms, double N ){
+double Espfit::getNetcharge( std::vector< QMAtom* >& _atoms, double N, bool _do_round ){
     double netcharge=0.0;
     if( std::abs(N)<0.05){
         //LOG(logDEBUG, *_log) << "Number of Electrons is "<<N<< " transitiondensity is used for fit"  << flush;
@@ -251,7 +251,9 @@ double Espfit::getNetcharge( std::vector< QMAtom* >& _atoms, double N ){
     }
     _do_Transition=false;
     }
-    netcharge=round(netcharge);
+    if(_do_round){
+        netcharge=round(netcharge);
+    }
     LOG(logDEBUG, *_log) <<"Netcharge constrained to " << netcharge<< flush; 
     
     return netcharge;

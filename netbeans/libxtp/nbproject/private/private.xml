@@ -9,12 +9,12 @@
             <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</url>
             <bookmark id="5">
                 <name/>
-                <line>1725</line>
+                <line>0</line>
                 <key/>
             </bookmark>
             <bookmark id="8">
                 <name/>
-                <line>2106</line>
+                <line>0</line>
                 <key/>
             </bookmark>
         </file>
@@ -25,15 +25,11 @@
         <file>file:/home/jens/votca_git/src/xtp/src/libxtp/gwbse/gwbse.cc</file>
         <file>file:/home/bbaumeie/votca/src/xtp/src/libxtp/qmpackages/nwchem.cc</file>
         <group>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/qmapemachine.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid_containers.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/numerical_integrations.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
             <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/elements.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/orbitals.h</file>
-            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/esp2multipole.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/apolarsite.h</file>
         </group>
     </open-files>
 </project-private>
