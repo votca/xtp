@@ -1,12 +1,31 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #ifndef __PARALLELXJOBCALC__H
 #define __PARALLELXJOBCALC__H
 
 
-#include <votca/xtp/jobcalculator.h>
-#include <votca/xtp/qmthread.h>
+#include <votca/ctp/jobcalculator.h>
+#include <votca/ctp/qmthread.h>
 #include <votca/tools/mutex.h>
-#include <votca/xtp/job.h>
-#include <votca/xtp/progressobserver.h>
+#include <votca/ctp/job.h>
+#include <votca/ctp/progressobserver.h>
 
 
 // PATHWAYS TO A NEW THREADED CALCULATOR
@@ -21,8 +40,9 @@
 
 namespace votca { namespace xtp {
 
+    namespace CTP = votca::ctp;
 template<typename JobContainer, typename pJob, typename rJob> 
-class ParallelXJobCalc : public JobCalculator
+class ParallelXJobCalc : public CTP::JobCalculator
 {
 
 public:
@@ -34,12 +54,12 @@ public:
 
     std::string       Identify() { return "Parallel XJob Calculator"; }
 
-    bool         EvaluateFrame(Topology *top);
+    bool         EvaluateFrame(CTP::Topology *top);
     virtual void LoadJobs() { ; }
-    virtual void CustomizeLogger(QMThread* thread);
-    virtual void PreProcess(Topology *top) { ; } 
-    virtual rJob EvalJob(Topology *top, const pJob job, QMThread *thread) = 0;
-    virtual void PostProcess(Topology *top) { ; }
+    virtual void CustomizeLogger(CTP::QMThread* thread);
+    virtual void PreProcess(CTP::Topology *top) { ; } 
+    virtual rJob EvalJob(CTP::Topology *top, const pJob job, CTP::QMThread *thread) = 0;
+    virtual void PostProcess(CTP::Topology *top) { ; }
     
     void         LockCout() { _coutMutex.Lock(); }
     void         UnlockCout() { _coutMutex.Unlock(); }
@@ -52,21 +72,21 @@ public:
     // ======================================== //
     
 
-    class JobOperator : public QMThread
+    class JobOperator : public CTP::QMThread
     {
     public:
 
-        JobOperator(int id,   Topology *top, ParallelXJobCalc<JobContainer,pJob,rJob> *master)
+        JobOperator(int id,   CTP::Topology *top, ParallelXJobCalc<JobContainer,pJob,rJob> *master)
                       : _top(top),          _master(master) { _id = id; };
        ~JobOperator() {};
 
-        void        InitData(Topology *top) { ; }
+        void        InitData(CTP::Topology *top) { ; }
         void        Run(void);
         
 
     public:
 
-        Topology         *_top;
+        CTP::Topology         *_top;
         ParallelXJobCalc<JobContainer,pJob,rJob> *_master;
         pJob              _job;
 

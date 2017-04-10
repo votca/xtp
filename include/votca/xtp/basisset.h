@@ -29,6 +29,7 @@
 using namespace votca::tools;
 
 namespace votca { namespace xtp {
+    //namespace CTP = votca::ctp;
 
 class Shell;  
 class Element;
@@ -80,6 +81,15 @@ public:
         return _lmax;
     }; */
     
+    
+    bool combined(){
+        if (_type.length()>1){
+            return true;
+        }
+        return false;
+    }
+    
+   
     
     int getLmax(  ) {
         return FindLmax(_type);

@@ -1,19 +1,38 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #ifndef VOTCA_XTP_QMAPECALC_H
 #define	VOTCA_XTP_QMAPECALC_H
 
-#include <votca/xtp/pewald3d.h>
+#include <votca/ctp/pewald3d.h>
 #include <votca/xtp/parallelxjobcalc.h>
-#include <votca/xtp/xmapper.h>
-#include <votca/xtp/xjob.h>
-#include <votca/xtp/xinductor.h>
-#include <votca/xtp/xinteractor.h>
+#include <votca/ctp/xmapper.h>
+#include <votca/ctp/xjob.h>
+#include <votca/ctp/xinductor.h>
+#include <votca/ctp/xinteractor.h>
 #include <votca/xtp/gwbse.h>
 #include <votca/xtp/qmapemachine.h>
 #include <boost/format.hpp>
 
 using boost::format;
 
-namespace votca { namespace xtp {
+namespace votca { namespace ctp {
 
    
 class QMAPE : public ParallelXJobCalc< vector<Job*>, Job*, Job::JobResult >
@@ -156,7 +175,7 @@ void QMAPE::Initialize(Property *options) {
         cout << endl << "... ... Configure for ground states (DFT)" << flush;
     }
 
-    QMPackageFactory::RegisterAll();
+    XQMPackageFactory::RegisterAll();
 }
 
 
@@ -262,12 +281,12 @@ Job::JobResult QMAPE::EvalJob(Topology *top, Job *job, QMThread *thread) {
 		cape.WriteDensitiesPDB(xjob.getTag()+".densities.pdb");
 
     // SETUP QM HANDLERS
-    QMPackage *qmpack =  QMPackages().Create(_package);
+    XQMPackage *qmpack =  XQMPackages().Create(_package);
     qmpack->Initialize(&_qmpack_opt);
     qmpack->setLog(qlog);
     
     // SETUP QMAPE
-    QMAPEMachine<QMPackage> machine = QMAPEMachine<QMPackage>(&xjob, &cape, qmpack,
+    QMAPEMachine<XQMPackage> machine = QMAPEMachine<XQMPackage>(&xjob, &cape, qmpack,
         _options, "options.qmape", _subthreads);
     machine.setLog(thread->getLogger());
     

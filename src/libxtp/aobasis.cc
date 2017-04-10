@@ -21,6 +21,7 @@
 
 
 namespace votca { namespace xtp {
+    namespace CTP = votca::ctp;
     
  AOBasis::~AOBasis() { 
         for (vector< AOShell* >::iterator it = _aoshells.begin(); it != _aoshells.end() ; it++ ) delete (*it); 
@@ -409,10 +410,10 @@ void AOBasis::addReorderShell( string& start, string& target,  string& shell_typ
 
 
 
-void AOBasis::AOBasisFill(BasisSet* bs , vector<QMAtom* > _atoms, int _fragbreak  ) {
+void AOBasis::AOBasisFill(BasisSet* bs , vector<CTP::QMAtom* > _atoms, int _fragbreak  ) {
     
-        vector< QMAtom* > :: iterator ait;
-        std::vector < QMAtom* > :: iterator atom;
+        vector< CTP::QMAtom* > :: iterator ait;
+        std::vector < CTP::QMAtom* > :: iterator atom;
 
        _AOBasisSize = 0;
        _is_stable = true; // _is_stable = true corresponds to gwa_basis%S_ev_stable = .false. 
@@ -463,10 +464,10 @@ void AOBasis::AOBasisFill(BasisSet* bs , vector<QMAtom* > _atoms, int _fragbreak
 
 
 
-void AOBasis::ECPFill(BasisSet* bs , vector<QMAtom* > _atoms  ) {
+void AOBasis::ECPFill(BasisSet* bs , vector<CTP::QMAtom* > _atoms  ) {
     
-        vector< QMAtom* > :: iterator ait;
-        std::vector < QMAtom* > :: iterator atom;
+        vector< CTP::QMAtom* > :: iterator ait;
+        std::vector < CTP::QMAtom* > :: iterator atom;
 
        _AOBasisSize = 0;
        _is_stable = true; // _is_stable = true corresponds to gwa_basis%S_ev_stable = .false. 
@@ -487,7 +488,7 @@ void AOBasis::ECPFill(BasisSet* bs , vector<QMAtom* > _atoms  ) {
           // cout << " Name " << name << endl;
           // and loop over all shells
           
-          int lmax;
+          int lmax=0;
           for (Element::ShellIterator its = element->firstShell(); its != element->lastShell(); its++) {
                Shell* shell = (*its);
                //cout << " Shell " << shell->getType() << endl;
@@ -496,7 +497,7 @@ void AOBasis::ECPFill(BasisSet* bs , vector<QMAtom* > _atoms  ) {
                //    cerr << "We have a contracted basis set!" << flush;
                //} else {
                string local_shell =    string( shell->getType(), 0, 1 );
-               int l;
+               int l=0;
                if ( local_shell == "S" ) l =0;
                if ( local_shell == "P" ) l =1;
                if ( local_shell == "D" ) l =2;

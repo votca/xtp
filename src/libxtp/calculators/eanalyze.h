@@ -1,21 +1,40 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #ifndef _VOTCA_XTP_EANALYZE_H
 #define _VOTCA_XTP_EANALYZE_H
 
-#include <votca/xtp/qmcalculator.h>
+//#include <votca/ctp/qmcalculator.h>
 #include <math.h>
 #include <votca/tools/tokenizer.h>
 
 
-namespace votca { namespace xtp {
+namespace votca { namespace ctp {
 
-class EAnalyze : public QMCalculator
+class XEAnalyze : public XQMCalculator
 {
 public:
 
-    EAnalyze() { };
-   ~EAnalyze() { };
+    XEAnalyze() { };
+   ~XEAnalyze() { };
 
-    std::string Identify() { return "eanalyze"; }
+    std::string Identify() { return "xeanalyze"; }
 
     void Initialize(Property *opt);
     bool EvaluateFrame(Topology *top);
@@ -49,7 +68,7 @@ private:
 
 
 
-void EAnalyze::Initialize( Property *opt ) {
+void XEAnalyze::Initialize( Property *opt ) {
     _skip_corr=false;
     _skip_sites=false;
     _skip_pairs=false;
@@ -116,7 +135,7 @@ void EAnalyze::Initialize( Property *opt ) {
 
 }
 
-bool EAnalyze::EvaluateFrame(Topology *top) {
+bool XEAnalyze::EvaluateFrame(Topology *top) {
     
     // Short-list segments according to pattern
     std::vector<Segment*>::iterator sit;
@@ -187,7 +206,7 @@ bool EAnalyze::EvaluateFrame(Topology *top) {
     return true;
 }
 
-void EAnalyze::SiteHist(Topology *top, int state) {
+void XEAnalyze::SiteHist(Topology *top, int state) {
 
     vector< double > Es;
     Es.reserve(_seg_shortlist.size());
@@ -299,7 +318,7 @@ void EAnalyze::SiteHist(Topology *top, int state) {
 }
 
 
-void EAnalyze::PairHist(Topology *top, int state) {
+void XEAnalyze::PairHist(Topology *top, int state) {
 
     QMNBList &nblist = top->NBList();
     QMNBList::iterator pit;
@@ -390,7 +409,7 @@ void EAnalyze::PairHist(Topology *top, int state) {
 }
 
 
-void EAnalyze::SiteCorr(Topology *top, int state) {
+void XEAnalyze::SiteCorr(Topology *top, int state) {
 
     double AVG = 0.0;
     double AVGESTATIC = 0.0;

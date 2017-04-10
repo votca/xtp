@@ -1,33 +1,47 @@
 /* 
- * File:   qmpackage.h
- * Author: andrienko
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
  *
- * Created on July 30, 2013, 8:25 PM
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
-#ifndef _XTP_QM_PACKAGE_H
-#define	_XTP_QM_PACKAGE_H
 
-#include <votca/xtp/logger.h>
+#ifndef _XTP_XQM_PACKAGE_H
+#define	_XTP_XQM_PACKAGE_H
+
+#include <votca/ctp/logger.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/tools/property.h>
-#include <votca/xtp/segment.h>
-#include <votca/xtp/qmpair.h>
-#include <votca/xtp/topology.h>
+#include <votca/ctp/segment.h>
+#include <votca/ctp/qmpair.h>
+#include <votca/ctp/topology.h>
 #include <boost/format.hpp>
 
 namespace votca { namespace xtp {
+    namespace CTP = votca::ctp;
  
 // ========================================================================== //
 // QMPackage base class for wrappers of TURBOMOLE, GAUSSIAN, etc              //
 // ========================================================================== //
     
-class QMPackage
+class XQMPackage
 {
 
 public:
 
-   QMPackage(){};
-   virtual ~QMPackage(){}; 
+   XQMPackage(){};
+   virtual ~XQMPackage(){}; 
 
    virtual std::string getPackageName() = 0;
 
@@ -35,10 +49,10 @@ public:
    virtual void Initialize( Property *options ) = 0;
    
    /// writes a coordinate file WITHOUT taking into account PBCs
-   virtual bool WriteInputFile( std::vector< Segment* > segments, Orbitals* orbitals = NULL) = 0;
+   virtual bool WriteInputFile( std::vector< CTP::Segment* > segments, Orbitals* orbitals = NULL) = 0;
 
    /// writes a coordinate file of a pair WITH PBCs and the orbital guess [if needed]
-   bool WriteInputFilePBC( QMPair* pair, Orbitals* orbitals = NULL);
+   bool WriteInputFilePBC( CTP::QMPair* pair, Orbitals* orbitals = NULL);
    
    virtual bool Run() = 0;
 
@@ -58,7 +72,7 @@ public:
 
    void setOrbitalsFileName( string orb_file ) { _orb_file_name = orb_file; }
    
-   void setLog( Logger* pLog ) { _pLog = pLog; }
+   void setLog( CTP::Logger* pLog ) { _pLog = pLog; }
       
    bool GuessRequested( ) { return _write_guess; }
    
@@ -108,36 +122,36 @@ protected:
     
     bool                                _output_Vxc;
     
-    Logger*                             _pLog;
+    CTP::Logger*                             _pLog;
        
 };
 
-inline bool QMPackage::WriteInputFilePBC( QMPair* pair, Orbitals* orbitals) {
+inline bool XQMPackage::WriteInputFilePBC( CTP::QMPair* pair, Orbitals* orbitals) {
     
     //std::cout << "IDFT writes input with PBC" << std::endl;
     
-    Segment* seg1 = pair->Seg1();
-    Segment* seg2 = pair->Seg2();
-    Segment* ghost = NULL;
+    CTP::Segment* seg1 = pair->Seg1();
+    CTP::Segment* seg2 = pair->Seg2();
+    CTP::Segment* ghost = NULL;
     
-    Topology* _top = seg1->getTopology();
+    CTP::Topology* _top = seg1->getTopology();
 
-    vec r1 = seg1->getPos();
-    vec r2 = seg2->getPos();
+    CTP::vec r1 = seg1->getPos();
+    CTP::vec r2 = seg2->getPos();
 
-    vec _R = _top->PbShortestConnect(r1, r2); // => _R points from 1 to 2
+    CTP::vec _R = _top->PbShortestConnect(r1, r2); // => _R points from 1 to 2
 
     // Check whether pair formed across periodic boundary
     if ( abs(r2 - r1 - _R) > 1e-8 ) {
-        ghost = new Segment(seg2);
+        ghost = new CTP::Segment(seg2);
         //ghost->TranslateBy(r1 - r2 + _R); // DO NOT USE THIS METHOD !
-	std::vector<Atom*>::iterator ait;
+	std::vector<CTP::Atom*>::iterator ait;
 	for (ait = ghost->Atoms().begin(); ait != ghost->Atoms().end(); ++ait) {
 		(*ait)->setQMPos((*ait)->getQMPos()+r1-r2+_R);
 	}
     }
  
-    std::vector< Segment* > segments;
+    std::vector< CTP::Segment* > segments;
     segments.push_back(seg1);
     
     if ( ghost ) {

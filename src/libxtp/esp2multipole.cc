@@ -20,16 +20,19 @@
 
 #include <votca/xtp/esp2multipole.h>
 #include <boost/format.hpp>
+#include <votca/xtp/orbitals.h>
 
 namespace votca { namespace xtp {
+    namespace CTP = votca::ctp;
 
-void Esp2multipole::Initialize(Property* options) {
+    void Esp2multipole::Initialize(Property* options) {
     string key = Identify();
     _use_ecp=false;
     _do_svd=false;
     
     _use_mulliken=false;
     _use_CHELPG=false;
+    _use_bulkESP=false;
     _use_GDMA=false;
     _use_CHELPG_SVD=false;
     _use_lowdin=false;     
@@ -49,15 +52,15 @@ void Esp2multipole::Initialize(Property* options) {
          else if(_method=="bulkESP")_use_bulkESP=true; 
          else if(_method=="GDMA") throw std::runtime_error("GDMA not implemented yet");
          else if(_method=="CHELPG_SVD") throw std::runtime_error("CHELPG_SVD not implemented yet"); 
-         else if(_method=="NBO") throw std::runtime_error("NBO not implemented yet."); //_use_NBO=true;
-         else  throw std::runtime_error("Method not recognized. Only Mulliken and CHELPG implemented");
+         else if(_method=="NBO") _use_NBO=true;
+         else  throw std::runtime_error("Method not recognized. Mulliken, Lowdin and CHELPG implemented");
          }
     else _use_CHELPG=true;
-    if (!_use_mulliken && !_use_bulkESP){
+    if (!_use_mulliken){
          _integrationmethod     = options->get(key + ".integrationmethod").as<string> ();
     }
     
-
+  
     if (!(_integrationmethod=="numeric" || _integrationmethod=="analytic")){
         std::runtime_error("Method not recognized. Only numeric and analytic available");
     }
@@ -133,14 +136,14 @@ void Esp2multipole::WritetoFile(string _output_file, string identifier){
      string tag="TOOL:"+Identify()+"_"+_state+"_"+_spin+boost::lexical_cast<string>(_state_no);
     if(_use_mps){
         QMMInterface Converter;
-        PolarSeg* result=Converter.Convert(_Atomlist);
+        CTP::PolarSeg* result=Converter.Convert(_Atomlist);
         
         result->WriteMPS(_output_file,tag);
         }
     else if(_use_pdb){
         FILE *out;
         Orbitals _orbitals;
-        std::vector< QMAtom* >::iterator at;
+        std::vector< CTP::QMAtom* >::iterator at;
          for (at=_Atomlist.begin();at<_Atomlist.end();++at){
             
             _orbitals.AddAtom(*(*at));
@@ -153,18 +156,18 @@ void Esp2multipole::WritetoFile(string _output_file, string identifier){
 
 
 
-void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
+void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
     int threads=1;
 #ifdef _OPENMP
             if ( _openmp_threads > 0 ) omp_set_num_threads(_openmp_threads); 
             threads=omp_get_max_threads();
 #endif
-   LOG(logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
-                
-        vector< QMAtom* > Atomlist =_orbitals.QMAtoms();
-        std::vector< QMAtom* >::iterator at;
+   LOG(CTP::logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
+
+        vector< CTP::QMAtom* > Atomlist =_orbitals.QMAtoms();
+        std::vector< CTP::QMAtom* >::iterator at;
         for (at=Atomlist.begin();at<Atomlist.end();++at){
-            QMAtom * atom=new QMAtom(*(*at));
+            CTP::QMAtom * atom=new CTP::QMAtom(*(*at));
             _Atomlist.push_back(atom);
         }
         ub::matrix<double> DMAT_tot;
@@ -176,11 +179,8 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         
         ub::matrix<double> _MO_Coefficients = *(_orbitals.getOrbitals()); // this is a copy?
         
-        
-        
         //basis.ReorderMOs(_orbitals.MOCoefficients(), _orbitals.getQMpackage(), "votca" );  
         basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "votca" );  
-        //cout<<"REORDERED MO coeffs:\n"<<_MO_Coefficients<<endl;
         bool _do_transition=false;
         if(_state=="transition"){
             _do_transition=true;
@@ -217,9 +217,7 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
 	}
         else throw std::runtime_error("State entry not recognized");
         
-        //cout<<DMAT_tot<<endl;
         
-                
         if (_use_mulliken) {
             Mulliken mulliken;
             mulliken.setUseECPs(_use_ecp);
@@ -252,11 +250,14 @@ void Esp2multipole::Extractingcharges( Orbitals& _orbitals ){
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;
-            //LOG(logDEBUG, _log) << "Initializing NBO" << flush;
+            //LOG(CTP::logDEBUG, _log) << "Initializing NBO" << flush;
             NBO nbo=NBO(_log);
             nbo.setUseECPs(_use_ecp);
             //nbo.LoadMatrices("", "");
             nbo.EvaluateNBO(_Atomlist, DMAT_tot, basis,bs);
+        }
+        else{
+            std::cout<<"Method not recognized."<<std::endl;
         }
 }       
 

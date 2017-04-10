@@ -1,4 +1,5 @@
-foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump xtp_overlap xtp_kmc_run)
+set(XTP_PROGS) 
+foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump)
   file(GLOB ${PROG}_SOURCES ${PROG}*.cc)
 
   if( ${PROG} STREQUAL "xtp_map" )
@@ -7,7 +8,7 @@ foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump xtp_overlap xtp_kmc
      add_executable(${PROG} ${${PROG}_SOURCES})
   endif()
 
-  target_link_libraries(${PROG} votca_xtp ${BOOST_LIBRARIES})
+  target_link_libraries(${PROG} votca_xtp)
   install(TARGETS ${PROG} RUNTIME DESTINATION bin)
 
   if (BUILD_MANPAGES)
@@ -19,5 +20,6 @@ foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump xtp_overlap xtp_kmc
      add_dependencies(manpages ${PROG}_manpage)
      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROG}.man DESTINATION ${MAN}/man1 RENAME ${PROG}.1)
   endif (BUILD_MANPAGES)
+  set(XTP_PROGS "${XTP_PROGS} ${CMAKE_CURRENT_BINARY_DIR}/${PROG}")
 endforeach(PROG)
-
+set(XTP_PROGS "${XTP_PROGS}" PARENT_SCOPE)

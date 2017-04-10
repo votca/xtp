@@ -4,13 +4,14 @@ Makefile
 libvotca*.pc
 libvotca*.a
 libvotca*.so
+libvotca*.so.*
 
 share/doc/html
 share/doc/Doxyfile
 
-src/libxtp/votca_config.h
-src/libxtp/hgversion.h
-include/votca/xtp/votca_xtp_config.h
+include/votca/xtp/votca_config.h
+src/libxtp/gitversion.h
+include/votca/xtp/votca_config.h
 
 src/tools/xtp_dump
 src/tools/xtp_parallel
@@ -51,5 +52,5 @@ CMakeFiles
 cmake_install.cmake
 CMakeCache.txt
 install_manifest.txt
-netbeans/xtp_app/dist/*
+/netbeans/xtp_app/dist/
 /netbeans/libxtp/dist/

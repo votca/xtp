@@ -18,13 +18,13 @@
  */
 
 
-#include <votca/xtp/votca_xtp_config.h>
+#include <votca/xtp/votca_config.h>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/algorithm/string.hpp>
-#include <votca/xtp/logger.h>
+#include <votca/ctp/logger.h>
 #include <votca/xtp/gdma.h>
 
 
@@ -33,7 +33,7 @@ using namespace votca::tools;
 namespace votca {
     namespace xtp {
         namespace ub = boost::numeric::ublas;
-
+        namespace CTP = votca::ctp; 
         // initialize the GDMA object, set parameters
         // for use of external code -> Rank
 
@@ -91,7 +91,7 @@ namespace votca {
 
         void GDMA::WriteInputFile() {
 
-            // LOG(logINFO, *_log) << "Running GDMA " << flush;
+            // LOG(CTP::logINFO, *_log) << "Running GDMA " << flush;
             // prepare a GDMA input file
             ofstream _gdma_inputfile;
             string _gdma_inputfile_name_full = _runFolder + "/gdma.in";
@@ -114,7 +114,7 @@ namespace votca {
             // check if the input file exists
             string fullInput = _runFolder + "/gdma.in";
             if (!boost::filesystem::exists(fullInput)) {
-                LOG(logINFO, *_log) << "GDMA input file has not been found!" << flush;
+                LOG(CTP::logINFO, *_log) << "GDMA input file has not been found!" << flush;
                 throw runtime_error(" GDMA cannot be run! ");
             }
 
@@ -127,15 +127,17 @@ namespace votca {
                     // use formchk
                     string _command;
                     _command = "cd " + _runFolder + "; formchk " + _chkFile + " system.fchk > /dev/null";
-                    std::system(_command.c_str());
+                    if (std::system(_command.c_str())){
+                      throw runtime_error("Command "+ _command + "failed");
+                    }
                     // check again for fchk
                     if (!boost::filesystem::exists(fullFChk)) {
-                        LOG(logINFO, *_log) << "Formatted Checkpoint file has not been found and cannot be created!" << flush;
+                        LOG(CTP::logINFO, *_log) << "Formatted Checkpoint file has not been found and cannot be created!" << flush;
                         throw runtime_error(" GDMA cannot be run! ");
 
                     }
                 } else {
-                    LOG(logINFO, *_log) << "Formatted Checkpoint file has not been found and cannot be created!" << flush;
+                    LOG(CTP::logINFO, *_log) << "Formatted Checkpoint file has not been found and cannot be created!" << flush;
                     throw runtime_error(" GDMA cannot be run! ");
                 }
             }
@@ -144,7 +146,9 @@ namespace votca {
             // now we seem ready to go
             string _command;
             _command = "cd " + _runFolder + "; " + _executable + " < gdma.in > " + _outFile;
-            std::system(_command.c_str());
+            if (std::system(_command.c_str())){
+              throw runtime_error("Command "+ _command + "failed");
+            }
 
         }
 
@@ -186,7 +190,7 @@ namespace votca {
                         double Q00 = boost::lexical_cast<double>(results.back());
                         Qs.push_back(Q00);
 
-                        // LOG(logINFO, *_log) << "New Q00 " << Q00 << flush;
+                        // LOG(CTP::logINFO, *_log) << "New Q00 " << Q00 << flush;
 
                     }
 
@@ -206,9 +210,9 @@ namespace votca {
                         Qs.push_back(Q11c);
                         Qs.push_back(Q11s);
                         /*
-                        LOG(logINFO, *_log) << "New Q10  " << Q10 << flush;
-                        LOG(logINFO, *_log) << "New Q11c " << Q11c << flush;
-                        LOG(logINFO, *_log) << "New Q11s " << Q11s << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q10  " << Q10 << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q11c " << Q11c << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q11s " << Q11s << flush;
                          */
 
                     }
@@ -238,11 +242,11 @@ namespace votca {
                         Qs.push_back(Q22s);
 
                         /* 
-                        LOG(logINFO, *_log) << "New Q20  " << Q20 << flush;
-                        LOG(logINFO, *_log) << "New Q21c " << Q21c << flush;
-                        LOG(logINFO, *_log) << "New Q21s " << Q21s << flush;
-                        LOG(logINFO, *_log) << "New Q22c " << Q22c << flush;
-                        LOG(logINFO, *_log) << "New Q22s " << Q22s << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q20  " << Q20 << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q21c " << Q21c << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q21s " << Q21s << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q22c " << Q22c << flush;
+                        LOG(CTP::logINFO, *_log) << "New Q22s " << Q22s << flush;
                         */
                         
                     }
@@ -256,7 +260,7 @@ namespace votca {
 
 
             } // gdma_output
-           // LOG(logINFO, *_log) << "Done with GDMA" << flush;
+           // LOG(CTP::logINFO, *_log) << "Done with GDMA" << flush;
 
 
         }

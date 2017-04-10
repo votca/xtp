@@ -1,20 +1,40 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #ifndef __QMAPEMACHINE__H
 #define	__QMAPEMACHINE__H
 
 
-#include <votca/xtp/votca_xtp_config.h>
-#include <votca/xtp/xjob.h>
-#include <votca/xtp/xinductor.h>
+#include <votca/xtp/votca_config.h>
+#include <votca/ctp/xjob.h>
+#include <votca/ctp/xinductor.h>
 #include <votca/xtp/gwbse.h>
 #include <votca/xtp/qmpackagefactory.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/espfit.h>
-#include <votca/xtp/ewaldnd.h>
+#include <votca/ctp/ewaldnd.h>
 
 
 
 namespace votca { namespace xtp {
 
+    namespace CTP = votca::ctp;
     
 // ========================================================================== //
 // QM-MM INTERFACE CLASS - CONVERTS BETWEEN QMATOMS <> POLAR OBJECTS          //
@@ -24,11 +44,11 @@ class QMAPEInterface
 {
 public:
     
-    QMAPEInterface() { _polar_table = POLAR_TABLE(); };
+    QMAPEInterface() { _polar_table = CTP::POLAR_TABLE(); };
    ~QMAPEInterface() {};
     
     // CONVERSION QM -> MM
-    APolarSite *Convert(QMAtom *atm, int id = -1) {
+    CTP::APolarSite *Convert(CTP::QMAtom *atm, int id = -1) {
         double A_to_nm = 0.1;
         vec pos = A_to_nm*vec(atm->x, atm->y, atm->z);
         double q = atm->charge;
@@ -43,7 +63,7 @@ public:
             pol = 1e-3;
         }
 
-        APolarSite *new_aps = new APolarSite(id, elem);
+        CTP::APolarSite *new_aps = new CTP::APolarSite(id, elem);
         new_aps->setRank(0);
         new_aps->setPos(pos);
         new_aps->setQ00(q,0); // <- charge state 0 <> 'neutral'
@@ -52,19 +72,19 @@ public:
         return new_aps;
     }
     
-    PolarSeg *Convert(std::vector<QMAtom*> &atms) {        
-        PolarSeg *new_pseg = new PolarSeg();
-        std::vector<QMAtom*>::iterator it;
+    CTP::PolarSeg *Convert(std::vector<CTP::QMAtom*> &atms) {        
+        CTP::PolarSeg *new_pseg = new CTP::PolarSeg();
+        std::vector<CTP::QMAtom*>::iterator it;
         for (it = atms.begin(); it < atms.end(); ++it) {
-            APolarSite *new_site = this->Convert(*it);
+            CTP::APolarSite *new_site = this->Convert(*it);
             new_pseg->push_back(new_site);
         }
         return new_pseg;
     }
     
     // TODO CONVERSION MM -> QM
-    QMAtom *Convert(APolarSite*);
-    std::vector<QMAtom*> Convert(PolarSeg*);
+    CTP::QMAtom *Convert(CTP::APolarSite*);
+    std::vector<CTP::QMAtom*> Convert(CTP::PolarSeg*);
     
 private:
     
@@ -87,9 +107,9 @@ public:
     QMAPEIter(int id) : _id(id), _hasdRdQ(false), _hasQM(false), _hasMM(false) { ; }
    ~QMAPEIter() { ; }
 
-   void ConvertPSitesToQMAtoms(std::vector< PolarSeg* > &, std::vector< QMAtom* > &);
-   void ConvertQMAtomsToPSites(std::vector< QMAtom* > &, std::vector< PolarSeg* > &);
-   void UpdatePosChrgFromQMAtoms(std::vector< QMAtom* > &, std::vector< PolarSeg* > &);   
+   void ConvertPSitesToQMAtoms(std::vector< CTP::PolarSeg* > &, std::vector< CTP::QMAtom* > &);
+   void ConvertQMAtomsToPSites(std::vector< CTP::QMAtom* > &, std::vector< CTP::PolarSeg* > &);
+   void UpdatePosChrgFromQMAtoms(std::vector< CTP::QMAtom* > &, std::vector< CTP::PolarSeg* > &);   
   
 
    void setdRdQ(double dR_RMS, double dQ_RMS, double dQ_SUM);
@@ -147,41 +167,41 @@ private:
 // QMMACHINE: REGISTER QMPACKAGE TYPE (E.G. GAUSSIAN) AT THE END OF .CC FILE  //
 // ========================================================================== //    
     
-template< class QMPackage >
+template< class XQMPackage >
 class QMAPEMachine
 {
     
 public:
 
-	QMAPEMachine(XJob *job, Ewald3DnD *cape, QMPackage *qmpack,
+	QMAPEMachine(CTP::XJob *job, CTP::Ewald3DnD *cape, XQMPackage *qmpack,
               Property *opt, std::string sfx, int nst);
    ~QMAPEMachine();
     
-    void Evaluate(XJob *job);
+    void Evaluate(CTP::XJob *job);
     //void WriteQMPackInputFile(std::string inputFile, QMPackage *qmpack, XJob *job);
     bool Iterate(std::string jobFolder, int iterCnt);
     bool EvaluateGWBSE(Orbitals &orb, std::string runFolder);
     QMAPEIter *CreateNewIter();
     bool hasConverged();
-    void GenerateQMAtomsFromPolarSegs(std::vector<PolarSeg*> &qm, std::vector<PolarSeg*> &mm, Orbitals &orb);
+    void GenerateQMAtomsFromPolarSegs(std::vector<CTP::PolarSeg*> &qm, std::vector<CTP::PolarSeg*> &mm, Orbitals &orb);
     bool AssertConvergence() { return _isConverged; }
     
-    void setLog(Logger *log) { _log = log; }
+    void setLog(CTP::Logger *log) { _log = log; }
     
 private:    
     
 
-    Logger *_log;
+    CTP::Logger *_log;
     int _subthreads;
 
     bool _run_ape;
     bool _run_dft;
     bool _run_gwbse;
 
-    XJob *_job;
-    XInductor *_xind;
-    QMPackage *_qmpack;
-    Ewald3DnD *_cape;
+    CTP::XJob *_job;
+    CTP::XInductor *_xind;
+    XQMPackage *_qmpack;
+    CTP::Ewald3DnD *_cape;
     
     Grid _grid_fg;
     Grid _grid_bg;

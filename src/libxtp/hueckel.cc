@@ -18,20 +18,20 @@
  */
 
 
-#include <votca/xtp/votca_xtp_config.h>
+#include <votca/xtp/votca_config.h>
 
 
 
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <votca/xtp/logger.h>
+#include <votca/ctp/logger.h>
 #include <votca/tools/linalg.h>
 
 using namespace std;
 using namespace votca::tools;
 
 namespace votca {
-    namespace xtp {
+    namespace ctp {
         namespace ub = boost::numeric::ublas;
         
         

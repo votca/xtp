@@ -27,10 +27,10 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
-#include <votca/xtp/qmatom.h>
-#include <votca/xtp/logger.h>
-#include <votca/xtp/apolarsite.h>
-#include <votca/xtp/polarseg.h>
+#include <votca/ctp/qmatom.h>
+#include <votca/ctp/logger.h>
+#include <votca/ctp/apolarsite.h>
+#include <votca/ctp/polarseg.h>
 /**
 * \brief Takes a list of atoms, and creates different grids for it. Right now only CHELPG grid.
 *
@@ -43,6 +43,7 @@ using namespace votca::tools;
 
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
+    namespace CTP = votca::ctp;
     
   class Grid{
     public:
@@ -71,11 +72,10 @@ namespace votca { namespace xtp {
         Grid& operator=(const Grid &obj);
         
         std::vector< ub::vector<double> > &getGrid() {return _gridpoints;}
-        std::vector< ub::vector<double> >* getPoints() {return &_gridpoints;}
-        std::vector< APolarSite* > &Sites() {return _gridsites;}
-        std::vector< APolarSite* > &AllSites() {return _all_gridsites;}
-        std::vector< APolarSite*>* getSites() {return &_gridsites;} 
-        PolarSeg* getSeg(){return _sites_seg;}
+		std::vector< ub::vector<double> >* getPoints() {return &_gridpoints;}
+        std::vector< CTP::APolarSite* > &Sites() {return _gridsites;}
+        std::vector< CTP::APolarSite*>* getSites() {return &_gridsites;} 
+        CTP::PolarSeg* getSeg(){return _sites_seg;}
 
         
         void setCutoffs(double cutoff, double cutoff_inside){_cutoff=cutoff;_cutoff_inside=cutoff_inside;}
@@ -83,8 +83,8 @@ namespace votca { namespace xtp {
         void setSpacing(double spacing){_gridspacing=spacing;}
         void setPadding(double padding){_padding=padding;}
         void setCubegrid(bool cubegrid){_cubegrid=cubegrid;_createpolarsites=true;}
-        bool getCubegrid(void){return(_cubegrid);}
-        void setAtomlist(std::vector< QMAtom* >* Atomlist){_atomlist=Atomlist;}
+		bool getCubegrid(void){return(_cubegrid);}     
+		void setAtomlist(std::vector< CTP::QMAtom* >* Atomlist){_atomlist=Atomlist;}
         int  getsize(){return _gridpoints.size();}
         
         int getTotalSize(){
@@ -128,10 +128,10 @@ namespace votca { namespace xtp {
   private:
      
       std::vector< ub::vector<double> > _gridpoints;
-      std::vector< APolarSite* > _gridsites;
-      std::vector< APolarSite* > _all_gridsites;
-      double _gridspacingX, _gridspacingY, _gridspacingZ;
-      
+      std::vector< CTP::APolarSite* > _gridsites;
+      std::vector< CTP::APolarSite* > _all_gridsites;
+	  double _gridspacingX, _gridspacingY, _gridspacingZ;      
+
       
       double _cutoff;
       double _gridspacing;
@@ -143,8 +143,8 @@ namespace votca { namespace xtp {
       bool   _cubegrid;
       double _padding;
       bool   _createpolarsites; 
-      PolarSeg *_sites_seg;
-      std::vector< QMAtom* >* _atomlist;
+      CTP::PolarSeg *_sites_seg;
+      std::vector< CTP::QMAtom* >* _atomlist;
       vec _lowerbound;
       int _xsteps, _ysteps, _zsteps;
       

@@ -1,30 +1,49 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include <votca/tools/propertyiomanipulator.h>
-#include <votca/xtp/job.h>
+#include <votca/ctp/job.h>
 #include <boost/format.hpp>
-#include <boost/algorithm/string.hpp> 
+#include <boost/algorithm/string.hpp>
 
 
 using boost::format;
 
-namespace votca { namespace xtp {    
-    
-    
-    
+namespace votca { namespace ctp {
+
+
+
 Job::Job(Property *prop)
   : _has_host(false), _has_time(false), _has_error(false),
     _has_output(false), _has_sqlcmd(false) {
-   
+
      // DEFINED BY USER
     _id = prop->get("id").as<int>();
     _tag = prop->get("tag").as<string>();
     _input = prop->get("input");
     _attemptsCount = 0;
-    
+
     if (prop->exists("status"))
         _status = ConvertStatus(prop->get("status").as<string>());
-    else 
+    else
         _status = AVAILABLE;
-    
+
     if (prop->exists("sqlcmd")) {
         _sqlcmd = prop->get("sqlcmd").as<string>();
         _has_sqlcmd = true;

@@ -18,11 +18,11 @@
  */
 
 // Overload of uBLAS prod function with MKL/GSL implementations
-#include <votca/xtp/votca_xtp_config.h>
+#include <votca/tools/linalg.h>
 
 #include <votca/xtp/threecenters.h>
 
-#include <votca/xtp/logger.h>
+#include <votca/ctp/logger.h>
 #include <votca/tools/linalg.h>
 
 

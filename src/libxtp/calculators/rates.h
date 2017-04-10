@@ -25,9 +25,8 @@
 #include <math.h>
 #include <cmath>
 #include <complex>
-//#include <boost/math/special_functions/gamma.hpp>
 
-namespace votca { namespace xtp {
+namespace votca { namespace ctp {
 
 class Rates : public PairCalculator2
 {
@@ -92,7 +91,7 @@ complex<double> ccgamma(complex<double> z,int OPT)
 {
     complex<double> g,z0,z1;
     double x0,q1,q2,x,y,th,th1,th2,g0,gr,gi,gr1,gi1;
-    double na,t,x1,y1,sr,si;
+    double na=0,t,x1=0,y1,sr,si;
     //int i,j,k;
     int j,k;
 

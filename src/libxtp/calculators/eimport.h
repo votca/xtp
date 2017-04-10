@@ -1,17 +1,36 @@
+/* 
+ *            Copyright 2009-2016 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #ifndef _VOTCA_XTP_EIMPORT_H
 #define _VOTCA_XTP_EIMPORT_H
 
-#include <votca/xtp/qmcalculator.h>
+//#include <votca/ctp/qmcalculator.h>
 
 
-namespace votca { namespace xtp {
+namespace votca { namespace ctp {
 
-class EImport : public QMCalculator
+class XEImport : public XQMCalculator
 {
 public:
 
-    EImport() {};
-   ~EImport() {};
+    XEImport() {};
+   ~XEImport() {};
 
    std::string Identify() { return "eimport"; }
 
@@ -42,7 +61,7 @@ private:
 };
 
 
-void EImport::Initialize(Property *options) {
+void XEImport::Initialize(Property *options) {
     _stochastic     = false;
 
     
@@ -133,7 +152,7 @@ void EImport::Initialize(Property *options) {
     }
 }
 
-double EImport::SphereIntersection(double radius, double distance){
+double XEImport::SphereIntersection(double radius, double distance){
     double overlapratio;
     if(distance <= 2*radius){
         overlapratio = 1./16. * (4.*radius+distance) * pow((2.*radius-distance),2.) / pow(radius,3.);
@@ -148,7 +167,7 @@ double EImport::SphereIntersection(double radius, double distance){
     return overlapratio;
 }
 
-double EImport::Correlation(double distance, std::vector<double> distances, std::vector<double>bcoeff, double sigma){
+double XEImport::Correlation(double distance, std::vector<double> distances, std::vector<double>bcoeff, double sigma){
         double correlation = 0;
         for(unsigned j=0; j<bcoeff.size(); j++){
             correlation += SphereIntersection(distances[j+1]/2.,distance) * bcoeff[j] ;
@@ -158,7 +177,7 @@ double EImport::Correlation(double distance, std::vector<double> distances, std:
         return correlation;
 }
 
-void EImport::StochasticEnergies(Topology *top, std::string &filename, int state) {
+void XEImport::StochasticEnergies(Topology *top, std::string &filename, int state) {
     double sigma = 1;
     double avgestatic = 0;
     if(state == 1){
@@ -449,7 +468,7 @@ void EImport::StochasticEnergies(Topology *top, std::string &filename, int state
     std::cout << "done." << std::endl;
 }
 
-bool EImport::EvaluateFrame(Topology *top) {
+bool XEImport::EvaluateFrame(Topology *top) {
 
     if (_reset == true) {
 
