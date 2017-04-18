@@ -27,7 +27,7 @@
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/grid_containers.h>
 #include <votca/xtp/grid.h>
-
+#include <votca/ctp/qmatom.h>
 
 
 namespace votca { namespace xtp {
@@ -38,55 +38,79 @@ namespace votca { namespace xtp {
 
         class NumericalIntegration {
         public: 
-            
-            NumericalIntegration():density_set(false) {};
+            NumericalIntegration() : density_set(false) {
+            };
 
-            void GridSetup(std::string type, BasisSet* bs , std::vector<CTP::QMAtom* > _atoms  );
+            void GridSetup(std::string type, BasisSet* bs, std::vector<ctp::QMAtom* > _atoms, AOBasis* basis);
 
-            double StupidIntegrate( std::vector<double>& _data );
-            
-            void getGridpoints( ub::matrix<double>& _gridpoints );
-            
-            ub::matrix<double> numAOoverlap ( AOBasis* basis  );
-            double IntegrateDensity(ub::matrix<double>& _density_matrix, AOBasis* basis);
-            double IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis);
+            //void FindsignificantAtoms2(AOBasis* basis);
+            //used for test purposes
+            double StupidIntegrate(std::vector<double>& _data);
+
+            std::vector<vec const *> getGridpoints();
+
+
+
+            double IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
-            double IntegratePotential(ub::vector<double> rvector);
-            double SetGridToCharges(std::vector< CTP::QMAtom* > & _local_atomlist);
-            double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
-            void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, double boxLen[3], ub::vector<double>& _ESPatGrid);
-            double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
-			double CalcDipole_w_PBC(ub::vector<double> rvector, double boxLen[3]);
+            double IntegratePotential(const vec& rvector);
+
+            double IntegrateField(const std::vector<double>& externalfield);
+
+            double IntegratePotential_w_PBC(vec rvector, vec boxLen);
+            void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, vec boxLen, ub::vector<double>& _ESPatGrid);
+            double IntegrateEnergy_w_PBC(vec rvector, vec boxLen);
+            double CalcDipole_w_PBC(vec rvector, vec boxLen);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< CTP::QMAtom* > & _local_atomlist, bool ECP, int nK);
-            void PrepKspaceDensity_gromacs_like(double boxLen[3], double ext_alpha, std::vector< CTP::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
+            void PrepKspaceDensity(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
+            void PrepKspaceDensity_gromacs_like(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             void FreeKspace(void);
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
-            void FillMadelungGrid(double boxLen[3], int natomsonside);
-            
+            void FillMadelungGrid(vec boxLen, int natomsonside);
+
             double getExactExchange(const std::string _functional);
-            ub::matrix<double> IntegrateVXC ( ub::matrix<double>& _density_matrix, AOBasis* basis  );
-            ub::matrix<double> IntegrateVXC_block ( ub::matrix<double>& _density_matrix, AOBasis* basis   );
-            ub::matrix<double> IntegrateVXC_Atomblock ( ub::matrix<double>& _density_matrix, AOBasis* basis,const std::string _functional);
-            
+            // in principle a symmetric matrix would be nicer but we calculate whole vxc matrix because of numerics and symmetrize explicitly 
+            ub::matrix<double> IntegrateVXC_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis, const std::string _functional);
+            //ub::matrix<double> IntegrateVXC_Atomblock2 (const ub::matrix<double>& _density_matrix, AOBasis* basis,const std::string _functional);
+            ub::matrix<double> IntegrateExternalPotential_Atomblock(AOBasis* basis, std::vector<double> Potentialvalues);
+
+
             // this gives int (e_xc-V_xc)*rho d3r
-            double& getTotEcontribution(){return EXC;}
-            //ub::matrix<double> StupidIntegrateVXC ( ub::matrix<double>& _density_matrix, AOBasis* basis  );
+
+            double getTotEcontribution() {
+                return EXC;
+            }
+          
             
         private:
             
            
             
-            std::vector<double> SSWpartition( int ngrid, int igrid, int ncenters ,  std::vector< std::vector<double> >& rq, double ass );
-            std::vector<double> Rij;
-            ub::matrix<double> Rij_mat;
-            int _totalgridsize;
-            double erf1c(double x);
+            
+           void FindsignificantAtoms(AOBasis* basis);
+           double erf1c(double x);
             double erfcc(double x);
+            std::vector<double> SSWpartition(int igrid, int ncenters ,  std::vector< std::vector<double> >& rq );
+            
+            
+            std::vector<double> Rij;
+
+            double  _totalgridsize;
             std::vector< std::vector< GridContainers::integration_grid > > _grid;
             double EXC;
             bool density_set;
-            
+            std::vector< std::vector< std::vector<int> > > _significant_atoms;
+            std::vector < int > _startIdx;
+            std::vector < int > _blocksize;
+            typedef std::vector< AOShell* >::iterator AOShellIterator;
+            std::vector< std::vector< AOShellIterator > > _atomshells;
+            std::vector< AOShellIterator > _singleatom;
+            std::vector< std::vector< ub::matrix<double> > >dmat_vector;
+            std::vector< std::vector< std::vector< ub::matrix<double> > > > xcmat_vector_thread;
+            std::vector< std::vector< ub::matrix<double> > > xcmat_vector;
+           //vector< vector<int> > _atomsforshells;
+        
+                    
         public:
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
             //std::complex<double>**** eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
@@ -101,7 +125,6 @@ namespace votca { namespace xtp {
             double E_rspace;
             double E_kspace;
             double E_erfc;
-
         };
 
     }}

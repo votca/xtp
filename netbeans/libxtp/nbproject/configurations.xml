@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="95">
+<configurationDescriptor version="97">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <logicalFolder name="f1" displayName="Calculators" projectFiles="true">
       <logicalFolder name="f2" displayName="Calculators" projectFiles="true">
@@ -126,6 +126,7 @@
         <itemPath>../../src/libxtp/aomatrices/aomatrix.cc</itemPath>
         <itemPath>../../src/libxtp/aomatrices/aomomentum.cc</itemPath>
         <itemPath>../../src/libxtp/aomatrices/aooverlap.cc</itemPath>
+        <itemPath>../../src/libxtp/aomatrices/aoquadrupole_potential.cc</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="Applications" projectFiles="true">
         <itemPath>../../src/libxtp/jobapplication.cc</itemPath>
@@ -254,11 +255,6 @@
       <item path="../../include/votca/xtp/aoshell.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/basisset.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="../../include/votca/xtp/bsecoupling.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/calculatorfactory.h"
             ex="false"
@@ -452,6 +448,11 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/aomatrices/aooverlap.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/aomatrices/aoquadrupole_potential.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -820,11 +821,6 @@
       </item>
       <item path="../../include/votca/xtp/basisset.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/bsecoupling.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../include/votca/xtp/calculatorfactory.h"
             ex="false"
             tool="3"
@@ -1017,6 +1013,11 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/aomatrices/aooverlap.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/aomatrices/aoquadrupole_potential.cc"
             ex="false"
             tool="1"
             flavor2="0">

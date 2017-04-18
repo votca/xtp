@@ -45,6 +45,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/2a3bfc3d/aomatrix.o \
 	${OBJECTDIR}/_ext/2a3bfc3d/aomomentum.o \
 	${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o \
+	${OBJECTDIR}/_ext/2a3bfc3d/aoquadrupole_potential.o \
 	${OBJECTDIR}/_ext/1ce08c7a/aoshell.o \
 	${OBJECTDIR}/_ext/1ce08c7a/bsecoupling.o \
 	${OBJECTDIR}/_ext/1ce08c7a/bulkesp.o \
@@ -173,6 +174,11 @@ ${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o: ../../src/libxtp/aomatrices/aooverlap.cc
 	${MKDIR} -p ${OBJECTDIR}/_ext/2a3bfc3d
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -I../../../ctp/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o ../../src/libxtp/aomatrices/aooverlap.cc
+
+${OBJECTDIR}/_ext/2a3bfc3d/aoquadrupole_potential.o: ../../src/libxtp/aomatrices/aoquadrupole_potential.cc 
+	${MKDIR} -p ${OBJECTDIR}/_ext/2a3bfc3d
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -I../../../ctp/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/2a3bfc3d/aoquadrupole_potential.o ../../src/libxtp/aomatrices/aoquadrupole_potential.cc
 
 ${OBJECTDIR}/_ext/1ce08c7a/aoshell.o: ../../src/libxtp/aoshell.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a

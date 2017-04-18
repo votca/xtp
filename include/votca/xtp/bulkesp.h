@@ -35,20 +35,20 @@ class Bulkesp: public Espfit{
 public:
 
     struct Bond{
-        CTP::QMAtom* a;
-        CTP::QMAtom* b;
+        ctp::QMAtom* a;
+        ctp::QMAtom* b;
         tools::vec ba;
         int a_indx, b_indx;
     };
     
     struct Molecule{
-        std::vector< CTP::QMAtom* > atoms;
+        std::vector< ctp::QMAtom* > atoms;
         std::vector< int > atomIndeces;
     };
     
     
 public:
-    Bulkesp(CTP::Logger *log):Espfit(log){
+    Bulkesp(ctp::Logger *log):Espfit(log){
         periodic=false;
         boxLen[0]=0;
         boxLen[1]=0;
@@ -69,17 +69,17 @@ public:
         boxLen[2]=b[2];
     }
     
-    std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< CTP::QMAtom* > a, double scale);
+    std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< ctp::QMAtom* > a, double scale);
     
-    ub::vector<double> ComputeESP(std::vector< CTP::QMAtom* > & _global_atomlist,
-            std::vector< CTP::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
+    ub::vector<double> ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
+            std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
             ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge);
     
-    void Evaluate(std::vector< CTP::QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
+    void Evaluate(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
             AOBasis &_basis,BasisSet &bs,string gridsize, double maxBondScale,
             std::string _state, std::string _spin, int _state_no);
     
-    void FillElement2NBF(std::vector< CTP::QMAtom* >& _atomlist, BasisSet &bs);
+    void FillElement2NBF(std::vector< ctp::QMAtom* >& _atomlist, BasisSet &bs);
     
 private:
 
@@ -90,7 +90,7 @@ private:
     double boxLen[3];                       //dimensions of the box, assume cuboid shape
     std::ofstream* dipolesLog;				//file to log dipoles of all the molecules
     
-    std::map<CTP::QMAtom*,int> MapAtom2MOCoefIndex(std::vector< CTP::QMAtom* >& _atomlist);
+    std::map<ctp::QMAtom*,int> MapAtom2MOCoefIndex(std::vector< ctp::QMAtom* >& _atomlist);
     
     ub::matrix<double> BuildDenMat(Orbitals &_orb, std::string _state, std::string _spin, int _state_no);
     

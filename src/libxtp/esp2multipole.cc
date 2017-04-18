@@ -23,9 +23,8 @@
 #include <votca/xtp/orbitals.h>
 
 namespace votca { namespace xtp {
-    namespace CTP = votca::ctp;
 
-    void Esp2multipole::Initialize(Property* options) {
+void Esp2multipole::Initialize(Property* options) {
     string key = Identify();
     _use_ecp=false;
     _do_svd=false;
@@ -136,14 +135,14 @@ void Esp2multipole::WritetoFile(string _output_file, string identifier){
      string tag="TOOL:"+Identify()+"_"+_state+"_"+_spin+boost::lexical_cast<string>(_state_no);
     if(_use_mps){
         QMMInterface Converter;
-        CTP::PolarSeg* result=Converter.Convert(_Atomlist);
+        ctp::PolarSeg* result=Converter.Convert(_Atomlist);
         
         result->WriteMPS(_output_file,tag);
         }
     else if(_use_pdb){
         FILE *out;
         Orbitals _orbitals;
-        std::vector< CTP::QMAtom* >::iterator at;
+        std::vector< ctp::QMAtom* >::iterator at;
          for (at=_Atomlist.begin();at<_Atomlist.end();++at){
             
             _orbitals.AddAtom(*(*at));
@@ -162,12 +161,12 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
             if ( _openmp_threads > 0 ) omp_set_num_threads(_openmp_threads); 
             threads=omp_get_max_threads();
 #endif
-   LOG(CTP::logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
+   LOG(ctp::logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
 
-        vector< CTP::QMAtom* > Atomlist =_orbitals.QMAtoms();
-        std::vector< CTP::QMAtom* >::iterator at;
+        vector< ctp::QMAtom* > Atomlist =_orbitals.QMAtoms();
+        std::vector< ctp::QMAtom* >::iterator at;
         for (at=Atomlist.begin();at<Atomlist.end();++at){
-            CTP::QMAtom * atom=new CTP::QMAtom(*(*at));
+            ctp::QMAtom * atom=new ctp::QMAtom(*(*at));
             _Atomlist.push_back(atom);
         }
         ub::matrix<double> DMAT_tot;
@@ -180,7 +179,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
         ub::matrix<double> _MO_Coefficients = *(_orbitals.getOrbitals()); // this is a copy?
         
         //basis.ReorderMOs(_orbitals.MOCoefficients(), _orbitals.getQMpackage(), "votca" );  
-        basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "votca" );  
+        basis.ReorderMOs(_MO_Coefficients, _orbitals.getQMpackage(), "xtp" );  
         bool _do_transition=false;
         if(_state=="transition"){
             _do_transition=true;
@@ -198,7 +197,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
             
         
             //ub::matrix<double> &DMATGS=_orbitals.DensityMatrixGroundState(_orbitals.MOCoefficients());
-            ub::matrix<double> &DMATGS=_orbitals.DensityMatrixGroundState(_MO_Coefficients);
+            ub::matrix<double> DMATGS=_orbitals.DensityMatrixGroundState(_MO_Coefficients);
             DMAT_tot=DMATGS;
             if ( _state_no > 0 && _state=="excited"){
                 std::vector<ub::matrix<double> > DMAT;
@@ -250,7 +249,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;
-            //LOG(CTP::logDEBUG, _log) << "Initializing NBO" << flush;
+            //LOG(logDEBUG, _log) << "Initializing NBO" << flush;
             NBO nbo=NBO(_log);
             nbo.setUseECPs(_use_ecp);
             //nbo.LoadMatrices("", "");
