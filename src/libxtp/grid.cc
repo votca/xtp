@@ -499,18 +499,18 @@ void Grid::setupgrid(){
                         else if ( distance2<pow(_cutoff,2))  _is_valid = true;
                     }
                     if (_is_valid || _cubegrid){
-                        temppos(0)=conv::ang2nm*x; //Angstroms
+                        temppos(0)=conv::ang2nm*x; //nm
                         temppos(1)=conv::ang2nm*y;        
                         temppos(2)=conv::ang2nm*z;   
                         if(_createpolarsites){
                             // APolarSite are in nm so convert
-                            vec temp=vec(temppos); //Angstroms
+                            vec temp=vec(temppos); //nm
                             string name="H";
                             CTP::APolarSite *apolarsite= new CTP::APolarSite(0,name);
                             apolarsite->setRank(0);        
                             apolarsite->setQ00(0,0); // <- charge state 0 <> 'neutral'
                             apolarsite->setIsoP(0.0);
-                            apolarsite->setPos(temp); //Angstroms
+                            apolarsite->setPos(temp); //nm
                             if(_is_valid){
                                 _gridsites.push_back(apolarsite);
                                 _gridpoints.push_back(temppos);
@@ -533,12 +533,12 @@ void Grid::setup2D(std::vector< ub::vector<double> > points){
     _gridpoints=points;
     
     if (_sites_seg != NULL) delete _sites_seg;
-    _sites_seg = new PolarSeg(0, _gridsites);
+    _sites_seg = new CTP::PolarSeg(0, _gridsites);
 }
 
 
 
-void Grid::writeIrregularGrid(std::string _filename, std::vector< QMAtom* > &_atoms, bool _ECP){
+void Grid::writeIrregularGrid(std::string _filename, std::vector< CTP::QMAtom* > &_atoms, bool _ECP){
     
     if(_gridsites.size()!=_gridpoints.size()){
         cout<<" Grid::writeIrregularGrid(): number of _gridpoints doesn't match number of _gridsites" << endl; 
@@ -560,8 +560,8 @@ void Grid::writeIrregularGrid(std::string _filename, std::vector< QMAtom* > &_at
     //atom type and coordinates in bohr and core charge
     Elements _elements;
     double nucQ;
-    for (std::vector< QMAtom* >::iterator i=_atoms.begin(); i!=_atoms.end(); ++i){
-        QMAtom* a = (*i);
+    for (std::vector< CTP::QMAtom* >::iterator i=_atoms.begin(); i!=_atoms.end(); ++i){
+        CTP::QMAtom* a = (*i);
         if (_ECP) {
             nucQ = _elements.getNucCrgECP(a->type);
         } else {

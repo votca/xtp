@@ -36,18 +36,18 @@ using namespace votca::tools;
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
     
-    std::vector<Bulkesp::Molecule> Bulkesp::BreakIntoMolecules(std::vector< QMAtom* > _atoms, double scale){
+    std::vector<Bulkesp::Molecule> Bulkesp::BreakIntoMolecules(std::vector< CTP::QMAtom* > _atoms, double scale){
         
         std::vector<Bulkesp::Molecule> mols;
         std::list<Bulkesp::Bond> bonds;
         
         Elements _elements;
         
-        LOG(logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
+        LOG(CTP::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
         
         //find all the bonds;
-        for (vector<QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i){
-            for(vector<QMAtom*>::iterator j = i+1; j != _atoms.end(); ++j){
+        for (vector<CTP::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i){
+            for(vector<CTP::QMAtom*>::iterator j = i+1; j != _atoms.end(); ++j){
                 double dif[3];
                 dif[0] = ((*i)->x - (*j)->x);
                 dif[1] = ((*i)->y - (*j)->y);
@@ -76,15 +76,15 @@ namespace votca { namespace xtp {
                 }
             }
         }
-        LOG(logDEBUG, *_log) << " BreakIntoMolecules(): "<< bonds.size() <<" bonds found.\n" << flush;
+        LOG(CTP::logDEBUG, *_log) << " BreakIntoMolecules(): "<< bonds.size() <<" bonds found.\n" << flush;
 //        for (std::list<Bond>::iterator b = bonds.begin(); b != bonds.end(); ++b){
-//            LOG(logDEBUG, *_log) << b->a_indx <<" - "<<b->b_indx<<"\t"<<b->ba<<"\t"<<sqrt(b->ba*b->ba)<< flush;
+//            LOG(CTP::logDEBUG, *_log) << b->a_indx <<" - "<<b->b_indx<<"\t"<<b->ba<<"\t"<<sqrt(b->ba*b->ba)<< flush;
 //        }
   
         
         //now add all the atoms that have no bonds as a separate molecule
         Bulkesp::Molecule leftover;
-        for (vector<QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i){
+        for (vector<CTP::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i){
             bool found = false; //does this atom have bonds?
             for (std::list<Bond>::iterator b = bonds.begin(); b != bonds.end(); ++b){
                 if(b->a==*i || b->b==*i){
@@ -98,7 +98,7 @@ namespace votca { namespace xtp {
         }
         if(leftover.atoms.size()>0){
             mols.push_back(leftover);
-            LOG(logDEBUG, *_log) << " BreakIntoMolecules(): put "<< leftover.atoms.size() 
+            LOG(CTP::logDEBUG, *_log) << " BreakIntoMolecules(): put "<< leftover.atoms.size() 
                     << " Unbonded atoms into molecule "<< mols.size() -1 <<";\t" << bonds.size() <<" bonds left.\n" << flush;
         }
         
@@ -162,12 +162,12 @@ namespace votca { namespace xtp {
             
             //we are done with this molecule, save it to mols
             mols.push_back(m);
-            LOG(logDEBUG, *_log) << " BreakIntoMolecules(): put "<< m.atoms.size() 
+            LOG(CTP::logDEBUG, *_log) << " BreakIntoMolecules(): put "<< m.atoms.size() 
                     << " atoms into molecule "<< mols.size() -1 <<";\t" << bonds.size() <<" bonds left.\n" << flush;
         }
         
         if(periodic)
-            LOG(logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped.\n" << flush;
+            LOG(CTP::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped.\n" << flush;
         
         return(mols);
     }
@@ -180,7 +180,7 @@ namespace votca { namespace xtp {
         bool _do_transition=false;
         
         if(_state!="ground")
-            LOG(logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
+            LOG(CTP::logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
                     <<"It will likely not work correctly, as BSE Singlet and Triplet Coefficients are simply copied from the global orbital object.\n"  << flush; 
         
         if(_state=="transition"){
@@ -239,8 +239,8 @@ namespace votca { namespace xtp {
      * @param _grid
      * @return 
      */
-    ub::vector<double> Bulkesp::ComputeESP(std::vector< QMAtom* > & _global_atomlist,
-            std::vector< QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
+    ub::vector<double> Bulkesp::ComputeESP(std::vector< CTP::QMAtom* > & _global_atomlist,
+            std::vector< CTP::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
             ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge){
         
 
@@ -250,49 +250,126 @@ namespace votca { namespace xtp {
 
         //numway.GridSetup(gridsize,&bs,_global_atomlist);
         numway.GridSetup(gridsize,&bs,_local_atomlist);
-        LOG(logDEBUG, *_log) << TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize "<<gridsize  << flush; 
+        LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize "<<gridsize  << flush; 
         //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
         //density integration should be accurate enough without making it explicitly periodic
         double N=numway.IntegrateDensity_Molecule(_global_dmat,&_global_basis,_local_atomIndeces);
-        LOG(logDEBUG, *_log) << TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is "<< N << flush; 
+        LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is "<< N << flush; 
 
 
         netcharge=getNetcharge( _local_atomlist,N ,false);   //do not round, we expect total charge to be non-int, as molecules can transfer some between themselves
 
-        LOG(logDEBUG, *_log) << TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
+        LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;     
         //boost::progress_display show_progress( _grid.getsize() );
         
+        
+        
+        
+#define MADELUNG_TEST
+#ifdef MADELUNG_TEST
+        
+        
+        double exactMadelung=1.74756459463318;
+        ofstream myfile ("Energy_kmax8.dat");
+              
+        int natomsonside=2;
+        double numK=8;
+        std::vector< CTP::QMAtom* > fake_atom_list;
+        fake_atom_list.resize(0);
+        std::vector< ub::vector<double> > points;
+        points.push_back(ub::zero_vector<double>(3)); //0,0,0 in nm
+        points[0](0)=5.6402*0.5*0.1;
+        points[0](1)=5.6402*0.5*0.1;
+        points[0](2)=5.6402*0.5*0.1;
+        Grid eval_grid(points); //in nm
+        _ESPatGrid = ub::zero_vector<double>(eval_grid.getsize());
+        
+              
+        for (double alpha=0.01; alpha<4; alpha+=0.01)
+        {
+                double a = 5.6402 * 0.5 * natomsonside * tools::conv::ang2bohr;
+                //a*= 1.14;
+                cout << "a = " << a << endl;
+                cout << "nearest neighbour distance = " << a / natomsonside << endl;
+                double BL[3];
+                BL[0] = a;
+                BL[1] = a;
+                BL[2] = a;
+
+                numway.FillMadelungGrid(BL, natomsonside);
+//                numway.PrepKspaceDensity_gromacs_like(BL, alpha, fake_atom_list, _ECP, eval_grid, numK);                
+//                numway.IntegratePotential_w_PBC_gromacs_like(eval_grid, BL, _ESPatGrid);
+                
+                numway.PrepKspaceDensity(BL, alpha, fake_atom_list, _ECP, numK);
+                for ( int i = 0 ; i < eval_grid.getsize(); i++){
+                    _ESPatGrid(i)=numway.IntegratePotential_w_PBC(eval_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
+                }
+
+                cout << "Madelung constant is: " << _ESPatGrid(0)*(a / natomsonside) << "\n";
+                myfile << natomsonside << " \t" << numway.numK[0] << " \t" << numway.alpha << " \t"
+                        //<<std::abs(_ESPatGrid(0)*(a/natomsonside)) - exactMadelung<<" \t"
+                        << std::abs(_ESPatGrid(0)*(a / natomsonside)) << " \t"
+                        << numway.E_rspace*(a / natomsonside) << " \t" << numway.E_kspace*(a / natomsonside) << " \t" << numway.E_erfc*(a / natomsonside)
+                        << endl;
+                numway.FreeKspace();
+        }
+        exit(0);
+        
+#endif        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if(periodic){
-            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
+            LOG(CTP::logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions."<< endl;
             double BL[3];
             BL[0]=boxLen[0]*tools::conv::ang2bohr;  //bohr
             BL[1]=boxLen[1]*tools::conv::ang2bohr;  //bohr
             BL[2]=boxLen[2]*tools::conv::ang2bohr;  //bohr
+            
+            numK=16;
 
+            
+            numway.PrepKspaceDensity_gromacs_like(BL, 0.5, _local_atomlist, _ECP, _grid, numK);
+            numway.IntegratePotential_w_PBC_gromacs_like(_grid, BL, _ESPatGrid);
+        
+            
+            /*
             numway.PrepKspaceDensity(BL, 0.5, _local_atomlist, _ECP);
-            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
+            LOG(CTP::logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
             #pragma omp parallel for
             for ( int i = 0 ; i < _grid.getsize(); i++){
                 _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
                 //++show_progress;
             }
-			LOG(logDEBUG, *_log) << TimeStamp() << " Electron and Nuclear contributions calculated"  << flush; 
-			
-			//calculate and record the molecular dipole moments
-			ub::vector<double> dipPos(3);
-			QMAtom* atom=*(_local_atomlist.begin());
-			dipPos(0)=atom->x * tools::conv::ang2bohr;
-			dipPos(1)=atom->y * tools::conv::ang2bohr;
-			dipPos(2)=atom->z * tools::conv::ang2bohr;
-			double dipole = numway.CalcDipole_w_PBC(dipPos, BL); //in bohr * e
-			LOG(logDEBUG, *_log) << TimeStamp() << " Molecular dipole: "<<  dipole/0.393430307 << "Debye" << flush;
-			*dipolesLog << dipole/0.393430307 << endl;
-			
-			numway.FreeKspace();
+            */
+            
+            
+            LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Electron and Nuclear contributions calculated"  << flush; 
+            //exit(0);
+
+            //calculate and record the molecular dipole moments
+            ub::vector<double> dipPos(3);
+            CTP::QMAtom* atom=*(_local_atomlist.begin());
+            dipPos(0)=atom->x * tools::conv::ang2bohr;
+            dipPos(1)=atom->y * tools::conv::ang2bohr;
+            dipPos(2)=atom->z * tools::conv::ang2bohr;
+            double dipole = numway.CalcDipole_w_PBC(dipPos, BL); //in bohr * e
+            LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Molecular dipole: "<<  dipole/0.393430307 << "Debye" << flush;
+            *dipolesLog << dipole/0.393430307 << endl;
+
+            //numway.FreeKspace();
 			
         }
         else{
-            LOG(logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
+            LOG(CTP::logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions."<< endl;
             
             //numway.SetGridToCharges(_local_atomlist);
             #pragma omp parallel for
@@ -301,12 +378,12 @@ namespace votca { namespace xtp {
                 //++show_progress;
             }
             
-            LOG(logDEBUG, *_log) << TimeStamp() << " Electron contribution calculated"  << flush; 
+            LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Electron contribution calculated"  << flush; 
         
             // Calculating nuclear potential at gridpoints
             ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _local_atomlist,  _grid );
             _ESPatGrid += _NucPatGrid;
-            LOG(logDEBUG, *_log) << TimeStamp() << " Nuclear contribution calculated"  << flush; 
+            LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() << " Nuclear contribution calculated"  << flush; 
         }
         
 
@@ -316,11 +393,11 @@ namespace votca { namespace xtp {
     
     
     
-    void Bulkesp::FillElement2NBF(std::vector< QMAtom* >& _atomlist, BasisSet &bs){
+    void Bulkesp::FillElement2NBF(std::vector< CTP::QMAtom* >& _atomlist, BasisSet &bs){
         
         //Find list of elements
         _elements.clear();
-        for (std::vector< QMAtom* >::iterator ait = _atomlist.begin(); ait < _atomlist.end(); ait++) {
+        for (std::vector< CTP::QMAtom* >::iterator ait = _atomlist.begin(); ait < _atomlist.end(); ait++) {
 
             std::string element_name = (*ait)->type;
             list<std::string>::iterator ite;
@@ -349,11 +426,11 @@ namespace votca { namespace xtp {
     
     //Find indeces of MO coefficients of the first shell of each atom,
     //assuming that the order of _atomlist is the same as that of the _MO_Coefficients.
-    std::map<QMAtom*,int> Bulkesp::MapAtom2MOCoefIndex(std::vector< QMAtom* >& _atomlist){
-            std::map<QMAtom*,int> ret;
+    std::map<CTP::QMAtom*,int> Bulkesp::MapAtom2MOCoefIndex(std::vector< CTP::QMAtom* >& _atomlist){
+            std::map<CTP::QMAtom*,int> ret;
             int count=0;
             //loop over all atoms in system
-            for(vector<QMAtom*>::iterator i = _atomlist.begin(); i != _atomlist.end(); ++i){
+            for(vector<CTP::QMAtom*>::iterator i = _atomlist.begin(); i != _atomlist.end(); ++i){
                 ret[(*i)] = count;
                 count += _element2NBF[(*i)->type];
             }
@@ -362,7 +439,7 @@ namespace votca { namespace xtp {
     
     
                 
-    void Bulkesp::Evaluate(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _globalOrb,
+    void Bulkesp::Evaluate(std::vector< CTP::QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _globalOrb,
             ub::matrix<double> _global_MO_Coeffs, AOBasis &_basis, BasisSet &bs,
             string gridsize, double maxBondScale, std::string _state,
             std::string _spin, int _state_no){
@@ -374,14 +451,14 @@ namespace votca { namespace xtp {
 		dipolesLog->open("dipolesLog.dat", ios_base::trunc);
 		
         //loop over molecules
-        LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): found "<< mols.size() << "molecules.\n" << flush; 
+        LOG(CTP::logDEBUG, *_log) << " Bulkesp::Evaluate(): found "<< mols.size() << "molecules.\n" << flush; 
         for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m){
             
-            LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" processing molecule "<< m-mols.begin() << endl; 
+            LOG(CTP::logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< CTP::TimeStamp()<<" processing molecule "<< m-mols.begin() << endl; 
 			
             //verify atomic coordinates and units
-            for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
-                QMAtom* ap=*a;
+            for(std::vector<CTP::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
+                CTP::QMAtom* ap=*a;
                 cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
             }
             cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
@@ -399,7 +476,7 @@ namespace votca { namespace xtp {
             _grid.setAtomlist(&m->atoms);
             //_grid.setCubegrid(true);
             _grid.setupgrid();
-            LOG(logDEBUG, *_log) << TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
+            LOG(CTP::logDEBUG, *_log) << CTP::TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
             
 			
             //calculate the ESP
@@ -441,7 +518,7 @@ namespace votca { namespace xtp {
             
             
                         
-            
+            /*
             //now build another grid so we can have a 2D image of the potential
             Grid _grid2D(true,false,false); //create polarsites, so we can output grid to .cube file
             if(periodic){
@@ -451,11 +528,11 @@ namespace votca { namespace xtp {
             _grid2D.setCubegrid(true);
             
             //instead of running setupgrid, we are going to fill it with custom positions
-            QMAtom* O;
-            QMAtom* H[2];
+            CTP::QMAtom* O;
+            CTP::QMAtom* H[2];
             int u=0;
-            for(std::vector<QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
-                QMAtom* ap=*a;
+            for(std::vector<CTP::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
+                CTP::QMAtom* ap=*a;
                 //cout<<'\t'<<ap->type;
                 if(ap->type[0]=='O')
                 {
@@ -500,6 +577,8 @@ namespace votca { namespace xtp {
                     points.push_back(temppos);
                 }
             }
+            
+            
             _grid2D.setup2D(points);
             
             //calculate ESP
@@ -521,7 +600,7 @@ namespace votca { namespace xtp {
             }
             out.flush();
             out.close();
-            
+            */
             
             
             
@@ -544,7 +623,7 @@ namespace votca { namespace xtp {
             } 
             
         }
-        LOG(logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< TimeStamp()<<" All molecules processed." << endl << flush; 
+        LOG(CTP::logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< CTP::TimeStamp()<<" All molecules processed." << endl << flush; 
         dipolesLog->close();
     }
     

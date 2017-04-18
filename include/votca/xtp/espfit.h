@@ -56,7 +56,7 @@ public:
     void Fit2Density(std::vector< CTP::QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,std::string gridsize);
     // not so fast
     void Fit2Density_analytic(std::vector< CTP::QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis);
-private:
+protected:
     
      CTP::Logger *_log;
      Elements _elements; 
@@ -66,7 +66,7 @@ private:
      double _conditionnumber;
      
      
-    double getNetcharge( std::vector< CTP::QMAtom* >& _atoms, double N );
+    double getNetcharge( std::vector< CTP::QMAtom* >& _atoms, double N, bool _do_round=false);
  
     ub::vector<double> EvalNuclearPotential( std::vector< CTP::QMAtom* >& _atoms, Grid _grid );
    

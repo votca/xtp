@@ -93,7 +93,7 @@ void Espfit::FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _ch
        
 
 
-void Espfit::Fit2Density(std::vector< QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize, Orbitals *orb) { 
+void Espfit::Fit2Density(std::vector< CTP::QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize) { 
    
 
     
@@ -207,7 +207,7 @@ ub::vector<double> Espfit::EvalNuclearPotential(std::vector< CTP::QMAtom* >& _at
     return _NucPatGrid;
 }
 
-double Espfit::getNetcharge( std::vector< CTP::QMAtom* >& _atoms, double N, bool _do_round ){
+double Espfit::getNetcharge( std::vector< CTP::QMAtom* >& _atoms, double N, bool _do_round){
     double netcharge=0.0;
     if( std::abs(N)<0.05){
         //LOG(CTP::logDEBUG, *_log) << "Number of Electrons is "<<N<< " transitiondensity is used for fit"  << flush;

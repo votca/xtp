@@ -63,6 +63,9 @@ namespace votca { namespace xtp {
              _createpolarsites(false), _sites_seg(NULL), _atomlist(NULL),
              _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
              _boxX(0.0), _boxY(0.0), _boxZ(0.0){};
+             
+        Grid(std::vector< ub::vector<double> > points)
+             :_gridpoints(points){};
            
         
         ~Grid();
@@ -116,7 +119,7 @@ namespace votca { namespace xtp {
             setupgrid();
         }
         
-        void writeIrregularGrid(std::string _filename, std::vector< QMAtom* > &_atoms, bool _ECP);
+        void writeIrregularGrid(std::string _filename, std::vector< CTP::QMAtom* > &_atoms, bool _ECP);
         void setPeriodicity(double BL[3]){
             _periodic=true;
             _boxX=BL[0];

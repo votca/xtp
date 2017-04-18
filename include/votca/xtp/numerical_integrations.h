@@ -26,6 +26,7 @@
 #include <votca/xtp/basisset.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/grid_containers.h>
+#include <votca/xtp/grid.h>
 
 
 
@@ -51,14 +52,17 @@ namespace votca { namespace xtp {
             double IntegrateDensity_Atomblock(ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(ub::vector<double> rvector);
-            double SetGridToCharges(std::vector< QMAtom* > & _local_atomlist);
+            double SetGridToCharges(std::vector< CTP::QMAtom* > & _local_atomlist);
             double IntegratePotential_w_PBC(ub::vector<double> rvector, double boxLen[3]);
+            void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, double boxLen[3], ub::vector<double>& _ESPatGrid);
             double IntegrateEnergy_w_PBC(ub::vector<double> rvector, double boxLen[3]);
 			double CalcDipole_w_PBC(ub::vector<double> rvector, double boxLen[3]);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< QMAtom* > & _local_atomlist, bool ECP);
+            void PrepKspaceDensity(double boxLen[3], double ext_alpha, std::vector< CTP::QMAtom* > & _local_atomlist, bool ECP, int nK);
+            void PrepKspaceDensity_gromacs_like(double boxLen[3], double ext_alpha, std::vector< CTP::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             void FreeKspace(void);
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
+            void FillMadelungGrid(double boxLen[3], int natomsonside);
             
             double getExactExchange(const std::string _functional);
             ub::matrix<double> IntegrateVXC ( ub::matrix<double>& _density_matrix, AOBasis* basis  );
@@ -85,6 +89,11 @@ namespace votca { namespace xtp {
             
         public:
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
+            //std::complex<double>**** eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
+            //std::complex<double>*** eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
+            std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
+            std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
+            double lll[3];
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double *Kcoord;//k-values

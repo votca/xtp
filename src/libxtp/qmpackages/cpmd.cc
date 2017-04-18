@@ -652,6 +652,7 @@ namespace votca {
         bool Cpmd::ParseLogFile(Orbitals * _orbitals) {
             std::string _line;
             std::vector<std::string> results;
+            std::vector<tools::vec> positions;
             
             LOG(CTP::logDEBUG, *_pLog) << "CPMD: parsing " << _log_file_name << flush;
             
@@ -727,8 +728,8 @@ namespace votca {
             
             //check that CPMD2TYPE_map is available
             if(CPMD2VOTCA_map==NULL){
-                LOG(logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
-                LOG(logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
+                LOG(CTP::logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
+                LOG(CTP::logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
                 throw std::runtime_error("CPMD2TYPE_map unavailable, rerun with <tasks>input, parse</tasks>");
                 exit(-1);
             }
