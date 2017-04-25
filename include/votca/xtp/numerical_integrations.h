@@ -117,7 +117,7 @@ namespace votca { namespace xtp {
             //std::complex<double>*** eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
             std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
-            double lll[3];
+            vec lll;
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double *Kcoord;//k-values

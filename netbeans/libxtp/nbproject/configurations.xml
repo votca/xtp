@@ -206,7 +206,6 @@
                    displayName="Important Files"
                    projectFiles="false">
     </logicalFolder>
-    <itemPath>../../src/libxtp/threecenters_g.cc</itemPath>
   </logicalFolder>
   <sourceRootList>
     <Elem>../../include</Elem>
@@ -751,8 +750,6 @@
             ex="false"
             tool="1"
             flavor2="0">
-      </item>
-      <item path="../../src/libxtp/threecenters_g.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/threecenters_tools.cc"
             ex="false"
@@ -1316,8 +1313,6 @@
             ex="false"
             tool="0"
             flavor2="0">
-      </item>
-      <item path="../../src/libxtp/threecenters_g.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/threecenters_tools.cc"
             ex="false"

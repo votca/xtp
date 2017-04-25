@@ -91,7 +91,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenter_rep.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o \
-	${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters_tools.o \
 	${OBJECTDIR}/_ext/1ce08c7a/toolfactory.o \
 	${OBJECTDIR}/_ext/1ce08c7a/version.o \
@@ -404,11 +403,6 @@ ${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o: ../../src/libxtp/threecenters_dft
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -I../../../ctp/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o ../../src/libxtp/threecenters_dft.cc
-
-${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o: ../../src/libxtp/threecenters_g.cc 
-	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
-	${RM} "$@.d"
-	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -I../../../ctp/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o ../../src/libxtp/threecenters_g.cc
 
 ${OBJECTDIR}/_ext/1ce08c7a/threecenters_tools.o: ../../src/libxtp/threecenters_tools.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a

@@ -466,19 +466,19 @@ void Grid::setupgrid(){
                         ytemp=fmod((*atom)->y, _boxY);
                         ztemp=fmod((*atom)->z, _boxZ);
                         
-                        dif(0)=std::abs(x-xtemp);
-                        dif(1)=std::abs(y-ytemp);
-                        dif(2)=std::abs(z-ztemp);
+                        dif[0]=std::abs(x-xtemp);
+                        dif[1]=std::abs(y-ytemp);
+                        dif[2]=std::abs(z-ztemp);
                         
                         if(_periodic){ //adjust point to atom distance for periodicity
-                            if(dif(0)>_boxX*0.5){ //X
-                                dif(0)=_boxX-dif(0);
+                            if(dif[0]>_boxX*0.5){ //X
+                                dif[0]=_boxX-dif[0];
                             }
-                            if(dif(1)>_boxY*0.5){ //Y
-                                dif(1)=_boxY-dif(1);
+                            if(dif[1]>_boxY*0.5){ //Y
+                                dif[1]=_boxY-dif[1];
                             }
-                            if(dif(2)>_boxZ*0.5){ //X
-                                dif(2)=_boxZ-dif(2);
+                            if(dif[2]>_boxZ*0.5){ //X
+                                dif[2]=_boxZ-dif[2];
                             }
                         }
                         
@@ -572,7 +572,7 @@ void Grid::writeIrregularGrid(std::string _filename, std::vector< ctp::QMAtom* >
     for(int i=0; i<_gridpoints.size(); i++){
         //point coordinates in Bohr
         vec point = _gridpoints[i]*tools::conv::nm2bohr;
-        out << point(0) << '\t' << point(1) << '\t' << point(2) << '\t' << _gridsites[i]->getPhi() <<  '\n';
+        out << point[0] << '\t' << point[1] << '\t' << point[2] << '\t' << _gridsites[i]->getPhi() <<  '\n';
     }
     out.flush();
     out.close();

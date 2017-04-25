@@ -91,7 +91,6 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenter_rep.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o \
-	${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o \
 	${OBJECTDIR}/_ext/1ce08c7a/threecenters_tools.o \
 	${OBJECTDIR}/_ext/1ce08c7a/toolfactory.o \
 	${OBJECTDIR}/_ext/1ce08c7a/version.o \
@@ -404,11 +403,6 @@ ${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o: nbproject/Makefile-${CND_CONF}.mk
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
 	${RM} "$@.d"
 	$(COMPILE.c) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/threecenters_dft.o ../../src/libxtp/threecenters_dft.cc
-
-${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o: nbproject/Makefile-${CND_CONF}.mk ../../src/libxtp/threecenters_g.cc 
-	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
-	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/threecenters_g.o ../../src/libxtp/threecenters_g.cc
 
 ${OBJECTDIR}/_ext/1ce08c7a/threecenters_tools.o: nbproject/Makefile-${CND_CONF}.mk ../../src/libxtp/threecenters_tools.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a

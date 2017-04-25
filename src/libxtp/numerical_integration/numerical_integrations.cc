@@ -744,8 +744,8 @@ namespace votca {
         double NumericalIntegration::IntegratePotential_w_PBC(vec rvector, vec boxLen) {
 
             double result = 0.0;
-            double cutoff = min(min(boxLen(0), boxLen(1)), boxLen(2)) / 2.0;
-            double vol = boxLen(0) * boxLen(1) * boxLen(2);
+            double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0;
+            double vol = boxLen[0] * boxLen[1] * boxLen[2];
 
             if (density_set) {
                 //                #pragma omp parallel for reduction(+:result)
@@ -759,11 +759,11 @@ namespace votca {
                         vec dif = _grid[i][j].grid_pos - rvector;
 
                         for (int k = 0; k < 3; k++) {
-                            if (std::abs(dif(k) > boxLen(k)*0.5)) //correct for for bond crossing PBC, if it exists
-                                if (dif(k) > 0) //i.x>j.x
-                                    dif(k) -= boxLen(k);
+                            if (std::abs(dif[k] > boxLen[k]*0.5)) //correct for for bond crossing PBC, if it exists
+                                if (dif[k] > 0) //i.x>j.x
+                                    dif[k] -= boxLen[k];
                                 else //i.x<j.x
-                                    dif(k) += boxLen(k);
+                                    dif[k] += boxLen[k];
                         }
                         double dist = abs(dif); //in bohr
                         double potR = q * ((erfc(alpha * dist) / dist) - tools::conv::Pi / (vol * vol * alpha * alpha)); //erfc and shift average pot to 0
@@ -782,7 +782,6 @@ namespace votca {
                 //cout<< "r-space sum: " <<result<<endl;
 
                 //k-space sum
-                vec r(rvector(0), rvector(1), rvector(2));
                 int nKpoints = numK[0] * numK[1] * numK[2];
                 double ksum = 0.0;
                 //exclude k={0,0,0} (index=0)
@@ -790,7 +789,7 @@ namespace votca {
                 for (int index = 1; index < nKpoints; index++) {
                     double* kp = &(Kcoord[index * 3]);
                     vec K(kp[0], kp[1], kp[2]);
-                    std::complex<double> Kr(0, K * r); // ik dot r
+                    std::complex<double> Kr(0, K * rvector); // ik dot r
 
                     double potK = prefactor[index]*(Rho_k[index] * std::exp(Kr)).real();
                     ksum += potK;
@@ -1117,6 +1116,8 @@ namespace votca {
                         eikr[m][k][i].resize(_grid[i].size());
                     }
                 }
+                
+                //also compute the inverse box dimensions
                 lll[m] = 2.0 * boost::math::constants::pi<double>() / boxLen[m]; //units are 1/Bohr
             }
             //eikr indexing is [DIM][k][i][j]
@@ -1125,10 +1126,10 @@ namespace votca {
             for (unsigned i = 0; i < _grid.size(); i++) {
 #pragma omp parallel for
                 for (unsigned j = 0; j < _grid[i].size(); j++) {
-                    vec r = _grid[i][j].grid_pos; //grid is in Bohr
+                    vec r = _grid[i][j].grid_pos; //grid is in Bohr, need it in reduced units (*2pi/box))
                     for (unsigned m = 0; (m < 3); m++) {
                         eikr[m][0][i][j] = std::complex<double>(1, 0);
-                        eikr[m][1][i][j] = std::complex<double>(cos(r[m] * lll[m]), sin(r[m] * lll[m]));
+                        eikr[m][1][i][j] = std::complex<double>(cos(r[m] * lll[m]), sin(r[m] * lll[m])); //this is where reduced units are applied
                         for (unsigned k = 2; k < numK[m]; k++) {
                             eikr[m][k][i][j] = eikr[m][k - 1][i][j] * eikr[m][1][i][j];
                         }//k
@@ -1140,25 +1141,32 @@ namespace votca {
             //now do the same for the eval_grid (eikR), the points were potential is to be evaluated
             //allocate space for eikR
             eikR.resize(3); //3 dim
-            double lll[3];
             for (unsigned m = 0; m < 3; m++) {
                 eikR[m].resize(numK[m]);
                 for (unsigned k = 0; k < numK[m]; k++) {
-                    eikR[m][k].resize(_grid.size());
+                    eikR[m][k].resize(eval_grid.getGrid().size());
                 }
             }
             //eikR indexing is [DIM][k][i]
 
             //based on gromacs 4.6 tabulate_eir()
 #pragma omp parallel for
-            for (unsigned i = 0; i < _grid.size(); i++) {
+            //printf("eval grid size = %d\n", eval_grid.getGrid().size());
+            //printf("lll_x = %f\n", lll[0]);
+            for (unsigned i = 0; i < eval_grid.getGrid().size(); i++) {
                 vec R = eval_grid.getGrid()[i] * tools::conv::nm2bohr; //this is in Bohr, eval_grid is in nm
                 for (unsigned m = 0; (m < 3); m++) {
                     eikR[m][0][i] = std::complex<double>(1, 0);
-                    eikR[m][1][i] = std::complex<double>(cos(R(m) * lll[m]), sin(R(m) * lll[m]));
+                    eikR[m][1][i] = std::complex<double>(cos(R[m] * lll[m]), sin(R[m] * lll[m]));
+                    //unsigned k=0;
+                    //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
+                    //k=1;
+                    //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     for (unsigned k = 2; k < numK[m]; k++) {
                         eikR[m][k][i] = eikR[m][k - 1][i] * eikR[m][1][i];
+                        //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     }//k
+                    //exit(0);
                 }//m
             }//i
 
@@ -1169,13 +1177,13 @@ namespace votca {
             _Madelung_grid.clear();
             std::vector< GridContainers::integration_grid > _Mad;
             double a = boxLen[0]; //in bohr
-            for (int l = 0; l < natomsonside; l++) {
-                for (int m = 0; m < natomsonside; m++) {
-                    for (int n = 0; n < natomsonside; n++) {
+            for (int l = 0; l < 2; l++) {
+                for (int m = 0; m < 2; m++) {
+                    for (int n = 0; n < 2; n++) {
                         GridContainers::integration_grid el;
                         el.grid_density = std::pow(-1.0, l + m + n);
                         el.grid_weight = 1.0;
-                        el.grid_pos = vec(l, m, n) * (a / natomsonside);
+                        el.grid_pos = vec(l, m, n) * (a / 2);
                         _Mad.push_back(el);
                         //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << "\t box size:"<< boxLen[0] << endl;
                     }
@@ -1191,10 +1199,19 @@ namespace votca {
             double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0; //Bohr
             double vol = boxLen[0] * boxLen[1] * boxLen[2]; //Bohr^3
             //eval_grid is in nm
+            
+            
+            ub::vector<double> k_pot;
+            k_pot.resize(_ESPatGrid.size());
+            for (unsigned p = 0; p < k_pot.size(); p++) {
+                k_pot[p] = 0;
+            }
+            
 
             if (density_set) {
-#pragma omp parallel for
+//#pragma omp parallel for
                 for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
+                    _ESPatGrid[p] = 0;
                     vec rvector = eval_grid.getGrid()[p] * tools::conv::nm2bohr; //Bohr
                     for (unsigned i = 0; i < _grid.size(); i++) {
                         for (unsigned j = 0; j < _grid[i].size(); j++) {
@@ -1225,75 +1242,23 @@ namespace votca {
                         }//j
                     }//i
                 }//p
-                E_rspace = _ESPatGrid[0];
+                E_rspace = _ESPatGrid(0);
                 E_erfc = erfc(alpha);
 
 
-                /*
-                                //k-space sum
-                                //adapted from gromacs 4.6 do_ewald_pot()
-                                int      lowiy, lowiz;
-                                double   tmp, cs, ss;
-
-                                lowiy        = 0;
-                                lowiz        = 1;
-                                //for (ix = 0; ix < numK[0]; ix++)
-                                unsigned ix = 0; //do ix=0 first, then do everything else in parallel
-                                {
-                                    double mx = ix*lll[0];
-                                    for (unsigned iy = lowiy; iy < numK[1]; iy++)
-                                    {
-                                        double my = iy*lll[1];
-                                        std::vector <std::vector <std::complex<double>> > tab_xy(_grid.size());
-                                        std::vector <std::vector <std::complex<double>> > tab_qxyz(_grid.size());
-                                        if (iy >= 0)
-                                        {
-                                            for (unsigned i = 0; i < _grid.size(); i++)
-                                            {
-                                                tab_xy[i].resize(_grid[i].size());
-                                                tab_qxyz[i].resize(_grid[i].size());
-                                                for(unsigned j = 0; j< _grid[i].size(); j++){
-                                                    tab_xy[i][j] = eikr[0][ix][i][j]*eikr[1][iy][i][j];
-                                                }//j
-                                            }//i
-                                        }
-                                        else
-                                        {
-                                            for (unsigned i = 0; i < _grid.size(); i++)
-                                            {
-                                                tab_xy[i].resize(_grid[i].size());
-                                                tab_qxyz[i].resize(_grid[i].size());
-                                                for(unsigned j = 0; j< _grid[i].size(); j++){
-                                                    tab_xy[i][j] = eikr[0][ix][i][j]*std::conj(eikr[1][iy][i][j]);
-                                                }//j
-                                            }//i
-                                        }
-
-                                        for (unsigned iz = lowiz; iz < numK[2]; iz++)
-                                        {
-                                            double mz  = iz*lll[2];
-                                            double m2  = mx*mx+my*my+mz*mz;
-                                            double ak  = exp(m2*factor)/m2;
-                                            if (iz >= 0)
-                                            {
-                                                for (unsigned i = 0; i < _grid.size(); i++)
-                                                    for(unsigned j = 0; j< _grid[i].size(); j++)
-                                                        tab_qxyz[i][j] = charge[i][j]*tab_xy[i][j]*eikr[2][iz][i][j];
-                                            }
-                                        }//iz
-
-                                    }//iy
-                                }//ix=0
-                 */
-
-
-
                 //adapted from gromacs 4.6 do_ewald_pot()
+                
+                //zero pot
+//                for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
+//                    _ESPatGrid[p] = 0;
+//                }
+                
+                
 
                 int ix, iy, iz;
                 double tmp, cs, ss, ak, mx, my, mz, m2;
                 double factor = -1.0 / (4 * alpha * alpha);
-                double scaleRecip = 1.0 / (vol); //final units of potential are Hartree/e (atomic units)
+                double scaleRecip = 4.0 * boost::math::constants::pi<double>() / (vol); //final units of potential are Hartree/e (atomic units)
                 std::vector<std::vector<std::complex<double> > > tab_xy;
                 std::vector<std::vector<std::complex<double> > > tab_qxyz; //charge distrib.
                 std::vector<std::complex<double> > tab_R_xyz; //where to evaluate
@@ -1307,6 +1272,12 @@ namespace votca {
                     tab_xy[i].resize(_grid[i].size());
                     tab_qxyz[i].resize(_grid[i].size());
                 }
+                
+                printf("factor = %f\n", factor);
+                printf("scaleRecip = %f\n", scaleRecip);
+                printf("vol = %f\n", vol);
+                printf("actual box for Madelung: %f\t%f\t%f\n", boxLen[0], boxLen[1], boxLen[2]);
+                //exit(0);
 
 
                 unsigned int lowiy = 0;
@@ -1341,7 +1312,7 @@ namespace votca {
                         }
                         for (iz = lowiz; iz < numK[2]; iz++) {
                             mz = iz * lll[2];
-                            m2 = mx * mx + my * my + mz*mz;
+                            m2 = mx * mx + my * my + mz * mz;
                             ak = exp(m2 * factor) / m2;
                             if (iz >= 0) {
                                 for (unsigned i = 0; i < _grid.size(); i++) //charge distrib.
@@ -1372,26 +1343,50 @@ namespace votca {
                                 for (unsigned j = 0; j < _grid[i].size(); j++) {
                                     cs += tab_qxyz[i][j].real();
                                     ss += tab_qxyz[i][j].imag();
+//                                    if(ix==4 && iy==4 && iz==4){
+//                                        printf("cs+= %f = %f * (%f+i%f) * (%f+i%f)\n", tab_qxyz[i][j].real(), -_grid[i][j].grid_weight * _grid[i][j].grid_density, tab_xy[i][j].real(), tab_xy[i][j].imag(), eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
+//                                        printf("\teikr=(%f+i%f) * (%f+i%f) * (%f+i%f)\n",eikr[0][ix][i][j].real(), eikr[0][ix][i][j].imag(),eikr[1][iy][i][j].real(), eikr[1][iy][i][j].imag(),eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
+//                                        printf("\tr=%f\t%f\t%f\n", _grid[i][j].grid_pos[0],_grid[i][j].grid_pos[1], _grid[i][j].grid_pos[2]);
+//                                        std::complex<double> krx = std::complex<double>(0, -_grid[i][j].grid_pos[0]*mz);
+//                                        krx=exp(krx);
+//                                        printf("\tkr_x=exp(-i%f)=%f+i%f\n",_grid[i][j].grid_pos[0]*mz, krx.real(), krx.imag());
+//                                    }
                                 }
                             }
-
+                            //exit(0);
+//                            if(abs(cs)>1e-6 || abs(ss)>1e-6)
+//                            if(ix==4 && iy==4 && iz==4)
+//                                printf("k=[%d,%d,%d]\tcs=%f\t ss=%f \tak=%f=exp(%f * %f) / %f\n", ix, iy, iz, cs, ss, ak, m2, factor, m2);
                             for (int n = 0; n < eval_grid.getsize(); n++) {
                                 tmp = ak * (cs * tab_R_xyz[n].real() + ss * tab_R_xyz[n].imag());
+//                                if((abs(cs)>1e-6 || abs(ss)>1e-6) && n==0){
+//                                    printf("ak=%f=exp(%f * %f) / %f\n", ak, m2, factor, m2);
+//                                    printf("tab_R_xyz=%f+i%f= (%f+i%f) * (%f+i%f) * (%f+i%f)\n", tab_R_xyz[n].real(), tab_R_xyz[n].imag(), eikR[0][ix][n].real(), eikR[0][ix][n].imag(), eikR[1][abs(iy)][n].real(), eikR[1][abs(iy)][n].imag(), eikR[2][abs(iz)][n].real(), eikR[2][abs(iz)][n].imag());
+//                                    printf("\ttmp=%f=%f*(%f*%f + %f*%f)\t m2=%f\n", tmp, ak, cs, tab_R_xyz[n].real(), ss, tab_R_xyz[n].imag(), m2);
+//                                    printf("\tk=[%d,%d,%d] of [%d,%d,%d]\ttmp=%f \t sum=%f\n", ix, iy, iz, numK[0], numK[1], numK[2], tmp, k_pot(n));
+//                                }
                                 _ESPatGrid(n) += tmp * 2 * scaleRecip;
+                                k_pot(n)+= tmp * 2 * scaleRecip;
+                                
                             }
-
-                            lowiz = 1 - numK[2];
-                        }
-                        lowiy = 1 - numK[1];
-                    }
-                }
-
+                            
+                        }//iz
+                        lowiz = 1 - numK[2];
+//                        if(ix==1)
+//                            exit(0);                        
+                    }//iy
+                    lowiy = 1 - numK[1];
+                }//ix
+                printf("%f=%f+%f\n",_ESPatGrid(0), E_rspace, k_pot(0));
+//                exit(0);
 
 
             } else {
                 throw std::runtime_error("Density not calculated");
             }
-            E_kspace = _ESPatGrid[0] - E_rspace;
+            E_kspace = k_pot(0);
+            //E_kspace = _ESPatGrid(1);
+            //_ESPatGrid(1)+=E_rspace;
         }
 
         double NumericalIntegration::IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis) {
