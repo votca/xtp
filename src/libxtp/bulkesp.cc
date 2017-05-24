@@ -262,8 +262,10 @@ namespace votca { namespace xtp {
         
         
         
+
+        double numK;
         
-#define MADELUNG_TEST
+//#define MADELUNG_TEST
 #ifdef MADELUNG_TEST
         
         
@@ -464,7 +466,7 @@ namespace votca { namespace xtp {
                 ctp::QMAtom* ap=*a;
                 cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
             }
-            cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
+            //cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 			
             //set up grid
             Grid _grid(true,false,false); //create polarsites, so we can output grid to .cube file
@@ -474,6 +476,7 @@ namespace votca { namespace xtp {
                 //_grid.setPadding(0.0);
                 _grid.setPeriodicity(boxLen);
             }
+            
             //test: set inner cutoff to 0 and calculate all potentials near nuclei
             _grid.setCutoffs(3, 1.5); //between 1.5 and 3 A, as that is the region where water-water interactions take place
             _grid.setAtomlist(&m->atoms);
@@ -481,6 +484,7 @@ namespace votca { namespace xtp {
             _grid.setupgrid();
             LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
             
+            break;
 			
             //calculate the ESP
             //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
@@ -489,7 +493,7 @@ namespace votca { namespace xtp {
                                                 _global_dmat, _basis, bs, gridsize, _grid, netcharge);
                 
             
-            
+            break;
             
             //store the potential in apolarsites
             for ( int i = 0 ; i < _grid.getsize(); i++){
@@ -520,92 +524,7 @@ namespace votca { namespace xtp {
             
             
             
-                        
-            /*
-            //now build another grid so we can have a 2D image of the potential
-            Grid _grid2D(true,false,false); //create polarsites, so we can output grid to .cube file
-            if(periodic){
-                _grid2D.setPeriodicity(boxLen);
-            }
-            _grid2D.setAtomlist(&m->atoms);
-            _grid2D.setCubegrid(true);
-            
-            //instead of running setupgrid, we are going to fill it with custom positions
-            ctp::QMAtom* O;
-            ctp::QMAtom* H[2];
-            int u=0;
-            for(std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a){
-                ctp::QMAtom* ap=*a;
-                //cout<<'\t'<<ap->type;
-                if(ap->type[0]=='O')
-                {
-                    O=ap;
-                }
-                else{
-                    H[u]=ap;
-                    u++;
-                }
-                cout<<'\n';
-            }
-            int resolution=200;
-            double step=0.1; //A
-            double mid_v[3];
-            float HH_v[3];
-            
-            mid_v[0]= (H[0]->x+H[1]->x-(2*O->x))/2; //vector from O to midpoint between Hs
-            mid_v[1]= (H[0]->y+H[1]->y-(2*O->y))/2;
-            mid_v[2]= (H[0]->z+H[1]->z-(2*O->z))/2;
-            HH_v[0] = H[0]->x-H[1]->x; //vector between Hs
-            HH_v[1] = H[0]->y-H[1]->y;
-            HH_v[2] = H[0]->z-H[1]->z;
-            //normalize
-            double n;
-            n=sqrt((mid_v[0]*mid_v[0])+(mid_v[1]*mid_v[1])+(mid_v[2]*mid_v[2]));
-            mid_v[0]/=n;
-            mid_v[1]/=n;
-            mid_v[2]/=n;
-            n=sqrt((HH_v[0]*HH_v[0])+(HH_v[1]*HH_v[1])+(HH_v[2]*HH_v[2]));
-            HH_v[0]/=n;
-            HH_v[1]/=n;
-            HH_v[2]/=n;
-            //fill the new grid
-            std::vector< ub::vector<double> > points;
-            ub::vector<double> temppos= ub::zero_vector<double>(3);
-            for (int i=0; i<resolution; i++){
-                for (int j=0; j<resolution; j++){
-                    temppos(0)=conv::ang2nm*(O->x + HH_v[0]*(i-0.5*resolution)*step + mid_v[0]*(j-0.5*resolution)*step);
-                    temppos(1)=conv::ang2nm*(O->y + HH_v[1]*(i-0.5*resolution)*step + mid_v[1]*(j-0.5*resolution)*step);        
-                    temppos(2)=conv::ang2nm*(O->z + HH_v[2]*(i-0.5*resolution)*step + mid_v[2]*(j-0.5*resolution)*step);   
-                    //_grid2D.getPoints()->push_back(temppos);
-                    points.push_back(temppos);
-                }
-            }
-            
-            
-            _grid2D.setup2D(points);
-            
-            //calculate ESP
-            ub::vector<double> ESP2D = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
-                                                _global_dmat, _basis, bs, gridsize, _grid2D, netcharge);
-            
-            //save to file
-            cout<<"Outputting 2D data"<<endl;
-            ofstream out;
-            fn.clear();
-            fn.str("");
-            fn << "BulkEsp_" << m-mols.begin() << ".2d";
-            out.open(fn.str().c_str(), ios::out | ios::trunc);
-            for (int i=0; i<resolution; i++){
-                for (int j=0; j<resolution; j++){
-                    ub::vector<double> point = (*_grid2D.getPoints())[i*resolution+j]; //in nm
-                    out << i << '\t' << j << '\t' << point(0) << '\t' << point(1) << '\t' << point(2) << '\t' << ESP2D(i*resolution+j)<< endl;
-                }
-            }
-            out.flush();
-            out.close();
-            */
-            
-            
+
             
             //TODO: fit charges
             std::vector< ub::vector<double> > _fitcenters;
@@ -625,9 +544,12 @@ namespace votca { namespace xtp {
                 m->atoms[_i]->charge=_charges[_i];
             } 
             
+            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< ctp::TimeStamp()<<" done with molecule "<< m-mols.begin() << endl; 
+            
         }
         LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): "<< ctp::TimeStamp()<<" All molecules processed." << endl << flush; 
         dipolesLog->close();
+        exit(0);
     }
     
     

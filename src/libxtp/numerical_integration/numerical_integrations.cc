@@ -1273,10 +1273,10 @@ namespace votca {
                     tab_qxyz[i].resize(_grid[i].size());
                 }
                 
-                printf("factor = %f\n", factor);
-                printf("scaleRecip = %f\n", scaleRecip);
-                printf("vol = %f\n", vol);
-                printf("actual box for Madelung: %f\t%f\t%f\n", boxLen[0], boxLen[1], boxLen[2]);
+                //printf("factor = %f\n", factor);
+                //printf("scaleRecip = %f\n", scaleRecip);
+                //printf("vol = %f\n", vol);
+                //printf("actual box for Madelung: %f\t%f\t%f\n", boxLen[0], boxLen[1], boxLen[2]);
                 //exit(0);
 
 
