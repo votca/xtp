@@ -262,6 +262,7 @@ namespace votca { namespace xtp {
         
         
         
+        
 
         double numK;
         
@@ -483,7 +484,9 @@ namespace votca { namespace xtp {
             //_grid.setCubegrid(true);
             _grid.setupgrid();
             LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
-            
+            if(m!=mols.begin()){
+                exit(0);
+            }
             break;
 			
             //calculate the ESP
@@ -527,13 +530,10 @@ namespace votca { namespace xtp {
 
             
             //TODO: fit charges
-            std::vector< ub::vector<double> > _fitcenters;
+            std::vector< tools::vec > _fitcenters;
     
-            for ( unsigned j = 0; j < m->atoms.size(); j++){
-               ub::vector<double> _pos(3);
-              _pos(0) = tools::conv::ang2nm*(m->atoms[j]->x);
-              _pos(1) = tools::conv::ang2nm*(m->atoms[j]->y);
-              _pos(2) = tools::conv::ang2nm*(m->atoms[j]->z);
+            for ( unsigned j = 0; j < _atomlist.size(); j++){
+               tools::vec _pos=m->atoms[j]->getPos()*tools::conv::ang2nm;
               _fitcenters.push_back(_pos);            
             }
 

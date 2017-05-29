@@ -26,6 +26,7 @@
 #include <votca/xtp/basisset.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/grid_containers.h>
+#include <votca/xtp/grid.h>
 
 #include <votca/ctp/qmatom.h>
 
@@ -51,7 +52,7 @@ namespace votca { namespace xtp {
             
             
             
-            double IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis);
+            double IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix);
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(const vec& rvector);
             

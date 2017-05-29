@@ -1396,6 +1396,123 @@ namespace votca {
             //E_kspace = _ESPatGrid(1);
             //_ESPatGrid(1)+=E_rspace;
         }
+        
+                
+         /**
+         * Computes electron density belonging to atoms listed in AtomIndeces.
+         * Based on IntegrateDensity_Atomblock()
+         *
+         * @param _density_matrix
+         * @param basis
+         * @param AtomIndeces of the atoms in the molecule
+         * @return electron density
+         */
+        double NumericalIntegration::IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces) {
+
+
+
+
+            // parallelization: distribute over threads inside one atom
+            int nthreads = 1;
+#ifdef _OPENMP
+            nthreads = omp_get_max_threads();
+#endif
+
+            std::vector<double> Density_thread;
+            for (int i_thread = 0; i_thread < nthreads; i_thread++) {
+                Density_thread.push_back(0.0);
+            }
+
+            // for every atom
+            for (unsigned i = 0; i < _grid.size(); i++) {
+                // for each point in atom grid
+
+                // number of points in this atomgrid
+                int atom_points = _grid[i].size();
+                // divide among threads
+                int atom_points_per_thread = atom_points / nthreads;
+                std::vector<int> _thread_start;
+                std::vector<int> _thread_stop;
+                for (int i_thread = 0; i_thread < nthreads; i_thread++) {
+                    _thread_start.push_back(i_thread * atom_points_per_thread);
+                    _thread_stop.push_back((i_thread + 1) * atom_points_per_thread);
+                }
+                // final stop must be size
+                _thread_stop[nthreads - 1] = atom_points;
+
+
+#pragma omp parallel for
+                for (int i_thread = 0; i_thread < nthreads; i_thread++) {
+                    for (int j = _thread_start[i_thread]; j < _thread_stop[i_thread]; j++) {
+
+                        // get value of orbitals at each gridpoint (vector as 1D boost matrix object -> prod )
+                        ub::matrix<double> AOgrid = ub::zero_matrix<double>(1, basis->AOBasisSize()); //basis function values at grid for all significant atoms
+                        ub::matrix<double> rho_mat = ub::zero_matrix<double>(1, 1);
+
+                        // evaluate AO Functions for all shells, NOW BLOCKWISE
+
+                        // for each significant atom for this grid point
+                        for (unsigned sigrow = 0; sigrow < _significant_atoms[i][j].size(); sigrow++) {
+
+                            // this atom
+                            int rowatom = _significant_atoms[i][j][sigrow];
+
+                            // for each shell in this atom
+                            for (unsigned ishell = 0; ishell < _atomshells[rowatom].size(); ishell++) {
+
+                                AOBasis::AOShellIterator _row = _atomshells[rowatom][ishell];
+                                AOShell* _shell = *_row;
+                                // for density, fill sub-part of AOatgrid
+                                ub::matrix_range< ub::matrix<double> > _AOgridsub = ub::subrange(AOgrid, 0, 1, _shell->getStartIndex(), _shell->getStartIndex() + _shell->getNumFunc());
+                                _shell->EvalAOspace(_AOgridsub, _grid[i][j].grid_pos);
+
+                            } // shell in atom
+                        }
+
+                        for (unsigned sigrow = 0; sigrow < _significant_atoms[i][j].size(); sigrow++) {
+
+                            // this atom
+                            int rowatom = _significant_atoms[i][j][sigrow];
+                            //only do things if this atom belongs to the molecule of interest and is significant
+                            if (std::find(AtomIndeces.begin(), AtomIndeces.end(), rowatom) != AtomIndeces.end()) {
+
+                                ub::matrix<double> _temp = ub::zero_matrix<double>(1, _blocksize[rowatom]);
+
+                                ub::matrix_range< ub::matrix<double> > _AOgridrow = ub::subrange(AOgrid, 0, 1, _startIdx[rowatom], _startIdx[rowatom] + _blocksize[rowatom]);
+
+                                // for each atom
+
+                                for (unsigned sigcol = 0; sigcol < _significant_atoms[i][j].size(); sigcol++) {
+                                    int colatom = _significant_atoms[i][j][sigcol];
+                                    ub::matrix_range< ub::matrix<double> > _AOgridcol = ub::subrange(AOgrid, 0, 1, _startIdx[colatom], _startIdx[colatom] + _blocksize[colatom]);
+                                    ub::matrix_range< ub::matrix<double> > DMAT_here = ub::subrange(_density_matrix, _startIdx[colatom], _startIdx[colatom] + _blocksize[colatom], _startIdx[rowatom], _startIdx[rowatom] + _blocksize[rowatom]);
+
+                                    _temp += ub::prod(_AOgridcol, DMAT_here);
+
+
+                                } //col shells
+
+                                rho_mat += ub::prod(_temp, ub::trans(_AOgridrow));
+                            } // atom belongs to molecule
+
+                        } // row shells
+
+
+                        _grid[i][j].grid_density = rho_mat(0, 0);
+                        Density_thread[i_thread] += _grid[i][j].grid_weight * _grid[i][j].grid_density;
+                    } // j: for each point in atom grid
+                }// each thread
+            } // i: for each atom grid
+
+            double result=0.0;
+            for (int i_thread = 0; i_thread < nthreads; i_thread++) {
+                //cout << result << endl;
+                result += Density_thread[i_thread];
+            }
+            density_set = true;
+
+            return (result);
+        }
 
 
 
