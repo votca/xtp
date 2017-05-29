@@ -40,7 +40,13 @@ endif()
 ########################################################################
 # User input options                                                   #
 ########################################################################
-
+if(GWBSE_DOUBLE)
+   add_definitions(-DGWBSE_DOUBLE)
+    set(GWBSE_DOUBLE_VALUE 1)
+else()
+    set(GWBSE_DOUBLE_VALUE 0)
+endif()
+add_definitions(-DGWBSE_DOUBLE=${GWBSE_DOUBLE_VALUE})
 
 find_package(LIBXC)
 if (LIBXC_FOUND)
@@ -105,6 +111,9 @@ find_package(VOTCA_TOOLS REQUIRED)
 include_directories(${VOTCA_TOOLS_INCLUDE_DIRS})
 find_package(VOTCA_CSG REQUIRED)
 include_directories(${VOTCA_CSG_INCLUDE_DIRS})
+#votca/ctp/topology.h incl. moo's jcalc.h
+find_package(VOTCA_MOO REQUIRED)
+include_directories(${VOTCA_MOO_INCLUDE_DIRS})
 find_package(VOTCA_CTP REQUIRED)
 include_directories(${VOTCA_CTP_INCLUDE_DIRS})
 ########################################################################

@@ -1,5 +1,5 @@
 /* 
- * Copyright 2009-2016 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2017 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ namespace votca {
 
         for (ctp::QMNBList::iterator it = nblist.begin(); it < nblist.end(); ++it) {
             _nodes[(*it)->Seg1()->getId()]->AddEventfromQmPair(*it, _carriertype);
+            _nodes[(*it)->Seg2()->getId()]->AddEventfromQmPair(*it, _carriertype);
         }
 
 

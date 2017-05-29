@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -69,17 +69,21 @@ namespace votca {
             }
 
             key = sfx + ".control";
+            bool split_dpl;
+            double dpl_spacing;
             if (opt->exists(key + ".split_dpl")) {
-                _split_dpl = opt->get(key + ".split_dpl").as<bool>();
+                split_dpl = opt->get(key + ".split_dpl").as<bool>();
             } else {
-                _split_dpl = true;
+                split_dpl = true;
             }
             if (opt->exists(key + ".dpl_spacing")) {
-                _dpl_spacing = opt->get(key + ".dpl_spacing").as<double>();
+                dpl_spacing = opt->get(key + ".dpl_spacing").as<double>();
             } else {
-                _dpl_spacing = 1e-3;
+                dpl_spacing = 1e-3;
             }
-
+            qminterface.setMultipoleSplitting(split_dpl,dpl_spacing);
+            
+            
             // GDMA options
             key = sfx + ".gdma";
             if (opt->exists(key)) {
@@ -94,7 +98,6 @@ namespace votca {
 
             // GWBSE options
             key = sfx + ".gwbse";
-
             if (opt->exists(key)) {
                 _do_gwbse = true;
                 cout << " Excited state QM/MM " << endl;
@@ -126,7 +129,7 @@ namespace votca {
                 _do_gwbse = false;
             }
 
-
+            return;
         }
 
         template<class QMPackage>
@@ -226,7 +229,7 @@ namespace votca {
             Orbitals orb_iter_input;
 
             std::vector<ctp::Segment*> empty;
-            thisIter->GenerateQMAtomsFromPolarSegs(_job->getPolarTop(), orb_iter_input, _split_dpl, _dpl_spacing);
+            qminterface.GenerateQMAtomsFromPolarSegs(_job->getPolarTop(), orb_iter_input);
 
             _qmpack->setRunDir(runFolder);
 
@@ -246,14 +249,6 @@ namespace votca {
             // EXTRACT LOG-FILE INFOS TO ORBITALS   
             Orbitals orb_iter_output;
             _qmpack->ParseLogFile(&orb_iter_output);
-
-
-
-
-
-
-
-
 
             // GW-BSE starts here
 
@@ -296,7 +291,6 @@ namespace votca {
 
                     // actual GW-BSE run
                     _gwbse.Evaluate();
-                    //bool _evaluate = _gwbse.Evaluate( &orb_iter_output );
 
 
                     // write logger to log file
@@ -317,10 +311,10 @@ namespace votca {
                     if (_has_osc_filter) {
 
                         // go through list of singlets
-                        const std::vector<ub::vector<double> >& TDipoles = orb_iter_output.TransitionDipoles();
+                        const std::vector<tools::vec >& TDipoles = orb_iter_output.TransitionDipoles();
                         for (unsigned _i = 0; _i < TDipoles.size(); _i++) {
 
-                            double osc = (ub::inner_prod(TDipoles[_i],TDipoles[_i])) * 1.0 / 3.0 * (orb_iter_output.BSESingletEnergies()(_i));
+                            double osc = (TDipoles[_i]*TDipoles[_i]) * 2.0 / 3.0 * (orb_iter_output.BSESingletEnergies()(_i));
                             if (osc > _osc_threshold) _state_index.push_back(_i);
                         }
 
@@ -345,20 +339,18 @@ namespace votca {
                         std::vector<int> _state_index_copy;
                         if (_type == "singlets") {
                             // go through list of singlets
-                            const std::vector<double>& dQ_fragA = orb_iter_output.FragmentAChargesSingEXC();
-                            //const std::vector<double>& dQ_fragB = orb_iter_output.FragmentBChargesSingEXC();
+                            const std::vector< ub::vector<double> >& dQ_frag = orb_iter_output.FragmentChargesSingEXC();
                             for (unsigned _i = 0; _i < _state_index.size(); _i++) {
-                                if (std::abs(dQ_fragA[_i]) > _dQ_threshold) {
+                                if (std::abs(dQ_frag[_i](0)) > _dQ_threshold) {
                                     _state_index_copy.push_back(_state_index[_i]);
                                 }
                             }
                             _state_index = _state_index_copy;
                         } else if (_type == "triplets") {
                             // go through list of triplets
-                            const std::vector<double>& dQ_fragA = orb_iter_output.FragmentAChargesTripEXC();
-                            //const std::vector<double>& dQ_fragB = orb_iter_output.FragmentBChargesTripEXC();
+                            const std::vector< ub::vector<double> >& dQ_frag = orb_iter_output.FragmentChargesTripEXC();
                             for (unsigned _i = 0; _i < _state_index.size(); _i++) {
-                                if (std::abs(dQ_fragA[_i]) > _dQ_threshold) {
+                                if (std::abs(dQ_frag[_i](0)) > _dQ_threshold) {
                                     _state_index_copy.push_back(_state_index[_i]);
                                 }
                             }
@@ -398,10 +390,6 @@ namespace votca {
                 }
                 
 
-
-
-
-
                 // fill DFT AO basis by going through all atoms 
                 AOBasis dftbasis;
                 dftbasis.AOBasisFill(&dftbs, orb_iter_output.QMAtoms());
@@ -412,8 +400,7 @@ namespace votca {
                 ub::matrix<double> DMAT_tot = DMATGS; // Ground state + hole_contribution + electron contribution
 
                 if (_state > 0) {
-                    ub::matrix<real_gwbse>& BSECoefs = orb_iter_output.BSESingletCoefficients();
-                    std::vector<ub::matrix<double> > DMAT = orb_iter_output.DensityMatrixExcitedState(_dft_orbitals, BSECoefs, _state_index[_state - 1]);
+                    std::vector<ub::matrix<double> > DMAT = _gwbse.getExcitedStateDmat(_type, _state_index[_state - 1]);
                     DMAT_tot = DMAT_tot - DMAT[0] + DMAT[1]; // Ground state + hole_contribution + electron contribution
                 }
 
@@ -422,18 +409,13 @@ namespace votca {
 
 
 
-        Espfit esp=Espfit(_log);
-        if (_do_gwbse){
-        esp.setUseECPs(true);
-        }
-        esp.Fit2Density(Atomlist, DMAT_tot, dftbasis,dftbs,"medium");
+                Espfit esp=Espfit(_log);
+                if (_qmpack->ECPRequested()){
+                    esp.setUseECPs(true);
+                    }
+                esp.Fit2Density(Atomlist, DMAT_tot, dftbasis,dftbs,"medium");
 
-
-
-
-
-
-            } //_do_gwbse
+} //_do_gwbse
 
             // Test: go via GDMA instead of point charges, only for DFT with Gaussian!
             GDMA _gdma;
@@ -443,7 +425,6 @@ namespace votca {
                     throw runtime_error(" Invalid QMPackage! " + _type + " Gaussian 03 only!");
 
                 } else {
-
                     // get a GDMA object
                     _gdma.Initialize(&_gdma_options);
                     _gdma.setLog(_log);
@@ -452,7 +433,6 @@ namespace votca {
                     LOG(ctp::logINFO, *_log) << "Running GDMA " << flush;
                     // prepare a GDMA input file
                     _gdma.WriteInputFile();
-
 
                     // run GDMA external
                     _gdma.RunExternal();
@@ -480,7 +460,7 @@ namespace votca {
                     thisIter->getQMMMEnergy());
 
             // EXTRACT & SAVE QMATOM DATA
-            std::vector< ctp::QMAtom* > &atoms = *(orb_iter_output.getAtoms());
+            std::vector< ctp::QMAtom* > &atoms = orb_iter_output.QMAtoms();
 
             thisIter->UpdatePosChrgFromQMAtoms(atoms, _job->getPolarTop()->QM0());
 
@@ -490,10 +470,6 @@ namespace votca {
                 thisIter->UpdateMPSFromGDMA(_gdma.GetMultipoles(), _job->getPolarTop()->QM0());
 
             }
-
-
-
-
 
             LOG(ctp::logINFO, *_log)
                     << format("Summary - iteration %1$d:") % (iterCnt + 1) << flush;
@@ -523,7 +499,6 @@ namespace votca {
 
 
             return 0;
-
         }
 
         template<class QMPackage>

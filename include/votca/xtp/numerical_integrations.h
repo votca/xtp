@@ -26,7 +26,7 @@
 #include <votca/xtp/basisset.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/grid_containers.h>
-#include <votca/xtp/grid.h>
+
 #include <votca/ctp/qmatom.h>
 
 
@@ -38,23 +38,23 @@ namespace votca { namespace xtp {
 
         class NumericalIntegration {
         public: 
-            NumericalIntegration() : density_set(false) {
-            };
+            
+            NumericalIntegration():density_set(false) {};
 
-            void GridSetup(std::string type, BasisSet* bs, std::vector<ctp::QMAtom* > _atoms, AOBasis* basis);
-
+            void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
+            
             //void FindsignificantAtoms2(AOBasis* basis);
             //used for test purposes
-            double StupidIntegrate(std::vector<double>& _data);
-
-            std::vector<vec const *> getGridpoints();
-
-
-
+            double StupidIntegrate( std::vector<double>& _data );
+            
+            std::vector<const vec*> getGridpoints();
+            
+            
+            
             double IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis);
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
             double IntegratePotential(const vec& rvector);
-
+            
             double IntegrateField(const std::vector<double>& externalfield);
 
             double IntegratePotential_w_PBC(vec rvector, vec boxLen);
@@ -70,24 +70,20 @@ namespace votca { namespace xtp {
 
             double getExactExchange(const std::string _functional);
             // in principle a symmetric matrix would be nicer but we calculate whole vxc matrix because of numerics and symmetrize explicitly 
-            ub::matrix<double> IntegrateVXC_Atomblock(const ub::matrix<double>& _density_matrix, AOBasis* basis, const std::string _functional);
+            ub::matrix<double> IntegrateVXC_Atomblock (const ub::matrix<double>& _density_matrix,const std::string _functional);
             //ub::matrix<double> IntegrateVXC_Atomblock2 (const ub::matrix<double>& _density_matrix, AOBasis* basis,const std::string _functional);
-            ub::matrix<double> IntegrateExternalPotential_Atomblock(AOBasis* basis, std::vector<double> Potentialvalues);
-
-
+            ub::matrix<double> IntegrateExternalPotential_Atomblock(const std::vector<double>& Potentialvalues);
+         
+            
             // this gives int (e_xc-V_xc)*rho d3r
-
-            double getTotEcontribution() {
-                return EXC;
-            }
+            double getTotEcontribution(){return EXC;}
           
             
         private:
             
-           
+            AOBasis* _basis;
             
-            
-           void FindsignificantAtoms(AOBasis* basis);
+           void FindsignificantAtoms();
            double erf1c(double x);
             double erfcc(double x);
             std::vector<double> SSWpartition(int igrid, int ncenters ,  std::vector< std::vector<double> >& rq );
@@ -102,9 +98,8 @@ namespace votca { namespace xtp {
             std::vector< std::vector< std::vector<int> > > _significant_atoms;
             std::vector < int > _startIdx;
             std::vector < int > _blocksize;
-            typedef std::vector< AOShell* >::iterator AOShellIterator;
-            std::vector< std::vector< AOShellIterator > > _atomshells;
-            std::vector< AOShellIterator > _singleatom;
+            std::vector< std::vector< AOBasis::AOShellIterator > > _atomshells;
+            std::vector< AOBasis::AOShellIterator > _singleatom;
             std::vector< std::vector< ub::matrix<double> > >dmat_vector;
             std::vector< std::vector< std::vector< ub::matrix<double> > > > xcmat_vector_thread;
             std::vector< std::vector< ub::matrix<double> > > xcmat_vector;

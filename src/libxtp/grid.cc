@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -41,18 +41,16 @@ Grid::Grid(const Grid &obj)
        if(!apolarsite->getIsVirtual()) _gridsites.push_back(apolarsite);
        _all_gridsites.push_back(apolarsite);   
     }     
-     _sites_seg = new ctp::PolarSeg(0, _gridsites);
      _atomlist=obj._atomlist;
     };
         
         
 Grid::~Grid() {
+       
         std::vector<ctp::APolarSite*>::iterator pit;
         for(pit=_all_gridsites.begin();pit!=_all_gridsites.end();++pit){
-             delete *pit;
+            delete *pit;
         }
-        _all_gridsites.clear();
-        if (_sites_seg != NULL) delete _sites_seg;
     }
 
 Grid &Grid::operator=(const Grid & obj){
@@ -77,7 +75,6 @@ Grid &Grid::operator=(const Grid & obj){
        if(!apolarsite->getIsVirtual()) _gridsites.push_back(apolarsite);
        _all_gridsites.push_back(apolarsite);   
     }     
-     _sites_seg = new ctp::PolarSeg(0, _gridsites);
      _atomlist=obj._atomlist;
      _periodic = obj._periodic;
      _boxX = obj._boxX;
@@ -190,9 +187,7 @@ void Grid::readgridfromCubeFile(std::string filename, bool ignore_zeros){
 
 
               }}}
-        if (_sites_seg != NULL) delete _sites_seg;
-        _sites_seg = new ctp::PolarSeg(0, _gridsites);
-
+        return;
         }         
 
 void Grid::printgridtoCubefile(std::string filename){
@@ -364,9 +359,7 @@ void Grid::setupradialgrid(const int depth) {
             _all_gridsites.push_back(apolarsite);       
         }
     }
-    if (_sites_seg != NULL) delete _sites_seg;
-           _sites_seg = new ctp::PolarSeg(0, _gridsites);
-
+    return;
 }
 
 void Grid::setupgrid(){
@@ -519,15 +512,12 @@ void Grid::setupgrid(){
                 }                          
             }                  
         }
-    if (_sites_seg != NULL) delete _sites_seg;
-    _sites_seg = new ctp::PolarSeg(0, _gridsites);
+    return;
 }
   
 void Grid::setup2D(std::vector< vec > points){
     _gridpoints=points;
-    
-    if (_sites_seg != NULL) delete _sites_seg;
-    _sites_seg = new ctp::PolarSeg(0, _gridsites);
+    return;
 }
 
 

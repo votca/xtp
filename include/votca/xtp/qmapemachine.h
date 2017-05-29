@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -38,18 +38,13 @@
 namespace votca { namespace xtp {
 
 
-    
-// ========================================================================== //
-// QMMACHINE: REGISTER QMPACKAGE TYPE (E.G. GAUSSIAN) AT THE END OF .CC FILE  //
-// ========================================================================== //    
-    
-template< class QMPackage >
+
 class QMAPEMachine
 {
     
 public:
 
-	QMAPEMachine(ctp::XJob *job, ctp::Ewald3DnD *cape, QMPackage *qmpack,
+	QMAPEMachine(ctp::XJob *job, ctp::Ewald3DnD *cape, 
               Property *opt, std::string sfx, int nst);
    ~QMAPEMachine();
     
@@ -64,7 +59,7 @@ public:
     
 private:    
     
-
+    QMMInterface qminterface;
     ctp::Logger *_log;
     int _subthreads;
 
@@ -74,18 +69,22 @@ private:
 
     ctp::XJob *_job;
     ctp::XInductor *_xind;
-    QMPackage *_qmpack;
     ctp::Ewald3DnD *_cape;
     
+    void SetupPolarSiteGrids( const std::vector< const vec *>& gridpoints,const std::vector< ctp::QMAtom* >& atoms);
     
+    std::vector<double> ExtractNucGrid_fromPolarsites();
+    std::vector<double> ExtractElGrid_fromPolarsites();
 
     std::vector<QMMIter*> _iters;
     int _maxIter;
     bool _isConverged;
-
-    // GWBSE object
+    
+    unsigned NumberofAtoms;
+    
     
     Property _gwbse_options;
+    Property _dft_options;
     int      _state;
     std::string   _type;
     bool     _has_osc_filter;
@@ -107,6 +106,9 @@ private:
     double _dpl_spacing;
     
     bool   _exportgridtofile;
+    
+    std::vector< ctp::PolarSeg* > target_bg;     
+    std::vector< ctp::PolarSeg* > target_fg;     
 
 };
 

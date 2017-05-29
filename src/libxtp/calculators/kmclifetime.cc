@@ -1,5 +1,5 @@
 /* 
- * Copyright 2009-2016 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2017 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ namespace votca {
     _insertions=options->ifExistsReturnElseThrowRuntimeError<unsigned int>(key+".numberofinsertions");
     _seed=options->ifExistsReturnElseThrowRuntimeError<int>(key+"seed");
     _numberofcharges=options->ifExistsReturnElseThrowRuntimeError<int>(key+".numberofcharges");
-    _injection_name=options->ifExistsReturnElseThrowRuntimeError<int>(key+".injectionpattern");
+    _injection_name=options->ifExistsReturnElseThrowRuntimeError<std::string>(key+".injectionpattern");
     _lifetimefile=options->ifExistsReturnElseThrowRuntimeError<int>(key+".lifetimefile");
 
     _maxrealtime=options->ifExistsReturnElseReturnDefault<double>(key+".maxrealtime",1E10);

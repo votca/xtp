@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -152,9 +152,9 @@ void EulerMaclaurinGrid::getRadialCutoffs(std::vector<ctp::QMAtom* > _atoms, Bas
             aobasis.AOBasisFill(bs, _atoms);
             AOOverlap _overlap;
             // initialize overlap matrix
-            _overlap.Initialize(aobasis._AOBasisSize);
+            _overlap.Initialize(aobasis.AOBasisSize());
             // Fill overlap
-            _overlap.Fill(&aobasis);
+            _overlap.Fill(aobasis);
             
             
             
@@ -165,9 +165,9 @@ void EulerMaclaurinGrid::getRadialCutoffs(std::vector<ctp::QMAtom* > _atoms, Bas
             std::vector<int> idxstop;
             int start = 0;
             int end = 0;
-            for (std::vector< AOShell* >::iterator _row = aobasis.firstShell(); _row != aobasis.lastShell() ; _row++ ) {
+            for (AOBasis::AOShellIterator _row = aobasis.firstShell(); _row != aobasis.lastShell() ; _row++ ) {
                 
-                 AOShell* _shell_row = aobasis.getShell( _row );
+                 const AOShell* _shell_row = aobasis.getShell( _row );
                  
                  if ( _shell_row->getIndex() == atidx ){
 
@@ -219,7 +219,7 @@ void EulerMaclaurinGrid::getRadialCutoffs(std::vector<ctp::QMAtom* > _atoms, Bas
                       if ( aidx != bidx ){
                           
                           // find overlap block of these two atoms
-                          ub::matrix<double> _overlapblock = ub::project( _overlap._aomatrix ,  ub::range( _a_start , _a_stop ), ub::range(_b_start, _b_stop ) );
+                          ub::matrix<double> _overlapblock = ub::project( _overlap.Matrix() ,  ub::range( _a_start , _a_stop ), ub::range(_b_start, _b_stop ) );
                           // determine abs max of this block
                           s_max = 0.0;
                           for ( unsigned i = 0 ; i < _overlapblock.size1(); i++ ){

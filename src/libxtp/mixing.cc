@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -32,7 +32,7 @@ namespace votca { namespace xtp {
           else{
               
           if(_Pout.size()<2){
-              alpha=0.5;             
+              alpha=0.7;             
           }
           else{
               

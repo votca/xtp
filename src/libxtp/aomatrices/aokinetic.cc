@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -33,11 +33,8 @@ namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
 
     
-    void AOKinetic::FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix, AOShell* _shell_row, AOShell* _shell_col, AOBasis* ecp) {
-        //const double pi = boost::math::constants::pi<double>();
-            /*cout << "\nAO block: "<< endl;
-        cout << "\t row: " << _shell_row->getType() << " at " << _shell_row->getPos() << endl;
-        cout << "\t col: " << _shell_col->getType() << " at " << _shell_col->getPos() << endl;*/
+    void AOKinetic::FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp) {
+       
        
         // shell info, only lmax tells how far to go
         int _lmax_row = _shell_row->getLmax();
@@ -59,7 +56,7 @@ namespace votca { namespace xtp {
         const vec  _diff    = _pos_row - _pos_col;
        
           
-        double _distsq = (_diff.getX()*_diff.getX()) + (_diff.getY()*_diff.getY()) + (_diff.getZ()*_diff.getZ());   
+        double _distsq = (_diff*_diff);   
         
      
         
@@ -105,19 +102,19 @@ namespace votca { namespace xtp {
        // cout << "row shell is " << _shell_row->getSize() << " -fold contracted!" << endl;
         //cout << "col shell is " << _shell_col->getSize() << " -fold contracted!" << endl;
         
-        typedef std::vector< AOGaussianPrimitive* >::iterator GaussianIterator;
+       
         // iterate over Gaussians in this _shell_row
-        for ( GaussianIterator itr = _shell_row->firstGaussian(); itr != _shell_row->lastGaussian(); ++itr){
+        for ( AOShell::GaussianIterator itr = _shell_row->firstGaussian(); itr != _shell_row->lastGaussian(); ++itr){
             // iterate over Gaussians in this _shell_col
-            const double& _decay_row = (*itr)->decay;
+            const double _decay_row = (*itr)->getDecay();
             
-            for ( GaussianIterator itc = _shell_col->firstGaussian(); itc != _shell_col->lastGaussian(); ++itc){
+            for ( AOShell::GaussianIterator itc = _shell_col->firstGaussian(); itc != _shell_col->lastGaussian(); ++itc){
            
             
            
 
             // get decay constants 
-            const double _decay_col = (*itc)->decay;
+            const double _decay_col = (*itc)->getDecay();
             
             // some helpers
             const double _fak  = 0.5/(_decay_row + _decay_col);
@@ -539,26 +536,10 @@ if (_lmax_col > 3) {
 } // end if (_lmax_col > 3)
 
                 // normalization and cartesian -> spherical factors
-             int _ntrafo_row = _shell_row->getNumFunc() + _shell_row->getOffset();
-             int _ntrafo_col = _shell_col->getNumFunc() + _shell_col->getOffset();
-
-             //cout << " _ntrafo_row " << _ntrafo_row << ":" << _shell_row->getType() << endl;
-             //cout << " _ntrafo_col " << _ntrafo_col << ":" << _shell_col->getType() << endl;
-             ub::matrix<double> _trafo_row = ub::zero_matrix<double>(_ntrafo_row,_nrows);
-             ub::matrix<double> _trafo_col = ub::zero_matrix<double>(_ntrafo_col,_ncols);
-
-             // get transformation matrices including contraction coefficients
-             std::vector<double> _contractions_row = (*itr)->contraction;
-             std::vector<double> _contractions_col = (*itc)->contraction;
-
-             this->getTrafo( _trafo_row, _lmax_row, _decay_row, _contractions_row);
-             this->getTrafo( _trafo_col, _lmax_col, _decay_col, _contractions_col);
-
-
-             // cartesian -> spherical
+            ub::matrix<double> _trafo_row = getTrafo(*itr);
+            ub::matrix<double> _trafo_col_tposed = ub::trans(getTrafo(*itc));      
 
              ub::matrix<double> kin_tmp = ub::prod( _trafo_row, kin );
-             ub::matrix<double> _trafo_col_tposed = ub::trans( _trafo_col );
              ub::matrix<double> kin_sph = ub::prod( kin_tmp, _trafo_col_tposed );
              // save to _matrix
              for ( unsigned i = 0; i< _matrix.size1(); i++ ) {
@@ -573,6 +554,7 @@ if (_lmax_col > 3) {
         
                 }//col
             }//row
+ return;
         }
     }
 }

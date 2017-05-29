@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -51,7 +51,7 @@ namespace votca { namespace xtp {
         Grid( bool createpolarsites, bool useVdWcutoff, bool useVdWcutoff_inside)
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(useVdWcutoff),_useVdWcutoff_inside(useVdWcutoff_inside),_cubegrid(false),_padding(3.0),
-             _createpolarsites(createpolarsites), _sites_seg(NULL), _atomlist(NULL), 
+             _createpolarsites(createpolarsites), _atomlist(NULL), 
             _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
             _boxX(0.0), _boxY(0.0), _boxZ(0.0) {};
            
@@ -59,7 +59,7 @@ namespace votca { namespace xtp {
         Grid()
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(false),_useVdWcutoff_inside(false),_cubegrid(false),_padding(3.0),
-             _createpolarsites(false), _sites_seg(NULL), _atomlist(NULL),
+             _createpolarsites(false), _atomlist(NULL),
              _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
              _boxX(0.0), _boxY(0.0), _boxZ(0.0){};
              
@@ -77,7 +77,7 @@ namespace votca { namespace xtp {
 		//std::vector< vec >* getPoints() {return &_gridpoints;}
         std::vector< ctp::APolarSite* > &Sites() {return _gridsites;}
         std::vector< ctp::APolarSite*>* getSites() {return &_gridsites;} 
-        ctp::PolarSeg* getSeg(){return _sites_seg;}
+       
 
         
         void setCutoffs(double cutoff, double cutoff_inside){_cutoff=cutoff;_cutoff_inside=cutoff_inside;}

@@ -50,7 +50,7 @@ namespace votca {
          */
         
       
-        bool TCrawMatrix::FillThreeCenterRepBlock(ub::matrix<double>& _subvector,  AOShell* _shell_3, AOShell* _shell_1, AOShell* _shell_2) {
+        bool TCMatrix_dft::FillThreeCenterRepBlock(ub::matrix<double>& _subvector, const AOShell* _shell_3, const AOShell* _shell_1, const AOShell* _shell_2) {
 
             const double pi = boost::math::constants::pi<double>();
             
@@ -68,9 +68,9 @@ namespace votca {
 
             // set size of internal block for recursion
            
-            AOShell* _shell_alpha;
-            AOShell* _shell_beta;
-            AOShell* _shell_gamma;
+            const AOShell* _shell_alpha;
+            const AOShell* _shell_beta;
+            const AOShell* _shell_gamma;
             bool alphabetaswitch=false;
 
             // We need lmax_alpha > lmax_beta, so instead of calculating (sp,s) we calculate (ps,s), due to symmetry they are the same. 
@@ -97,10 +97,9 @@ namespace votca {
             int _lmax_beta  = _shell_beta->getLmax();
             int _lmax_gamma = _shell_gamma->getLmax();
             
-            int _ngamma = this->getBlockSize(_lmax_gamma);
-            int _nalpha = this->getBlockSize(_lmax_alpha);
-            int _nbeta = this->getBlockSize(_lmax_beta);
-            int _ncombined =this->getBlockSize(_lmax_alpha+_lmax_beta);
+            int _ngamma = AOSuperMatrix::getBlockSize(_lmax_gamma);
+            int _nbeta = AOSuperMatrix::getBlockSize(_lmax_beta);
+            int _ncombined =AOSuperMatrix::getBlockSize(_lmax_alpha+_lmax_beta);
             
             typedef boost::multi_array<double, 3> ma_type;
             typedef boost::multi_array_types::extent_range range;
@@ -216,17 +215,16 @@ namespace votca {
          
 
 
-            //start vertical recurrence
-            typedef vector< AOGaussianPrimitive* >::iterator GaussianIterator;
-
-            for ( GaussianIterator italpha = _shell_alpha->firstGaussian(); italpha != _shell_alpha->lastGaussian(); ++italpha){
-                const double& _decay_alpha = (*italpha)->decay;
             
-                for ( GaussianIterator itbeta = _shell_beta->firstGaussian(); itbeta != _shell_beta->lastGaussian(); ++itbeta){
-                    const double& _decay_beta = (*itbeta)->decay;
+
+            for ( AOShell::GaussianIterator italpha = _shell_alpha->firstGaussian(); italpha != _shell_alpha->lastGaussian(); ++italpha){
+                const double _decay_alpha = (*italpha)->getDecay();
+            
+                for ( AOShell::GaussianIterator itbeta = _shell_beta->firstGaussian(); itbeta != _shell_beta->lastGaussian(); ++itbeta){
+                    const double _decay_beta = (*itbeta)->getDecay();
                     
-                    for ( GaussianIterator itgamma = _shell_gamma->firstGaussian(); itgamma != _shell_gamma->lastGaussian(); ++itgamma){
-                        const double& _decay_gamma = (*itgamma)->decay;
+                    for ( AOShell::GaussianIterator itgamma = _shell_gamma->firstGaussian(); itgamma != _shell_gamma->lastGaussian(); ++itgamma){
+                        const double _decay_gamma = (*itgamma)->getDecay();
             
           
             
@@ -293,9 +291,8 @@ namespace votca {
             
 
 
-            vector<double> _FmT(_mmax+1, 0.0); 
-           
-            XIntegrate(_FmT, _T);
+            
+            const vector<double> _FmT=AOMatrix::XIntegrate(_mmax+1, _T);
 
 
             double sss = ( 2.0 * pow(pi, 0.25) * pow( 8.0 * _decay_alpha * _decay_beta * _decay_gamma, 0.75 ) )
@@ -894,7 +891,7 @@ if (_lmax_gamma > 5) {
 
 
 
-std::vector<double> _contractions_gamma = (*itgamma)->contraction;
+const std::vector<double>& _contractions_gamma = (*itgamma)->getContraction();
 
   // s-functions
 double factor = _contractions_gamma[0];
@@ -1133,10 +1130,6 @@ for (index i = 0; i < n_orbitals[_lmax_alpha_beta]; ++i) {
 
                 }
 
-
-//          cout << "halloende" << endl;
-
-
             
 
 
@@ -1230,25 +1223,12 @@ if (_lmax_beta > 3) {
             int _ntrafo_gamma = _shell_gamma->getNumFunc() + _offset_gamma;
             // cout << "_ntrafo_alpha = " << _ntrafo_alpha << "   _ntrafo_beta = " << _ntrafo_beta << "   _ntrafo_gamma = " << _ntrafo_gamma << endl;
 
-            ub::matrix<double> _trafo_beta = ub::zero_matrix<double>(_ntrafo_beta, _nbeta);
-            ub::matrix<double> _trafo_alpha = ub::zero_matrix<double>(_ntrafo_alpha, _nalpha);
-
-
             
-            std::vector<double> _contractions_alpha = (*italpha)->contraction;
-
-            std::vector<double> _contractions_beta    = (*itbeta)->contraction;
             
-            // get transformation matrices
-            this->getTrafo(_trafo_beta, _lmax_beta, _decay_beta, _contractions_beta);
-            this->getTrafo(_trafo_alpha, _lmax_alpha, _decay_alpha, _contractions_alpha);
-
-
-
-
-
-
-
+            const ub::matrix<double> _trafo_beta=AOSuperMatrix::getTrafo(*itbeta);
+            const ub::matrix<double> _trafo_alpha=AOSuperMatrix::getTrafo(*italpha);
+            
+       
             ma_type R_sph;
             R_sph.resize(extents[ _ntrafo_alpha ][ _ntrafo_beta ][ _ntrafo_gamma ]);
 
@@ -1320,9 +1300,7 @@ if (_lmax_beta > 3) {
             }
         }
 
-                        
  
-//       cout << "ende" << endl;
     
        return _does_contribute;     
     }  
@@ -1331,48 +1309,5 @@ if (_lmax_beta > 3) {
         
         
         
-        void TCrawMatrix::XIntegrate(vector<double>& _FmT, const double& _T  ){
-        
-        const int _mm = _FmT.size() - 1;
-        const double pi = boost::math::constants::pi<double>();
-        if ( _mm < 0){
-            cerr << "mm is: " << _mm << " This should not have happened!" << flush;
-            exit(1);
-        }
-        
-        if ( _T < 0.0 ) {
-            cerr << "T is: " << _T << " This should not have happened!" << flush;
-            exit(1);
-        }
-  
-        if ( _T >= 10.0 ) {
-            // forward iteration
-            _FmT[0]=0.50*sqrt(pi/_T)* erf(sqrt(_T));
-
-            for (unsigned m = 1; m < _FmT.size(); m++ ){
-                _FmT[m] = (2*m-1) * _FmT[m-1]/(2.0*_T) - exp(-_T)/(2.0*_T) ;
-            }
-        }
-
-        if ( _T < 1e-10 ){
-           for ( unsigned m=0; m < _FmT.size(); m++){
-               _FmT[m] = 1.0/(2.0*m+1.0) - _T/(2.0*m+3.0); 
-           }
-        }
-
-        
-        if ( _T >= 1e-10 && _T < 10.0 ){
-            // backward iteration
-            double fm = 0.0;
-            for ( int m = 60; m >= _mm; m--){
-                fm = (2.0*_T)/(2.0*m+1.0) * ( fm + exp(-_T)/(2.0*_T));
-            } 
-            _FmT[_mm] = fm;
-            for (int m = _mm-1 ; m >= 0; m--){
-                _FmT[m] = (2.0*_T)/(2.0*m+1.0) * (_FmT[m+1] + exp(-_T)/(2.0*_T));
-            }
-        }
-        
-
-    }
+       
     }}

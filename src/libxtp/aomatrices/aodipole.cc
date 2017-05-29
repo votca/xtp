@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -31,7 +31,7 @@ namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
 
     
-    void AODipole::FillBlock( std::vector< ub::matrix_range< ub::matrix<double> > >& _matrix, AOShell* _shell_row, AOShell* _shell_col , AOBasis* ecp) {
+    void AODipole::FillBlock( std::vector< ub::matrix_range< ub::matrix<double> > >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col , AOBasis* ecp) {
 
         
         /* Calculating the AO matrix of the gradient operator requires 
@@ -67,7 +67,7 @@ namespace votca { namespace xtp {
         const vec& _pos_row = _shell_row->getPos();
         const vec& _pos_col = _shell_col->getPos();
         const vec  _diff    = _pos_row - _pos_col;
-        double _distsq = (_diff.getX()*_diff.getX()) + (_diff.getY()*_diff.getY()) + (_diff.getZ()*_diff.getZ()); 
+        double _distsq = (_diff*_diff); 
 
 
 
@@ -119,16 +119,16 @@ namespace votca { namespace xtp {
         std::vector<double> _center(3,0.0); // here: origin, can be changed later
         std::vector<double> _pmc(3,0.0);
         
-        typedef std::vector< AOGaussianPrimitive* >::iterator GaussianIterator;
+        
         // iterate over Gaussians in this _shell_row
-        for ( GaussianIterator itr = _shell_row->firstGaussian(); itr != _shell_row->lastGaussian(); ++itr){
+        for ( AOShell::GaussianIterator itr = _shell_row->firstGaussian(); itr != _shell_row->lastGaussian(); ++itr){
             // iterate over Gaussians in this _shell_col
             // get decay constant
-            const double& _decay_row = (*itr)->decay;
+            const double _decay_row = (*itr)->getDecay();
             
-            for ( GaussianIterator itc = _shell_col->firstGaussian(); itc != _shell_col->lastGaussian(); ++itc){
+            for ( AOShell::GaussianIterator itc = _shell_col->firstGaussian(); itc != _shell_col->lastGaussian(); ++itc){
                 //get decay constant
-                const double& _decay_col = (*itc)->decay;
+                const double _decay_col = (*itc)->getDecay();
         
        
                 const double _fak  = 0.5/(_decay_row + _decay_col);
@@ -574,23 +574,11 @@ if (_lmax_col > 3) {
 } // end if (_lmax_col > 3)
 
 
-        // normalization and cartesian -> spherical factors
-        int _ntrafo_row = _shell_row->getNumFunc() + _shell_row->getOffset();
-        int _ntrafo_col = _shell_col->getNumFunc() + _shell_col->getOffset();
+       
         
-        //cout << " _ntrafo_row " << _ntrafo_row << ":" << _shell_row->getType() << endl;
-        //cout << " _ntrafo_col " << _ntrafo_col << ":" << _shell_col->getType() << endl;
-        ub::matrix<double> _trafo_row = ub::zero_matrix<double>(_ntrafo_row,_nrows);
-        ub::matrix<double> _trafo_col = ub::zero_matrix<double>(_ntrafo_col,_ncols);
-
-        // get transformation matrices
-           // get transformation matrices including contraction coefficients
-        std::vector<double> _contractions_row = (*itr)->contraction;
-        std::vector<double> _contractions_col = (*itc)->contraction;
-        
-        this->getTrafo( _trafo_row, _lmax_row, _decay_row, _contractions_row);
-        this->getTrafo( _trafo_col, _lmax_col, _decay_col, _contractions_col);
-        ub::matrix<double> _trafo_col_tposed = ub::trans( _trafo_col );
+        ub::matrix<double> _trafo_row = getTrafo(*itr);
+        ub::matrix<double> _trafo_col_tposed = ub::trans(getTrafo(*itc));       
+        //ub::matrix<double> _trafo_col_tposed = ub::trans( _trafo_col );
 
         // cartesian -> spherical
        

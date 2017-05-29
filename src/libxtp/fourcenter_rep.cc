@@ -49,7 +49,8 @@ namespace votca {
          */
 
       
-        bool TCrawMatrix::FillFourCenterRepBlock(ub::matrix<double>& _subvector, AOShell* _shell_1, AOShell* _shell_2, AOShell* _shell_3, AOShell* _shell_4) {
+        bool FCMatrix_dft::FillFourCenterRepBlock(ub::matrix<double>& _subvector,
+                const AOShell* _shell_1, const AOShell* _shell_2, const AOShell* _shell_3, const AOShell* _shell_4) {
 
             const double pi = boost::math::constants::pi<double>();
             
@@ -68,10 +69,10 @@ namespace votca {
 
             // set size of internal block for recursion
            
-            AOShell* _shell_alpha;
-            AOShell* _shell_beta;
-            AOShell* _shell_gamma;
-            AOShell* _shell_delta;
+            const AOShell* _shell_alpha;
+            const AOShell* _shell_beta;
+            const AOShell* _shell_gamma;
+            const AOShell* _shell_delta;
             bool alphabetaswitch = false;
             bool gammadeltaswitch = false;
             bool ab_cd_switch = false;
@@ -236,12 +237,10 @@ namespace votca {
 
 
 
-            int _nalpha = this->getBlockSize(_lmax_alpha);
-            int _nbeta = this->getBlockSize(_lmax_beta);
-            int _ngamma = this->getBlockSize(_lmax_gamma);
-            int _ndelta = this->getBlockSize(_lmax_delta);
-            int _ncombined_ab = this->getBlockSize(_lmax_alpha+_lmax_beta);
-            int _ncombined_cd = this->getBlockSize(_lmax_gamma+_lmax_delta);
+            int _nbeta = AOSuperMatrix::getBlockSize(_lmax_beta);
+            int _ndelta = AOSuperMatrix::getBlockSize(_lmax_delta);
+            int _ncombined_ab = AOSuperMatrix::getBlockSize(_lmax_alpha+_lmax_beta);
+            int _ncombined_cd = AOSuperMatrix::getBlockSize(_lmax_gamma+_lmax_delta);
             
             typedef boost::multi_array<double, 3> ma_type;
             typedef boost::multi_array<double, 4> ma4_type; //////////////////
@@ -275,19 +274,17 @@ namespace votca {
 
 
 
-            typedef vector< AOGaussianPrimitive* >::iterator GaussianIterator;
-
-            for ( GaussianIterator italpha = _shell_alpha->firstGaussian(); italpha != _shell_alpha->lastGaussian(); ++italpha) {
-                const double& _decay_alpha = (*italpha)->decay;
+            for ( AOShell::GaussianIterator italpha = _shell_alpha->firstGaussian(); italpha != _shell_alpha->lastGaussian(); ++italpha) {
+                const double _decay_alpha = (*italpha)->getDecay();
             
-              for ( GaussianIterator itbeta = _shell_beta->firstGaussian(); itbeta != _shell_beta->lastGaussian(); ++itbeta) {
-                  const double& _decay_beta = (*itbeta)->decay;
+              for ( AOShell::GaussianIterator itbeta = _shell_beta->firstGaussian(); itbeta != _shell_beta->lastGaussian(); ++itbeta) {
+                  const double _decay_beta = (*itbeta)->getDecay();
                     
-                for ( GaussianIterator itgamma = _shell_gamma->firstGaussian(); itgamma != _shell_gamma->lastGaussian(); ++itgamma) {
-                    const double& _decay_gamma = (*itgamma)->decay;
+                for ( AOShell::GaussianIterator itgamma = _shell_gamma->firstGaussian(); itgamma != _shell_gamma->lastGaussian(); ++itgamma) {
+                    const double _decay_gamma = (*itgamma)->getDecay();
 
-                  for ( GaussianIterator itdelta = _shell_delta->firstGaussian(); itdelta != _shell_delta->lastGaussian(); ++itdelta) {
-                      const double& _decay_delta = (*itdelta)->decay;
+                  for ( AOShell::GaussianIterator itdelta = _shell_delta->firstGaussian(); itdelta != _shell_delta->lastGaussian(); ++itdelta) {
+                      const double _decay_delta = (*itdelta)->getDecay();
 
 
           
@@ -366,9 +363,7 @@ namespace votca {
             }
             
 
-            vector<double> _FmT(_mmax+1, 0.0);
-           
-            XIntegrate(_FmT, _T);
+            const vector<double> _FmT=AOMatrix::XIntegrate(_mmax+1, _T);
 
             double exp_AB = exp( -2. * _decay_alpha * _decay_beta * rzeta * _dist_AB );
             double exp_CD = exp( -2.* _decay_gamma * _decay_delta * reta * _dist_CD );
@@ -772,15 +767,10 @@ for (int l = 4; l < _lmax_beta+1; l++) {
             int _ntrafo_alpha = _shell_alpha->getNumFunc() + _offset_alpha;
             int _ntrafo_beta = _shell_beta->getNumFunc() + _offset_beta;
 
-            ub::matrix<double> _trafo_alpha = ub::zero_matrix<double>(_ntrafo_alpha, _nalpha);
-            ub::matrix<double> _trafo_beta = ub::zero_matrix<double>(_ntrafo_beta, _nbeta);
-
-            std::vector<double> _contractions_alpha = (*italpha)->contraction;
-            std::vector<double> _contractions_beta    = (*itbeta)->contraction;
             
             // get transformation matrices
-            this->getTrafo(_trafo_alpha, _lmax_alpha, _decay_alpha, _contractions_alpha);
-            this->getTrafo(_trafo_beta, _lmax_beta, _decay_beta, _contractions_beta);
+            const ub::matrix<double> _trafo_alpha = AOSuperMatrix::getTrafo(*italpha);
+            const ub::matrix<double> _trafo_beta = AOSuperMatrix::getTrafo(*itbeta);
 
             ma_type R3_ab_sph;
             R3_ab_sph.resize(extents[ _ntrafo_alpha ][ _ntrafo_beta ][ _ncombined_cd ]);
@@ -934,15 +924,9 @@ for (int l = 4; l < _lmax_delta+1; l++) {
             int _ntrafo_gamma = _shell_gamma->getNumFunc() + _offset_gamma;
             int _ntrafo_delta = _shell_delta->getNumFunc() + _offset_delta;
 
-            ub::matrix<double> _trafo_gamma = ub::zero_matrix<double>(_ntrafo_gamma, _ngamma);
-            ub::matrix<double> _trafo_delta = ub::zero_matrix<double>(_ntrafo_delta, _ndelta);
+            const ub::matrix<double> _trafo_gamma = AOSuperMatrix::getTrafo(*itgamma);
+            const ub::matrix<double> _trafo_delta = AOSuperMatrix::getTrafo(*itdelta);
 
-            std::vector<double> _contractions_gamma = (*itgamma)->contraction;
-            std::vector<double> _contractions_delta    = (*itdelta)->contraction;
-            
-            // get transformation matrices
-            this->getTrafo(_trafo_gamma, _lmax_gamma, _decay_gamma, _contractions_gamma);
-            this->getTrafo(_trafo_delta, _lmax_delta, _decay_delta, _contractions_delta);
 
             ma4_type R4_sph;
             R4_sph.resize(extents[ _ntrafo_alpha ][ _ntrafo_beta ][ _ntrafo_gamma ][ _ntrafo_delta ]);

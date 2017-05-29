@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -74,13 +74,12 @@ private:
     // GDMA _gdma;
     Property _gdma_options;
     bool _do_gdma;
+    QMMInterface qminterface;
     
     
     
     
-    
-    // GWBSE object
-    // GWBSE _gwbse;
+   
     Property _gwbse_options;
     int      _state;
     string   _type;
@@ -98,9 +97,7 @@ private:
     bool _convg_dQ;
     bool _convg_dE_QM;
     bool _convg_dE_MM;
-    
-    bool _split_dpl;
-    double _dpl_spacing;
+
     
     bool _do_gwbse; // needs to be set by options!!!
 
