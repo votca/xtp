@@ -22,7 +22,7 @@
 #include <votca/xtp/aomatrix.h>
 #include <votca/tools/linalg.h>
 //#include <boost/progress.hpp>
-#include <votca/xtp/numerical_integrations.h>
+#include <votca/xtp/numerical_integrations_periodic.h>
 #include <math.h> 
 #include <votca/tools/constants.h>
 
@@ -244,7 +244,7 @@ namespace votca { namespace xtp {
 
         ub::vector<double> _ESPatGrid = ub::zero_vector<double>(_grid.getsize());
         
-        NumericalIntegration numway;
+        NumericalIntegrationPeriodic numway;
 
         //numway.GridSetup(gridsize,&bs,_global_atomlist);
         numway.GridSetup(gridsize,&bs,_local_atomlist, &_global_basis);

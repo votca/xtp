@@ -71,6 +71,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/1ce08c7a/mulliken.o \
 	${OBJECTDIR}/_ext/1ce08c7a/nbo.o \
 	${OBJECTDIR}/_ext/4d261038/numerical_integrations.o \
+	${OBJECTDIR}/_ext/4d261038/numerical_integrations_periodic.o \
 	${OBJECTDIR}/_ext/4d261038/radial_euler_maclaurin_rule.o \
 	${OBJECTDIR}/_ext/4d261038/sphere_lebedev_rule.o \
 	${OBJECTDIR}/_ext/1ce08c7a/orbitals.o \
@@ -303,6 +304,11 @@ ${OBJECTDIR}/_ext/4d261038/numerical_integrations.o: nbproject/Makefile-${CND_CO
 	${MKDIR} -p ${OBJECTDIR}/_ext/4d261038
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/4d261038/numerical_integrations.o ../../src/libxtp/numerical_integration/numerical_integrations.cc
+
+${OBJECTDIR}/_ext/4d261038/numerical_integrations_periodic.o: nbproject/Makefile-${CND_CONF}.mk ../../src/libxtp/numerical_integration/numerical_integrations_periodic.cc 
+	${MKDIR} -p ${OBJECTDIR}/_ext/4d261038
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/4d261038/numerical_integrations_periodic.o ../../src/libxtp/numerical_integration/numerical_integrations_periodic.cc
 
 ${OBJECTDIR}/_ext/4d261038/radial_euler_maclaurin_rule.o: nbproject/Makefile-${CND_CONF}.mk ../../src/libxtp/numerical_integration/radial_euler_maclaurin_rule.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/4d261038
