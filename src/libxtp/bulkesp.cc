@@ -459,7 +459,7 @@ namespace votca {
             LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): found " << mols.size() << "molecules.\n" << flush;
             for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m) {
 
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << endl;
+                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin();
 
                 //verify atomic coordinates and units
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
@@ -483,7 +483,7 @@ namespace votca {
                 _grid.setAtomlist(&m->atoms);
                 //_grid.setCubegrid(true);
                 _grid.setupgrid();
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
+                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points ";
 
                 //calculate the ESP
                 //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
@@ -522,7 +522,7 @@ namespace votca {
                 //TODO: fit charges
                 std::vector< tools::vec > _fitcenters;
 
-                for (unsigned j = 0; j < _atomlist.size(); j++) {
+                for (unsigned j = 0; j < m->atoms.size(); j++) {
                     tools::vec _pos = m->atoms[j]->getPos() * tools::conv::ang2nm;
                     _fitcenters.push_back(_pos);
                 }
