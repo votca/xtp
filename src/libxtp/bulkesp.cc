@@ -183,12 +183,12 @@ namespace votca {
 
                 //we are done with this molecule, save it to mols
                 mols.push_back(m);
-                LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): put " << m.atoms.size()
-                        << " atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left.\n" << flush;
+                LOG(ctp::logDEBUG, *_log) << "BreakIntoMolecules(): put " << m.atoms.size()
+                        << " atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left." << flush;
             }
 
             if (periodic)
-                LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped.\n" << flush;
+                LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped." << flush;
 
             return (mols);
         }
@@ -339,7 +339,7 @@ namespace votca {
 
 
             if (periodic) {
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is on, including long range contributions." << endl;
+                LOG(ctp::logDEBUG, *_log) << "Bulkesp::ComputeESP(): periodicity is on, including long range contributions.";
                 double BL[3];
                 BL[0] = boxLen[0] * tools::conv::ang2bohr; //bohr
                 BL[1] = boxLen[1] * tools::conv::ang2bohr; //bohr
@@ -458,15 +458,15 @@ namespace votca {
             double system_netcharge=0;
 
             //loop over molecules
-            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): found " << mols.size() << "molecules.\n" << flush;
+            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
             for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m) {
 
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin();
+                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
 
                 //verify atomic coordinates and units
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
                     ctp::QMAtom* ap = *a;
-                    cout << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << endl;
+                    LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << flush;
                 }
                 //cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 
@@ -485,7 +485,7 @@ namespace votca {
                 _grid.setAtomlist(&m->atoms);
                 //_grid.setCubegrid(true);
                 _grid.setupgrid();
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points ";
+                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP
                 //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
@@ -540,7 +540,7 @@ namespace votca {
                 }
 
 
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl;
+                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
 
             }
             LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
