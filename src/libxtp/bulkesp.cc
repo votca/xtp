@@ -261,7 +261,7 @@ namespace votca {
             LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is " << N << flush;
 
             _do_round = false; //do not round net charge, we expect total charge to be non-int, as molecules can transfer some between themselves
-            netcharge = getNetcharge(_local_atomlist, N);
+            netcharge = getNetcharge(_local_atomlist, N, false); //don't round
 
             LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points" << flush;
             //boost::progress_display show_progress( _grid.getsize() );
@@ -402,20 +402,20 @@ namespace votca {
         void Bulkesp::FillElement2NBF(std::vector< ctp::QMAtom* >& _atomlist, BasisSet &bs) {
 
             //Find list of elements
-            _elements.clear();
+            _elementNames.clear();
             for (std::vector< ctp::QMAtom* >::iterator ait = _atomlist.begin(); ait < _atomlist.end(); ait++) {
 
                 std::string element_name = (*ait)->type;
                 list<std::string>::iterator ite;
-                ite = find(_elements.begin(), _elements.end(), element_name);
-                if (ite == _elements.end()) { //this is the first atom of this element encountered
-                    _elements.push_back(element_name);
+                ite = find(_elementNames.begin(), _elementNames.end(), element_name);
+                if (ite == _elementNames.end()) { //this is the first atom of this element encountered
+                    _elementNames.push_back(element_name);
                 }
             }
 
             //Find NBF for each element
             _element2NBF.clear();
-            for (list<std::string>::iterator eit = _elements.begin(); eit != _elements.end(); ++eit) {
+            for (list<std::string>::iterator eit = _elementNames.begin(); eit != _elementNames.end(); ++eit) {
                 vector<Shell*> shells = bs.getElement(*eit)->getShells();
                 int nfunc = 0;
                 //loop over shells
@@ -454,6 +454,8 @@ namespace votca {
 
             //open/create dipolesLog
             dipolesLog->open("dipolesLog.dat", ios_base::trunc);
+            
+            double system_netcharge=0;
 
             //loop over molecules
             LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): found " << mols.size() << "molecules.\n" << flush;
@@ -498,6 +500,8 @@ namespace votca {
                     //                site->setPhi(ESP(i), 0.0);
                     _grid.Sites()[i]->setPhi(ESP(i), 0.0);
                 }
+                
+                system_netcharge+=netcharge;
 
 
                 //and save it to a .cube file
@@ -541,7 +545,16 @@ namespace votca {
             }
             LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
             dipolesLog->close();
-            exit(0);
+
+            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " Net charge of the whole system is "<< system_netcharge << endl << flush;
+            if(fabs(system_netcharge)>0.05){
+                if(fmod(system_netcharge,1.0)<0.05){
+                    LOG(ctp::logWARNING, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System is ionized. Is this intended?"<< endl << flush;
+                }
+                else{
+                    LOG(ctp::logWARNING, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System has significant net partial charge. Projection was likely incomplete. "<< endl << flush;
+                }
+            }
         }
 
         
@@ -654,6 +667,49 @@ namespace votca {
 
             return _result;
         }
+        
+        
+        
+        double Bulkesp::getNetcharge(std::vector< ctp::QMAtom* >& _atoms, double N, bool doround) {
+            double netcharge = 0.0;
+            if (std::abs(N) < 0.05) {
+                //LOG(ctp::logDEBUG, *_log) << "Number of Electrons is "<<N<< " transitiondensity is used for fit"  << flush;
+                _do_Transition = true;
+            } else {
+                double Znuc_ECP = 0.0;
+                double Znuc = 0.0;
+                for (unsigned j = 0; j < _atoms.size(); j++) {
+                    Znuc_ECP += _elements.getNucCrgECP(_atoms[j]->type);
+                    Znuc += _elements.getNucCrg(_atoms[j]->type);
+                }
+
+                if (_ECP) {
+                    if (std::abs(Znuc_ECP - N) < 4) {
+                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you use ECPs, sounds good" << flush;
+                    } else if (std::abs(Znuc - N) < 4) {
+                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus real Nucleus charge is " << Znuc - N << " you are sure you want ECPs?" << flush;
+                    } else {
+                        LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you want ECPs, sounds interesting" << flush;
+                    }
+                    netcharge = Znuc_ECP - N;
+                } else {
+                    if (std::abs(Znuc - N) < 4) {
+                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus Nucleus charge is " << Znuc - N << " you probably do not use ECPs, if you do use ECPs please use the option. Otherwise you are fine" << flush;
+                    } else if (std::abs(Znuc_ECP - N) < 4) {
+                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you probably use ECPs, if you do use ECPs please use the option to switch on" << flush;
+                    } else {
+                        LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you use real core potentials, sounds interesting" << flush;
+                    }
+                }
+                _do_Transition = false;
+            }
+            if(doround){
+                LOG(ctp::logDEBUG, *_log) << "Rounding Netcharge from " << netcharge<< flush;
+            }
+            LOG(ctp::logDEBUG, *_log) << "Netcharge constrained to " << netcharge << flush;
+
+            return netcharge;
+        }    
 
 
     }//xtp

@@ -78,6 +78,7 @@ namespace votca { namespace xtp {
             }
 
             std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< ctp::QMAtom* > a, double scale);
+            double getNetcharge(std::vector< ctp::QMAtom* >& _atoms, double N, bool doround);
 
             ub::vector<double> ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
                     std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
@@ -94,7 +95,7 @@ namespace votca { namespace xtp {
         private:
 
             std::map<std::string, int> _element2NBF; //Number of Basis Functions for each element in the basis set
-            list<std::string> _elements; //list of all elements in the QMatoms vector
+            list<std::string> _elementNames; //list of all elements in the QMatoms vector
             std::string fn_prefix; //prefix for output files containing potentials
             bool periodic; //is the box periodic for the purposes of assigning atoms to molecules?
             double boxLen[3]; //dimensions of the box, assume cuboid shape
