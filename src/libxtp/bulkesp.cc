@@ -339,7 +339,7 @@ namespace votca {
 
 
             if (periodic) {
-                LOG(ctp::logDEBUG, *_log) << "Bulkesp::ComputeESP(): periodicity is on, including long range contributions.";
+                LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
                 double BL[3];
                 BL[0] = boxLen[0] * tools::conv::ang2bohr; //bohr
                 BL[1] = boxLen[1] * tools::conv::ang2bohr; //bohr
@@ -458,10 +458,10 @@ namespace votca {
             double system_netcharge=0;
 
             //loop over molecules
-            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
+            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
             for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m) {
 
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
+                LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
 
                 //verify atomic coordinates and units
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
@@ -540,19 +540,19 @@ namespace votca {
                 }
 
 
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
+                LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
 
             }
-            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
+            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
             dipolesLog->close();
 
-            LOG(ctp::logDEBUG, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " Net charge of the whole system is "<< system_netcharge << endl << flush;
+            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " Net charge of the whole system is "<< system_netcharge << endl << flush;
             if(fabs(system_netcharge)>0.05){
                 if(fmod(system_netcharge,1.0)<0.05){
-                    LOG(ctp::logWARNING, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System is ionized. Is this intended?"<< endl << flush;
+                    LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System is ionized. Is this intended?"<< endl << flush;
                 }
                 else{
-                    LOG(ctp::logWARNING, *_log) << " Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System has significant net partial charge. Projection was likely incomplete. "<< endl << flush;
+                    LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System has significant net partial charge. Projection was likely incomplete. "<< endl << flush;
                 }
             }
         }
@@ -616,7 +616,7 @@ namespace votca {
             }
 
             _Bvec(_Bvec.size1() - 1, 0) = _netcharge; //netcharge!!!!
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << "  Inverting Matrices " << flush;
+            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Inverting Matrices " << flush;
             // invert _Amat
             ub::matrix<double> _Amat_inverse = ub::zero_matrix<double>(_fitcenters.size() + 1, _fitcenters.size() + 1);
 
