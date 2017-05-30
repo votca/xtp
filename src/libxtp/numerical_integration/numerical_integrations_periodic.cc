@@ -264,8 +264,8 @@ namespace votca {
                     numK[i] = nK;
                 }
             }
-            cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl;
-            cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl;
+            //cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl;
+            //cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl;
 
 
             //allocate
@@ -346,7 +346,7 @@ namespace votca {
         }
 
         void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
-            cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl; //already in Bohr
+            //cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl; //already in Bohr
 
             alpha = ext_alpha;
             double fourasq = 4.0 * alpha*alpha;
@@ -403,8 +403,8 @@ namespace votca {
                  */
                 numK[i] = nK;
             }
-            cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl;
-            cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl;
+            //cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl;
+            //cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl;
 
 
             //allocate space for eikr
@@ -678,7 +678,7 @@ namespace votca {
                     }//iy
                     lowiy = 1 - numK[1];
                 }//ix
-                printf("%f=%f+%f\n", _ESPatGrid(0), E_rspace, k_pot(0));
+                //printf("%f=%f+%f\n", _ESPatGrid(0), E_rspace, k_pot(0));
                 //                exit(0);
 
 
