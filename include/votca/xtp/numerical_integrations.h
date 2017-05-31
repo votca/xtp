@@ -75,6 +75,7 @@ namespace votca { namespace xtp {
            double erf1c(double x);
             double erfcc(double x);
             std::vector<double> SSWpartition(int igrid, int ncenters ,  std::vector< std::vector<double> >& rq );
+            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
             
             
             std::vector<double> Rij;
