@@ -823,7 +823,7 @@ namespace votca {
 
         /*
          * Finds distances between integration centers.
-         * Overloads the same function from the parent
+         * Overrides the same function from the parent
          */
         void NumericalIntegrationPeriodic::FindCenterCenterDist(vector<ctp::QMAtom*> _atoms){
         
@@ -855,6 +855,39 @@ namespace votca {
                 i++;
             } // atoms
             return;
+        }
+        
+        /*
+         * Finds distances between grid points and integration centers.
+         * Overrides the same function from the parent
+         */
+        std::vector< std::vector<double> > NumericalIntegrationPeriodic::FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms,
+                std::vector< GridContainers::integration_grid > _atomgrid)
+        {
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
+            
+            std::vector< std::vector<double> > rq;
+            vector< ctp::QMAtom* > ::iterator bit;
+            // for each center
+            for (bit = _atoms.begin(); bit < _atoms.end(); ++bit) {
+                // get center coordinates
+               const vec atom_pos = (*bit)->getPos() * tools::conv::ang2bohr;
+
+
+                std::vector<double> temp;
+                // for each gridpoint
+                for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end(); ++git) {
+                    
+                    vec dif = WrapDisplacement(git->grid_pos, atom_pos, boxLen);
+                    temp.push_back(abs(dif));
+
+                } // gridpoint of _atomgrid
+                rq.push_back(temp); // rq[center][gridpoint]
+
+            } // centers
+            return(rq);
         }
         
         

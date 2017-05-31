@@ -30,15 +30,6 @@ using namespace votca::tools;
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
 
-        /**
-         * \brief Wraps a vector to periodic boundary conditions
-         * 
-         * @param vector r to wrap
-         * @param vector box specifying the periodic box
-         * @return the wrapped vector
-         */
-        tools::vec Wrap(const tools::vec r, const tools::vec box);
-
         class Bulkesp : public Espfit {
         public:
 

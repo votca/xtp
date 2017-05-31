@@ -43,7 +43,6 @@ namespace votca { namespace xtp {
             void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
             void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             void FreeKspace(void);
-            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
             inline void setBox(vec box){
                 boxLen=box;
                 return;
@@ -55,6 +54,9 @@ namespace votca { namespace xtp {
 
                     
         private:
+            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
+            std::vector< std::vector<double> > FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms, std::vector< GridContainers::integration_grid > _atomgrid);
+            
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
             std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
             std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution

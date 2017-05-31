@@ -1044,23 +1044,7 @@ namespace votca {
 
 
                 // get all distances from grid points to centers
-                std::vector< std::vector<double> > rq;
-                // for each center
-                for (bit = _atoms.begin(); bit < _atoms.end(); ++bit) {
-                    // get center coordinates
-                   const vec atom_pos = (*bit)->getPos() * tools::conv::ang2bohr;
-
-
-                    std::vector<double> temp;
-                    // for each gridpoint
-                    for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end(); ++git) {
-
-                        temp.push_back(abs(git->grid_pos-atom_pos));
-
-                    } // gridpoint of _atomgrid
-                    rq.push_back(temp); // rq[center][gridpoint]
-
-                } // centers
+                std::vector< std::vector<double> > rq=FindGridpointCenterDist(_atoms, _atomgrid);
                 // cout << " Calculated all gridpoint distances to centers for " << i_atom << endl;
                 
                 // find nearest-neighbor of this atom
@@ -1216,6 +1200,36 @@ namespace votca {
                 i++;
             } // atoms
             return;
+        }
+        
+        
+        /*
+         * Finds distances between grid points and integration centers.
+         * Brought out to a separate function to allow easy implementation
+         * of periodicity by a subclass.
+         */
+        std::vector< std::vector<double> > NumericalIntegration::FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms,
+                std::vector< GridContainers::integration_grid > _atomgrid)
+        {
+            std::vector< std::vector<double> > rq;
+            vector< ctp::QMAtom* > ::iterator bit;
+            // for each center
+            for (bit = _atoms.begin(); bit < _atoms.end(); ++bit) {
+                // get center coordinates
+               const vec atom_pos = (*bit)->getPos() * tools::conv::ang2bohr;
+
+
+                std::vector<double> temp;
+                // for each gridpoint
+                for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end(); ++git) {
+
+                    temp.push_back(abs(git->grid_pos-atom_pos));
+
+                } // gridpoint of _atomgrid
+                rq.push_back(temp); // rq[center][gridpoint]
+
+            } // centers
+            return(rq);
         }
         
         

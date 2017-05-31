@@ -37,25 +37,6 @@ namespace votca {
     namespace xtp {
         namespace ub = boost::numeric::ublas;
         
-        
-        
-        /**
-         * \brief Wraps a vector to periodic boundary conditions
-         * 
-         * @param vector r to wrap
-         * @param vector box specifying the periodic box
-         * @return the wrapped vector
-         */
-        tools::vec Wrap(const tools::vec r, const tools::vec box) {
-            tools::vec ret;
-            for(int k=0; k<3; k++)
-            {
-                ret[k]=fmod(r[k], box[k]);
-            }
-            return(ret);
-        }
-        
-        
 
         std::vector<Bulkesp::Molecule> Bulkesp::BreakIntoMolecules(std::vector< ctp::QMAtom* > _atoms, double scale) {
 
@@ -586,8 +567,8 @@ namespace votca {
                         tools::vec dif_i = _fitcenters[_i] - _gridpoints[_k];
                         tools::vec dif_j = _fitcenters[_j] - _gridpoints[_k];
                         if(periodic){ //adjust for periodic boundary conditions
-                            dif_i=Wrap(dif_i, L);
-                            dif_j=Wrap(dif_j, L);
+                            dif_i=WrapPoint(dif_i, L);
+                            dif_j=WrapPoint(dif_j, L);
                         }
                         double dist_i = tools::abs(dif_i) * tools::conv::nm2bohr;
                         double dist_j = tools::abs(dif_j) * tools::conv::nm2bohr;

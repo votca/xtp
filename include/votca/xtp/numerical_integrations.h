@@ -72,7 +72,8 @@ namespace votca { namespace xtp {
             double erf1c(double x);
             double erfcc(double x);
             std::vector<double> SSWpartition(int igrid, int ncenters, std::vector< std::vector<double> >& rq );
-            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
+            virtual void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
+            virtual std::vector< std::vector<double> > FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms, std::vector< GridContainers::integration_grid > _atomgrid);
             
             
             std::vector<double> Rij;
