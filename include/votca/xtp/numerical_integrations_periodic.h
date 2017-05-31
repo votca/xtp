@@ -40,12 +40,12 @@ namespace votca { namespace xtp {
             double IntegrateEnergy_w_PBC(vec rvector, vec boxLen);
             double CalcDipole_w_PBC(vec rvector, vec boxLen);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
-            void PrepKspaceDensity_gromacs_like(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
+            void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
+            void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             void FreeKspace(void);
             void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
-            inline void setBox(vec boxLen){
-                box=boxLen;
+            inline void setBox(vec box){
+                boxLen=box;
                 return;
             }
             
@@ -59,7 +59,7 @@ namespace votca { namespace xtp {
             std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
             std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             vec lll;
-            vec box;
+            vec boxLen; //in Bohr
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double *Kcoord;//k-values

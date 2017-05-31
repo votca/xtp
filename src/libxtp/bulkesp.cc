@@ -253,6 +253,7 @@ namespace votca {
             NumericalIntegrationPeriodic numway;
 
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
+            numway.setBox(boxLen*tools::conv::ang2bohr);
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);
             LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
@@ -306,8 +307,8 @@ namespace votca {
             for (double alpha = 0.01; alpha < 4; alpha += 0.01) {
                 numway.FillMadelungGrid(BL, natomsonside);
 #ifdef GROLIKE
-                numway.PrepKspaceDensity_gromacs_like(BL, alpha, fake_atom_list, _ECP, eval_grid, numK);
-                numway.IntegratePotential_w_PBC_gromacs_like(eval_grid, BL, _ESPatGrid);
+                numway.PrepKspaceDensity_gromacs_like(alpha, fake_atom_list, _ECP, eval_grid, numK);
+                numway.IntegratePotential_w_PBC_gromacs_like(eval_grid, _ESPatGrid);
 #else                
                 numway.PrepKspaceDensity(BL, alpha, fake_atom_list, _ECP, numK);
                 for (int i = 0; i < eval_grid.getsize(); i++) {
@@ -340,10 +341,7 @@ namespace votca {
 
             if (periodic) {
                 LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
-                double BL[3];
-                BL[0] = boxLen[0] * tools::conv::ang2bohr; //bohr
-                BL[1] = boxLen[1] * tools::conv::ang2bohr; //bohr
-                BL[2] = boxLen[2] * tools::conv::ang2bohr; //bohr
+                tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
                 numK = 16;
 
@@ -579,7 +577,7 @@ namespace votca {
             
             tools::vec L; //periodic box in nm
             if(periodic){
-                L=tools::vec(boxLen) *  tools::conv::ang2nm;
+                L = boxLen * tools::conv::ang2nm;
             }
 #pragma omp parallel for
             for (unsigned _i = 0; _i < _Amat.size1() - 1; _i++) {

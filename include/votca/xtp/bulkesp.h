@@ -98,7 +98,7 @@ namespace votca { namespace xtp {
             list<std::string> _elementNames; //list of all elements in the QMatoms vector
             std::string fn_prefix; //prefix for output files containing potentials
             bool periodic; //is the box periodic for the purposes of assigning atoms to molecules?
-            double boxLen[3]; //dimensions of the box, assume cuboid shape
+            tools::vec boxLen; //dimensions of the box, assume cuboid shape
             std::ofstream* dipolesLog; //file to log dipoles of all the molecules
 
             std::map<ctp::QMAtom*, int> MapAtom2MOCoefIndex(std::vector< ctp::QMAtom* >& _atomlist);

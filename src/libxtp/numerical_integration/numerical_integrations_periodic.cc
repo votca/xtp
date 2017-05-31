@@ -188,7 +188,7 @@ namespace votca {
          * @param boxLen
          * @param Kspacing in Angstroms
          */
-        void NumericalIntegrationPeriodic::PrepKspaceDensity(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK = 0) {
+        void NumericalIntegrationPeriodic::PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK = 0) {
 
             cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl;
 
@@ -345,7 +345,7 @@ namespace votca {
 
         }
 
-        void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
+        void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
             //cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl; //already in Bohr
 
             alpha = ext_alpha;
@@ -473,10 +473,11 @@ namespace votca {
 
         }
 
-        void NumericalIntegrationPeriodic::FillMadelungGrid(vec boxLen, int natomsonside) {
+        void NumericalIntegrationPeriodic::FillMadelungGrid(vec box, int natomsonside) {
             //fill _Madelung_grid;
             _Madelung_grid.clear();
             std::vector< GridContainers::integration_grid > _Mad;
+            boxLen = box;
             double a = boxLen[0]; //in bohr
             for (int l = 0; l < 2; l++) {
                 for (int m = 0; m < 2; m++) {
@@ -820,14 +821,14 @@ namespace votca {
             int i = 1;
             for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
                 // get center coordinates in Bohr
-                vec pos_a = (*ait)->getPos();
+                vec pos_a = (*ait)->getPos() * tools::conv::ang2bohr;
                 
                 int j = 0;
                 for (bit = _atoms.begin(); bit != ait; ++bit) {
                     ij++;
                     // get center coordinates in Bohr
-                    vec pos_b = (*bit)->getPos();
-                    vec dif = WrapDisplacement(pos_a, pos_b, box) * tools::conv::ang2bohr;
+                    vec pos_b = (*bit)->getPos() * tools::conv::ang2bohr;
+                    vec dif = WrapDisplacement(pos_a, pos_b, boxLen);
                     Rij.push_back(1.0 / abs(dif));
                                         
                     j++;
