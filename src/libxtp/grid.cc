@@ -46,7 +46,6 @@ Grid::Grid(const Grid &obj)
         
         
 Grid::~Grid() {
-       
         std::vector<ctp::APolarSite*>::iterator pit;
         for(pit=_all_gridsites.begin();pit!=_all_gridsites.end();++pit){
             delete *pit;
