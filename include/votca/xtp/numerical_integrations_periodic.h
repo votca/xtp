@@ -35,10 +35,10 @@ namespace votca { namespace xtp {
             
             double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
 
-            double IntegratePotential_w_PBC(vec rvector, vec boxLen);
-            void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, vec boxLen, ub::vector<double>& _ESPatGrid);
-            double IntegrateEnergy_w_PBC(vec rvector, vec boxLen);
-            double CalcDipole_w_PBC(vec rvector, vec boxLen);
+            double IntegratePotential_w_PBC(vec rvector);
+            void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid);
+            double IntegrateEnergy_w_PBC(vec rvector);
+            double CalcDipole_w_PBC(vec rvector);
             void findAlpha(double Rc, double dtol);
             void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
             void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);

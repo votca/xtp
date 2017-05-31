@@ -42,7 +42,10 @@ namespace votca {
     namespace xtp {
         namespace ub = boost::numeric::ublas;
 
-        double NumericalIntegrationPeriodic::IntegratePotential_w_PBC(vec rvector, vec boxLen) {
+        double NumericalIntegrationPeriodic::IntegratePotential_w_PBC(vec rvector) {
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
 
             double result = 0.0;
             double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0;
@@ -118,7 +121,10 @@ namespace votca {
             return result;
         }
 
-        double NumericalIntegrationPeriodic::CalcDipole_w_PBC(vec rvector, vec boxLen) {
+        double NumericalIntegrationPeriodic::CalcDipole_w_PBC(vec rvector) {
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
             //as a check, compute the dipole moment of the density distribution.
             //center it on the first atom, for example.
 
@@ -190,6 +196,9 @@ namespace votca {
          */
         void NumericalIntegrationPeriodic::PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK = 0) {
 
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
             cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl;
 
             //add nuclear charges to _grid to avoid having to do periodic calculations on them separately;
@@ -346,7 +355,9 @@ namespace votca {
         }
 
         void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
-            //cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl; //already in Bohr
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
 
             alpha = ext_alpha;
             double fourasq = 4.0 * alpha*alpha;
@@ -496,8 +507,11 @@ namespace votca {
             //exit(0);
         }
 
-        void NumericalIntegrationPeriodic::IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, vec boxLen, ub::vector<double>& _ESPatGrid) {
-
+        void NumericalIntegrationPeriodic::IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid) {
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
+            
             double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0; //Bohr
             double vol = boxLen[0] * boxLen[1] * boxLen[2]; //Bohr^3
             //eval_grid is in nm
@@ -813,6 +827,10 @@ namespace votca {
          */
         void NumericalIntegrationPeriodic::FindCenterCenterDist(vector<ctp::QMAtom*> _atoms){
         
+            if(boxLen*boxLen==0){
+                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+            }
+            
             int ij = 0;
             Rij.push_back(0.0); // 1st center "self-distance"
             

@@ -346,8 +346,8 @@ namespace votca {
                 numK = 16;
 
 
-                numway.PrepKspaceDensity_gromacs_like(BL, 0.5, _local_atomlist, _ECP, _grid, numK);
-                numway.IntegratePotential_w_PBC_gromacs_like(_grid, BL, _ESPatGrid);
+                numway.PrepKspaceDensity_gromacs_like(0.5, _local_atomlist, _ECP, _grid, numK);
+                numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
 
 
                 /*
@@ -370,7 +370,7 @@ namespace votca {
                 dipPos(0) = atom->x * tools::conv::ang2bohr;
                 dipPos(1) = atom->y * tools::conv::ang2bohr;
                 dipPos(2) = atom->z * tools::conv::ang2bohr;
-                double dipole = numway.CalcDipole_w_PBC(dipPos, BL); //in bohr * e
+                double dipole = numway.CalcDipole_w_PBC(dipPos); //in bohr * e
                 LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Molecular dipole: " << dipole / 0.393430307 << "Debye" << flush;
                 *dipolesLog << dipole / 0.393430307 << endl;
 
