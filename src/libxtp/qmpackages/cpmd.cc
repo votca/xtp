@@ -746,8 +746,8 @@ namespace votca {
             
             
             //basis set
-            if(_orbitals->hasGWbasis()){
-                if(_orbitals->getGWbasis().compare(_basisset_name)!=0){
+            if(_orbitals->hasDFTbasis()){
+                if(_orbitals->getDFTbasis().compare(_basisset_name)!=0){
                     cerr << "CPMD: _orbitals already has a basis set and it does not match the basis set CPMD was initialized with." << flush;
                     LOG(ctp::logDEBUG, *_pLog) << "CPMD: _orbitals already has a basis set and it does not match the basis set CPMD was initialized with." << flush;
                     throw std::runtime_error("Basis set mismatch");
@@ -755,7 +755,7 @@ namespace votca {
                 }
             }
             else{
-                _orbitals->setGWbasis(_basisset_name);
+                _orbitals->setDFTbasis(_basisset_name);
             }
             
             return true;
