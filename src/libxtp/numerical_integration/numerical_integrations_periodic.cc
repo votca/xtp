@@ -806,5 +806,75 @@ namespace votca {
             return (result);
         }
 
-    }
-}
+        /*
+         * Finds distances between integration centers.
+         * Overloads the same function from the parent
+         */
+        void NumericalIntegrationPeriodic::FindCenterCenterDist(vector<ctp::QMAtom*> _atoms){
+        
+            int ij = 0;
+            Rij.push_back(0.0); // 1st center "self-distance"
+            
+            vector< ctp::QMAtom* > ::iterator ait;
+            vector< ctp::QMAtom* > ::iterator bit;
+            int i = 1;
+            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                // get center coordinates in Bohr
+                vec pos_a = (*ait)->getPos();
+                
+                int j = 0;
+                for (bit = _atoms.begin(); bit != ait; ++bit) {
+                    ij++;
+                    // get center coordinates in Bohr
+                    vec pos_b = (*bit)->getPos();
+                    vec dif = WrapDisplacement(pos_a, pos_b, box) * tools::conv::ang2bohr;
+                    Rij.push_back(1.0 / abs(dif));
+                                        
+                    j++;
+                } // atoms
+                Rij.push_back(0.0); // self-distance again
+                i++;
+            } // atoms
+            return;
+        }
+        
+        
+        /**
+         * \brief Wraps a vector to periodic boundary conditions. This eventually needs to be moved to tools::vec.
+         * 
+         * @param vector r to wrap
+         * @param vector box specifying the periodic box
+         * @return the wrapped vector
+         */
+        tools::vec WrapPoint(const tools::vec r, const tools::vec box) {
+            tools::vec ret;
+            for(int k=0; k<3; k++)
+            {
+                ret[k] = fmod(r[k], box[k]);
+            }
+            return(ret);
+        }
+        
+        /**
+         * \brief Finds the shortest displacement between images of two vectors due to periodic boundary conditions.
+         * This eventually needs to be moved to tools::vec.
+         * 
+         * @param vector a
+         * @param vector b
+         * @param vector box specifying the periodic box
+         * @return the shortest displacement
+         */
+        tools::vec WrapDisplacement(const tools::vec a, const tools::vec b , const tools::vec box) {
+            tools::vec ret = a-b;
+            for(int k=0; k<3; k++)
+            {
+                ret[k] = fmod(ret[k], box[k]);
+                if(ret[k] > box[k]*0.5){
+                    ret[k] = box[k]-ret[k];
+                }
+            }
+            return(ret);
+        }
+        
+    }//xtp
+}//votca

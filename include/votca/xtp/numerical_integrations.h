@@ -18,7 +18,7 @@
  */
 
 #ifndef __XTP_NUMERICAL_INTEGRATION__H
-#define __XTP_NUMERICAL_INTEGRATION__H
+#define	__XTP_NUMERICAL_INTEGRATION__H
 
 // Overload of uBLAS prod function with MKL/GSL implementations
 #include <votca/tools/linalg.h>
@@ -30,52 +30,54 @@
 #include <votca/ctp/qmatom.h>
 
 
-namespace votca {
-    namespace xtp {
+namespace votca { namespace xtp {
 
-        namespace ub = boost::numeric::ublas;
+    namespace ub = boost::numeric::ublas;
+    
+    
 
         class NumericalIntegration {
-        public:
+        public: 
+            
+            NumericalIntegration():density_set(false) {};
 
-            NumericalIntegration() : density_set(false) {
-            };
-
-            void GridSetup(std::string type, BasisSet* bs, std::vector<ctp::QMAtom* > _atoms, AOBasis* basis);
+            void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
             std::vector<const vec*> getGridpoints();
 
             //void FindsignificantAtoms2(AOBasis* basis);
             //used for test purposes
-            double StupidIntegrate(std::vector<double>& _data);
+            double StupidIntegrate( std::vector<double>& _data );
+            
+            
+            
             double IntegrateDensity_Atomblock(const ub::matrix<double>& _density_matrix);
             double IntegratePotential(const vec& rvector);
             double IntegrateField(const std::vector<double>& externalfield);
             double getExactExchange(const std::string _functional);
             // in principle a symmetric matrix would be nicer but we calculate whole vxc matrix because of numerics and symmetrize explicitly 
-            ub::matrix<double> IntegrateVXC_Atomblock(const ub::matrix<double>& _density_matrix, const std::string _functional);
+            ub::matrix<double> IntegrateVXC_Atomblock (const ub::matrix<double>& _density_matrix,const std::string _functional);
             //ub::matrix<double> IntegrateVXC_Atomblock2 (const ub::matrix<double>& _density_matrix, AOBasis* basis,const std::string _functional);
             ub::matrix<double> IntegrateExternalPotential_Atomblock(const std::vector<double>& Potentialvalues);
-
+         
+            
             // this gives int (e_xc-V_xc)*rho d3r
-
-            double getTotEcontribution() {
-                return EXC;
-            }
-
-
+            double getTotEcontribution(){return EXC;}
+          
+            
         protected:
-
+            
             AOBasis* _basis;
 
             void FindsignificantAtoms();
             double erf1c(double x);
             double erfcc(double x);
-            std::vector<double> SSWpartition(int igrid, int ncenters, std::vector< std::vector<double> >& rq);
-
-
+            std::vector<double> SSWpartition(int igrid, int ncenters, std::vector< std::vector<double> >& rq );
+            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
+            
+            
             std::vector<double> Rij;
 
-            double _totalgridsize;
+            double  _totalgridsize;
             std::vector< std::vector< GridContainers::integration_grid > > _grid;
             double EXC;
             bool density_set;
@@ -88,6 +90,6 @@ namespace votca {
             std::vector< std::vector< std::vector< ub::matrix<double> > > > xcmat_vector_thread;
             std::vector< std::vector< ub::matrix<double> > > xcmat_vector;
         };
-    }
-}
-#endif /* NUMERICAL_INTEGRATION_H */
+
+    }}
+#endif	/* NUMERICAL_INTEGRATION_H */

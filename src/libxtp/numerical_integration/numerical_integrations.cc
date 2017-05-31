@@ -937,31 +937,12 @@ namespace votca {
 
             
             // for the partitioning, we need all inter-center distances later, stored in one-directional list
-            int ij = 0;
-            Rij.push_back(0.0); // 1st center "self-distance"
+            FindCenterCenterDist(_atoms);
+
             
             vector< ctp::QMAtom* > ::iterator ait;
             vector< ctp::QMAtom* > ::iterator bit;
-            int i = 1;
-            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
-                // get center coordinates in Bohr
-                vec pos_a = (*ait)->getPos() * tools::conv::ang2bohr;
-                
-                int j = 0;
-                for (bit = _atoms.begin(); bit != ait; ++bit) {
-                    ij++;
-                    // get center coordinates in Bohr
-                    vec pos_b = (*bit)->getPos() * tools::conv::ang2bohr;
-                   
-                    Rij.push_back(1.0 / abs(pos_a-pos_b));
-                                        
-                    j++;
-                } // atoms
-                Rij.push_back(0.0); // self-distance again
-                i++;
-            } // atoms
             
-
 
             int i_atom = 0;
             _totalgridsize = 0;
@@ -1203,6 +1184,41 @@ namespace votca {
             
             return p;
         }
+        
+        /*
+         * Finds distances between integration centers.
+         * Brought out to a separate function to allow easy implementation
+         * of periodicity by a subclass.
+         */
+        void NumericalIntegration::FindCenterCenterDist(vector<ctp::QMAtom*> _atoms){
+        
+            int ij = 0;
+            Rij.push_back(0.0); // 1st center "self-distance"
+            
+            vector< ctp::QMAtom* > ::iterator ait;
+            vector< ctp::QMAtom* > ::iterator bit;
+            int i = 1;
+            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                // get center coordinates in Bohr
+                vec pos_a = (*ait)->getPos() * tools::conv::ang2bohr;
+                
+                int j = 0;
+                for (bit = _atoms.begin(); bit != ait; ++bit) {
+                    ij++;
+                    // get center coordinates in Bohr
+                    vec pos_b = (*bit)->getPos() * tools::conv::ang2bohr;
+                   
+                    Rij.push_back(1.0 / abs(pos_a-pos_b));
+                                        
+                    j++;
+                } // atoms
+                Rij.push_back(0.0); // self-distance again
+                i++;
+            } // atoms
+            return;
+        }
+        
+        
 
         double NumericalIntegration::erf1c(double x){
              
