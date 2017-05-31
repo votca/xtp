@@ -230,9 +230,17 @@ void AOBasis::addMultiplierShell(const string& start, const string& target, cons
                 multiplier.push_back(1);
             }
             else if (shell_type == "P") {
-                multiplier.push_back(1);
-                multiplier.push_back(1);
-                multiplier.push_back(1);
+                if(start == "cpmd"){
+                    //cpmd order is -px -pz -py
+                    multiplier.push_back(-1);
+                    multiplier.push_back(-1);
+                    multiplier.push_back(-1);
+                }
+                else{
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                    multiplier.push_back(1);
+                }
             }
             else if (shell_type == "D") {
                 if (start == "nwchem") {
@@ -314,9 +322,9 @@ void AOBasis::addReorderShell(const string& start,const string& target,const str
                     neworder.push_back(_cur_pos + 3);
                     neworder.push_back(_cur_pos + 2);
                     neworder.push_back(_cur_pos + 1);
-				} else if(start == "cpmd"){ 
-					//cpmd order is -px -pz -py
-	                neworder.push_back( _cur_pos + 3 );
+		} else if(start == "cpmd"){ 
+                    //cpmd order is -px -pz -py
+	            neworder.push_back( _cur_pos + 3 );
     	            neworder.push_back( _cur_pos + 1 );
     	            neworder.push_back( _cur_pos + 2 );
                 } else if (start == "votca") {//for usage with old orb files
@@ -343,7 +351,7 @@ void AOBasis::addReorderShell(const string& start,const string& target,const str
                neworder.push_back( _cur_pos + 2 );
                neworder.push_back( _cur_pos + 5 );
                neworder.push_back( _cur_pos + 4 );
-           } else if ( start == "nwchem") {
+            } else if ( start == "nwchem") {
 
                // nwchem order is dxy dyz d3z2-r2 -dxz dx2-y2 
                neworder.push_back( _cur_pos + 4 ); 
@@ -352,7 +360,7 @@ void AOBasis::addReorderShell(const string& start,const string& target,const str
                //neworder.push_back( -(_cur_pos + 1) ); // bloody inverted sign // BUG!!!!!!!
                neworder.push_back( _cur_pos + 3 ); 
                neworder.push_back( _cur_pos + 5 );               
-			}else if ( start == "cpmd") {
+            }else if ( start == "cpmd") {
 
                //cpmd order is dxy dxz d3z2-r2 dyz dx2-y2
                neworder.push_back( _cur_pos + 4 ); 
@@ -360,7 +368,7 @@ void AOBasis::addReorderShell(const string& start,const string& target,const str
                neworder.push_back( _cur_pos + 1 );
                neworder.push_back( _cur_pos + 2 ); 
                neworder.push_back( _cur_pos + 5 );              
-			}else if ( start == "votca") { //for usage with old orb files
+            }else if ( start == "votca") { //for usage with old orb files
                
                neworder.push_back( _cur_pos + 4 ); 
                neworder.push_back( _cur_pos + 2 );
