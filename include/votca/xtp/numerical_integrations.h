@@ -67,7 +67,7 @@ namespace votca { namespace xtp {
             double getTotEcontribution(){return EXC;}
           
             
-        private:
+        protected:
             
             AOBasis* _basis;
             

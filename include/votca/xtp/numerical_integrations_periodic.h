@@ -28,9 +28,7 @@ namespace votca { namespace xtp {
 
     namespace ub = boost::numeric::ublas;
     
-    
-
-        class NumericalIntegrationPeriodic: public NumericalIntegration {
+    class NumericalIntegrationPeriodic: public NumericalIntegration {
         public: 
             
             //void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
@@ -45,17 +43,23 @@ namespace votca { namespace xtp {
             void PrepKspaceDensity(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
             void PrepKspaceDensity_gromacs_like(vec boxLen, double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             void FreeKspace(void);
+            void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
+            inline void setBox(vec boxLen){
+                box=boxLen;
+                return;
+            }
+            
+            //used for debuging and testing
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
             void FillMadelungGrid(vec boxLen, int natomsonside);
 
                     
         private:
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
-            //std::complex<double>**** eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
-            //std::complex<double>*** eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
             std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             vec lll;
+            vec box;
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double *Kcoord;//k-values
@@ -63,7 +67,10 @@ namespace votca { namespace xtp {
             double E_rspace;
             double E_kspace;
             double E_erfc;
-        };
+    };
+        
+    tools::vec WrapPoint(const tools::vec r, const tools::vec box);
+    tools::vec WrapDisplacement(const tools::vec a, const tools::vec b, const tools::vec box);
 
-    }}
+}}
 #endif	/* NUMERICAL_INTEGRATION_H */
