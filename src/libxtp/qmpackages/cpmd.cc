@@ -535,20 +535,21 @@ namespace votca {
          */
         bool Cpmd::Run() {
             
-            if (std::system(NULL)){
-                std::system("rm -f LocalError*.log");
-            }
-            
             if(_optWF && _projectWF){ //CPMD needs to run twice, once for _optWF and once for _projectWF
                 //_optWF run:
                  LOG(ctp::logDEBUG, *_pLog) << "CPMD: running [" << _executable << " " << _wfOpt_input_file_name << "]" << flush;
                  if (std::system(NULL)) {
                     std::string _command;
-                    _command = "cd " + _run_dir + "; " + _executable + " " + _wfOpt_input_file_name + ">" + _wfOpt_log_file_name;
+                    _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _wfOpt_input_file_name + ">" + _wfOpt_log_file_name;
                     int check=std::system(_command.c_str());
-	                if (check==-1){
+	            if (check==-1){
     	                LOG(ctp::logERROR, *_pLog) << _input_file_name << " failed to start" << flush;
     	                return false;
+    	            }
+                    
+                    check = std::system("mv LocalError*.log LocalError_wfOpt*.log");
+                    if (check==0){
+    	                LOG(ctp::logWARNING, *_pLog) << "CPMD produced an error log. Moving it to LocalError_wfOpt*.log" << flush;
     	            }
 
                     if (CheckLogFile()) {
@@ -558,9 +559,8 @@ namespace votca {
                         return false;
                     }
                     
-                    std::system("mv LocalError*.log LocalError_wfOpt*.log");
                 } else {
-                    LOG(ctp::logERROR, *_pLog) << _wfOpt_input_file_name << " failed to start" << flush;
+                    LOG(ctp::logERROR, *_pLog) << _wfOpt_input_file_name << " failed to start. No shell accessible." << flush;
                     return false;
                 }
                  
