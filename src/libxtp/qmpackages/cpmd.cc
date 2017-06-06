@@ -223,6 +223,9 @@ namespace votca {
                 _com_file << "  PCG MINIMIZE" << endl;              //use the more stable optimizer
                 _com_file << "  TIMESTEP" << endl;
                 _com_file << "   20" << endl;
+                _com_file << "  STORE WAVEFUNCTIONS" <<endl;
+                _com_file << "   20 SC=20" <<endl;
+
 
             }
             if(_elpot){                                                 //output electrostatic potential
@@ -540,7 +543,7 @@ namespace votca {
                  LOG(ctp::logDEBUG, *_pLog) << "CPMD: running [" << _executable << " " << _wfOpt_input_file_name << "]" << flush;
                  if (std::system(NULL)) {
                     std::string _command;
-                    _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _wfOpt_input_file_name + ">" + _wfOpt_log_file_name;
+                    _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _wfOpt_input_file_name + " | tee " + _wfOpt_log_file_name;
                     int check=std::system(_command.c_str());
 	            if (check==-1){
     	                LOG(ctp::logERROR, *_pLog) << _input_file_name << " failed to start" << flush;
@@ -573,7 +576,7 @@ namespace votca {
 
             if (std::system(NULL)) {
                 std::string _command;
-                _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _input_file_name + ">" + _log_file_name;
+                _command = "cd " + _run_dir + "; rm -f LocalError*.log; " + _executable + " " + _input_file_name + " | tee " + _log_file_name;
                 int check=std::system(_command.c_str());
                 if (check==-1){
                     LOG(ctp::logERROR, *_pLog) << _input_file_name << " failed to start" << flush;
