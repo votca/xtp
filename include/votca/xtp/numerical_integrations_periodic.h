@@ -51,6 +51,16 @@ namespace votca { namespace xtp {
             //used for debuging and testing
             std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
             void FillMadelungGrid(vec boxLen, int natomsonside);
+            
+        protected:
+            virtual void FindsignificantAtoms();  
+            
+            //which cell the relevant image of significant atoms resides in
+            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellX;
+            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellY;
+            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellZ;
+            //coords of the relevant image
+            std::vector< std::vector< std::vector<tools::vec> > > _significant_atoms_pos;
 
                     
         private:

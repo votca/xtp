@@ -68,7 +68,7 @@ namespace votca { namespace xtp {
             
             AOBasis* _basis;
 
-            void FindsignificantAtoms();
+            virtual void FindsignificantAtoms();
             double erf1c(double x);
             double erfcc(double x);
             std::vector<double> SSWpartition(int igrid, int ncenters, std::vector< std::vector<double> >& rq );

@@ -928,5 +928,199 @@ namespace votca {
             return(ret);
         }
         
+        
+        
+        
+        
+        void NumericalIntegrationPeriodic::FindsignificantAtoms() {
+
+            int _atomindex = 0;
+            int _Idx = 0;
+            int _size = 0;
+
+            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+
+                if ((*_row)->getIndex() == _atomindex) {
+
+                    _singleatom.push_back(_row);
+                    _size += (*_row)->getNumFunc();
+
+                } else {
+
+                    // append _singleatom to _atomshells
+                    _atomshells.push_back(_singleatom);
+                    _startIdx.push_back(_Idx);
+                    _blocksize.push_back(_size);
+                    // reset _singleatom
+                    _singleatom.clear();
+                    _size = (*_row)->getNumFunc();
+                    _Idx = (*_row)->getStartIndex();
+                    _singleatom.push_back(_row);
+                    _atomindex = (*_row)->getIndex();
+
+                }
+            }
+
+            _atomshells.push_back(_singleatom);
+            _startIdx.push_back(_Idx);
+            _blocksize.push_back(_size);
+
+
+            // setup a list of min decay constants per atom
+            // for every shell
+            _atomindex = 0;
+            double _decaymin = 1e7;
+            vector< double > _minimal_decay;
+            vector < vec > _positions;
+            vec _localpos = (*_basis->firstShell())->getPos();
+            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+
+                if ((*_row)->getIndex() == _atomindex) {
+
+                    // check all decay constants in this shell
+                    for (AOShell::GaussianIterator itg = (*_row)->firstGaussian(); itg != (*_row)->lastGaussian(); itg++) {
+                        const AOGaussianPrimitive* gaussian = *itg;
+                        double _decay = gaussian->getDecay();
+                        if (_decay < _decaymin) {
+                            _decaymin = _decay;
+                        } // decay min check
+
+                    } // Gaussian Primitives 
+
+                } else { // if shell belongs to the actual atom
+                    // add to mininal_decay vector
+                    _minimal_decay.push_back(_decaymin);
+                    _positions.push_back(_localpos);
+                    // reset counters
+                    _decaymin = 1e7;
+                    _localpos = (*_row)->getPos();
+
+                    _atomindex++;
+
+                    // check all decay constants in this shell
+                    for (AOShell::GaussianIterator itg = (*_row)->firstGaussian(); itg != (*_row)->lastGaussian(); itg++) {
+                        const AOGaussianPrimitive* gaussian = *itg;
+                        double _decay = gaussian->getDecay();
+                        if (_decay < _decaymin) {
+                            _decaymin = _decay;
+                        } // decay min check
+
+                    } // Gaussian Primitives                                       
+                }
+            } // all shells
+
+            // push final atom
+            _minimal_decay.push_back(_decaymin);
+            _positions.push_back(_localpos);
+
+
+            // for each gridpoint, check the value of exp(-a*(r-R)^2) < 1e-10
+            //                             = alpha*(r-R)^2 >~ 20.7
+
+            // each atomic grid
+            for (unsigned i = 0; i < _grid.size(); i++) {
+
+                vector< vector<int> > _significant_atoms_atomgrid;
+                vector< vector<tools::vec> > _significant_atoms_pos_atomgrid;
+
+                // each point of the atomic grid
+                for (unsigned j = 0; j < _grid[i].size(); j++) {
+
+                    vector<int> _significant_atoms_gridpoint;
+                    vector<tools::vec> _significant_atoms_pos_gridpoint;
+                    const vec& grid = _grid[i][j].grid_pos;
+
+
+                    // check all images
+                    unsigned maxImg = 3;
+                    for (int imgX = -maxImg; imgX <= maxImg; imgX++) {// X
+                        for (int imgY = -maxImg; imgY <= maxImg; imgY++) {// Y
+                            for (int imgZ = -maxImg; imgZ <= maxImg; imgZ++) {// Z
+                                vec boxshift=vec(imgX*boxLen.getX(), imgY*boxLen.getY(), imgZ*boxLen.getZ());
+                                // check all atoms
+                                for (unsigned iatom = 0; iatom < _minimal_decay.size(); iatom++) {
+
+                                    vec dist = grid - (_positions[iatom] + boxshift);
+                                    double distsq = dist*dist;
+
+                                    // if contribution is smaller than -ln(1e-10), add atom to list
+                                    if ((_minimal_decay[iatom] * distsq) < 20.7) {
+                                        _significant_atoms_gridpoint.push_back(iatom);
+                                        _significant_atoms_pos_gridpoint.push_back(_positions[iatom] + boxshift);
+                                    }
+                                }// check all atoms
+                            }// Z
+                        }// Y
+                    }// check all images X
+
+                    _significant_atoms_atomgrid.push_back(_significant_atoms_gridpoint);
+                    _significant_atoms_pos_atomgrid.push_back(_significant_atoms_pos_gridpoint);
+
+                } // all points of this atom grid
+
+                _significant_atoms.push_back(_significant_atoms_atomgrid);
+                _significant_atoms_pos.push_back(_significant_atoms_pos_atomgrid);
+
+            } // atomic grids
+
+
+
+            int total_grid = 0;
+            int significant_grid = 0;
+            for (unsigned i = 0; i < _significant_atoms.size(); i++) {
+
+                total_grid += _grid[i].size();
+
+                for (unsigned j = 0; j < _significant_atoms[i].size(); j++) {
+
+                    int gridpointsize = _significant_atoms[i][j].size();
+                    significant_grid += gridpointsize * (gridpointsize + 1);
+
+                }
+            }
+            int natoms = _grid.size();
+
+            total_grid = total_grid * (natoms * (natoms + 1)) / 2;
+
+            for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
+                std::vector< ub::matrix<double> > rowmatrix;
+                for (unsigned colatom = 0; colatom <= rowatom; colatom++) {
+                    rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[colatom], _blocksize[rowatom]));
+                }
+                dmat_vector.push_back(rowmatrix);
+            }
+
+
+
+            // parallelization: distribute over threads inside one atom
+            int nthreads = 1;
+#ifdef _OPENMP
+            nthreads = omp_get_max_threads();
+#endif
+
+
+            for (int i = 0; i < nthreads; i++) {
+
+                std::vector< std::vector< ub::matrix<double> > > matrix;
+                for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
+                    std::vector< ub::matrix<double> > rowmatrix;
+                    for (unsigned colatom = 0; colatom < _grid.size(); colatom++) {
+                        rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[rowatom], _blocksize[colatom]));
+                    }
+                    matrix.push_back(rowmatrix);
+                }
+                xcmat_vector_thread.push_back(matrix);
+            }
+
+            for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
+                std::vector< ub::matrix<double> > rowmatrix;
+                for (unsigned colatom = 0; colatom < _grid.size(); colatom++) {
+                    rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[colatom], _blocksize[rowatom]));
+                }
+                xcmat_vector.push_back(rowmatrix);
+            }
+            return;
+        }
+        
     }//xtp
 }//votca
