@@ -768,10 +768,12 @@ namespace votca {
                             for (unsigned ishell = 0; ishell < _atomshells[rowatom].size(); ishell++) {
 
                                 AOBasis::AOShellIterator _row = _atomshells[rowatom][ishell];
+                                //copy shell and replace position to that of relevant periodic image
                                 AOShell* _shell = *_row;
+                                
                                 // for density, fill sub-part of AOatgrid
                                 ub::matrix_range< ub::matrix<double> > _AOgridsub = ub::subrange(AOgrid, 0, 1, _shell->getStartIndex(), _shell->getStartIndex() + _shell->getNumFunc());
-                                _shell->EvalAOspace(_AOgridsub, _grid[i][j].grid_pos);
+                                _shell->EvalAOspacePeriodic(_AOgridsub, _grid[i][j].grid_pos, _significant_atoms_pos[i][j][rowatom]);
 
                             } // shell in atom
                         }
