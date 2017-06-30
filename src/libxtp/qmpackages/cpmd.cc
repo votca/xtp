@@ -837,7 +837,7 @@ namespace votca {
             bl=count;
 
             int NUMORB=count/F_real_size/NATTOT;          //number of MOs (energy levels))
-            LOG(ctp::logDEBUG, *_pLog) << "CPMD: number of energy levels: " << NATTOT << flush;
+            LOG(ctp::logDEBUG, *_pLog) << "CPMD: number of energy levels: " << NUMORB << flush;
                 //resize the coefficient matrix
             
             

@@ -108,6 +108,7 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     ub::matrix<double> _MO_Coefficients = orb->MOCoefficients();
     _basis.ReorderMOs(_MO_Coefficients, orb->getQMpackage(), "xtp" );  
     cout.setf(ios::fixed, ios::floatfield);
+    cout<<"MOCoeffssize: "<<_MO_Coefficients.size1()<<'\t'<<_MO_Coefficients.size2()<<endl;
 //    for(int i=0; i<_MO_Coefficients.size1(); i++){
 //        int jsi=0; //shell index
 //        int jfi=0; //function index
@@ -128,7 +129,10 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     
     
     
-    AOOverlap overlap;
+    AOOverlapPeriodic overlap;
+    //AOOverlap overlap;
+    float B=11.73033306*tools::conv::ang2bohr;
+    overlap.setBox(tools::vec(B,B,B));
     overlap.Initialize(_basis.AOBasisSize());
     overlap.Fill(_basis);
     ub::vector<double> DMATasarray=_dmat.data();
@@ -204,11 +208,28 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     }
     cout<<endl;
  
-//    ub::matrix<double> temp=ub::prod(orb->MOCoefficients(), cmpd_overlap);
-//    ub::matrix<double> ortho=ub::prod(temp,ub::trans(orb->MOCoefficients()));
+    ub::matrix<double> temp=ub::prod(orb->MOCoefficients(), orb->AOOverlap());
+    ub::matrix<double> ortho=ub::prod(temp,ub::trans(orb->MOCoefficients()));
 //    cout<< " pray" <<endl;
 //    cout<< ortho <<endl;    
-   
+    cout<<"VOTCA orto:\n"<<ortho<<endl;
+    //sum up diagonal elements
+    float ele=0;
+    for(int i=0; i<ortho.size1(); i++){
+        ele+=ortho(i,i);
+    }
+    cout<< "Number of electrons from CMPD coefs & overlap:  "<< ele;
+    ub::matrix<double>  reorderdMOs = orb->MOCoefficients();
+    basis.ReorderMOs(reorderdMOs, "cpmd", "xtp" );
+    temp=ub::prod(reorderdMOs, overlap.Matrix());
+    ortho=ub::prod(temp,ub::trans(reorderdMOs));
+    cout<<"VOTCA orto:\n"<<ortho<<endl;
+    ele=0;
+    for(int i=0; i<ortho.size1(); i++){
+        ele+=ortho(i,i);
+    }
+    cout<< "Number of electrons from VOTCA coefs & overlap: "<< ele;
+            
     exit(0);
  
     

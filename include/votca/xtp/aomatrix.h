@@ -230,6 +230,17 @@ namespace votca { namespace xtp {
         
     };
     
+    //derived class for atomic orbital overlap in periodic systems
+    class AOOverlapPeriodic : public AOMatrix{
+    public:
+        //block fill for overlap, implementation in aooverlap.cc
+        void FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp);
+        void setBox(tools::vec L){_box=L;} //needs to be in Bohr
+    private:
+        tools::vec _box;
+        int _nimages;
+    };
+    
     class AODipole_Potential : public AOMatrix{
     public:
         //block fill for overlap, implementation in aooverlap.cc
