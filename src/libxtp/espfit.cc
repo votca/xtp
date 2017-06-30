@@ -86,7 +86,7 @@ void Espfit::FitAPECharges(Grid& _targetgrid_fg, Grid& _targetgrid_bg, Grid& _ch
        
 
 
-void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize, Orbitals* orb) { 
+void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<double> &_dmat, AOBasis &_basis,BasisSet &bs,string gridsize) { 
    
 
     // setting up grid    
@@ -99,40 +99,11 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     // Calculating nuclear potential at gridpoints
     
     ub::vector<double> _ESPatGrid = ub::zero_vector<double>(_grid.getsize());
-    // ub::vector<double> _NucPatGrid = ub::zero_vector<double>(_gridpoints.size());
    
     
     
-    
-//    cout<<"MO Coefficients:"<<endl;
-    ub::matrix<double> _MO_Coefficients = orb->MOCoefficients();
-    _basis.ReorderMOs(_MO_Coefficients, orb->getQMpackage(), "xtp" );  
-    cout.setf(ios::fixed, ios::floatfield);
-    cout<<"MOCoeffssize: "<<_MO_Coefficients.size1()<<'\t'<<_MO_Coefficients.size2()<<endl;
-//    for(int i=0; i<_MO_Coefficients.size1(); i++){
-//        int jsi=0; //shell index
-//        int jfi=0; //function index
-//        for(int j=0; j<_MO_Coefficients.size2(); j++, jfi++){
-//            if(jfi>=_basis.getShell(jsi)->getNumFunc()){
-//                jfi=0;
-//                jsi++;
-//            }
-//            cout << _basis.getShell(jsi)->getName() << ' ' << _basis.getShell(jsi)->getType() << jfi << '\t';
-//            cout <<"\tCPMD: "<< orb->MOCoefficients()(i,j)<<"\tVOTCA: "<< _MO_Coefficients(i,j)<<'\n';
-//        }
-//        cout<<endl;
-//        break;
-//    }
-//    
-    
-    cout<<"\t = "<<ub::sum(ub::prod(ub::scalar_vector<double>(_dmat.size1()), _dmat))<<endl;
-    
-    
-    
-    AOOverlapPeriodic overlap;
+    AOOverlap overlap;
     //AOOverlap overlap;
-    float B=11.73033306*tools::conv::ang2bohr;
-    overlap.setBox(tools::vec(B,B,B));
     overlap.Initialize(_basis.AOBasisSize());
     overlap.Fill(_basis);
     ub::vector<double> DMATasarray=_dmat.data();
@@ -143,99 +114,9 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
             N_comp =N_comp+ DMATasarray(_i)*AOOasarray(_i);
         }
     
-   
-    
-    
-    cout<<"\n\n\nDENSITY"<<endl;
-    cout<<"\t = "<<ub::sum(ub::prod(ub::scalar_vector<double>(_dmat.size1()), _dmat))<<endl;
-//    cout<< _dmat <<endl;
-//    cout<<"\n\n\nOVERLAP CPMD"<<endl;
-     
-      
-     
-    AOBasis basis;
-    basis.AOBasisFill(&bs, _atomlist );
-    ub::matrix<double> cmpd_overlap = orb->AOOverlap();
-    basis.ReorderMOs(cmpd_overlap, "cpmd", "xtp" );
-    cmpd_overlap=ub::trans(cmpd_overlap);    //transpose, reorder the other axis and transpose back
-    basis.ReorderMOs(cmpd_overlap, "cpmd", "xtp" );
-    cmpd_overlap=ub::trans(cmpd_overlap);
-//    cout<< cmpd_overlap <<endl;
-//    cout<<"\n\n\nOVERLAP VOTCA"<<endl;
-//    cout<< overlap.Matrix() <<endl;
-    
-    ub::matrix<double> OVdif = cmpd_overlap - overlap.Matrix();
-//    cout<<"\n\n\nOVERLAP DIF"<<endl;
-//    for(int i=0; i<OVdif.size1(); i++){
-//        for(int j=0; j<OVdif.size2(); j++){
-//            if(fabs(OVdif(i,j)) > 1.0e-4){
-//                cout <<i<< "\t"<<j <<"\t"<< OVdif(i,j)<<'\n';
-//            }
-//        }
-//    }
-    
-    cout<< cmpd_overlap(1,1) <<'\t'<< overlap.Matrix()(1,1)<<'\t'<<endl;
-    cout<<"\n\n\nOVERLAP TABLE"<<endl;
-    int isi=0; //shell index
-    int ifi=0; //function index
-    for(int i=0; i<OVdif.size1(); i++, ifi++){
-        int jsi=0; //shell index
-        int jfi=0; //function index
-        if(ifi>=_basis.getShell(isi)->getNumFunc()){
-            ifi=0;
-            isi++;
-        }
-        for(int j=0; j<OVdif.size2(); j++, jfi++){
-            if(jfi>=_basis.getShell(jsi)->getNumFunc()){
-                jfi=0;
-                jsi++;
-            }
-            cout<< _basis.getShell(isi)->getName() << ' ' << _basis.getShell(isi)->getType() << ifi << '\t' << _basis.getShell(jsi)->getName() << ' ' << _basis.getShell(jsi)->getType() << jfi << '\t' <<flush;
-            cout<< cmpd_overlap(i,j) <<'\t'<< overlap.Matrix()(i,j)<<'\t'<<flush;
-            
-            if(cmpd_overlap(i,j)>1.0e-5) cout<<'+';
-            else if(cmpd_overlap(i,j)<-1.0e-5) cout<<'-';
-            else cout<<'0';
-            
-            if(overlap.Matrix()(i,j)>1.0e-5) cout<<'+';
-            else if(overlap.Matrix()(i,j)<-1.0e-5) cout<<'-';
-            else cout<<'0';
-            
-            cout<<endl;
-        }
-        cout<<endl;
-        break;
-    }
-    cout<<endl;
- 
-    ub::matrix<double> temp=ub::prod(orb->MOCoefficients(), orb->AOOverlap());
-    ub::matrix<double> ortho=ub::prod(temp,ub::trans(orb->MOCoefficients()));
-//    cout<< " pray" <<endl;
-//    cout<< ortho <<endl;    
-    cout<<"VOTCA orto:\n"<<ortho<<endl;
-    //sum up diagonal elements
-    float ele=0;
-    for(int i=0; i<ortho.size1(); i++){
-        ele+=ortho(i,i);
-    }
-    cout<< "Number of electrons from CMPD coefs & overlap:  "<< ele;
-    ub::matrix<double>  reorderdMOs = orb->MOCoefficients();
-    basis.ReorderMOs(reorderdMOs, "cpmd", "xtp" );
-    temp=ub::prod(reorderdMOs, overlap.Matrix());
-    ortho=ub::prod(temp,ub::trans(reorderdMOs));
-    cout<<"VOTCA orto:\n"<<ortho<<endl;
-    ele=0;
-    for(int i=0; i<ortho.size1(); i++){
-        ele+=ortho(i,i);
-    }
-    cout<< "Number of electrons from VOTCA coefs & overlap: "<< ele;
-            
-    exit(0);
- 
-    
-    
-    
 
+    
+    
     NumericalIntegration numway;
 
     numway.GridSetup(gridsize,&bs,_atomlist,&_basis);

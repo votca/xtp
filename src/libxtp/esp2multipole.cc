@@ -234,7 +234,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
                 esp.setUseSVD(_do_svd,_conditionnumber);
             }
             if (_integrationmethod=="numeric")  {
-                esp.Fit2Density(_Atomlist, DMAT_tot, basis,bs,_gridsize, &_orbitals); 
+                esp.Fit2Density(_Atomlist, DMAT_tot, basis,bs,_gridsize); 
             }
             else if (_integrationmethod=="analytic")  esp.Fit2Density_analytic(_Atomlist,DMAT_tot,basis);
         }
