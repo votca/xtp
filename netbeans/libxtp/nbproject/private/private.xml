@@ -4,7 +4,23 @@
         <activeConfTypeElem>3</activeConfTypeElem>
         <activeConfIndexElem>0</activeConfIndexElem>
     </data>
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="8">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="11">
+        <file>
+            <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/bulkesp.cc</url>
+            <bookmark id="8">
+                <name/>
+                <line>484</line>
+                <key/>
+            </bookmark>
+        </file>
+        <file>
+            <url>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid.h</url>
+            <bookmark id="7">
+                <name/>
+                <line>116</line>
+                <key/>
+            </bookmark>
+        </file>
         <file>
             <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</url>
             <bookmark id="4">
@@ -19,31 +35,42 @@
             </bookmark>
         </file>
         <file>
-            <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/bulkesp.cc</url>
-            <bookmark id="8">
+            <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/aomatrices/aooverlap_periodic.cc</url>
+            <bookmark id="9">
                 <name/>
-                <line>461</line>
+                <line>133</line>
                 <key/>
             </bookmark>
         </file>
         <file>
-            <url>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/grid.h</url>
-            <bookmark id="7">
+            <url>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations_periodic.cc</url>
+            <bookmark id="10">
                 <name/>
-                <line>116</line>
+                <line>775</line>
+                <key/>
+            </bookmark>
+            <bookmark id="11">
+                <name/>
+                <line>1044</line>
                 <key/>
             </bookmark>
         </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/espfit.cc</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/bulkesp.cc</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/include/votca/xtp/bulkesp.h</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/esp2multipole.cc</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/aobasis.cc</file>
-            <file>file:/home/yuriy/hydronium/src/xtp/src/libxtp/qmpackages/cpmd.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/numerical_integrations_periodic.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations_periodic.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/aobasis.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/aoshell.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/espfit.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/espfit.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/bulkesp.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/include/votca/xtp/numerical_integrations.h</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/bulkesp.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/aoshell.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/aobasis.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/numerical_integration/numerical_integrations.cc</file>
+            <file>file:/home/yuriy/soft/votca/src/xtp/src/libxtp/esp2multipole.cc</file>
         </group>
     </open-files>
 </project-private>

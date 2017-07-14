@@ -46,16 +46,20 @@ namespace votca {
             Elements _elements;
 
             LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
-
+            
             //find all the bonds;
             for (vector<ctp::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i) {
                 for (vector<ctp::QMAtom*>::iterator j = i + 1; j != _atoms.end(); ++j) {
-                    tools::vec dif = (*i)->getPos() - (*j)->getPos();
-//                    double dif[3];
-//                    dif[0] = ((*i)->x - (*j)->x);
-//                    dif[1] = ((*i)->y - (*j)->y);
-//                    dif[2] = ((*i)->z - (*j)->z);
-                    cout << "dif: " << dif[0] << " " << dif[1] << " " << dif[2] << "\t";
+                    tools::vec dif;
+                    if(periodic){
+//                        dif = WrapPoint((*i)->getPos(), boxLen) - WrapPoint((*j)->getPos(), boxLen); //Wrap points into periodic box
+                        dif = (*i)->getPos() - (*j)->getPos();
+                    }
+                    else{
+                        dif = (*i)->getPos() - (*j)->getPos();
+                    }
+
+                    //cout << "dif: " << dif[0] << " " << dif[1] << " " << dif[2] << "\t";
                     for (int k = 0; k < 3; k++) {
                         if (periodic && std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
                             if (dif[k] > 0) //i.x>j.x
@@ -63,12 +67,20 @@ namespace votca {
                             else //i.x<j.x
                                 dif[k] += boxLen[k];
                     }
-                    cout << "PBC corrected: " << dif[0] << " " << dif[1] << " " << dif[2] << "\n";
+                    //cout << "PBC corrected: " << dif[0] << " " << dif[1] << " " << dif[2] << "\n";
                     vec v(dif);
                     double distSq = v*v;
 
                     double acceptDist = _elements.getCovRad((*i)->type) + _elements.getCovRad((*j)->type);
-                    if (distSq <= acceptDist * acceptDist * scale) {
+//                    if(fabs((*i)->x - 14.905)<0.002 && fabs((*j)->x - 14.266)<0.002){
+//                    //if(fabs((*i)->x - 14.266)<0.002){
+//                        cout<< (*i)->type << "\t" << (*i)->x << " " << (*i)->y << " " << (*i)->z <<endl;
+//                        cout<< (*j)->type << "\t" << (*j)->x << " " << (*j)->y << " " << (*j)->z <<endl;
+//                        cout<<"\tacceptDist:"<<acceptDist<<"\tscale:"<<scale<< "\tdist:"<<sqrt(distSq)<<endl;
+//                        cout << "\tPBC corrected dist:" <<distSq <<endl<<flush;
+//                        //exit(0);
+//                    }
+                    if (distSq <= acceptDist * acceptDist * scale * scale) {
                         Bond nb; //bond goes
                         nb.a = (*i); //from a
                         nb.b = (*j); //to b
@@ -102,7 +114,13 @@ namespace votca {
             if (leftover.atoms.size() > 0) {
                 mols.push_back(leftover);
                 LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): put " << leftover.atoms.size()
-                        << " Unbonded atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left.\n" << flush;
+                        << " Unbonded atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left.\nThey were:" << flush;
+                for(std::vector<ctp::QMAtom*>::iterator it = leftover.atoms.begin(); it != leftover.atoms.end(); ++it) {
+                    /* std::cout << *it; ... */
+                    LOG(ctp::logDEBUG, *_log) << (*it)->type << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << endl << flush;
+                }
+                exit(-1);
+                
             }
 
 
@@ -166,11 +184,16 @@ namespace votca {
                 mols.push_back(m);
                 LOG(ctp::logDEBUG, *_log) << "BreakIntoMolecules(): put " << m.atoms.size()
                         << " atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left." << flush;
+                
+                if(m.atoms.size() != 3)
+                {
+                    cout<<"Unexpected number of atoms in molecule"<< mols.size() <<endl;
+                }
             }
 
             if (periodic)
                 LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped." << flush;
-
+            
             return (mols);
         }
 
