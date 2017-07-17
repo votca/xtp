@@ -537,16 +537,18 @@ namespace votca {
                             //double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
 
                             //r-space sum
-                            vec dif = _grid[i][j].grid_pos - rvector; //Bohr
-
-                            for (unsigned k = 0; k < 3; k++) {
-                                if (std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
-                                    if (dif[k] > 0) //i.x>j.x
-                                        dif[k] -= boxLen[k];
-                                    else //i.x<j.x
-                                        dif[k] += boxLen[k];
-                            }
+//                            vec dif = _grid[i][j].grid_pos - rvector; //Bohr
+//                            for (unsigned k = 0; k < 3; k++) {
+//                                if (std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+//                                    if (dif[k] > 0) //i.x>j.x
+//                                        dif[k] -= boxLen[k];
+//                                    else //i.x<j.x
+//                                        dif[k] += boxLen[k];
+//                            }
+                            
+                            vec dif = WrapDisplacement(_grid[i][j].grid_pos, rvector, boxLen);
                             double dist = abs(dif); //in bohr
+                            
                             double potR = q * ((erfc(alpha * dist) / dist) - tools::conv::Pi / (vol * vol * alpha * alpha)); //erfc and shift average pot to 0
 
                             if (dist < 1.0e-12) { //point is in the same spot as we are evaluating potential
@@ -808,6 +810,9 @@ namespace votca {
 
 
                         _grid[i][j].grid_density = rho_mat(0, 0);
+                        if(fabs(rho_mat(0, 0))>1e-10){
+                            cout<<rho_mat(0, 0)<<'\n'<<flush;
+                        }
                         Density_thread[i_thread] += _grid[i][j].grid_weight * _grid[i][j].grid_density;
                     } // j: for each point in atom grid
                 }// each thread
@@ -817,6 +822,7 @@ namespace votca {
             for (int i_thread = 0; i_thread < nthreads; i_thread++) {
                 //cout << result << endl;
                 result += Density_thread[i_thread];
+
             }
             density_set = true;
 

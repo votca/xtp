@@ -476,6 +476,7 @@ namespace votca {
                 Grid _grid(true, false, false); //create polarsites, so we can output grid to .cube file
                 //            _grid.setAtomlist(&m->atoms);
                 //            _grid.setupCHELPgrid();
+                _grid.setCubegrid(true);
                 if (periodic) {
                     //_grid.setPadding(0.0);
                     _grid.setPeriodicity(boxLen);

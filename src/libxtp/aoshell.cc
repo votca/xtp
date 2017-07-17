@@ -287,7 +287,113 @@ void AOShell::EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, ub::m
 
         }
            
-           
+
+void AOShell::EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  ){
+            //This is not thread safe!
+            /*
+            vec temp=_pos;
+            _pos=img_pos;
+            EvalAOspace(AOvalues, grid_pos);
+            _pos=temp;
+             */
+        
+            // need type of shell
+            string  shell_type = this->_type;
+            // need position of shell
+             const vec center=grid_pos-img_pos;
+             const double center_x = center.getX();
+             const double center_y = center.getY();
+             const double center_z = center.getZ();
+             const double distsq =  center*center;
+
+            typedef vector< AOGaussianPrimitive* >::const_iterator GaussianIterator;
+            // iterate over Gaussians in this shell
+            for (GaussianIterator itr = firstGaussian(); itr != lastGaussian(); ++itr) {
+
+                const double alpha = (*itr)->getDecay();
+                const std::vector<double>& _contractions = (*itr)->getContraction();
+
+                double _expofactor =(*itr)->getPowfactor() * exp(-alpha * distsq);
+
+                // split combined shells
+                int _i_func = -1;
+
+                for (unsigned i = 0; i < shell_type.length(); ++i) {
+                    char single_shell = shell_type[i];
+                    // single type shells
+                    if (single_shell == 'S') {
+                        AOvalues(0, _i_func + 1) += _contractions[0] * _expofactor; // s-function        
+                        _i_func++;
+                    }
+                    else if (single_shell == 'P') {
+                        double factor = 2.*sqrt(alpha)*_contractions[1];
+                      AOvalues(0, _i_func + 1) += factor * center_z* _expofactor; // Y 1,0
+                      AOvalues(0, _i_func + 2) += factor * center_y* _expofactor; // Y 1,-1
+                      AOvalues(0, _i_func + 3) += factor * center_x* _expofactor; // Y 1,1
+                      _i_func += 3;
+                    }
+                    else if (single_shell == 'D') {
+                       double factor = 2.*alpha*_contractions[2];
+                      double factor_1 =  factor/sqrt(3.);
+                      AOvalues(0, _i_func + 1) += factor_1 * (3.*center_z*center_z - distsq) * _expofactor; // Y 2,0
+                      AOvalues(0, _i_func + 2) += 2.*factor * (center_y*center_z) * _expofactor; // Y 2,-1
+                      AOvalues(0, _i_func + 3) += 2.*factor * (center_x*center_z) * _expofactor; // Y 2,1
+                      AOvalues(0, _i_func + 4) += 2.*factor * (center_x*center_y) * _expofactor; // Y 2,-2
+                      AOvalues(0, _i_func + 5) += factor * (center_x*center_x - center_y*center_y) * _expofactor; // Y 2,2
+                      _i_func += 5;
+                    }
+                    else if (single_shell == 'F') {
+                      double factor = 2.*pow(alpha,1.5)*_contractions[3];
+                      double factor_1 = factor*2./sqrt(15.);
+                      double factor_2 = factor*sqrt(2.)/sqrt(5.);
+                      double factor_3 = factor*sqrt(2.)/sqrt(3.);
+                      double cx_cx = center_x*center_x;
+                      double cy_cy = center_y*center_y;
+                      double cz_cz = center_z*center_z;
+
+                      AOvalues(0, _i_func + 1) += factor_1 * center_z * (5.*cz_cz - 3.*distsq) * _expofactor; // Y 3,0
+                      AOvalues(0, _i_func + 2) += factor_2 * center_y * (5.*cz_cz - distsq) * _expofactor; // Y 3,-1
+                      AOvalues(0, _i_func + 3) += factor_2 * center_x * (5.*cz_cz - distsq) * _expofactor; // Y 3,1
+                      AOvalues(0, _i_func + 4) += 4.*factor * center_x * center_y * center_z * _expofactor; // Y 3,-2
+                      AOvalues(0, _i_func + 5) += 2.*factor * center_z * (cx_cx - cy_cy) * _expofactor; // Y 3,2
+                      AOvalues(0, _i_func + 6) += factor_3 * center_y * (3.*cx_cx - cy_cy) * _expofactor; // Y 3,-3
+                      AOvalues(0, _i_func + 7) += factor_3 * center_x * (cx_cx - 3.*cy_cy) * _expofactor; // Y 3,3
+
+                      _i_func += 7;
+                    }
+                    else if (single_shell == 'G') {
+                      double factor = 2./sqrt(3.)*alpha*alpha*_contractions[4];
+                      double factor_1 = factor/sqrt(35.);
+                      double factor_2 = factor*4./sqrt(14.);
+                      double factor_3 = factor*2./sqrt(7.);
+                      double factor_4 = factor*2.*sqrt(2.);
+                      double cx_cx = center_x*center_x;
+                      double cx_cy = center_x*center_y;
+                      double cx_cz = center_x*center_z;
+                      double cy_cy = center_y*center_y;
+                      double cy_cz = center_y*center_z;
+                      double cz_cz = center_z*center_z;
+
+                      AOvalues(0, _i_func + 1) += factor_1 * (35.*cz_cz*cz_cz - 30.*cz_cz*distsq + 3.*distsq*distsq) * _expofactor; // Y 4,0
+                      AOvalues(0, _i_func + 2) += factor_2 * cy_cz * (7.*cz_cz - 3.*distsq) * _expofactor; // Y 4,-1
+                      AOvalues(0, _i_func + 3) += factor_2 * cx_cz * (7.*cz_cz - 3.*distsq) * _expofactor; // Y 4,1
+                      AOvalues(0, _i_func + 4) += 2.*factor_3 * cx_cy * (7.*cz_cz - distsq) * _expofactor; // Y 4,-2
+                      AOvalues(0, _i_func + 5) += factor_3 * (cx_cx - cy_cy) * (7.*cz_cz - distsq) * _expofactor; // Y 4,2
+                      AOvalues(0, _i_func + 6) += factor_4 * cy_cz * (3.*cx_cx - cy_cy) * _expofactor; // Y 4,-3
+                      AOvalues(0, _i_func + 7) += factor_4 * cx_cz * (cx_cx - 3.*cy_cy) * _expofactor; // Y 4,3
+                      AOvalues(0, _i_func + 8) += 4.*factor * cx_cy * (cx_cx - cy_cy) * _expofactor; // Y 4,-4
+                      AOvalues(0, _i_func + 9) += factor * (cx_cx*cx_cx - 6.*cx_cx*cy_cy + cy_cy*cy_cy) * _expofactor; // Y 4,4
+
+                      _i_func += 9;
+                    }
+                    else{
+                        cerr << "Single shell type"<<single_shell<<" not known " << endl;
+                        exit(1);
+                    }
+                }
+            } // contractions
+        
+    }
            
 void AOShell::EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos ){
 

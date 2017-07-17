@@ -504,7 +504,7 @@ void Grid::setupgrid(){
                             apolarsite->setQ00(0,0); // <- charge state 0 <> 'neutral'
                             apolarsite->setIsoP(0.0);
                             apolarsite->setPos(temppos);
-                            if(_is_valid){
+                            if(_is_valid || true){
                                 _gridsites.push_back(apolarsite);
                                 _gridpoints.push_back(temppos);
                                 }

@@ -97,12 +97,7 @@ public:
     
     
     void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos );
-    void EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  ){
-        vec temp=_pos;
-        _pos=img_pos;
-        EvalAOspace(AOvalues, grid_pos);
-        _pos=temp;
-    };
+    void EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  );
     void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues,ub::matrix_range<ub::matrix<double> >& AODervalues, const vec& grid_pos );
     
    
