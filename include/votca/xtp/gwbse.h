@@ -72,12 +72,9 @@ namespace votca {
             _bse_singlet_coefficients(orbitals->BSESingletCoefficients()),
             _bse_singlet_coefficients_AR(orbitals->BSESingletCoefficientsAR()),
             _bse_triplet_energies(orbitals->BSETripletEnergies()),
-            _bse_triplet_coefficients(orbitals->BSETripletCoefficients())
- {
-            };
+            _bse_triplet_coefficients(orbitals->BSETripletCoefficients()){};
 
-            ~GWBSE() {
-            };
+            ~GWBSE() {};
 
 
 
@@ -188,8 +185,8 @@ namespace votca {
             double _bsemaxfactor;
             double _ScaHFX;
 
-            double _qp_limit; //convergence criteria for qp iteration [Ryd]]
-            double _shift_limit; //convergence criteria for shift iteration [Ryd]]
+            double _qp_limit; //convergence criteria for qp iteration [Hartree]]
+            double _shift_limit; //convergence criteria for shift iteration [Hartree]]
             unsigned int _bse_vmin;
             unsigned int _bse_vmax;
             unsigned int _bse_cmin;
@@ -220,7 +217,7 @@ namespace votca {
                     const double screening_freq);
 
             void RPA_prepare_threecenters(TCMatrix& _Mmn_RPA, const TCMatrix& _Mmn_full, AOBasis& gwbasis,
-                    const AOMatrix& gwoverlap, const AOMatrix& gwoverlap_inverse);
+                    const AOMatrix& gwoverlap, const ub::matrix<double>& gwoverlap_inverse);
 
 
             // PPM related variables and functions
@@ -228,7 +225,7 @@ namespace votca {
             ub::vector<double> _ppm_freq;
             ub::vector<double> _ppm_weight;
 
-            void PPM_construct_parameters(const ub::matrix<double>& _overlap_cholesky_inverse);
+            void PPM_construct_parameters(const ub::matrix<double>& _overlap_cholesky_inverse,const ub::matrix<double>& _overlap_cholesky_inverse_trans);
 
             // Sigma related variables and functions
             ub::symmetric_matrix<double> _sigma_x; // exchange term
@@ -268,6 +265,8 @@ namespace votca {
             void BSE_solve_triplets();
             void BSE_solve_singlets();
             void BSE_solve_singlets_BTDA();
+            
+            void Solve_nonhermitian(ub::matrix<double>& H, ub::matrix<double>& L);
             std::vector<int> _index2v;
             std::vector<int> _index2c;
 

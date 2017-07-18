@@ -84,18 +84,19 @@ namespace votca {
 	    // only diagonal elements except for in final iteration
             for (int _i_iter = 0; _i_iter < _max_iter - 1; _i_iter++) {
                 // loop over all GW levels
+
                 #pragma omp parallel for
                 for (unsigned _gw_level = 0; _gw_level < _qptotal; _gw_level++) {
                     
-                    _sigma_c(_gw_level, _gw_level) = 0;
-                    double qpmin = _qp_energies(_gw_level + _qpmin);
+                    const double qpmin = _qp_old(_gw_level + _qpmin);
                     const ub::matrix<real_gwbse>& Mmn = _Mmn[ _gw_level + _qpmin ];
-
+                    double sigma_c=0.0;
                     // loop over all functions in GW basis
                     for (unsigned _i_gw = 0; _i_gw < _gwsize; _i_gw++) {
-                        
-                        double ppm_freq = _ppm_freq(_i_gw);
-                        double fac = _ppm_weight(_i_gw) * ppm_freq;
+                        // the ppm_weights smaller 1.e-5 are set to zero in rpa.cc PPM_construct_parameters
+                        if (_ppm_weight(_i_gw) < 1.e-9) { continue;}
+                        const double ppm_freq = _ppm_freq(_i_gw);
+                        const double fac = _ppm_weight(_i_gw) * ppm_freq;
                         // loop over all bands
                         for (unsigned _i = 0; _i < _levelsum; _i++) {
 
@@ -103,28 +104,27 @@ namespace votca {
                             if (_i > _homo) occ = -1.0; // sign for empty levels
 
                             // energy denominator
-                            double _denom = qpmin - _qp_energies(_i) + occ*ppm_freq;
+                            const double _denom = qpmin - _qp_old(_i) + occ*ppm_freq;
 
                             double _stab = 1.0;
                             if (std::abs(_denom) < 0.25) {
                                 _stab = 0.25 * (1.0 - std::cos(4.0 * pi * std::abs(_denom)));
                             }
 
-                            double _factor =0.5* fac * _stab / _denom; //Hartree
+                            const double _factor =0.5* fac * _stab / _denom; //Hartree
 
                             // sigma_c diagonal elements
-                            _sigma_c(_gw_level, _gw_level) += _factor * Mmn(_i_gw, _i) * Mmn(_i_gw, _i);
+                            sigma_c += _factor * Mmn(_i_gw, _i) * Mmn(_i_gw, _i);
 
                         }// bands
 
                     }// GW functions
-
+                    _sigma_c(_gw_level, _gw_level)=sigma_c;
                     // update _qp_energies
-                    _qp_energies(_gw_level + _qpmin) = dftenergies(_gw_level + _qpmin) + _sigma_x(_gw_level, _gw_level) + _sigma_c(_gw_level, _gw_level) - _vxc(_gw_level, _gw_level);
-
+                    _qp_energies(_gw_level + _qpmin) = dftenergies(_gw_level + _qpmin) + sigma_c + _sigma_x(_gw_level, _gw_level) - _vxc(_gw_level, _gw_level);
 
                 }// all bands
-                //cout << " end of qp refinement step (diagonal) " << _i_iter << "\n" << endl;
+                
                 _qp_old = _qp_old - _qp_energies;
                 energies_converged = true;
                 for (unsigned l = 0; l < _qp_old.size(); l++) {
@@ -134,7 +134,7 @@ namespace votca {
                     }
                 }
                 if (energies_converged) {
-                    LOG(ctp::logDEBUG, *_pLog) << ctp::TimeStamp() << " Converged after " << _i_iter+1 << " qp_energy iterations." << flush;
+                    CTP_LOG(ctp::logDEBUG, *_pLog) << ctp::TimeStamp() << " Converged after " << _i_iter+1 << " qp_energy iterations." << flush;
                     break;
                 } else {
                     _qp_old = _qp_energies;
@@ -153,9 +153,16 @@ namespace votca {
             double _DFTgap =dftenergies(_homo + 1) - dftenergies(_homo);
             double _QPgap = _qp_energies( _homo +1 ) - _qp_energies( _homo  );
             _shift = _QPgap - _DFTgap;
-
-
-	    if ( ! _iterate_qp  ) _qp_converged = true;
+            
+            
+            if(_iterate_qp){
+            // qp energies outside the update range are simply shifted. 
+            for(unsigned i=_qpmax+1;i<dftenergies.size();++i){
+                _qp_energies(i)=dftenergies(i)+_shift;
+            }
+            }else{
+                _qp_converged = true;
+            }
 
 
             // only if _shift is converged
@@ -164,21 +171,25 @@ namespace votca {
                 // initialize sigma_c to zero at the beginning
                 
                 
-             //this is not the fastest algorithm but faster ones throw igwbse off, so this is good enough.    
+            
                 
+      
+            //this is not the fastest algorithm but faster ones throw igwbse off, so this is good enough.    
             #pragma omp parallel for
             for (unsigned _gw_level = 0; _gw_level < _qptotal; _gw_level++) {
-                double qpmin_e=_qp_energies(_gw_level + _qpmin);
+                const double qpmin=_qp_energies(_gw_level + _qpmin);
 
                 const ub::matrix<real_gwbse>& Mmn = _Mmn[ _gw_level + _qpmin ];
                 for (unsigned _m = 0; _m < _gw_level; _m++) {
-                    _sigma_c(_gw_level, _m) = 0;
+                     double sigma_c = 0;
                     const ub::matrix<real_gwbse>& Mmn2 = _Mmn[_m + _qpmin];
 
                     // loop over all functions in GW basis
                     for (unsigned _i_gw = 0; _i_gw < _gwsize; _i_gw++) {
-                        double ppm_freq = _ppm_freq(_i_gw);
-                        double fac = _ppm_weight(_i_gw) * ppm_freq;
+                        // the ppm_weights smaller 1.e-5 are set to zero in rpa.cc PPM_construct_parameters
+                        if (_ppm_weight(_i_gw) < 1.e-9) { continue;}
+                        const double ppm_freq = _ppm_freq(_i_gw);
+                        const double fac = _ppm_weight(_i_gw) * ppm_freq;
                         // loop over all screening levels
                         for (unsigned _i = 0; _i < _levelsum; _i++) {
 
@@ -186,22 +197,22 @@ namespace votca {
                             if (_i > _homo) occ = -1.0; // sign for empty levels
 
                             // energy denominator
-                            double _denom = qpmin_e - _qp_energies(_i) + occ * ppm_freq;
+                            const double _denom = qpmin - _qp_energies(_i) + occ * ppm_freq;
 
                             double _stab = 1.0;
                             if (std::abs(_denom) < 0.25) {
                                 _stab = 0.25 * (1.0 - std::cos(4.0 * pi * std::abs(_denom)));
                             }
 
-                            double _factor = 0.5*fac * Mmn(_i_gw, _i) * _stab / _denom; //Hartree
+                            const double _factor = 0.5*fac * Mmn(_i_gw, _i) * _stab / _denom; //Hartree
 
-                            _sigma_c(_gw_level, _m) += _factor * Mmn2(_i_gw, _i);
+                            sigma_c+= _factor * Mmn2(_i_gw, _i);
 
 
                         }// screening levels 
                     }// GW functions 
+                    _sigma_c(_gw_level, _m)=sigma_c;
                 }// GW row 
-                _qp_energies(_gw_level + _qpmin) = dftenergies(_gw_level + _qpmin) + _sigma_x(_gw_level, _gw_level) + _sigma_c(_gw_level, _gw_level) - _vxc(_gw_level, _gw_level);
             } // GW col 
         } 
             

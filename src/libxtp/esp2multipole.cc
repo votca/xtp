@@ -161,13 +161,15 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
             if ( _openmp_threads > 0 ) omp_set_num_threads(_openmp_threads); 
             threads=omp_get_max_threads();
 #endif
-   LOG(ctp::logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
+   CTP_LOG(ctp::logDEBUG, *_log) << "===== Running on "<< threads << " threads ===== " << flush;
 
         vector< ctp::QMAtom* > Atomlist =_orbitals.QMAtoms();
         std::vector< ctp::QMAtom* >::iterator at;
         for (at=Atomlist.begin();at<Atomlist.end();++at){
+            if(!(*at)->from_environment){
             ctp::QMAtom * atom=new ctp::QMAtom(*(*at));
             _Atomlist.push_back(atom);
+            }
         }
         ub::matrix<double> DMAT_tot;
         BasisSet bs;
@@ -248,7 +250,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
         }
         else if(_use_NBO){
             std::cout<<"WARNING: NBO analysis isn't fully implemented yet."<<std::endl;
-            //LOG(logDEBUG, _log) << "Initializing NBO" << flush;
+            //CTP_LOG(logDEBUG, _log) << "Initializing NBO" << flush;
             NBO nbo=NBO(_log);
             nbo.setUseECPs(_use_ecp);
             //nbo.LoadMatrices("", "");

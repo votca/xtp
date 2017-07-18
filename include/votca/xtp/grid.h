@@ -52,16 +52,14 @@ namespace votca { namespace xtp {
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(useVdWcutoff),_useVdWcutoff_inside(useVdWcutoff_inside),_cubegrid(false),_padding(3.0),
              _createpolarsites(createpolarsites), _atomlist(NULL), 
-            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
-            _boxX(0.0), _boxY(0.0), _boxZ(0.0) {};
+            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0) {};
            
         
         Grid()
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(false),_useVdWcutoff_inside(false),_cubegrid(false),_padding(3.0),
              _createpolarsites(false), _atomlist(NULL),
-             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),_periodic(false),
-             _boxX(0.0), _boxY(0.0), _boxZ(0.0){};
+             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0) {};
              
         Grid(std::vector< vec > points)
              :_gridpoints(points){};
@@ -73,8 +71,8 @@ namespace votca { namespace xtp {
         
         Grid& operator=(const Grid &obj);
         
-        std::vector< vec > &getGrid() {return _gridpoints;}
-		//std::vector< vec >* getPoints() {return &_gridpoints;}
+        const std::vector< vec > &getGrid() const {return _gridpoints;}
+
         std::vector< ctp::APolarSite* > &Sites() {return _gridsites;}
         std::vector< ctp::APolarSite*>* getSites() {return &_gridsites;} 
        
@@ -117,15 +115,7 @@ namespace votca { namespace xtp {
             _useVdWcutoff=false;
             setupgrid();
         }
-        
-        void writeIrregularGrid(std::string _filename, std::vector< ctp::QMAtom* > &_atoms, bool _ECP);
-        void setPeriodicity(vec BL){
-            _periodic=true;
-            _boxX=BL.getX();
-            _boxY=BL.getY();
-            _boxZ=BL.getZ();
-            _padding=0.0;
-        }
+       
       
   private:
      
@@ -144,14 +134,11 @@ namespace votca { namespace xtp {
       bool   _cubegrid;
       double _padding;
       bool   _createpolarsites; 
-      ctp::PolarSeg *_sites_seg;
       std::vector< ctp::QMAtom* >* _atomlist;
       vec _lowerbound;
       int _xsteps, _ysteps, _zsteps;
       
-      bool _periodic;
-      double _boxX, _boxY, _boxZ;
-      
+  
       
       void subdivide(const vec &v1, const vec &v2, const vec &v3, std::vector<vec> &spherepoints, const int depth);
       void initialize_sphere(std::vector<vec> &spherepoints, const int depth);

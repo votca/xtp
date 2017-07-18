@@ -144,26 +144,35 @@ ctp::Job::JobResult IEXCITON::EvalJob(ctp::Topology *top, ctp::Job *job, ctp::QM
     ctp::Segment *seg_B = top->getSegment( ID_B );
     assert( seg_B->getName() == type_B );
     
-    LOG(ctp::logINFO,*pLog) << ctp::TimeStamp() << " Evaluating pair "  
+    CTP_LOG(ctp::logINFO,*pLog) << ctp::TimeStamp() << " Evaluating pair "  
             << _job_ID << " ["  << ID_A << ":" << ID_B << "]" << flush; 
     
-   vector<ctp::APolarSite*> seg_A_raw=_mps_mapper.GetOrCreateRawSites(mps_fileA);
-   vector<ctp::APolarSite*> seg_B_raw=_mps_mapper.GetOrCreateRawSites(mps_fileB);
+   vector<ctp::APolarSite*> seg_A_raw=ctp::APS_FROM_MPS(mps_fileA,0,opThread);
+   vector<ctp::APolarSite*> seg_B_raw=ctp::APS_FROM_MPS(mps_fileB,0,opThread);
    
    ctp::PolarSeg* seg_A_polar=_mps_mapper.MapPolSitesToSeg(seg_A_raw,seg_A);
    ctp::PolarSeg* seg_B_polar=_mps_mapper.MapPolSitesToSeg(seg_B_raw,seg_B);
    
-   ctp::PolarTop cleanup;
-   vector<ctp::PolarSeg*> cleanup2;
-   cleanup2.push_back(seg_A_polar);
-   cleanup2.push_back(seg_B_polar);
-   cleanup.setMM1(cleanup2);
-  
+
    
    double JAB=EvaluatePair(top,seg_A_polar,seg_B_polar, pLog);
    
+   std::vector< ctp::APolarSite* >::iterator it;
     
+   for (it = seg_A_raw.begin() ; it !=seg_A_raw.end(); ++it){
+         delete *it;
+     }
+     seg_A_raw.clear();
+     
+      for (it = seg_B_raw.begin() ; it !=seg_B_raw.end(); ++it){
+         delete *it;
+     }
+     seg_B_raw.clear();
     
+   
+   delete seg_A_polar;
+   delete seg_B_polar;
+  
     
     
    
@@ -199,7 +208,7 @@ double IEXCITON::EvaluatePair(ctp::Topology *top,ctp::PolarSeg* Seg1,ctp::PolarS
     Seg1->CalcPos();
     Seg2->CalcPos();
     vec s=top->PbShortestConnect(Seg1->getPos(),Seg2->getPos())+Seg1->getPos()-Seg2->getPos();
-    //LOG(logINFO, *pLog) << "Evaluate pair for debugging " << Seg1->getId() << ":" <<Seg2->getId() << " Distance "<< abs(s) << flush; 
+    //CTP_LOG(logINFO, *pLog) << "Evaluate pair for debugging " << Seg1->getId() << ":" <<Seg2->getId() << " Distance "<< abs(s) << flush; 
     ctp::PolarSeg::iterator pit1;
     ctp::PolarSeg::iterator pit2;
     double E=0.0;
@@ -319,9 +328,9 @@ void IEXCITON::ReadJobFile(ctp::Topology *top) {
             ctp::QMPair *qmp = nblist.FindPair(segA,segB);
             
             if (qmp == NULL) { // there is no pair in the neighbor list with this name
-                LOG_SAVE(ctp::logINFO, _log) << "No pair " <<  idA << ":" << idB << " found in the neighbor list. Ignoring" << flush; 
+                CTP_LOG_SAVE(ctp::logINFO, _log) << "No pair " <<  idA << ":" << idB << " found in the neighbor list. Ignoring" << flush; 
             }   else {
-                //LOG(logINFO, _log) << "Store in record: " <<  idA << ":" << idB << flush; 
+                //CTP_LOG(logINFO, _log) << "Store in record: " <<  idA << ":" << idB << flush; 
                 records[qmp->getId()] = & ((*it)->get("output.pair"));
             }
         } else {
@@ -332,7 +341,7 @@ void IEXCITON::ReadJobFile(ctp::Topology *top) {
 
 
     // loop over all pairs in the neighbor list
-    LOG_SAVE(ctp::logINFO, _log) << "Neighborlist size " << top->NBList().size() << flush; 
+    CTP_LOG_SAVE(ctp::logINFO, _log) << "Neighborlist size " << top->NBList().size() << flush; 
     for (ctp::QMNBList::iterator ipair = top->NBList().begin(); ipair != top->NBList().end(); ++ipair) {
         
         ctp::QMPair *pair = *ipair;
@@ -368,7 +377,7 @@ void IEXCITON::ReadJobFile(ctp::Topology *top) {
         }
     }
                     
-    LOG_SAVE(ctp::logINFO, _log) << "Pairs [total:updated] " <<  _number_of_pairs << ":" << _current_pairs  << flush; 
+    CTP_LOG_SAVE(ctp::logINFO, _log) << "Pairs [total:updated] " <<  _number_of_pairs << ":" << _current_pairs  << flush; 
     cout << _log;
 }
 

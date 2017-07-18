@@ -92,17 +92,24 @@ public:
     const vec& getPos() const{ return _pos; }
     double getScale() const{ return _scale; }
     
-    int getSize() { return _gaussians.size(); }
+    int getSize() const{ return _gaussians.size(); }
     
+    void CalcMinDecay(){
+     _mindecay=std::numeric_limits<double>::max();
+     for(auto& gaussian:_gaussians){
+         if(gaussian->getDecay()<_mindecay){
+             _mindecay=gaussian->getDecay();
+         }
+     }
+     return;
+    }
     
+    double getMinDecay() const{return _mindecay;}
     
-    void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos );
-    void EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  );
-    void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues,ub::matrix_range<ub::matrix<double> >& AODervalues, const vec& grid_pos );
-    
-   
-    
-   
+    void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos ) const;
+    void EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  ) const;
+    void EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues,ub::matrix_range<ub::matrix<double> >& AODervalues, const vec& grid_pos ) const;
+
     // iterator over pairs (decay constant; contraction coefficient)
     typedef std::vector< AOGaussianPrimitive* >::const_iterator GaussianIterator;
     GaussianIterator firstGaussian() const{ return _gaussians.begin(); }
@@ -149,14 +156,14 @@ private:
     double _scale;
     // number of functions in shell
     int _numFunc;
-
+    double _mindecay;
     int _startIndex;
     int _offset;
     vec _pos;
     string _atomname;
     int _atomindex;
      
-    //AOBasis* _aobasis;
+
     
     // vector of pairs of decay constants and contraction coefficients
     std::vector< AOGaussianPrimitive* > _gaussians;

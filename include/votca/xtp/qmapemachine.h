@@ -22,7 +22,7 @@
 
 
 
-
+#include <votca/xtp/dftengine.h>
 #include <votca/xtp/gwbse.h>
 #include <votca/xtp/qmpackagefactory.h>
 #include <votca/xtp/orbitals.h>
@@ -71,6 +71,8 @@ private:
     ctp::XInductor *_xind;
     ctp::Ewald3DnD *_cape;
     
+    DFTENGINE dftengine;
+    
     void SetupPolarSiteGrids( const std::vector< const vec *>& gridpoints,const std::vector< ctp::QMAtom* >& atoms);
     
     std::vector<double> ExtractNucGrid_fromPolarsites();
@@ -81,7 +83,7 @@ private:
     bool _isConverged;
     
     unsigned NumberofAtoms;
-    
+    string _externalgridaccuracy;
     
     Property _gwbse_options;
     Property _dft_options;
@@ -102,10 +104,6 @@ private:
     bool _convg_dE_QM;
     bool _convg_dE_MM;
     
-    bool _split_dpl;
-    double _dpl_spacing;
-    
-    bool   _exportgridtofile;
     
     std::vector< ctp::PolarSeg* > target_bg;     
     std::vector< ctp::PolarSeg* > target_fg;     
