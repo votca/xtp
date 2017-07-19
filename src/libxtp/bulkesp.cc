@@ -45,7 +45,7 @@ namespace votca {
 
             Elements _elements;
 
-            LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
             
             //find all the bonds;
             for (vector<ctp::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i) {
@@ -91,9 +91,9 @@ namespace votca {
                     }
                 }
             }
-            LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): " << bonds.size() << " bonds found.\n" << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): " << bonds.size() << " bonds found.\n" << flush;
             //        for (std::list<Bond>::iterator b = bonds.begin(); b != bonds.end(); ++b){
-            //            LOG(ctp::logDEBUG, *_log) << b->a_indx <<" - "<<b->b_indx<<"\t"<<b->ba<<"\t"<<sqrt(b->ba*b->ba)<< flush;
+            //            CTP_LOG(ctp::logDEBUG, *_log) << b->a_indx <<" - "<<b->b_indx<<"\t"<<b->ba<<"\t"<<sqrt(b->ba*b->ba)<< flush;
             //        }
 
 
@@ -113,11 +113,11 @@ namespace votca {
             }
             if (leftover.atoms.size() > 0) {
                 mols.push_back(leftover);
-                LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): put " << leftover.atoms.size()
+                CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): put " << leftover.atoms.size()
                         << " Unbonded atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left.\nThey were:" << flush;
                 for(std::vector<ctp::QMAtom*>::iterator it = leftover.atoms.begin(); it != leftover.atoms.end(); ++it) {
                     /* std::cout << *it; ... */
-                    LOG(ctp::logDEBUG, *_log) << (*it)->type << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << endl << flush;
+                    CTP_LOG(ctp::logDEBUG, *_log) << (*it)->type << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << endl << flush;
                 }
                 exit(-1);
                 
@@ -182,7 +182,7 @@ namespace votca {
 
                 //we are done with this molecule, save it to mols
                 mols.push_back(m);
-                LOG(ctp::logDEBUG, *_log) << "BreakIntoMolecules(): put " << m.atoms.size()
+                CTP_LOG(ctp::logDEBUG, *_log) << "BreakIntoMolecules(): put " << m.atoms.size()
                         << " atoms into molecule " << mols.size() - 1 << ";\t" << bonds.size() << " bonds left." << flush;
                 
                 if(m.atoms.size() != 3)
@@ -192,7 +192,7 @@ namespace votca {
             }
 
             if (periodic)
-                LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped." << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped." << flush;
             
             return (mols);
         }
@@ -202,7 +202,7 @@ namespace votca {
             bool _do_transition = false;
 
             if (_state != "ground")
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
+                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
                 << "It will likely not work correctly, as BSE Singlet and Triplet Coefficients are simply copied from the global orbital object.\n" << flush;
 
             if (_state == "transition") {
@@ -259,16 +259,17 @@ namespace votca {
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
             numway.setBox(boxLen*tools::conv::ang2bohr);
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
             //density integration should be accurate enough without making it explicitly periodic
-            double N = numway.IntegrateDensity_Molecule(_global_dmat, &_global_basis, _local_atomIndeces);
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is " << N << flush;
+            //double N = numway.IntegrateDensity_Molecule(_global_dmat, &_global_basis, _local_atomIndeces);
+            double N = numway.IntegrateDensity(_global_dmat);
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is " << N << flush;
 
             _do_round = false; //do not round net charge, we expect total charge to be non-int, as molecules can transfer some between themselves
             netcharge = getNetcharge(_local_atomlist, N, false); //don't round
 
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points" << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points" << flush;
             //boost::progress_display show_progress( _grid.getsize() );
 
 
@@ -344,7 +345,7 @@ namespace votca {
 
 
             if (periodic) {
-                LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
+                CTP_LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
                 tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
                 numK = 16;
@@ -356,7 +357,7 @@ namespace votca {
 
                 /*
                 numway.PrepKspaceDensity(BL, 0.5, _local_atomlist, _ECP);
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
+                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
                 #pragma omp parallel for
                 for ( int i = 0 ; i < _grid.getsize(); i++){
                     _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
@@ -365,7 +366,7 @@ namespace votca {
                  */
 
 
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Electron and Nuclear contributions calculated" << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Electron and Nuclear contributions calculated" << flush;
                 //exit(0);
 
                 //calculate and record the molecular dipole moments
@@ -375,13 +376,13 @@ namespace votca {
                 dipPos(1) = atom->y * tools::conv::ang2bohr;
                 dipPos(2) = atom->z * tools::conv::ang2bohr;
                 double dipole = numway.CalcDipole_w_PBC(dipPos); //in bohr * e
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Molecular dipole: " << dipole / 0.393430307 << "Debye" << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Molecular dipole: " << dipole / 0.393430307 << "Debye" << flush;
                 *dipolesLog << dipole / 0.393430307 << endl;
 
                 //numway.FreeKspace();
 
             } else {
-                LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions." << endl;
+                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): periodicity is off, no long range contributions." << endl;
 
                 //numway.SetGridToCharges(_local_atomlist);
 #pragma omp parallel for
@@ -390,12 +391,12 @@ namespace votca {
                     //++show_progress;
                 }
 
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Electron contribution calculated" << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Electron contribution calculated" << flush;
 
                 // Calculating nuclear potential at gridpoints
                 ub::vector<double> _NucPatGrid = EvalNuclearPotential(_local_atomlist, _grid);
                 _ESPatGrid += _NucPatGrid;
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Nuclear contribution calculated" << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Nuclear contribution calculated" << flush;
             }
 
             return (_ESPatGrid);
@@ -460,15 +461,15 @@ namespace votca {
             double system_netcharge=0;
 
             //loop over molecules
-            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
             for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m) {
 
-                LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
 
                 //verify atomic coordinates and units
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
                     ctp::QMAtom* ap = *a;
-                    LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << flush;
+                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << flush;
                 }
                 //cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
 
@@ -488,7 +489,7 @@ namespace votca {
                 _grid.setAtomlist(&m->atoms);
                 //_grid.setCubegrid(true);
                 _grid.setupgrid();
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP
                 //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
@@ -543,19 +544,19 @@ namespace votca {
                 }
 
 
-                LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
 
             }
-            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
             dipolesLog->close();
 
-            LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " Net charge of the whole system is "<< system_netcharge << endl << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " Net charge of the whole system is "<< system_netcharge << endl << flush;
             if(fabs(system_netcharge)>0.05){
                 if(fmod(system_netcharge,1.0)<0.05){
-                    LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System is ionized. Is this intended?"<< endl << flush;
+                    CTP_LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System is ionized. Is this intended?"<< endl << flush;
                 }
                 else{
-                    LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System has significant net partial charge. Projection was likely incomplete. "<< endl << flush;
+                    CTP_LOG(ctp::logWARNING, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " System has significant net partial charge. Projection was likely incomplete. "<< endl << flush;
                 }
             }
         }
@@ -569,11 +570,11 @@ namespace votca {
          * 
          */
         std::vector<double> Bulkesp::FitPartialCharges(std::vector< tools::vec >& _fitcenters, Grid& _grid, ub::vector<double>& _potential, double& _netcharge) {
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Setting up Matrices for fitting of size " << _fitcenters.size() + 1 << " x " << _fitcenters.size() + 1 << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Setting up Matrices for fitting of size " << _fitcenters.size() + 1 << " x " << _fitcenters.size() + 1 << flush;
 
-            std::vector< tools::vec >& _gridpoints = _grid.getGrid();
+            const std::vector< tools::vec >& _gridpoints=_grid.getGrid();   
 
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Using " << _fitcenters.size() << " Fittingcenters and " << _gridpoints.size() << " Gridpoints." << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Using " << _fitcenters.size() << " Fittingcenters and " << _gridpoints.size() << " Gridpoints." << flush;
 
             ub::matrix<double> _Amat = ub::zero_matrix<double>(_fitcenters.size() + 1, _fitcenters.size() + 1);
             ub::matrix<double> _Bvec = ub::zero_matrix<double>(_fitcenters.size() + 1, 1);
@@ -619,7 +620,7 @@ namespace votca {
             }
 
             _Bvec(_Bvec.size1() - 1, 0) = _netcharge; //netcharge!!!!
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Inverting Matrices " << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Inverting Matrices " << flush;
             // invert _Amat
             ub::matrix<double> _Amat_inverse = ub::zero_matrix<double>(_fitcenters.size() + 1, _fitcenters.size() + 1);
 
@@ -627,12 +628,12 @@ namespace votca {
 
             if (_do_svd) {
                 int notfittedatoms = linalg_invert_svd(_Amat, _Amat_inverse, _conditionnumber);
-                LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << "SVD Done. " << notfittedatoms << " could not be fitted and are set to zero." << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << "SVD Done. " << notfittedatoms << " could not be fitted and are set to zero." << flush;
             } else {
                 linalg_invert(_Amat, _Amat_inverse);
             }
 
-            LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Inverting Matrices done." << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Inverting Matrices done." << flush;
             //_Amat.resize(0,0);
 
 
@@ -647,11 +648,11 @@ namespace votca {
             double _sumcrg = 0.0;
             for (unsigned _i = 0; _i < _fitcenters.size(); _i++) {
 
-                //LOG(logDEBUG, *_log) << " Center " << _i << " FitCharge: " << _result[_i] << flush;
+                //CTP_LOG(logDEBUG, *_log) << " Center " << _i << " FitCharge: " << _result[_i] << flush;
                 _sumcrg += _result[_i];
             }
 
-            LOG(ctp::logDEBUG, *_log) << " Sum of fitted charges: " << _sumcrg << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << " Sum of fitted charges: " << _sumcrg << flush;
 
             // get RMSE
             double _rmse = 0.0;
@@ -665,8 +666,8 @@ namespace votca {
                 _rmse += (_potential(_k) - temp)*(_potential(_k) - temp);
                 _totalPotSq += _potential(_k) * _potential(_k);
             }
-            LOG(ctp::logDEBUG, *_log) << " RMSE of fit:  " << sqrt(_rmse / _gridpoints.size()) << flush;
-            LOG(ctp::logDEBUG, *_log) << " RRMSE of fit: " << sqrt(_rmse / _totalPotSq) << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << " RMSE of fit:  " << sqrt(_rmse / _gridpoints.size()) << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << " RRMSE of fit: " << sqrt(_rmse / _totalPotSq) << flush;
 
             return _result;
         }
@@ -676,7 +677,7 @@ namespace votca {
         double Bulkesp::getNetcharge(std::vector< ctp::QMAtom* >& _atoms, double N, bool doround) {
             double netcharge = 0.0;
             if (std::abs(N) < 0.05) {
-                //LOG(ctp::logDEBUG, *_log) << "Number of Electrons is "<<N<< " transitiondensity is used for fit"  << flush;
+                //CTP_LOG(ctp::logDEBUG, *_log) << "Number of Electrons is "<<N<< " transitiondensity is used for fit"  << flush;
                 _do_Transition = true;
             } else {
                 double Znuc_ECP = 0.0;
@@ -688,28 +689,28 @@ namespace votca {
 
                 if (_ECP) {
                     if (std::abs(Znuc_ECP - N) < 4) {
-                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you use ECPs, sounds good" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you use ECPs, sounds good" << flush;
                     } else if (std::abs(Znuc - N) < 4) {
-                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus real Nucleus charge is " << Znuc - N << " you are sure you want ECPs?" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus real Nucleus charge is " << Znuc - N << " you are sure you want ECPs?" << flush;
                     } else {
-                        LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you want ECPs, sounds interesting" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you want ECPs, sounds interesting" << flush;
                     }
                     netcharge = Znuc_ECP - N;
                 } else {
                     if (std::abs(Znuc - N) < 4) {
-                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus Nucleus charge is " << Znuc - N << " you probably do not use ECPs, if you do use ECPs please use the option. Otherwise you are fine" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus Nucleus charge is " << Znuc - N << " you probably do not use ECPs, if you do use ECPs please use the option. Otherwise you are fine" << flush;
                     } else if (std::abs(Znuc_ECP - N) < 4) {
-                        LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you probably use ECPs, if you do use ECPs please use the option to switch on" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Number of Electrons minus ECP_Nucleus charge is " << Znuc_ECP - N << " you probably use ECPs, if you do use ECPs please use the option to switch on" << flush;
                     } else {
-                        LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you use real core potentials, sounds interesting" << flush;
+                        CTP_LOG(ctp::logDEBUG, *_log) << "Warning: Your molecule is highly ionized and you use real core potentials, sounds interesting" << flush;
                     }
                 }
                 _do_Transition = false;
             }
             if(doround){
-                LOG(ctp::logDEBUG, *_log) << "Rounding Netcharge from " << netcharge<< flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << "Rounding Netcharge from " << netcharge<< flush;
             }
-            LOG(ctp::logDEBUG, *_log) << "Netcharge constrained to " << netcharge << flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << "Netcharge constrained to " << netcharge << flush;
 
             return netcharge;
         }    

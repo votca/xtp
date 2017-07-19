@@ -78,6 +78,11 @@ namespace votca { namespace xtp {
             void setIndexoffirstgridpoint(unsigned indexoffirstgridpoint){_indexoffirstgridpoint=indexoffirstgridpoint;}
             unsigned getIndexoffirstgridpoint() const{return _indexoffirstgridpoint;}
             
+            void appendBoxData(GridBox& other){
+                grid_pos.insert(grid_pos.end() , other.getGridPoints().begin(), other.getGridPoints().end());
+                weights.insert(weights.end() , other.getGridWeights().begin(), other.getGridWeights().end());
+                densities.insert(densities.end() , other.getGridDensities().begin(), other.getGridDensities().end());
+            };
             
             
         private:

@@ -31,54 +31,63 @@ namespace votca { namespace xtp {
     class NumericalIntegrationPeriodic: public NumericalIntegration {
         public: 
             
-            //void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
+            ~NumericalIntegrationPeriodic(){
+                if(_expanded_basis!=_basis)
+                    delete _expanded_basis;
+                for(const auto& imgatom:_toclean_atoms){
+                    delete imgatom;
+                }
+                
+            };
             
-            double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
+            virtual void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
+            
+            
+//            double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
+//            virtual double IntegratePotential(const vec& rvector);
 
-            double IntegratePotential_w_PBC(vec rvector);
+//            double IntegratePotential_w_PBC(vec rvector);
             void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid);
-            double IntegrateEnergy_w_PBC(vec rvector);
+//            double IntegrateEnergy_w_PBC(vec rvector);
             double CalcDipole_w_PBC(vec rvector);
             void findAlpha(double Rc, double dtol);
-            void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
+//            void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
             void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
-            void FreeKspace(void);
+//            void FreeKspace(void);
             inline void setBox(vec box){
                 boxLen=box;
                 return;
             }
             
             //used for debuging and testing
-            std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
-            void FillMadelungGrid(vec boxLen, int natomsonside);
+//            std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
+//            void FillMadelungGrid(vec boxLen, int natomsonside);
             
         protected:
-            virtual void FindsignificantAtoms();  
-            
-            //which cell the relevant image of significant atoms resides in
-            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellX;
-            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellY;
-            std::vector< std::vector< std::vector<int> > > _significant_atoms_cellZ;
-            //coords of the relevant image
-            std::vector< std::vector< std::vector<tools::vec> > > _significant_atoms_pos;
-
+            virtual void FindSignificantShells();
+            virtual void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
                     
         private:
+            void ExpandBasis(vector<ctp::QMAtom*> _atoms);
             void FindCenterCenterDist(vector<ctp::QMAtom*> _atoms);
             std::vector< std::vector<double> > FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms, std::vector< GridContainers::integration_grid > _atomgrid);
             
             std::complex<double>* Rho_k; //density in k-space, used for Ewald summation of potential in periodic systems
-            std::vector<std::vector<std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
-            std::vector<std::vector<std::vector< std::vector<std::complex<double> > > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
+            std::vector< std::vector< std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
+            std::vector< std::vector< std::vector< std::complex<double> > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             vec lll;
             vec boxLen; //in Bohr
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
-            double *Kcoord;//k-values
-            double *prefactor; //prefactors for k-space components of potential before summation
             double E_rspace;
             double E_kspace;
             double E_erfc;
+            GridBox _periodicGridBox;
+            
+            unsigned int _nExpantionCells; //expand basis and atoms to include atoms in this many periodic cells away
+            AOBasis* _expanded_basis;
+            vector<ctp::QMAtom*> _expanded_atoms;
+            vector<ctp::QMAtom*> _toclean_atoms;
     };
         
     tools::vec WrapPoint(const tools::vec r, const tools::vec box);

@@ -115,6 +115,14 @@ namespace votca { namespace xtp {
             _useVdWcutoff=false;
             setupgrid();
         }
+        
+        
+        void writeIrregularGrid(std::string _filename, std::vector< ctp::QMAtom* > &_atoms, bool _ECP);
+        void setPeriodicity(vec BL){
+            _periodic=true;
+            _box=BL;
+            _padding=0.0;
+        }
        
       
   private:
@@ -137,6 +145,11 @@ namespace votca { namespace xtp {
       std::vector< ctp::QMAtom* >* _atomlist;
       vec _lowerbound;
       int _xsteps, _ysteps, _zsteps;
+      
+      
+      bool _periodic;
+      tools::vec _box;
+    
       
   
       

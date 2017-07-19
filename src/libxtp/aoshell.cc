@@ -288,7 +288,7 @@ void AOShell::EvalAOspace(ub::matrix_range<ub::matrix<double> >& AOvalues, ub::m
             return;
         }
 
-void AOShell::EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  ){
+void AOShell::EvalAOspacePeriodic(ub::matrix_range<ub::matrix<double> >& AOvalues, const vec& grid_pos, const vec& img_pos  ) const{
             //This is not thread safe!
             /*
             vec temp=_pos;

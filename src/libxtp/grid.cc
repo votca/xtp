@@ -20,6 +20,7 @@
 #include <votca/xtp/grid.h>
 #include <math.h>       /* ceil */
 #include <votca/tools/constants.h>
+#include <votca/xtp/numerical_integrations_periodic.h>
 
 using namespace votca::tools;
 
@@ -388,9 +389,9 @@ void Grid::setupgrid(){
     
     if(_periodic){
         xmin=ymin=zmin=0.0;
-        xmax=_boxX;
-        ymax=_boxY;
-        zmax=_boxZ;
+        xmax=_box.getX();
+        ymax=_box.getY();
+        zmax=_box.getZ();
         _padding=0.0;
     }
 
@@ -414,9 +415,9 @@ void Grid::setupgrid(){
         //whole box divides into a grid uniformly even if the grid elements
         //have to be non-cubic
         padding_x=padding_y=padding_z=0.0;
-        _gridspacingX=_boxX/_xsteps;
-        _gridspacingY=_boxY/_ysteps;
-        _gridspacingZ=_boxZ/_zsteps;
+        _gridspacingX=_box.getX()/_xsteps;
+        _gridspacingY=_box.getY()/_ysteps;
+        _gridspacingZ=_box.getZ()/_zsteps;
         
         //In the loops below, the "<=" in "i<=_xsteps" is needed for
         //non-periodic systems to keep the potential have the same number
@@ -447,9 +448,9 @@ void Grid::setupgrid(){
                 vec gridpos=vec(x,y,z);
                     for (std::vector<ctp::QMAtom* >::const_iterator atom = _atomlist->begin(); atom != _atomlist->end(); ++atom ) {
                         vec atompos=(*atom)->getPos();
-						vec dif = gridpos-atompos
+						vec dif = gridpos-atompos;
 						if(_periodic){
-							Wrap(dif, box);
+							dif = WrapDisplacement(gridpos, atompos, _box);
 						}
                         double distance2 = dif*dif;
                         if(_useVdWcutoff) _cutoff=_elements.getVdWChelpG((*atom)->type)+_shift_cutoff;
@@ -488,5 +489,65 @@ void Grid::setupgrid(){
     return;
 }
     
+
+
+  
+void Grid::setup2D(std::vector< vec > points){
+    _gridpoints=points;
+    return;
+}
+
+
+
+void Grid::writeIrregularGrid(std::string _filename, std::vector< ctp::QMAtom* > &_atoms, bool _ECP){
+    
+    if(_gridsites.size()!=_gridpoints.size()){
+        cout<<" Grid::writeIrregularGrid(): number of _gridpoints doesn't match number of _gridsites" << endl; 
+    }
+    
+    ofstream out;
+    out.open (_filename.c_str(), ios::out | ios::trunc);
+    
+    //cell dimensions in bohr
+    if(_periodic)
+        out << tools::conv::ang2bohr*_box.getX() << '\t' << tools::conv::ang2bohr*_box.getY() << '\t' << tools::conv::ang2bohr*_box.getZ() << '\n';
+    else
+        out << 0 << '\t' << 0 << '\t' << 0 << '\n';
+    
+    
+    //number of atoms
+    out << _atoms.size() << '\n';
+    
+    //atom type and coordinates in bohr and core charge
+    Elements _elements;
+    double nucQ;
+    for (std::vector< ctp::QMAtom* >::iterator i=_atoms.begin(); i!=_atoms.end(); ++i){
+        ctp::QMAtom* a = (*i);
+        if (_ECP) {
+            nucQ = _elements.getNucCrgECP(a->type);
+        } else {
+            nucQ = _elements.getNucCrg(a->type);
+        }
+        out << a->type << '\t' << a->x*tools::conv::ang2bohr << '\t'<< a->y*tools::conv::ang2bohr << '\t'<< a->z*tools::conv::ang2bohr
+            << '\t' << nucQ << '\n';
+    }
+    
+    //number of grid points
+    out << _gridpoints.size() << '\n';
+    
+    //data: x y z value
+    for(int i=0; i<_gridpoints.size(); i++){
+        //point coordinates in Bohr
+        vec point = _gridpoints[i]*tools::conv::nm2bohr;
+        out << point[0] << '\t' << point[1] << '\t' << point[2] << '\t' << _gridsites[i]->getPhi() <<  '\n';
+    }
+    out.flush();
+    out.close();
+    
+
+}
+
+
+
     
 }}

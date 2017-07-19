@@ -23,12 +23,12 @@
 
 #include <votca/xtp/numerical_integrations_periodic.h>
 #include <boost/math/constants/constants.hpp>
+#include <votca/xtp/radial_euler_maclaurin_rule.h>
+#include <votca/xtp/sphere_lebedev_rule.h>
 #include <votca/xtp/aoshell.h>
 #include <votca/tools/constants.h>
 
-#ifdef LIBXC
-#include <xc.h>
-#endif
+
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/elements.h>
 #include <fstream>
@@ -38,88 +38,441 @@
 
 
 
+
+
 namespace votca {
     namespace xtp {
         namespace ub = boost::numeric::ublas;
-
-        double NumericalIntegrationPeriodic::IntegratePotential_w_PBC(vec rvector) {
+        
+        
+        void NumericalIntegrationPeriodic::ExpandBasis(vector<ctp::QMAtom*> _atoms){
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
             }
-
-            double result = 0.0;
-            double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0;
-            double vol = boxLen[0] * boxLen[1] * boxLen[2];
-
-            if (density_set) {
-                //                #pragma omp parallel for reduction(+:result)
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-
-                        //charge at this point
-                        double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
-
-                        //r-space sum
-                        vec dif = _grid[i][j].grid_pos - rvector;
-
-                        for (int k = 0; k < 3; k++) {
-                            if (std::abs(dif[k] > boxLen[k]*0.5)) //correct for for bond crossing PBC, if it exists
-                                if (dif[k] > 0) //i.x>j.x
-                                    dif[k] -= boxLen[k];
-                                else //i.x<j.x
-                                    dif[k] += boxLen[k];
+            
+            if(_nExpantionCells==0){ //just one box, no need to expand
+                _expanded_basis=_basis;
+                _expanded_atoms=_atoms;
+                //no _toclean_atoms
+                return;
+            }
+            //need to expand
+            _expanded_basis =  new AOBasis;
+            vector< ctp::QMAtom* > ::iterator ait;
+            for(int cx= -_nExpantionCells; cx<=_nExpantionCells; cx++){
+                for(int cy= -_nExpantionCells; cy<=_nExpantionCells; cy++){
+                    for(int cz= -_nExpantionCells; cz<=_nExpantionCells; cz++){
+                        if(cx==0 && cy==0 && cz==0){ //cell 0 0 0 needs to be at the very end of _expanded_atoms
+                            continue;
                         }
-                        double dist = abs(dif); //in bohr
-                        double potR = q * ((erfc(alpha * dist) / dist) - tools::conv::Pi / (vol * vol * alpha * alpha)); //erfc and shift average pot to 0
+                        
+                        tools::vec shift = tools::vec(boxLen.getX()*cx, boxLen.getY()*cy, boxLen.getZ()*cz);
+                        shift *= tools::conv::bohr2ang; //boxLen is in Bohr, QMAtom positions are in Angstroms
 
-                        if (dist < 1.0e-12) { //point is in the same spot as we are evaluating potential
-                            result -= 2.0 * (alpha / sqrt(tools::conv::Pi)) * q; //self correction
-                        } else if (dist <= cutoff) {
-                            //double potR=q/dist;
-                            result += potR;
+                        //loop over atoms
+                        for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                            vec imgpos = shift + (*ait)->getPos();
+                            ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
+                            _expanded_atoms.push_back(imgatom);
+                            _toclean_atoms.push_back(imgatom);
                         }
+                        
+                        //loop over shells
+                        for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+                            AOShell* _store=(*_row);
+                            vec imgpos = shift + _store->getPos();
+                            _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
+                                                      _store->getStartIndex(), _store->getOffset(), imgpos, _store->getName(), _store->getIndex());
+                            
+                        }
+                    }
+                }
+            }
+            
+            //cell 0 0 0 needs to be at the very end of _expanded_atoms
+            //atoms
+            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                _expanded_atoms.push_back((*ait));
+            }
+            //shells
+            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+                AOShell* _store=(*_row);
+                _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
+                                          _store->getStartIndex(), _store->getOffset(), _store->getPos(), _store->getName(), _store->getIndex());
+            }
+            
+            return;
+        }
 
-                    }//j
-                }//i
-                E_rspace = result;
+        
+        
+        
+        void NumericalIntegrationPeriodic::GridSetup(string type, BasisSet* bs, vector<ctp::QMAtom*> _atoms,AOBasis* basis) {
+            
+            _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            _basis=basis;
+            ExpandBasis(_atoms);
+            
+            
+            std::vector< std::vector< GridContainers::integration_grid > > grid;
+            const double pi = boost::math::constants::pi<double>();
+            // get GridContainer
+            GridContainers initialgrids;
 
-                //cout<< "r-space sum: " <<result<<endl;
+            // get radial grid per element
+            EulerMaclaurinGrid _radialgrid;
+            _radialgrid.getRadialGrid(bs, _atoms, type, initialgrids); // this checks out 1:1 with NWChem results! AWESOME
 
-                //k-space sum
-                int nKpoints = numK[0] * numK[1] * numK[2];
-                double ksum = 0.0;
-                //exclude k={0,0,0} (index=0)
-                //                #pragma omp parallel for reduction(+:ksum)
-                for (int index = 1; index < nKpoints; index++) {
-                    double* kp = &(Kcoord[index * 3]);
-                    vec K(kp[0], kp[1], kp[2]);
-                    std::complex<double> Kr(0, K * rvector); // ik dot r
+     
+           map<string, GridContainers::radial_grid>::iterator it;
 
-                    double potK = prefactor[index]*(Rho_k[index] * std::exp(Kr)).real();
-                    ksum += potK;
-
-                }//index
-                result += ksum;
-                E_kspace = ksum;
-
-
-                //cout<< "k-space sum: " <<ksum<<endl;
-                //cout<< "final Ewald sum: "<<result<<endl;
-
-                //dipole moment correction
-                //This is only usefull if we have a countably infinite
-                //sphere of periodic cells embeded in a dielectric.
-                //If material is trully periodic ("metallic boundary
-                //conditions"), then this correction is 0
-
-
-
-            } else {
-                throw std::runtime_error("Density not calculated");
+            LebedevGrid _sphericalgrid;
+         
+            for (it = initialgrids._radial_grids.begin(); it != initialgrids._radial_grids.end(); ++it) {
+               _sphericalgrid.getSphericalGrid(_atoms, type, initialgrids);
+       
             }
 
-            return result;
+            
+            // for the partitioning, we need all inter-center distances later, stored in one-directional list
+            int ij = 0;
+            Rij.push_back(0.0); // 1st center "self-distance"
+            
+            vector< ctp::QMAtom* > ::iterator ait;
+            vector< ctp::QMAtom* > ::iterator bit;
+            int i = 1;
+            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                // get center coordinates in Bohr
+                vec pos_a = (*ait)->getPos() * tools::conv::ang2bohr;
+                
+                int j = 0;
+                for (bit = _expanded_atoms.begin(); bit != ait; ++bit) {
+                    ij++;
+                    // get center coordinates in Bohr
+                    vec pos_b = (*bit)->getPos() * tools::conv::ang2bohr;
+                   
+                    Rij.push_back(1.0 / abs(pos_a-pos_b));
+                                        
+                    j++;
+                } // atoms
+                Rij.push_back(0.0); // self-distance again
+                i++;
+            } // atoms
+            
+            
+
+            int i_atom = 0;
+            _totalgridsize = 0;
+            for (ait = _atoms.begin(); ait < _atoms.end(); ++ait) {
+                // get center coordinates in Bohr
+                std::vector< GridContainers::integration_grid > _atomgrid;
+                const vec atomA_pos =(*ait)->getPos() * tools::conv::ang2bohr;
+             
+                string name = (*ait)->type;
+                
+                // get radial grid information for this atom type
+                GridContainers::radial_grid _radial_grid = initialgrids._radial_grids.at(name);
+
+                
+                // get spherical grid information for this atom type
+                GridContainers::spherical_grid _spherical_grid = initialgrids._spherical_grids.at(name);
+
+                // maximum order (= number of points) in spherical integration grid
+                int maxorder = _sphericalgrid.Type2MaxOrder(name,type);
+                int maxindex = _sphericalgrid.getIndexFromOrder(maxorder);
+
+                // for pruning of integration grid, get interval boundaries for this element
+                std::vector<double> PruningIntervals = _radialgrid.getPruningIntervals( name );
+              //  cout << " Pruning Intervals: " << PruningIntervals[0] << " " << PruningIntervals[1] << " " << PruningIntervals[2] << " " << PruningIntervals[3] << endl;
+                
+                int current_order = 0;
+                // get spherical grid
+                std::vector<double> _theta;
+                std::vector<double> _phi;
+                std::vector<double> _weight;
+                
+                // for each radial value
+                for (unsigned _i_rad = 0; _i_rad < _radial_grid.radius.size(); _i_rad++) {
+                    double r = _radial_grid.radius[_i_rad];
+                    int order;
+                    // which Lebedev order for this point?
+                    if ( maxindex == 1 ) {
+                        // smallest possible grid anyway, nothing to do
+                        order = maxorder;
+                    } else if ( maxindex == 2 ) {
+                        // only three intervals
+                        if ( r < PruningIntervals[0] ) {
+                            order = _sphericalgrid.getOrderFromIndex(1);//1;
+                        } else if ( ( r >= PruningIntervals[0] ) && ( r < PruningIntervals[3] )   ){
+                            order = _sphericalgrid.getOrderFromIndex(2);
+                        } else {
+                            order = _sphericalgrid.getOrderFromIndex(1);
+                        } // maxorder == 2
+                    } else {
+                        // five intervals
+                        if ( r < PruningIntervals[0] ) {
+                            order = _sphericalgrid.getOrderFromIndex(int(2));
+                        } else if ( ( r >= PruningIntervals[0]) && ( r < PruningIntervals[1] ) ) {
+                            order = _sphericalgrid.getOrderFromIndex(4);
+                        } else if ( ( r >= PruningIntervals[1]) && ( r < PruningIntervals[2] ) ) {
+                            order = _sphericalgrid.getOrderFromIndex(max(maxindex-1, 4));
+                        } else if ( (r >= PruningIntervals[2]) && ( r < PruningIntervals[3] ) ) {
+                            order = maxorder;
+                        } else {
+                            order = _sphericalgrid.getOrderFromIndex(max(maxindex-1,1));
+                        }
+                    }                        
+
+
+                    
+                    // get new spherical grid, if order changed
+                    if ( order != current_order ){
+                        _theta.clear();
+                        _phi.clear();
+                        _weight.clear();
+                        
+                        _sphericalgrid.getUnitSphereGrid(order,_theta,_phi,_weight);
+                        current_order = order;
+                    }
+                    
+                  
+
+                    for (unsigned _i_sph = 0; _i_sph < _phi.size(); _i_sph++) {
+
+                        double p   = _phi[_i_sph] * pi / 180.0; // back to rad
+                        double t   = _theta[_i_sph] * pi / 180.0; // back to rad
+                        double ws  = _weight[_i_sph];
+
+                        const vec s = vec(sin(p) * cos(t), sin(p) * sin(t),cos(p));
+                     
+
+                        //we only need densities in the first periodic cell
+                        vec ppos = atomA_pos+r*s;
+                        if(ppos.getX()>=0 && ppos.getY()>=0 && ppos.getZ()>=0 &&
+                           ppos.getX()<boxLen.getX() && ppos.getY()<boxLen.getY() && ppos.getZ()<boxLen.getZ()){
+
+                            GridContainers::integration_grid _gridpoint;
+                            _gridpoint.grid_pos = ppos;
+                            _gridpoint.grid_weight = _radial_grid.weight[_i_rad] * ws;
+                            _atomgrid.push_back(_gridpoint);
+                        }
+
+
+                    } // spherical gridpoints
+                } // radial gridpoint
+                
+
+                // get all distances from grid points to centers
+                std::vector< std::vector<double> > rq;
+                // for each center
+                for (bit = _expanded_atoms.begin(); bit < _expanded_atoms.end(); ++bit) {
+                    // get center coordinates
+                   const vec atom_pos = (*bit)->getPos() * tools::conv::ang2bohr;
+
+
+                    std::vector<double> temp;
+                    // for each gridpoint
+                    for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end(); ++git) {
+
+                        temp.push_back(abs(git->grid_pos-atom_pos));
+
+                    } // gridpoint of _atomgrid
+                    rq.push_back(temp); 
+
+                } // centers
+                // cout << " Calculated all gridpoint distances to centers for " << i_atom << endl;
+                
+                // find nearest-neighbor of this atom
+                double distNN = 1e10;
+
+                vector< ctp::QMAtom* > ::iterator NNit;
+                //int i_NN;
+               
+                // now check all other centers
+                int i_b =0;
+                for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit) {
+
+                    if (bit != ait) {
+                        // get center coordinates
+                       
+                        const vec atomB_pos=(*bit)->getPos() * tools::conv::ang2bohr;
+                        double distSQ = (atomA_pos-atomB_pos)*(atomA_pos-atomB_pos);
+
+                        // update NN distance and iterator
+                        if ( distSQ < distNN ) {
+                            distNN = distSQ;
+                            NNit = bit;
+                           
+                        }
+
+                    } // if ( ait != bit) 
+                    i_b++;
+                }// bit centers
+                
+                for ( unsigned i_grid = 0; i_grid < _atomgrid.size() ; i_grid++){
+                    // call some shit called grid_ssw0 in NWChem
+                    std::vector<double> _p = SSWpartition( i_grid, _expanded_atoms.size(),rq);
+                 
+                    // check weight sum
+                    double wsum = 0.0;
+                    for (unsigned i =0 ; i < _p.size(); i++ ){
+                        wsum += _p[i];
+                    }
+                    //cout << " sum of partition weights " << wsum << endl;
+                    if ( wsum != 0.0 ){
+                        
+                        // update the weight of this grid point
+                        _atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p[i_atom]/wsum;
+                        //cout << " adjusting gridpoint weight "  << endl;
+                    } else {
+                        
+                       cerr << "\nSum of partition weights of grid point " << i_grid << " of atom " << i_atom << " is zero! ";
+                       throw std::runtime_error("\nThis should never happen!"); 
+                        
+                    }
+                    
+
+                } // partition weight for each gridpoint
+               
+                // now remove points from the grid with negligible weights
+                
+                for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end();) {
+                    if (git->grid_weight < 1e-13 ) {
+                        git = _atomgrid.erase(git);
+                    } else {
+                        ++git;
+                    }
+                }
+                
+                _totalgridsize += _atomgrid.size() ;
+
+                grid.push_back(_atomgrid);
+                
+                i_atom++;
+                
+            } // atoms
+            
+            SortGridpointsintoBlocks(grid);
+            FindSignificantShells();
+            return;
         }
+        
+        
+        
+        
+        
+        void NumericalIntegrationPeriodic::FindSignificantShells(){
+
+            for (unsigned i=0;i<_grid_boxes.size();++i){
+                GridBox & box=_grid_boxes[i];
+                for (AOBasis::AOShellIterator _row = _expanded_basis->firstShell(); _row != _expanded_basis->lastShell(); _row++) {
+                      AOShell* _store=(*_row);
+                      const double decay=(*_row)->getMinDecay();
+                      const tools::vec& shellpos=(*_row)->getPos();
+                      
+                      for(const auto& point : box.getGridPoints()){
+                          tools::vec dist=shellpos-point;
+                          double distsq=dist*dist;
+                          // if contribution is smaller than -ln(1e-10), add atom to list
+                        if ( (decay * distsq) < 20.7 ){
+                            box.addShell(_store);
+                            break;
+                        }
+                      }
+                }
+                //cout<<box.significant_shells.size()<<" "<<box.grid_pos.size()<<endl;
+            }
+            std::vector< GridBox > _grid_boxes_copy=_grid_boxes;
+            
+            
+            std::vector<unsigned> sizes;
+            sizes.reserve(_grid_boxes_copy.size());
+            for(auto& box: _grid_boxes_copy){
+                sizes.push_back(box.size());
+            }
+           
+            
+            std::vector<unsigned> indexes=std::vector<unsigned>(sizes.size());
+            iota(indexes.begin(), indexes.end(), 0);
+            std::sort(indexes.begin(), indexes.end(),[&sizes](unsigned i1, unsigned i2) {return sizes[i1] > sizes[i2];});
+            _grid_boxes.resize(0);
+            unsigned indexoffirstgridpoint=0;
+            for(unsigned& index: indexes){
+                if(_grid_boxes_copy[index].Shellsize()>0){
+                    GridBox newbox=_grid_boxes_copy[index];
+                    newbox.setIndexoffirstgridpoint(indexoffirstgridpoint);
+                    indexoffirstgridpoint+=newbox.size();
+                    newbox.PrepareForIntegration();
+                    _grid_boxes.push_back(newbox);
+                }   
+            }
+            
+            return;
+        }
+        
+        
+        
+        void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
+            const double boxsize=3;
+            
+            std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
+            
+            tools::vec min = vec(0,0,0);
+            tools::vec max = boxLen;
+            
+            vec molextension=(max-min);
+            vec numberofboxes=molextension/boxsize;
+            vec roundednumofbox=vec(std::ceil(numberofboxes.getX()),std::ceil(numberofboxes.getY()),std::ceil(numberofboxes.getZ()));
+
+            
+            //creating temparray
+            for (unsigned i=0;i<unsigned(roundednumofbox.getX());i++){
+                std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > boxes_yz;
+                for (unsigned j=0;j<unsigned(roundednumofbox.getY());j++){
+                    std::vector< std::vector< GridContainers::integration_grid* > >  boxes_z;
+                    for (unsigned k=0;k<unsigned(roundednumofbox.getZ());k++){
+                        std::vector< GridContainers::integration_grid* >  box;
+                        box.reserve(100);
+                        boxes_z.push_back(box);
+                    }
+                    boxes_yz.push_back(boxes_z);
+            }
+                boxes.push_back(boxes_yz);
+            }
+            
+             for ( auto & atomgrid : grid){
+                for ( auto & gridpoint : atomgrid){
+                    tools::vec pos= gridpoint.grid_pos-min;
+                    tools::vec index=pos/boxsize;
+                    int i_x=int(index.getX());
+                    int i_y=int(index.getY());
+                    int i_z=int(index.getZ());
+                    boxes[i_x][i_y][i_z].push_back(&gridpoint);
+                }
+             }
+            
+            for ( auto& boxes_xy : boxes){
+                for( auto& boxes_z : boxes_xy){
+                    for ( auto& box : boxes_z){      
+                        if( box.size()<1){
+                            continue;
+                        }
+                        GridBox gridbox;
+                        
+                        for(const auto&point:box){
+                            gridbox.addGridPoint(*point);
+                        }
+                        _grid_boxes.push_back(gridbox);
+                    }
+                }
+            }
+            
+            return;
+        }
+        
+
+        
+        
 
         double NumericalIntegrationPeriodic::CalcDipole_w_PBC(vec rvector) {
             if(boxLen*boxLen==0){
@@ -127,25 +480,22 @@ namespace votca {
             }
             //as a check, compute the dipole moment of the density distribution.
             //center it on the first atom, for example.
+            
 
             double z[3] = {0};
             vec dip(z);
             if (density_set) {
+                
+                const std::vector<double>& _densities = _periodicGridBox.getGridDensities();
+                const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
+                const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
+                
                 //                #pragma omp parallel for reduction(+:result)
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-                        double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
-                        vec dif = _grid[i][j].grid_pos - rvector;
-                        for (int k = 0; k < 3; k++) {
-                            if (std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
-                                if (dif[k] > 0) //i.x>j.x
-                                    dif[k] -= boxLen[k];
-                                else //i.x<j.x
-                                    dif[k] += boxLen[k];
-                        }
-                        dip += dif * q;
-                    }//i
-                }//j
+                for (unsigned i = 0; i < _densities.size(); i++) {
+                    double q = -_densities[i] * _weights[i]; //density is neg of charge
+                    vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
+                    dip += dif * q;
+                }//i
             }//density
             else {
                 throw std::runtime_error("Density not calculated");
@@ -153,235 +503,44 @@ namespace votca {
             return (abs(dip)); //in Bohr*elementary charge
         }
 
-        void NumericalIntegrationPeriodic::FreeKspace() {
-            delete[] Rho_k;
-            delete[] Kcoord;
-            delete[] prefactor;
-        }
-
-        /**
-         *	Calculate and return the Ewald coefficient (alpha) from cutoff distance
-         *	and requested tolerance.
-         */
-        void NumericalIntegrationPeriodic::findAlpha(double Rc, double dtol) {
-            double x = 1.0;
-            int i = 20;
-            while (erfc(x * Rc) / Rc > dtol) {
-                x *= 2.0;
-                i++;
-            }
-            double lastx = x * 2.0;
-            double newx;
-            while (true) {
-                double reldif = (erfc(x * Rc) / Rc - dtol) / dtol;
-                if (std::abs(reldif) < 1.0e-3 || i == 0)
-                    break;
-
-                if (reldif > 0)
-                    newx = (x + lastx)*0.5;
-                else
-                    newx = x * 0.5;
-                lastx = x;
-                x = newx;
-                i--;
-            }
-            alpha = x;
-        }
-
-        /**
-         *
-         * @param _atoms
-         * @param boxLen
-         * @param Kspacing in Angstroms
-         */
-        void NumericalIntegrationPeriodic::PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK = 0) {
-
-            if(boxLen*boxLen==0){
-                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
-            }
-            cout << "box is " << boxLen[0] << " " << boxLen[1] << " " << boxLen[2] << endl;
-
-            //add nuclear charges to _grid to avoid having to do periodic calculations on them separately;
-            //_Madelung_grid.clear();
-            std::vector< GridContainers::integration_grid > _Nuc;
-            Elements _elements;
-            for (std::vector< ctp::QMAtom* >::iterator it = _local_atomlist.begin(); it != _local_atomlist.end(); ++it) {
-                GridContainers::integration_grid el;
-                ctp::QMAtom* atom = *it;
-                if (ECP) {
-                    el.grid_density = -_elements.getNucCrgECP(atom->type);
-                } else {
-                    el.grid_density = -_elements.getNucCrg(atom->type);
-                }
-                el.grid_weight = 1.0;
-                el.grid_pos = vec(atom->x, atom->y, atom->z) * tools::conv::ang2bohr;
-                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
-                _Nuc.push_back(el);
-            }
-            if (_Nuc.size() > 0) {
-                _grid.push_back(_Nuc);
-            }
-
-            //
-            //            //fill Madelung grid with density grid, all in to _Madelung_grid[0], so that energy calculation foesn't have a quadrupple nested loop
-            //            _Madelung_grid=_grid;
-
-
-
-            //cout<<"points in _Mad: " <<_Mad.size() << endl;
-            //cout<<"_Mads in _Madelung_grid: " <<_Madelung_grid.size() << endl;
-
-
-
-            //compute alpha
-            double cutoff = min(min(boxLen[0], boxLen[1]), boxLen[2]) / 2.0;
-            //            findAlpha(cutoff, 1.0e-10);
-            alpha = ext_alpha;
-            double fourasq = 4.0 * alpha*alpha;
-            cout << "found alpha = " << alpha << "\t rel err of r-sum ~ " << erfc(alpha * cutoff) / cutoff << endl;
-            //            cout<<"found alpha = "<< alpha <<"\t";
-
-
-            //this is going to be slow, as points we have density for are not on a periodic grid,
-            //so will use simple Ewald summation, not any of the FFT methods.
-
-            //find number of k-vectors in each lattice direction
-            double minSq = 1.0e15;
-            for (int i = 0; i < 3; i++) {
-                if (nK == 0) {
-                    //numK[i]=1+(boxLen[i]/Kspacing);
-                    //if(numK[i]%2 == 0) numK[i]++; //keep it odd
-
-                    //find maxK
-                    int maxK;
-                    double maxKsq;
-                    double err;
-                    double twoPiL = 2.0 * tools::conv::Pi / boxLen[i];
-                    for (maxK = 2; true; maxK++) {
-                        maxKsq = maxK * maxK * twoPiL*twoPiL;
-                        err = std::exp(-maxKsq / fourasq) / maxKsq;
-                        if (err < 1.0e-7) {
-                            break;
-                        }
-                    }
-
-                    maxK = max(16, maxK);
-
-                    numK[i] = 2 * maxK + 1;
-                    minSq = min(maxKsq, minSq);
-                } else {
-                    numK[i] = nK;
-                }
-            }
-            //cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl;
-            //cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl;
-
-
-            //allocate
-            int nKpoints = numK[0] * numK[1] * numK[2];
-            Rho_k = new std::complex<double>[nKpoints];
-            Kcoord = new double[nKpoints * 3];
-            prefactor = new double[nKpoints];
-
-            //fill Kcoord and prefactor
-            // [0, 1, 2, 3, ..., N/2 -1, N/2, -N/2, -N/2 +1, -N/2 +1, ..., -3, -2, -1] (note no 0)
-            // k={0,0,0} is the very first entry (index=0)
-
-
-            double invvolume = 1.0 / (boxLen[0] * boxLen[1] * boxLen[2]);
-            double pre = invvolume * 4.0 * tools::conv::Pi;
-
-            //cout<<"pre=4*Pi/Volume="<<pre<<endl;
-            //cout<<"fourasq=4*alpha^2="<<fourasq<<endl;
-
-#pragma omp parallel for
-            for (int l = 0; l < numK[0]; l++) {
-                int L, M, N;
-                double ksq;
-                if (l > numK[0] / 2) {
-                    L = l - numK[0];
-                } else {
-                    L = l;
-                }
-                //cout<<L<<endl;
-                for (int m = 0; m < numK[1]; m++) {
-                    if (m > numK[1] / 2) {
-                        M = m - numK[1];
-                    } else {
-                        M = m;
-                    }
-                    for (int n = 0; n < numK[2]; n++) {
-                        if (n > numK[2] / 2) {
-                            N = n - numK[2];
-                        } else {
-                            N = n;
-                        }
-
-                        int index = l * (numK[1] * numK[2]) + m * numK[2] + n;
-
-                        double* kp = &(Kcoord[index * 3]);
-                        kp[0] = 2.0 * tools::conv::Pi * L / boxLen[0];
-                        kp[1] = 2.0 * tools::conv::Pi * M / boxLen[1];
-                        kp[2] = 2.0 * tools::conv::Pi * N / boxLen[2];
-
-                        ksq = (kp[0] * kp[0])+(kp[1] * kp[1])+(kp[2] * kp[2]);
-                        //cout<<"{L,M,N}={"<<L<<", "<<M<<", "<<N<<"}\n";
-                        //                        cout<<"{l,m,n}={"<<l<<", "<<m<<", "<<n<<"}\t";
-                        //                        cout<<"k={"<<kp[0]<<", "<<kp[1]<<", "<<kp[2]<<"}\tksq="<<ksq<<"\t";
-                        //                        cout<<"prefactor="<<(pre/ksq) * std::exp(-ksq/fourasq)<<endl;
-                        prefactor[index] = (pre / ksq) * std::exp(-ksq / fourasq);
-
-                        //index++;
-                    }
-                }
-            }
-
-
-            //fill Rho_k
-#pragma omp parallel for
-            for (int index = 0; index < nKpoints; index++) {
-                double* kp = &(Kcoord[index * 3]);
-                vec K(kp[0], kp[1], kp[2]);
-                Rho_k[index] = 0.0;
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-                        vec r = _grid[i][j].grid_pos;
-                        std::complex<double> nKr(0, -K * r); // -ik dot r
-                        Rho_k[index] -= _grid[i][j].grid_weight * _grid[i][j].grid_density * std::exp(nKr); //density is neg of charge
-                    }//j
-                }//i
-            }//index
-
-        }
-
+        
+        
+        
         void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
             }
+            
+            //fill the _periodicGridBox from all the smaller grid boxes
+            if (density_set) {
+                for (unsigned i = 0; i < _grid_boxes.size(); i++) {
+                    _periodicGridBox.appendBoxData(_grid_boxes[i]);
+                }
+            }
+            else {
+                throw std::runtime_error("Density not calculated");
+            }
 
-            alpha = ext_alpha;
-            double fourasq = 4.0 * alpha*alpha;
-
-            //add nuclear charges to _grid to avoid having to do periodic calculations on them separately;
-            std::vector< GridContainers::integration_grid > _Nuc;
+            //add nuclear charges to _periodicGridBox to avoid having to do periodic calculations on them separately;
             Elements _elements;
             for (std::vector< ctp::QMAtom* >::iterator it = _local_atomlist.begin(); it != _local_atomlist.end(); ++it) {
                 GridContainers::integration_grid el;
                 ctp::QMAtom* atom = *it;
                 if (ECP) {
-                    el.grid_density = -_elements.getNucCrgECP(atom->type);
+                    _periodicGridBox.addDensity(-_elements.getNucCrgECP(atom->type));
                 } else {
-                    el.grid_density = -_elements.getNucCrg(atom->type);
+                    _periodicGridBox.addDensity(-_elements.getNucCrg(atom->type));
                 }
                 el.grid_weight = 1.0;
                 el.grid_pos = vec(atom->x, atom->y, atom->z) * tools::conv::ang2bohr;
-                //cout<< atom->charge << "@ "<<el.grid_x<<'\t'<<el.grid_y<<'\t'<<el.grid_z<<endl;
-                _Nuc.push_back(el);
+                _periodicGridBox.addGridPoint(el);
             }
-            if (_Nuc.size() > 0) {
-                _grid.push_back(_Nuc);
-            }
+            
+            const std::vector<double>& _densities = _periodicGridBox.getGridDensities();
+            const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
 
+            alpha = ext_alpha;
+            double fourasq = 4.0 * alpha*alpha;
 
             //this is going to be slow, as points we have density for are not on a periodic grid,
             //so will use simple Ewald summation, not any of the FFT methods.
@@ -420,13 +579,11 @@ namespace votca {
 
             //allocate space for eikr
             eikr.resize(3); //3 dim
-            for (unsigned m = 0; m < 3; m++) {
+            for (unsigned m = 0; m < 3; m++) { //dimension
                 eikr[m].resize(numK[m]);
-                for (unsigned k = 0; k < numK[m]; k++) {
-                    eikr[m][k].resize(_grid.size());
-                    for (unsigned i = 0; i < _grid.size(); i++) {
-                        eikr[m][k][i].resize(_grid[i].size());
-                    }
+#pragma omp parallel for
+                for (unsigned k = 0; k < numK[m]; k++) { //k vectors
+                    eikr[m][k].resize(_densities.size());    //density points
                 }
 
                 //also compute the inverse box dimensions
@@ -435,25 +592,23 @@ namespace votca {
             //eikr indexing is [DIM][k][i][j]
 
             //based on gromacs 4.6 tabulate_eir()
-            for (unsigned i = 0; i < _grid.size(); i++) {
 #pragma omp parallel for
-                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                    vec r = _grid[i][j].grid_pos; //grid is in Bohr, need it in reduced units (*2pi/box))
-                    for (unsigned m = 0; (m < 3); m++) {
-                        eikr[m][0][i][j] = std::complex<double>(1, 0);
-                        eikr[m][1][i][j] = std::complex<double>(cos(r[m] * lll[m]), sin(r[m] * lll[m])); //this is where reduced units are applied
-                        for (unsigned k = 2; k < numK[m]; k++) {
-                            eikr[m][k][i][j] = eikr[m][k - 1][i][j] * eikr[m][1][i][j];
-                        }//k
-                    }//m
-                }//j
+            for (unsigned i = 0; i < _densities.size(); i++) { //density points
+                vec r = _positions[i]; //grid is in Bohr, need it in reduced units (*2pi/box))
+                for (unsigned m = 0; (m < 3); m++) { //dimensions
+                    eikr[m][0][i] = std::complex<double>(1, 0);
+                    eikr[m][1][i] = std::complex<double>(cos(r[m] * lll[m]), sin(r[m] * lll[m])); //this is where reduced units are applied
+                    for (unsigned k = 2; k < numK[m]; k++) { //k vectors
+                        eikr[m][k][i] = eikr[m][k - 1][i] * eikr[m][1][i];
+                    }//k
+                }//m
             }//i
 
 
             //now do the same for the eval_grid (eikR), the points were potential is to be evaluated
             //allocate space for eikR
             eikR.resize(3); //3 dim
-            for (unsigned m = 0; m < 3; m++) {
+            for (unsigned m = 0; m < 3; m++) { //dimensions
                 eikR[m].resize(numK[m]);
                 for (unsigned k = 0; k < numK[m]; k++) {
                     eikR[m][k].resize(eval_grid.getGrid().size());
@@ -484,29 +639,29 @@ namespace votca {
 
         }
 
-        void NumericalIntegrationPeriodic::FillMadelungGrid(vec box, int natomsonside) {
-            //fill _Madelung_grid;
-            _Madelung_grid.clear();
-            std::vector< GridContainers::integration_grid > _Mad;
-            boxLen = box;
-            double a = boxLen[0]; //in bohr
-            for (int l = 0; l < 2; l++) {
-                for (int m = 0; m < 2; m++) {
-                    for (int n = 0; n < 2; n++) {
-                        GridContainers::integration_grid el;
-                        el.grid_density = std::pow(-1.0, l + m + n);
-                        el.grid_weight = 1.0;
-                        el.grid_pos = vec(l, m, n) * (a / 2);
-                        _Mad.push_back(el);
-                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << "\t box size:"<< boxLen[0] << endl;
-                    }
-                }
-            }
-            _Madelung_grid.push_back(_Mad);
-            _grid = _Madelung_grid;
-            //exit(0);
-        }
-
+//        void NumericalIntegrationPeriodic::FillMadelungGrid(vec box, int natomsonside) {
+//            //fill _Madelung_grid;
+//            _Madelung_grid.clear();
+//            std::vector< GridContainers::integration_grid > _Mad;
+//            boxLen = box;
+//            double a = boxLen[0]; //in bohr
+//            for (int l = 0; l < 2; l++) {
+//                for (int m = 0; m < 2; m++) {
+//                    for (int n = 0; n < 2; n++) {
+//                        GridContainers::integration_grid el;
+//                        el.grid_density = std::pow(-1.0, l + m + n);
+//                        el.grid_weight = 1.0;
+//                        el.grid_pos = vec(l, m, n) * (a / 2);
+//                        _Mad.push_back(el);
+//                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << "\t box size:"<< boxLen[0] << endl;
+//                    }
+//                }
+//            }
+//            _Madelung_grid.push_back(_Mad);
+//            _grid = _Madelung_grid;
+//            //exit(0);
+//        }
+//
         void NumericalIntegrationPeriodic::IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid) {
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
@@ -525,28 +680,23 @@ namespace votca {
 
 
             if (density_set) {
-                //#pragma omp parallel for
+                const std::vector<double>& _densities = _periodicGridBox.getGridDensities();
+                const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
+                const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
+                
+                
+                #pragma omp parallel for
                 for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
                     _ESPatGrid[p] = 0;
                     vec rvector = eval_grid.getGrid()[p] * tools::conv::nm2bohr; //Bohr
-                    for (unsigned i = 0; i < _grid.size(); i++) {
-                        for (unsigned j = 0; j < _grid[i].size(); j++) {
+                    for (unsigned i = 0; i < _densities.size(); i++) {
 
                             //charge at this point
-                            double q = -_grid[i][j].grid_weight * _grid[i][j].grid_density; //density is neg of charge
+                            double q = -_weights[i] * _densities[i]; //density is neg of charge
                             //double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
 
                             //r-space sum
-//                            vec dif = _grid[i][j].grid_pos - rvector; //Bohr
-//                            for (unsigned k = 0; k < 3; k++) {
-//                                if (std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
-//                                    if (dif[k] > 0) //i.x>j.x
-//                                        dif[k] -= boxLen[k];
-//                                    else //i.x<j.x
-//                                        dif[k] += boxLen[k];
-//                            }
-                            
-                            vec dif = WrapDisplacement(_grid[i][j].grid_pos, rvector, boxLen);
+                            vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
                             double dist = abs(dif); //in bohr
                             
                             double potR = q * ((erfc(alpha * dist) / dist) - tools::conv::Pi / (vol * vol * alpha * alpha)); //erfc and shift average pot to 0
@@ -557,7 +707,6 @@ namespace votca {
                                 //double potR=q/dist;
                                 _ESPatGrid[p] += potR;
                             }
-                        }//j
                     }//i
                 }//p
                 E_rspace = _ESPatGrid(0);
@@ -577,19 +726,16 @@ namespace votca {
                 double tmp, cs, ss, ak, mx, my, mz, m2;
                 double factor = -1.0 / (4 * alpha * alpha);
                 double scaleRecip = 4.0 * boost::math::constants::pi<double>() / (vol); //final units of potential are Hartree/e (atomic units)
-                std::vector<std::vector<std::complex<double> > > tab_xy;
-                std::vector<std::vector<std::complex<double> > > tab_qxyz; //charge distrib.
+                std::vector<std::complex<double> > tab_xy;
+                std::vector<std::complex<double> > tab_qxyz; //charge distrib.
                 std::vector<std::complex<double> > tab_R_xyz; //where to evaluate
                 std::vector<std::complex<double> > tab_R_xy;
                 //allocate space
-                tab_xy.resize(_grid.size());
-                tab_qxyz.resize(_grid.size());
+                tab_xy.resize(_densities.size());
+                tab_qxyz.resize(_densities.size());
                 tab_R_xy.resize(eval_grid.getsize());
                 tab_R_xyz.resize(eval_grid.getsize());
-                for (unsigned i = 0; i < _grid.size(); i++) {
-                    tab_xy[i].resize(_grid[i].size());
-                    tab_qxyz[i].resize(_grid[i].size());
-                }
+
 
                 //printf("factor = %f\n", factor);
                 //printf("scaleRecip = %f\n", scaleRecip);
@@ -605,11 +751,9 @@ namespace votca {
                     for (iy = lowiy; iy < numK[1]; iy++) {
                         my = iy * lll[1];
                         if (iy >= 0) {
-                            for (unsigned i = 0; i < _grid.size(); i++) //charge distrib.
+                            for (unsigned i = 0; i < _densities.size(); i++) //charge distrib.
                             {
-                                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                                    tab_xy[i][j] = eikr[0][ix][i][j] * eikr[1][iy][i][j]; //eikr indexing is [DIM][k][i][j]
-                                }//j
+                                tab_xy[i] = eikr[0][ix][i] * eikr[1][iy][i]; //eikr indexing is [DIM][k][i]
                             }//i
                             for (unsigned n = 0; n < eval_grid.getsize(); n++) //where to evaluate
                             {
@@ -617,11 +761,9 @@ namespace votca {
                             }//n
                         } else //negative k component
                         {
-                            for (unsigned i = 0; i < _grid.size(); i++) //charge distrib.
+                            for (unsigned i = 0; i < _densities.size(); i++) //charge distrib.
                             {
-                                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                                    tab_xy[i][j] = eikr[0][ix][i][j] * std::conj(eikr[1][-iy][i][j]); //eikr indexing is [DIM][k][i][j]
-                                }//j
+                                tab_xy[i] = eikr[0][ix][i] * std::conj(eikr[1][-iy][i]); //eikr indexing is [DIM][k][i][j]
                             }//i
                             for (unsigned n = 0; n < eval_grid.getsize(); n++) //where to evaluate
                             {
@@ -633,22 +775,18 @@ namespace votca {
                             m2 = mx * mx + my * my + mz * mz;
                             ak = exp(m2 * factor) / m2;
                             if (iz >= 0) {
-                                for (unsigned i = 0; i < _grid.size(); i++) //charge distrib.
+                                for (unsigned i = 0; i < _densities.size(); i++) //charge distrib.
                                 {
-                                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-                                        tab_qxyz[i][j] = -_grid[i][j].grid_weight * _grid[i][j].grid_density * tab_xy[i][j] * eikr[2][iz][i][j]; //eikr indexing is [DIM][k][i][j]
-                                    }//j
+                                    tab_qxyz[i] = -_weights[i] * _densities[i] * tab_xy[i] * eikr[2][iz][i]; //eikr indexing is [DIM][k][i]
                                 }//i
                                 for (unsigned n = 0; n < eval_grid.getsize(); n++) //where to evaluate
                                 {
                                     tab_R_xyz[n] = tab_R_xy[n] * eikR[2][iz][n];
                                 }//n
                             } else {
-                                for (unsigned i = 0; i < _grid.size(); i++) //charge distrib.
+                                for (unsigned i = 0; i < _densities.size(); i++) //charge distrib.
                                 {
-                                    for (unsigned j = 0; j < _grid[i].size(); j++) {
-                                        tab_qxyz[i][j] = -_grid[i][j].grid_weight * _grid[i][j].grid_density * tab_xy[i][j] * std::conj(eikr[2][-iz][i][j]); //eikr indexing is [DIM][k][i][j]
-                                    }//j
+                                    tab_qxyz[i] = -_weights[i] * _densities[i] * tab_xy[i] * std::conj(eikr[2][-iz][i]); //eikr indexing is [DIM][k][i][j]
                                 }//i
                                 for (unsigned n = 0; n < eval_grid.getsize(); n++) //where to evaluate
                                 {
@@ -657,19 +795,17 @@ namespace votca {
                             }
 
                             cs = ss = 0;
-                            for (unsigned i = 0; i < _grid.size(); i++) {
-                                for (unsigned j = 0; j < _grid[i].size(); j++) {
-                                    cs += tab_qxyz[i][j].real();
-                                    ss += tab_qxyz[i][j].imag();
-                                    //                                    if(ix==4 && iy==4 && iz==4){
-                                    //                                        printf("cs+= %f = %f * (%f+i%f) * (%f+i%f)\n", tab_qxyz[i][j].real(), -_grid[i][j].grid_weight * _grid[i][j].grid_density, tab_xy[i][j].real(), tab_xy[i][j].imag(), eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
-                                    //                                        printf("\teikr=(%f+i%f) * (%f+i%f) * (%f+i%f)\n",eikr[0][ix][i][j].real(), eikr[0][ix][i][j].imag(),eikr[1][iy][i][j].real(), eikr[1][iy][i][j].imag(),eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
-                                    //                                        printf("\tr=%f\t%f\t%f\n", _grid[i][j].grid_pos[0],_grid[i][j].grid_pos[1], _grid[i][j].grid_pos[2]);
-                                    //                                        std::complex<double> krx = std::complex<double>(0, -_grid[i][j].grid_pos[0]*mz);
-                                    //                                        krx=exp(krx);
-                                    //                                        printf("\tkr_x=exp(-i%f)=%f+i%f\n",_grid[i][j].grid_pos[0]*mz, krx.real(), krx.imag());
-                                    //                                    }
-                                }
+                            for (unsigned i = 0; i < _densities.size(); i++) {
+                                cs += tab_qxyz[i].real();
+                                ss += tab_qxyz[i].imag();
+                                //                                    if(ix==4 && iy==4 && iz==4){
+                                //                                        printf("cs+= %f = %f * (%f+i%f) * (%f+i%f)\n", tab_qxyz[i][j].real(), -_grid[i][j].grid_weight * _grid[i][j].grid_density, tab_xy[i][j].real(), tab_xy[i][j].imag(), eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
+                                //                                        printf("\teikr=(%f+i%f) * (%f+i%f) * (%f+i%f)\n",eikr[0][ix][i][j].real(), eikr[0][ix][i][j].imag(),eikr[1][iy][i][j].real(), eikr[1][iy][i][j].imag(),eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
+                                //                                        printf("\tr=%f\t%f\t%f\n", _grid[i][j].grid_pos[0],_grid[i][j].grid_pos[1], _grid[i][j].grid_pos[2]);
+                                //                                        std::complex<double> krx = std::complex<double>(0, -_grid[i][j].grid_pos[0]*mz);
+                                //                                        krx=exp(krx);
+                                //                                        printf("\tkr_x=exp(-i%f)=%f+i%f\n",_grid[i][j].grid_pos[0]*mz, krx.real(), krx.imag());
+                                //                                    }
                             }
                             //exit(0);
                             //                            if(abs(cs)>1e-6 || abs(ss)>1e-6)
@@ -706,198 +842,7 @@ namespace votca {
             //E_kspace = _ESPatGrid(1);
             //_ESPatGrid(1)+=E_rspace;
         }
-
-        /**
-         * Computes electron density belonging to atoms listed in AtomIndeces.
-         * Based on IntegrateDensity_Atomblock()
-         *
-         * @param _density_matrix
-         * @param basis
-         * @param AtomIndeces of the atoms in the molecule
-         * @return electron density
-         */
-        double NumericalIntegrationPeriodic::IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces) {
-
-
-
-
-            // parallelization: distribute over threads inside one atom
-            int nthreads = 1;
-#ifdef _OPENMP
-            nthreads = omp_get_max_threads();
-#endif
-
-            std::vector<double> Density_thread;
-            for (int i_thread = 0; i_thread < nthreads; i_thread++) {
-                Density_thread.push_back(0.0);
-            }
-
-            // for every atom
-            for (unsigned i = 0; i < _grid.size(); i++) {
-                // for each point in atom grid
-
-                // number of points in this atomgrid
-                int atom_points = _grid[i].size();
-                // divide among threads
-                int atom_points_per_thread = atom_points / nthreads;
-                std::vector<int> _thread_start;
-                std::vector<int> _thread_stop;
-                for (int i_thread = 0; i_thread < nthreads; i_thread++) {
-                    _thread_start.push_back(i_thread * atom_points_per_thread);
-                    _thread_stop.push_back((i_thread + 1) * atom_points_per_thread);
-                }
-                // final stop must be size
-                _thread_stop[nthreads - 1] = atom_points;
-
-
-#pragma omp parallel for
-                for (int i_thread = 0; i_thread < nthreads; i_thread++) {
-                    for (int j = _thread_start[i_thread]; j < _thread_stop[i_thread]; j++) {
-
-                        // get value of orbitals at each gridpoint (vector as 1D boost matrix object -> prod )
-                        ub::matrix<double> AOgrid = ub::zero_matrix<double>(1, basis->AOBasisSize()); //basis function values at grid for all significant atoms
-                        ub::matrix<double> rho_mat = ub::zero_matrix<double>(1, 1);
-
-                        // evaluate AO Functions for all shells, NOW BLOCKWISE
-
-                        // for each significant atom for this grid point
-                        for (unsigned sigrow = 0; sigrow < _significant_atoms[i][j].size(); sigrow++) {
-
-                            // this atom
-                            int rowatom = _significant_atoms[i][j][sigrow];
-
-                            // for each shell in this atom
-                            for (unsigned ishell = 0; ishell < _atomshells[rowatom].size(); ishell++) {
-
-                                AOBasis::AOShellIterator _row = _atomshells[rowatom][ishell];
-                                //copy shell and replace position to that of relevant periodic image
-                                AOShell* _shell = *_row;
-                                
-                                // for density, fill sub-part of AOatgrid
-                                ub::matrix_range< ub::matrix<double> > _AOgridsub = ub::subrange(AOgrid, 0, 1, _shell->getStartIndex(), _shell->getStartIndex() + _shell->getNumFunc());
-                                _shell->EvalAOspacePeriodic(_AOgridsub, _grid[i][j].grid_pos, _significant_atoms_pos[i][j][rowatom]);
-
-                            } // shell in atom
-                        }
-
-                        for (unsigned sigrow = 0; sigrow < _significant_atoms[i][j].size(); sigrow++) {
-
-                            // this atom
-                            int rowatom = _significant_atoms[i][j][sigrow];
-                            //only do things if this atom belongs to the molecule of interest and is significant
-                            if (std::find(AtomIndeces.begin(), AtomIndeces.end(), rowatom) != AtomIndeces.end()) {
-
-                                ub::matrix<double> _temp = ub::zero_matrix<double>(1, _blocksize[rowatom]);
-
-                                ub::matrix_range< ub::matrix<double> > _AOgridrow = ub::subrange(AOgrid, 0, 1, _startIdx[rowatom], _startIdx[rowatom] + _blocksize[rowatom]);
-
-                                // for each atom
-
-                                for (unsigned sigcol = 0; sigcol < _significant_atoms[i][j].size(); sigcol++) {
-                                    int colatom = _significant_atoms[i][j][sigcol];
-                                    ub::matrix_range< ub::matrix<double> > _AOgridcol = ub::subrange(AOgrid, 0, 1, _startIdx[colatom], _startIdx[colatom] + _blocksize[colatom]);
-                                    ub::matrix_range< ub::matrix<double> > DMAT_here = ub::subrange(_density_matrix, _startIdx[colatom], _startIdx[colatom] + _blocksize[colatom], _startIdx[rowatom], _startIdx[rowatom] + _blocksize[rowatom]);
-
-                                    _temp += ub::prod(_AOgridcol, DMAT_here);
-
-
-                                } //col shells
-
-                                rho_mat += ub::prod(_temp, ub::trans(_AOgridrow));
-                            } // atom belongs to molecule
-
-                        } // row shells
-
-
-                        _grid[i][j].grid_density = rho_mat(0, 0);
-                        if(fabs(rho_mat(0, 0))>1e-10){
-                            cout<<rho_mat(0, 0)<<'\n'<<flush;
-                        }
-                        Density_thread[i_thread] += _grid[i][j].grid_weight * _grid[i][j].grid_density;
-                    } // j: for each point in atom grid
-                }// each thread
-            } // i: for each atom grid
-
-            double result = 0.0;
-            for (int i_thread = 0; i_thread < nthreads; i_thread++) {
-                //cout << result << endl;
-                result += Density_thread[i_thread];
-
-            }
-            density_set = true;
-
-            return (result);
-        }
-
-        /*
-         * Finds distances between integration centers.
-         * Overrides the same function from the parent
-         */
-        void NumericalIntegrationPeriodic::FindCenterCenterDist(vector<ctp::QMAtom*> _atoms){
-        
-            if(boxLen*boxLen==0){
-                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
-            }
-            
-            int ij = 0;
-            Rij.push_back(0.0); // 1st center "self-distance"
-            
-            vector< ctp::QMAtom* > ::iterator ait;
-            vector< ctp::QMAtom* > ::iterator bit;
-            int i = 1;
-            for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
-                // get center coordinates in Bohr
-                vec pos_a = (*ait)->getPos() * tools::conv::ang2bohr;
-                
-                int j = 0;
-                for (bit = _atoms.begin(); bit != ait; ++bit) {
-                    ij++;
-                    // get center coordinates in Bohr
-                    vec pos_b = (*bit)->getPos() * tools::conv::ang2bohr;
-                    vec dif = WrapDisplacement(pos_a, pos_b, boxLen);
-                    Rij.push_back(1.0 / abs(dif));
-                                        
-                    j++;
-                } // atoms
-                Rij.push_back(0.0); // self-distance again
-                i++;
-            } // atoms
-            return;
-        }
-        
-        /*
-         * Finds distances between grid points and integration centers.
-         * Overrides the same function from the parent
-         */
-        std::vector< std::vector<double> > NumericalIntegrationPeriodic::FindGridpointCenterDist(vector<ctp::QMAtom*> _atoms,
-                std::vector< GridContainers::integration_grid > _atomgrid)
-        {
-            if(boxLen*boxLen==0){
-                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
-            }
-            
-            std::vector< std::vector<double> > rq;
-            vector< ctp::QMAtom* > ::iterator bit;
-            // for each center
-            for (bit = _atoms.begin(); bit < _atoms.end(); ++bit) {
-                // get center coordinates
-               const vec atom_pos = (*bit)->getPos() * tools::conv::ang2bohr;
-
-
-                std::vector<double> temp;
-                // for each gridpoint
-                for (std::vector<GridContainers::integration_grid >::iterator git = _atomgrid.begin(); git != _atomgrid.end(); ++git) {
-                    
-                    vec dif = WrapDisplacement(git->grid_pos, atom_pos, boxLen);
-                    temp.push_back(abs(dif));
-
-                } // gridpoint of _atomgrid
-                rq.push_back(temp); // rq[center][gridpoint]
-
-            } // centers
-            return(rq);
-        }
-        
+  
         
         /**
          * \brief Wraps a vector to periodic boundary conditions. This eventually needs to be moved to tools::vec.
@@ -936,199 +881,6 @@ namespace votca {
             return(ret);
         }
         
-        
-        
-        
-        
-        void NumericalIntegrationPeriodic::FindsignificantAtoms() {
 
-            int _atomindex = 0;
-            int _Idx = 0;
-            int _size = 0;
-
-            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-
-                if ((*_row)->getIndex() == _atomindex) {
-
-                    _singleatom.push_back(_row);
-                    _size += (*_row)->getNumFunc();
-
-                } else {
-
-                    // append _singleatom to _atomshells
-                    _atomshells.push_back(_singleatom);
-                    _startIdx.push_back(_Idx);
-                    _blocksize.push_back(_size);
-                    // reset _singleatom
-                    _singleatom.clear();
-                    _size = (*_row)->getNumFunc();
-                    _Idx = (*_row)->getStartIndex();
-                    _singleatom.push_back(_row);
-                    _atomindex = (*_row)->getIndex();
-
-                }
-            }
-
-            _atomshells.push_back(_singleatom);
-            _startIdx.push_back(_Idx);
-            _blocksize.push_back(_size);
-
-
-            // setup a list of min decay constants per atom
-            // for every shell
-            _atomindex = 0;
-            double _decaymin = 1e7;
-            vector< double > _minimal_decay;
-            vector < vec > _positions;
-            vec _localpos = (*_basis->firstShell())->getPos();
-            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-
-                if ((*_row)->getIndex() == _atomindex) {
-
-                    // check all decay constants in this shell
-                    for (AOShell::GaussianIterator itg = (*_row)->firstGaussian(); itg != (*_row)->lastGaussian(); itg++) {
-                        const AOGaussianPrimitive* gaussian = *itg;
-                        double _decay = gaussian->getDecay();
-                        if (_decay < _decaymin) {
-                            _decaymin = _decay;
-                        } // decay min check
-
-                    } // Gaussian Primitives 
-
-                } else { // if shell belongs to the actual atom
-                    // add to mininal_decay vector
-                    _minimal_decay.push_back(_decaymin);
-                    _positions.push_back(_localpos);
-                    // reset counters
-                    _decaymin = 1e7;
-                    _localpos = (*_row)->getPos();
-
-                    _atomindex++;
-
-                    // check all decay constants in this shell
-                    for (AOShell::GaussianIterator itg = (*_row)->firstGaussian(); itg != (*_row)->lastGaussian(); itg++) {
-                        const AOGaussianPrimitive* gaussian = *itg;
-                        double _decay = gaussian->getDecay();
-                        if (_decay < _decaymin) {
-                            _decaymin = _decay;
-                        } // decay min check
-
-                    } // Gaussian Primitives                                       
-                }
-            } // all shells
-
-            // push final atom
-            _minimal_decay.push_back(_decaymin);
-            _positions.push_back(_localpos);
-
-
-            // for each gridpoint, check the value of exp(-a*(r-R)^2) < 1e-10
-            //                             = alpha*(r-R)^2 >~ 20.7
-
-            // each atomic grid
-            for (unsigned i = 0; i < _grid.size(); i++) {
-
-                vector< vector<int> > _significant_atoms_atomgrid;
-                vector< vector<tools::vec> > _significant_atoms_pos_atomgrid;
-
-                // each point of the atomic grid
-                for (unsigned j = 0; j < _grid[i].size(); j++) {
-
-                    vector<int> _significant_atoms_gridpoint;
-                    vector<tools::vec> _significant_atoms_pos_gridpoint;
-                    const vec& grid = _grid[i][j].grid_pos;
-
-
-                    // check all images
-                    unsigned maxImg = 3;
-                    for (int imgX = -maxImg; imgX <= maxImg; imgX++) {// X
-                        for (int imgY = -maxImg; imgY <= maxImg; imgY++) {// Y
-                            for (int imgZ = -maxImg; imgZ <= maxImg; imgZ++) {// Z
-                                vec boxshift=vec(imgX*boxLen.getX(), imgY*boxLen.getY(), imgZ*boxLen.getZ());
-                                // check all atoms
-                                for (unsigned iatom = 0; iatom < _minimal_decay.size(); iatom++) {
-
-                                    vec dist = grid - (_positions[iatom] + boxshift);
-                                    double distsq = dist*dist;
-
-                                    // if contribution is smaller than -ln(1e-10), add atom to list
-                                    if ((_minimal_decay[iatom] * distsq) < 20.7) {
-                                        _significant_atoms_gridpoint.push_back(iatom);
-                                        _significant_atoms_pos_gridpoint.push_back(_positions[iatom] + boxshift);
-                                    }
-                                }// check all atoms
-                            }// Z
-                        }// Y
-                    }// check all images X
-
-                    _significant_atoms_atomgrid.push_back(_significant_atoms_gridpoint);
-                    _significant_atoms_pos_atomgrid.push_back(_significant_atoms_pos_gridpoint);
-
-                } // all points of this atom grid
-
-                _significant_atoms.push_back(_significant_atoms_atomgrid);
-                _significant_atoms_pos.push_back(_significant_atoms_pos_atomgrid);
-
-            } // atomic grids
-
-
-
-            int total_grid = 0;
-            int significant_grid = 0;
-            for (unsigned i = 0; i < _significant_atoms.size(); i++) {
-
-                total_grid += _grid[i].size();
-
-                for (unsigned j = 0; j < _significant_atoms[i].size(); j++) {
-
-                    int gridpointsize = _significant_atoms[i][j].size();
-                    significant_grid += gridpointsize * (gridpointsize + 1);
-
-                }
-            }
-            int natoms = _grid.size();
-
-            total_grid = total_grid * (natoms * (natoms + 1)) / 2;
-
-            for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
-                std::vector< ub::matrix<double> > rowmatrix;
-                for (unsigned colatom = 0; colatom <= rowatom; colatom++) {
-                    rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[colatom], _blocksize[rowatom]));
-                }
-                dmat_vector.push_back(rowmatrix);
-            }
-
-
-
-            // parallelization: distribute over threads inside one atom
-            int nthreads = 1;
-#ifdef _OPENMP
-            nthreads = omp_get_max_threads();
-#endif
-
-
-            for (int i = 0; i < nthreads; i++) {
-
-                std::vector< std::vector< ub::matrix<double> > > matrix;
-                for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
-                    std::vector< ub::matrix<double> > rowmatrix;
-                    for (unsigned colatom = 0; colatom < _grid.size(); colatom++) {
-                        rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[rowatom], _blocksize[colatom]));
-                    }
-                    matrix.push_back(rowmatrix);
-                }
-                xcmat_vector_thread.push_back(matrix);
-            }
-
-            for (unsigned rowatom = 0; rowatom < _grid.size(); rowatom++) {
-                std::vector< ub::matrix<double> > rowmatrix;
-                for (unsigned colatom = 0; colatom < _grid.size(); colatom++) {
-                    rowmatrix.push_back(ub::zero_matrix<double>(_blocksize[colatom], _blocksize[rowatom]));
-                }
-                xcmat_vector.push_back(rowmatrix);
-            }
-            return;
-        }
-        
     }//xtp
 }//votca

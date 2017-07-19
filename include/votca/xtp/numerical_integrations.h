@@ -51,7 +51,7 @@ namespace votca { namespace xtp {
             
             ~NumericalIntegration(){};
             
-            void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
+            virtual void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
             
          
             double getExactExchange(const std::string _functional);
@@ -63,7 +63,7 @@ namespace votca { namespace xtp {
             void setXCfunctional(const string _functional);
             
             double IntegrateDensity(const ub::matrix<double>& _density_matrix);
-            double IntegratePotential(const vec& rvector);
+            virtual double IntegratePotential(const vec& rvector);
             double IntegrateField(const std::vector<double>& externalfield);
             ub::matrix<double> IntegrateExternalPotential(const std::vector<double>& Potentialvalues);
             
@@ -78,10 +78,10 @@ namespace votca { namespace xtp {
             double getTotEcontribution(){return EXC;}
           
             
-        private:
+        protected:
             
             
-           void FindSignificantShells();
+           virtual void FindSignificantShells();
             
            void EvaluateXC(const double rho,const ub::matrix<double>& grad_rho,double& f_xc, double& df_drho, double& df_dsigma);
           
@@ -90,9 +90,9 @@ namespace votca { namespace xtp {
            double erf1c(double x);
            double erfcc(double x);
            std::vector<double> SSWpartition(int igrid, int ncenters ,  std::vector< std::vector<double> >& rq );
-           void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
+           virtual void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
             
-        protected:
+        
             std::vector<double> Rij;
             AOBasis* _basis;
 

@@ -729,8 +729,8 @@ namespace votca {
             
             //check that CPMD2TYPE_map is available
             if(CPMD2VOTCA_map==NULL){
-                LOG(ctp::logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
-                LOG(ctp::logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
+                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Can not convert atom order from CPMD to VOTCA." << flush;
+                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Please rerun with writing CPMD input (<tasks>input, parse</tasks>)." << flush;
                 throw std::runtime_error("CPMD2TYPE_map unavailable, rerun with <tasks>input, parse</tasks>");
                 exit(-1);
             }
@@ -864,7 +864,7 @@ namespace votca {
             
             
             //map atomic orbitals to (CPMD) atom indeces so we can reorder the MO and Overlap matrices to VOTCA's atom order
-            LOG(ctp::logDEBUG, *_pLog) << "CPMD: Reordering orbitals."<< flush;
+            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Reordering orbitals."<< flush;
             int* AO_CPMD2VOTCA_map= new int[NATTOT];
             int* VOTCA2numAOs= new int[totAtoms];   //number of AOs for each atom in VOTCA atomic order 
             int* VOTCA2firstAO= new int[totAtoms];  //index of first AO of each atom in VOTCA atomic order 
