@@ -248,7 +248,7 @@ namespace votca {
          * @return 
          */
         ub::vector<double> Bulkesp::ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
-                std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
+                std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<unsigned> _local_atomIndeces,
                 ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge) {
 
 
@@ -258,6 +258,7 @@ namespace votca {
 
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
             numway.setBox(boxLen*tools::conv::ang2bohr);
+            numway.SetRelevantAtomIds(_local_atomIndeces);
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then

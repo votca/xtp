@@ -42,7 +42,7 @@ namespace votca { namespace xtp {
 
             struct Molecule {
                 std::vector< ctp::QMAtom* > atoms;
-                std::vector< int > atomIndeces;
+                std::vector< unsigned > atomIndeces;
             };
 
 
@@ -72,7 +72,7 @@ namespace votca { namespace xtp {
             double getNetcharge(std::vector< ctp::QMAtom* >& _atoms, double N, bool doround);
 
             ub::vector<double> ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
-                    std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<int> _local_atomIndeces,
+                    std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<unsigned> _local_atomIndeces,
                     ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge);
 
             void Evaluate(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,

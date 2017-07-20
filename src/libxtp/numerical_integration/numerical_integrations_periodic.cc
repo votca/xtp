@@ -107,11 +107,16 @@ namespace votca {
         
         
         
-        void NumericalIntegrationPeriodic::GridSetup(string type, BasisSet* bs, vector<ctp::QMAtom*> _atoms,AOBasis* basis) {
+        void NumericalIntegrationPeriodic::GridSetup(string type, BasisSet* bs, vector<ctp::QMAtom*> _atoms,AOBasis* global_basis) {
+            
+            if(_relevant_atomids.size()==0){
+                throw std::runtime_error("_relevant_atomids not set. Run NumericalIntegrationPeriodic::SetRelevantAtomIds() first!"); 
+            }
             
             _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
-            _basis=basis;
+            _basis=global_basis;
             ExpandBasis(_atoms);
+            
             
             
             std::vector< std::vector< GridContainers::integration_grid > > grid;
@@ -402,7 +407,7 @@ namespace votca {
                     GridBox newbox=_grid_boxes_copy[index];
                     newbox.setIndexoffirstgridpoint(indexoffirstgridpoint);
                     indexoffirstgridpoint+=newbox.size();
-                    newbox.PrepareForIntegration();
+                    newbox.PrepareForIntegration_perMolecule(_relevant_atomids);
                     _grid_boxes.push_back(newbox);
                 }   
             }
@@ -468,6 +473,90 @@ namespace votca {
             }
             
             return;
+        }
+        
+        
+        
+        
+        double NumericalIntegrationPeriodic::IntegrateDensity(const ub::matrix<double>& _density_matrix){
+            
+            double N = 0;
+            
+            unsigned nthreads = 1;
+            #ifdef _OPENMP
+               nthreads = omp_get_max_threads();
+            #endif
+               
+               std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
+               
+               
+               
+            #pragma omp parallel for
+            for (unsigned thread=0;thread<nthreads;++thread){
+            for (unsigned i = thread; i < _grid_boxes.size(); i+=nthreads) {
+                
+                double N_box=0.0;
+                GridBox& box = _grid_boxes[i];
+                
+                
+                const ub::matrix<double>  DMAT_here=box.ReadFromBigMatrix_perMolecule(_density_matrix);
+                
+                ub::matrix<double> Vxc_here=ub::zero_matrix<double>(DMAT_here.size1());
+                const std::vector<tools::vec>& points=box.getGridPoints();
+                const std::vector<double>& weights=box.getGridWeights();
+                
+                ub::range one=ub::range(0,1);
+                
+                ub::matrix<double> _temp     = ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
+               
+                ub::matrix<double> ao=ub::matrix<double>(1,box.Matrixsize());
+                ub::matrix<double> ao_mol=ub::matrix<double>(1,box.Matrixsize_perMolecule());
+                
+                box.prepareDensity();
+                
+                //iterate over gridpoints
+                for(unsigned p=0;p<box.size();p++){
+                    //for row vector: use all significant shells
+                    ao=ub::zero_matrix<double>(1,box.Matrixsize());
+                    const std::vector<ub::range>& aoranges=box.getAOranges();
+                    const std::vector<const AOShell* > shells=box.getShells();
+                    for(unsigned j=0;j<box.Shellsize();++j){
+                        const AOShell* shell=shells[j];
+                        ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao,one,aoranges[j]);
+                        
+                        shell->EvalAOspace(aoshell,points[p]);
+                    }
+                    _temp=ub::prod( ao, DMAT_here);
+                   
+                    
+                    //For the column vector: only significant shells in the relevant molecule in the first periodic cell
+                    ao_mol=ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
+                    const std::vector<ub::range>& aoranges_mol=box.getAOranges_perMolecule();
+                    const std::vector<const AOShell* > shells_mol=box.getShells_perMolecule();
+                    for(unsigned j=0;j<shells_mol.size();++j){
+                        const AOShell* shell=shells_mol[j];
+                        ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao_mol,one,aoranges_mol[j]);
+                        
+                        shell->EvalAOspace(aoshell,points[p]);
+                    }
+                    
+                    
+                    
+                    double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
+                    box.addDensity(rho);
+                    N_box+=rho*weights[p];
+                    
+                }
+
+                N_thread[thread]+=N_box;
+                
+            }
+            }   
+            for(int i=0;i<nthreads;++i){
+                N+=N_thread[i];
+               }   
+            density_set=true;
+            return N;
         }
         
 

@@ -62,7 +62,7 @@ namespace votca { namespace xtp {
             
             void setXCfunctional(const string _functional);
             
-            double IntegrateDensity(const ub::matrix<double>& _density_matrix);
+            virtual double IntegrateDensity(const ub::matrix<double>& _density_matrix);
             virtual double IntegratePotential(const vec& rvector);
             double IntegrateField(const std::vector<double>& externalfield);
             ub::matrix<double> IntegrateExternalPotential(const std::vector<double>& Potentialvalues);

@@ -41,14 +41,17 @@ namespace votca { namespace xtp {
             const std::vector<double>& getGridWeights() const{return weights;}
             
             const std::vector<const AOShell* >& getShells() const{return significant_shells;}
+            const std::vector<const AOShell* >& getShells_perMolecule() const{return mol_shells;}
             
             const std::vector<ub::range>& getAOranges() const{return aoranges;}
+            const std::vector<ub::range>& getAOranges_perMolecule() const{return mol_aoranges;}
             
             unsigned size() const{return grid_pos.size();}
             
             unsigned Shellsize() const{return significant_shells.size();}
             
             unsigned Matrixsize() const{return matrix_size;}
+            unsigned Matrixsize_perMolecule() const{return mol_matrix_size;}
             
             void addGridPoint(const GridContainers::integration_grid& point){
                 grid_pos.push_back(point.grid_pos);
@@ -70,10 +73,13 @@ namespace votca { namespace xtp {
             const std::vector<double>& getGridDensities() const{return densities;}
             
             void PrepareForIntegration();
+            void PrepareForIntegration_perMolecule(std::vector<unsigned> relevant_atomids);
             
             ub::matrix<double> ReadFromBigMatrix(const ub::matrix<double>& bigmatrix);
+            ub::matrix<double> ReadFromBigMatrix_perMolecule(const ub::matrix<double>& bigmatrix);
             
             void AddtoBigMatrix(ub::matrix<double>& bigmatrix,const ub::matrix<double>& smallmatrix);
+            void AddtoBigMatrix_perMolecule(ub::matrix<double>& bigmatrix, const ub::matrix<double>& smallmatrix);
             
             void setIndexoffirstgridpoint(unsigned indexoffirstgridpoint){_indexoffirstgridpoint=indexoffirstgridpoint;}
             unsigned getIndexoffirstgridpoint() const{return _indexoffirstgridpoint;}
@@ -99,6 +105,12 @@ namespace votca { namespace xtp {
                 std::vector< double > densities;
                 std::vector< ub::matrix<double> > dens_grad;
                 
+                //these are the ranges associated only with the shells of the target molecule.
+                unsigned mol_matrix_size;
+                std::vector<ub::range> mol_aoranges;
+                std::vector<ub::range> mol_ranges;
+                std::vector<ub::range> mol_inv_ranges;
+                std::vector<const AOShell* >mol_shells;
             };
 
        

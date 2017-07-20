@@ -41,12 +41,17 @@ namespace votca { namespace xtp {
             };
             
             virtual void GridSetup(std::string type, BasisSet* bs , std::vector<ctp::QMAtom* > _atoms,AOBasis* basis  );
+            void SetRelevantAtomIds(std::vector< unsigned >& relevantAtomIndeces){
+                _relevant_atomids = relevantAtomIndeces;
+                return;
+            };
             
             
 //            double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
 //            virtual double IntegratePotential(const vec& rvector);
 
 //            double IntegratePotential_w_PBC(vec rvector);
+            virtual double IntegrateDensity(const ub::matrix<double>& _density_matrix);
             void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid);
 //            double IntegrateEnergy_w_PBC(vec rvector);
             double CalcDipole_w_PBC(vec rvector);
@@ -88,6 +93,7 @@ namespace votca { namespace xtp {
             AOBasis* _expanded_basis;
             vector<ctp::QMAtom*> _expanded_atoms;
             vector<ctp::QMAtom*> _toclean_atoms;
+            std::vector<unsigned> _relevant_atomids;
     };
         
     tools::vec WrapPoint(const tools::vec r, const tools::vec box);
