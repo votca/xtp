@@ -130,7 +130,11 @@ public:
         return gaussian;                                                                 
     }                                                                                
 
-
+    void copyGaussians(AOShell* other){
+        for(auto& og:other->_gaussians){
+            addGaussian(og->getPower(), og->getDecay(), og->getContraction());
+        }
+    };
     
 private:   
 

@@ -71,6 +71,7 @@ namespace votca { namespace xtp {
         protected:
             virtual void FindSignificantShells();
             virtual void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
+            std::vector<double> SSWpartition(int igrid, int ncenters, int nexpandedcenters,  std::vector< std::vector<double> >& rq );
                     
         private:
             void ExpandBasis(vector<ctp::QMAtom*> _atoms);
@@ -89,11 +90,12 @@ namespace votca { namespace xtp {
             double E_erfc;
             GridBox _periodicGridBox;
             
-            unsigned int _nExpantionCells; //expand basis and atoms to include atoms in this many periodic cells away
+            int _nExpantionCells; //expand basis and atoms to include atoms in this many periodic cells away
             AOBasis* _expanded_basis;
             vector<ctp::QMAtom*> _expanded_atoms;
             vector<ctp::QMAtom*> _toclean_atoms;
             std::vector<unsigned> _relevant_atomids;
+            
     };
         
     tools::vec WrapPoint(const tools::vec r, const tools::vec box);

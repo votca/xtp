@@ -52,14 +52,14 @@ namespace votca { namespace xtp {
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(useVdWcutoff),_useVdWcutoff_inside(useVdWcutoff_inside),_cubegrid(false),_padding(3.0),
              _createpolarsites(createpolarsites), _atomlist(NULL), 
-            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0) {};
+            _lowerbound(vec(0,0,0)), _xsteps(0),_ysteps(0),_zsteps(0),_periodic(false) {};
            
         
         Grid()
             :_cutoff(3),_gridspacing(0.3),_cutoff_inside(1.5),_shift_cutoff(0.0),_shift_cutoff_inside(0.0),
              _useVdWcutoff(false),_useVdWcutoff_inside(false),_cubegrid(false),_padding(3.0),
              _createpolarsites(false), _atomlist(NULL),
-             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0) {};
+             _lowerbound(vec(0,0,0)),_xsteps(0),_ysteps(0),_zsteps(0),_periodic(false) {};
              
         Grid(std::vector< vec > points)
              :_gridpoints(points){};

@@ -259,6 +259,7 @@ namespace votca {
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
             numway.setBox(boxLen*tools::conv::ang2bohr);
             numway.SetRelevantAtomIds(_local_atomIndeces);
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Emtering Bulkesp::ComputeESP()"<< flush;
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
@@ -349,12 +350,49 @@ namespace votca {
                 CTP_LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
                 tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
-                numK = 16;
+                numK = 32;
+                float alpha=3;
 
-
-                numway.PrepKspaceDensity_gromacs_like(0.5, _local_atomlist, _ECP, _grid, numK);
+                numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
                 numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-
+                
+                
+                
+//                cout<<endl;
+//                for(int i=0; i<10; i++){
+//                    alpha=1.0 + (i*1.0);
+//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
+//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
+//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
+//                }
+//                cout<<endl;
+//                numK = 32;
+//                for(int i=0; i<10; i++){
+//                    alpha=1.0 + (i*1.0);
+//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
+//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
+//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
+//                }
+//                cout<<endl;
+//                numK = 64;
+//                for(int i=0; i<10; i++){
+//                    alpha=1.0 + (i*1.0);
+//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
+//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
+//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
+//                }
+//                cout<<endl;
+//                numK = 128;
+//                for(int i=0; i<10; i++){
+//                    alpha=1.0 + (i*1.0);
+//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
+//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
+//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
+//                }
+//                exit(0);
+                
+                
+                
 
                 /*
                 numway.PrepKspaceDensity(BL, 0.5, _local_atomlist, _ECP);
@@ -485,11 +523,11 @@ namespace votca {
                 }
 
                 //test: set inner cutoff to 0 and calculate all potentials near nuclei
-                _grid.setCutoffs(3, 1.5); //between 1.5 and 3 A, as that is the region where water-water interactions take place
-                _grid.setSpacing(0.3); //defaults to 0.3 A
+                _grid.setCutoffs(3, 0.5); //between 1.5 and 3 A, as that is the region where water-water interactions take place
+                _grid.setSpacing(0.1); //defaults to 0.3 A
                 _grid.setAtomlist(&m->atoms);
-                //_grid.setCubegrid(true);
                 _grid.setupgrid();
+//                _grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP

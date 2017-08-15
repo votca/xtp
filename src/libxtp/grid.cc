@@ -205,13 +205,26 @@ void Grid::printgridtoCubefile(std::string filename){
             FILE *out;
             out = fopen(filename.c_str(), "w");
             
-            fprintf(out, "Electrostatic potential around molecule \n" );
+            { //account for the <= in setupGrid()
+                _xsteps++;
+                _ysteps++;
+                _zsteps++;
+            }
+            
+            fprintf(out, "Electrostatic potential around molecule \n");
             fprintf(out, "Created by VOTCA-XTP \n");
             fprintf(out, "%lu %f %f %f \n", _atomlist->size(), _lowerbound.getX()*conv::ang2bohr,
                     _lowerbound.getY()*conv::ang2bohr,_lowerbound.getZ()*conv::ang2bohr);
             fprintf(out, "%d %f 0.0 0.0 \n", _xsteps, _gridspacing*conv::ang2bohr); 
             fprintf(out, "%d 0.0 %f 0.0 \n",  _ysteps, _gridspacing*conv::ang2bohr);
             fprintf(out, "%d 0.0 0.0 %f \n", _zsteps, _gridspacing*conv::ang2bohr);
+            
+            {
+                _xsteps--;
+                _ysteps--;
+                _zsteps--;
+            }
+            
             
             std::vector<ctp::QMAtom* >::const_iterator ait;
             for (ait=_atomlist->begin(); ait != _atomlist->end(); ++ait) {
