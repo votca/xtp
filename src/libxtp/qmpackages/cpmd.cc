@@ -758,13 +758,13 @@ namespace votca {
                         }
                     }
                 }
-                else
-                {
-                    cerr << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-                    CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-                    throw std::runtime_error("Unimplemented case");
-                    return false;
-                }
+//                else
+//                {
+//                    cerr << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
+//                    CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
+//                    throw std::runtime_error("Unimplemented case");
+//                    return false;
+//                }
             }
             
             

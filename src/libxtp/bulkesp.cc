@@ -523,11 +523,11 @@ namespace votca {
                 }
 
                 //test: set inner cutoff to 0 and calculate all potentials near nuclei
-                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
-                _grid.setSpacing(0.3); //defaults to 0.3 A
+//                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
+//                _grid.setSpacing(0.3); //defaults to 0.3 A
                 _grid.setAtomlist(&m->atoms);
                 _grid.setupgrid();
-//                _grid.setupCHELPgrid();
+                _grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP
