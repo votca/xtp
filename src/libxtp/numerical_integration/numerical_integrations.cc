@@ -581,6 +581,7 @@ namespace votca {
                         shell->EvalAOspace(aoshell,points[p]);
                     }
                     
+//                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao("<< ao.size1() <<"," << ao.size2() <<")\tDMAT_here("<< DMAT_here.size1() <<","<< DMAT_here.size2() <<")"<<endl<<flush;
                     _temp=ub::prod( ao, DMAT_here);
                    
                     

@@ -119,7 +119,7 @@ namespace votca { namespace xtp {
                 const AOShell* shell=significant_shells[i];
                 //skip any significant shells not in this molecule
                 if(std::find(relevant_atomids.begin(), relevant_atomids.end(), shell->getIndex()) != relevant_atomids.end()){
-                    mol_aoranges.push_back(ub::range(matrix_size, matrix_size+shell->getNumFunc()));
+                    mol_aoranges.push_back(ub::range(mol_matrix_size, mol_matrix_size+shell->getNumFunc()));
                     mol_matrix_size += shell->getNumFunc();
                     start.push_back(shell->getStartIndex());
                     end.push_back(shell->getStartIndex() + shell->getNumFunc());

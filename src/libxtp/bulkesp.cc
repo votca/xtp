@@ -351,7 +351,7 @@ namespace votca {
                 tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
                 numK = 32;
-                float alpha=3;
+                float alpha=1;
 
                 numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
                 numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
@@ -508,9 +508,9 @@ namespace votca {
                 //verify atomic coordinates and units
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
                     ctp::QMAtom* ap = *a;
-                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << flush;
+                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << "A" << flush;
                 }
-                //cout << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << endl;
+                CTP_LOG(ctp::logDEBUG, *_log) << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << "A" << flush;
 
                 //set up grid
                 Grid _grid(true, false, false); //create polarsites, so we can output grid to .cube file
@@ -523,8 +523,8 @@ namespace votca {
                 }
 
                 //test: set inner cutoff to 0 and calculate all potentials near nuclei
-                _grid.setCutoffs(3, 0.5); //between 1.5 and 3 A, as that is the region where water-water interactions take place
-                _grid.setSpacing(0.1); //defaults to 0.3 A
+                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
+                _grid.setSpacing(0.3); //defaults to 0.3 A
                 _grid.setAtomlist(&m->atoms);
                 _grid.setupgrid();
 //                _grid.setupCHELPgrid();

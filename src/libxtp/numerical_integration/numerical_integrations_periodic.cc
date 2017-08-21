@@ -50,12 +50,24 @@ namespace votca {
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
             }
             
+            cout<<"boxLen = "<<boxLen<<" Bohr = "<<boxLen*tools::conv::bohr2ang << "A"<<endl<<flush;
+            
             if(_nExpantionCells==0){ //just one box, no need to expand
                 _expanded_basis=_basis;
                 _expanded_atoms=_atoms;
                 //no _toclean_atoms
                 return;
             }
+            
+//            //debug: list original shells
+//            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+//                AOShell* _store=(*_row);
+//                vec orgpos = _store->getPos();
+//                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
+//            }
+            
+            
+            
             //need to expand
             cout<<"\nexpanding atom list into nearby periodic boxes."<<endl<<flush;
 //            cout<<"_nExpantionCells = "<< _nExpantionCells<<endl<<flush;
@@ -69,26 +81,31 @@ namespace votca {
                             continue;
                         }
                         
-                        tools::vec shift = tools::vec(boxLen.getX()*cx, boxLen.getY()*cy, boxLen.getZ()*cz);
-                        shift *= tools::conv::bohr2ang; //boxLen is in Bohr, QMAtom positions are in Angstroms
-
-                        //loop over atoms
-                        for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
-                            vec imgpos = shift + (*ait)->getPos();
-                            ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
-//                            cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
-                            _expanded_atoms.push_back(imgatom);
-                            _toclean_atoms.push_back(imgatom);
-                        }
+                        tools::vec shift = tools::vec(boxLen.getX()*cx, boxLen.getY()*cy, boxLen.getZ()*cz); //Bohr
                         
-                        //loop over shells
+                        //loop over shells (in Bohr)
                         for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
                             AOShell* _store=(*_row);
                             vec imgpos = shift + _store->getPos();
+//                            vec orgpos = _store->getPos();
+//                            cout<<"Image shell: "<<_store->getType()<<" at "<<imgpos.getX()<<" "<<imgpos.getY()<<" "<<imgpos.getZ()<<" with start index "<<_store->getStartIndex()<<endl<<flush;
+//                            cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()<<" "<<orgpos.getY()<<" "<<orgpos.getZ() <<endl<<flush;
                             AOShell* newShell = _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
                                                       _store->getStartIndex(), _store->getOffset(), imgpos, _store->getName(), _store->getIndex());
                             newShell->copyGaussians(_store);
                             newShell->CalcMinDecay();
+                        }                        
+                        
+                        shift *= tools::conv::bohr2ang; //boxLen is in Bohr, AOBasis positions are in Bohr, QMAtom positions are in Angstroms
+
+                        //loop over atoms (in Angstroms)
+                        for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                            vec imgpos = shift + (*ait)->getPos();
+                            ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
+//                            cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
+//                            cout<<"\tfrom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<endl<<flush;
+                            _expanded_atoms.push_back(imgatom);
+                            _toclean_atoms.push_back(imgatom);
                         }
                     }
                 }
@@ -110,6 +127,7 @@ namespace votca {
                 newShell->CalcMinDecay();
             }
             
+//            exit(0);
             return;
         }
 
@@ -475,7 +493,7 @@ namespace votca {
                         }
                       }
                 }
-                cout<<"box "<<i<<"\t has "<<box.Shellsize()<<" shells \t and"<<box.size()<<" points."<<endl;
+//                cout<<"box "<<i<<"\t has "<<box.Shellsize()<<" shells \t and "<<box.size()<<" points."<<endl;
             }
             std::vector< GridBox > _grid_boxes_copy=_grid_boxes;
             
@@ -578,7 +596,8 @@ namespace votca {
                
                std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
                
-               
+            
+               //need to project every relevant shell onto every relevant shell in this molecule
                
 //            #pragma omp parallel for
             for (unsigned thread=0;thread<nthreads;++thread){
@@ -603,6 +622,7 @@ namespace votca {
                 
                 box.prepareDensity();
                 
+//                cout<<endl<<"iterate over gridpoints"<<endl<<flush;
                 //iterate over gridpoints
                 for(unsigned p=0;p<box.size();p++){
                     //for row vector: use all significant shells
@@ -615,6 +635,7 @@ namespace votca {
                         
                         shell->EvalAOspace(aoshell,points[p]);
                     }
+//                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao("<< ao.size1() <<"," << ao.size2() <<")\tDMAT_here("<< DMAT_here.size1() <<","<< DMAT_here.size2() <<")"<<endl<<flush;
                     _temp=ub::prod( ao, DMAT_here);
                    
                     
@@ -630,8 +651,11 @@ namespace votca {
                     }
                     
                     
-                    
-                    double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
+                    ub::matrix<double> tr = ub::trans( ao_mol);
+//                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao_mol("<< ao_mol.size1() <<","<< ao_mol.size2() <<")"<<endl<<flush;
+                    ub::matrix<double> pr = ub::prod(_temp, tr );
+                    double rho = pr(0,0);
+                    //double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
                     box.addDensity(rho);
                     N_box+=rho*weights[p];
                     
