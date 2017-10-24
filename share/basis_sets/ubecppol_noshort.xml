@@ -1,0 +1,95 @@
+<basis name="ubecppol_noshort">
+  <!-- Smaller decay constant for Oxygen's firds S orbital taken from Def2-TZVP basis set instead. This should let CPMD better reproduce this basis with planewaves.-->
+	<element name="H">
+		<shell type="S" scale="1.00">
+			<constant decay="33.86500000" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+		<shell type="S" scale="1.00">
+			<constant decay="5.094790000" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+		<shell type="S" scale="1.00">
+			<constant decay="1.158790000" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+		<shell type="S" scale="1.00">
+			<constant decay="0.3258400000" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+		<shell type="S" scale="1.00">
+			<constant decay="0.1027410000" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+		<shell type="P" scale="1.00">
+			<constant decay="0.75">
+				<contractions type="P" factor="1.0"></contractions>
+			</constant> 
+		</shell>
+	</element>
+
+
+
+
+
+	<element name="O">
+		<shell type="S" scale="1.00">
+                  <constant decay="31.035035245" >
+				<contractions type="S" factor="1.0"></contractions>
+                  </constant>
+		</shell>
+		<shell type="S" scale="1.00">
+			<constant decay="5.911346" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+		</shell>
+        <shell type="S" scale="1.00">
+            <constant decay="0.976483" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="S" scale="1.00">
+            <constant decay="0.296070" >
+				<contractions type="S" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="P" scale="1.00">
+            <constant decay="16.692219" >
+				<contractions type="P" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="P" scale="1.00">
+            <constant decay="3.900702" >
+				<contractions type="P" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="P" scale="1.00">
+            <constant decay="1.078253" >
+				<contractions type="P" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="P" scale="1.00">
+            <constant decay="0.284189" >
+				<contractions type="P" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="P" scale="1.00">
+            <constant decay="0.070200" >
+				<contractions type="P" factor="1.0"></contractions>
+			</constant>
+        </shell>
+        <shell type="D" scale="1.00">
+            <constant decay="1.2920000">
+				<contractions type="D" factor="1.0"></contractions>
+			</constant>
+        </shell>
+	</element>
+
+
+
+</basis>
