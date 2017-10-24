@@ -73,7 +73,7 @@ namespace votca { namespace xtp {
             const std::vector<double>& getGridDensities() const{return densities;}
             
             void PrepareForIntegration();
-            void PrepareForIntegration_perMolecule(std::vector<unsigned> relevant_atomids);
+            void PrepareForIntegration_perMolecule(std::vector<unsigned> relevant_atomids, std::vector<AOShell*> central_cell_shells);
             
             ub::matrix<double> ReadFromBigMatrix(const ub::matrix<double>& bigmatrix);
             ub::matrix<double> ReadFromBigMatrix_perMolecule(const ub::matrix<double>& bigmatrix);

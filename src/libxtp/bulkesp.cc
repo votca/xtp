@@ -521,11 +521,16 @@ namespace votca {
                     //_grid.setPadding(0.0);
                     _grid.setPeriodicity(boxLen);
                 }
+                
+//                //let's just consider the first Oxygen atom as a molecule
+//                m->atoms= vector<ctp::QMAtom*>(m->atoms.begin()+0, m->atoms.begin()+2);
+//                m->atomIndeces= vector<unsigned>(m->atomIndeces.begin()+0, m->atomIndeces.begin()+2);
 
                 //test: set inner cutoff to 0 and calculate all potentials near nuclei
 //                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
 //                _grid.setSpacing(0.3); //defaults to 0.3 A
                 _grid.setAtomlist(&m->atoms);
+//                _grid.setAtomlist(&_atomlist);
                 _grid.setupgrid();
                 _grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
@@ -535,6 +540,13 @@ namespace votca {
                 double netcharge = 0.0;
                 ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
                         _global_dmat, _basis, bs, gridsize, _grid, netcharge);
+                
+//                std::vector< unsigned > allIndeces;
+//                for (vector<ctp::QMAtom*>::iterator i = _atomlist.begin(); i != _atomlist.end(); ++i) {
+//                    allIndeces.push_back(i - _atomlist.begin());
+//                }
+//                ub::vector<double> ESP = ComputeESP(_atomlist, _atomlist, allIndeces,
+//                        _global_dmat, _basis, bs, gridsize, _grid, netcharge);
 
                 //store the potential in apolarsites
                 for (int i = 0; i < _grid.getsize(); i++) {

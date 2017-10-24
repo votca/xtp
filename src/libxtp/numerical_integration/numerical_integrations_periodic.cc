@@ -119,12 +119,14 @@ namespace votca {
                 cout<<"Original atom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<"\t ait="<<(*ait)<<endl<<flush;
             }
             //shells
+            central_cell_shells.clear();
             for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
                 AOShell* _store=(*_row);
                 AOShell* newShell = _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
                                           _store->getStartIndex(), _store->getOffset(), _store->getPos(), _store->getName(), _store->getIndex());
                 newShell->copyGaussians(_store);
                 newShell->CalcMinDecay();
+                central_cell_shells.push_back(newShell);
             }
             
 //            exit(0);
@@ -290,14 +292,16 @@ namespace votca {
 
                         //we only need densities in the first periodic cell
                         vec ppos = atomA_pos+r*s;
-                        if(ppos.getX()>=0 && ppos.getY()>=0 && ppos.getZ()>=0 &&
-                           ppos.getX()<boxLen.getX() && ppos.getY()<boxLen.getY() && ppos.getZ()<boxLen.getZ()){
+//                        if(ppos.getX()>=0 && ppos.getY()>=0 && ppos.getZ()>=0 &&
+//                           ppos.getX()<boxLen.getX() && ppos.getY()<boxLen.getY() && ppos.getZ()<boxLen.getZ()){
 
                             GridContainers::integration_grid _gridpoint;
+                            //wrap position into the periodic box. Pos is in Bohr.
+                            //_gridpoint.grid_pos = WrapPoint(ppos, boxLen);
                             _gridpoint.grid_pos = ppos;
                             _gridpoint.grid_weight = _radial_grid.weight[_i_rad] * ws;
                             _atomgrid.push_back(_gridpoint);
-                        }
+//                        }
 
 
                     } // spherical gridpoints
@@ -411,6 +415,31 @@ namespace votca {
 //            cout<<"grid boxes after SortGridpointsintoBlocks: "<<_grid_boxes.size() <<endl<<flush;
             FindSignificantShells();
 //            cout<<"grid boxes after FindSignificantShells: "<<_grid_boxes.size() <<endl<<flush;
+            
+            
+            
+            
+            
+            //build a vector of ranges to what elements of DMAT & Overlap matrix belong to this molecule
+            nFuncInMol=0;
+            unsigned aoFuncCounter=0;
+            i=0;
+            global_mol_aoranges.clear();
+            global_mol_inv_aoranges.clear();
+            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+                //Check if a  shell belongs to the molecule
+                const AOShell* shell=*(_row);
+                if(std::find(_relevant_atomids.begin(), _relevant_atomids.end(), shell->getIndex()) != _relevant_atomids.end()){
+                    global_mol_aoranges.push_back(ub::range(aoFuncCounter, aoFuncCounter+shell->getNumFunc()));
+                    global_mol_inv_aoranges.push_back(ub::range(nFuncInMol, nFuncInMol+shell->getNumFunc()));
+                    nFuncInMol += shell->getNumFunc();
+                }
+                aoFuncCounter += shell->getNumFunc();
+            }
+            
+            
+            
+            
             return;
         }
         
@@ -514,7 +543,7 @@ namespace votca {
                     GridBox newbox=_grid_boxes_copy[index];
                     newbox.setIndexoffirstgridpoint(indexoffirstgridpoint);
                     indexoffirstgridpoint+=newbox.size();
-                    newbox.PrepareForIntegration_perMolecule(_relevant_atomids);
+                    newbox.PrepareForIntegration_perMolecule(_relevant_atomids, central_cell_shells);
                     _grid_boxes.push_back(newbox);
                 }   
             }
@@ -525,12 +554,15 @@ namespace votca {
         
         
         void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
-            const double boxsize=3;
+            const double boxsize=50;
             
             std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
             
-            tools::vec min = vec(0,0,0);
-            tools::vec max = boxLen;
+            tools::vec min=vec(std::numeric_limits<double>::max());
+            tools::vec max=vec(std::numeric_limits<double>::min());
+                   
+            min = vec(0,0,0);
+            max = boxLen;
             
             vec molextension=(max-min);
             vec numberofboxes=molextension/boxsize;
@@ -554,7 +586,8 @@ namespace votca {
             
              for ( auto & atomgrid : grid){
                 for ( auto & gridpoint : atomgrid){
-                    tools::vec pos= gridpoint.grid_pos-min;
+                    //gridpoint positions was already wrapped into the periodic box when it was assigned to the gridpoint
+                    tools::vec pos= gridpoint.grid_pos;
                     tools::vec index=pos/boxsize;
                     int i_x=int(index.getX());
                     int i_y=int(index.getY());
@@ -591,83 +624,165 @@ namespace votca {
             
             unsigned nthreads = 1;
             #ifdef _OPENMP
-               nthreads = omp_get_max_threads();
+               //nthreads = omp_get_max_threads();
             #endif
                
                std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
                
             
-               //need to project every relevant shell onto every relevant shell in this molecule
+            
+            //need to project every relevant shell onto every relevant shell in this molecule
+            
                
 //            #pragma omp parallel for
             for (unsigned thread=0;thread<nthreads;++thread){
-            for (unsigned i = thread; i < _grid_boxes.size(); i+=nthreads) {
-                
-                double N_box=0.0;
-                GridBox& box = _grid_boxes[i];
-                
-                
-                const ub::matrix<double>  DMAT_here=box.ReadFromBigMatrix_perMolecule(_density_matrix);
-                
-                ub::matrix<double> Vxc_here=ub::zero_matrix<double>(DMAT_here.size1());
-                const std::vector<tools::vec>& points=box.getGridPoints();
-                const std::vector<double>& weights=box.getGridWeights();
-                
-                ub::range one=ub::range(0,1);
-                
-                ub::matrix<double> _temp     = ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
-               
-                ub::matrix<double> ao=ub::matrix<double>(1,box.Matrixsize());
-                ub::matrix<double> ao_mol=ub::matrix<double>(1,box.Matrixsize_perMolecule());
-                
-                box.prepareDensity();
-                
-//                cout<<endl<<"iterate over gridpoints"<<endl<<flush;
-                //iterate over gridpoints
-                for(unsigned p=0;p<box.size();p++){
-                    //for row vector: use all significant shells
-                    ao=ub::zero_matrix<double>(1,box.Matrixsize());
-                    const std::vector<ub::range>& aoranges=box.getAOranges();
-                    const std::vector<const AOShell* > shells=box.getShells();
-                    for(unsigned j=0;j<box.Shellsize();++j){
-                        const AOShell* shell=shells[j];
-                        ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao,one,aoranges[j]);
-                        
-                        shell->EvalAOspace(aoshell,points[p]);
-                    }
-//                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao("<< ao.size1() <<"," << ao.size2() <<")\tDMAT_here("<< DMAT_here.size1() <<","<< DMAT_here.size2() <<")"<<endl<<flush;
-                    _temp=ub::prod( ao, DMAT_here);
-                   
-                    
-                    //For the column vector: only significant shells in the relevant molecule in the first periodic cell
-                    ao_mol=ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
-                    const std::vector<ub::range>& aoranges_mol=box.getAOranges_perMolecule();
-                    const std::vector<const AOShell* > shells_mol=box.getShells_perMolecule();
-                    for(unsigned j=0;j<shells_mol.size();++j){
-                        const AOShell* shell=shells_mol[j];
-                        ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao_mol,one,aoranges_mol[j]);
-                        
-                        shell->EvalAOspace(aoshell,points[p]);
-                    }
-                    
-                    
-                    ub::matrix<double> tr = ub::trans( ao_mol);
-//                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao_mol("<< ao_mol.size1() <<","<< ao_mol.size2() <<")"<<endl<<flush;
-                    ub::matrix<double> pr = ub::prod(_temp, tr );
-                    double rho = pr(0,0);
-                    //double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
-                    box.addDensity(rho);
-                    N_box+=rho*weights[p];
-                    
-                }
+                for (unsigned i = thread; i < _grid_boxes.size(); i+=nthreads) {
 
-                N_thread[thread]+=N_box;
-                
-            }
+                    double N_box=0.0;
+                    GridBox& box = _grid_boxes[i];
+
+                    //compilers do some weird memory optimizations with parts of DMAT_here
+                    //resulting in garbage matrix multiplications.
+                    const ub::matrix<double>  DMAT_here=box.ReadFromBigMatrix_perMolecule(_density_matrix);
+
+                    const std::vector<tools::vec>& points=box.getGridPoints();
+                    const std::vector<double>& weights=box.getGridWeights();
+                    //const std::vector<double> weights= std::vector<double>(box.getGridWeights().size(), 1.0);
+
+                    ub::range one=ub::range(0,1);
+
+                    //ub::matrix<double> _temp = ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
+
+                    ub::matrix<double> ao=ub::matrix<double>(1,box.Matrixsize());
+                    ub::matrix<double> ao_mol=ub::matrix<double>(1,box.Matrixsize_perMolecule());
+
+                    box.prepareDensity();
+
+    //                cout<<endl<<"iterate over gridpoints"<<endl<<flush;
+                    //iterate over gridpoints
+                    for(unsigned p=0;p<box.size();p++){
+                        //for row vector: use all significant shells
+                        ao=ub::zero_matrix<double>(1,box.Matrixsize());
+                        const std::vector<ub::range>& aoranges=box.getAOranges();
+                        const std::vector<const AOShell* > shells=box.getShells();
+                        for(unsigned j=0;j<box.Shellsize();++j){
+                            const AOShell* shell=shells[j];
+                            ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao,one,aoranges[j]);
+
+                            shell->EvalAOspace(aoshell,points[p]);
+                        }
+                        
+                        
+                        ub::matrix<double> _temp=ub::prod( ao, DMAT_here);
+//                        if(p%10000==0){
+//                            cout<<"\n###############################\n_temp:\n";
+//                            for (unsigned i = 0; i < _temp.size1(); i++) {
+//                                for (unsigned j = 0; j < _temp.size2(); j++) {
+//                                    cout<< "_temp "<<i<<'\t'<<j<<'\t'<< _temp(i,j)<<'\n';
+//                                }
+//                                cout<<'\n';
+//                            }
+//                            cout<<"\n###############################\nao:\n";
+//                            for (unsigned i = 0; i < ao.size1(); i++) {
+//                                for (unsigned j = 0; j < ao.size2(); j++) {
+//                                    cout<< "ao "<<i<<'\t'<<j<<'\t'<< ao(i,j)<<'\n';
+//                                }
+//                                cout<<'\n';
+//                            }
+//                            cout<<"\n###############################\nDMAT_here:\n";
+//                            for (unsigned i = 0; i < DMAT_here.size1(); i++) {
+//                                for (unsigned j = 0; j < DMAT_here.size2(); j++) {
+//                                    cout<< "DMAT_here "<<i<<'\t'<<j<<'\t'<< DMAT_here(i,j)<<'\n';
+//                                }
+//                                cout<<'\n';
+//                            }
+//
+//                            cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao("<< ao.size1() <<"," << ao.size2() <<")\tDMAT_here("<< DMAT_here.size1() <<","<< DMAT_here.size2() <<")"<<endl<<flush;
+//                            //exit(-1);
+//                        }
+
+                        //For the column vector: only significant shells in the relevant molecule in the first periodic cell
+                        ao_mol=ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
+                        const std::vector<ub::range>& aoranges_mol=box.getAOranges_perMolecule();
+                        const std::vector<const AOShell* > shells_mol=box.getShells_perMolecule(); //should only include shells in the first periodic box
+                        for(unsigned j=0;j<shells_mol.size();++j){
+                            const AOShell* shell=shells_mol[j];
+                            ub::matrix_range< ub::matrix<double> > aoshell=ub::project(ao_mol,one,aoranges_mol[j]);
+
+                            shell->EvalAOspace(aoshell,points[p]);
+                        }
+
+
+                        ub::matrix<double> tr = ub::trans( ao_mol);                        
+    //                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao_mol("<< ao_mol.size1() <<","<< ao_mol.size2() <<")"<<endl<<flush;
+                        ub::matrix<double> pr = ub::prod(_temp, tr );
+                        double rho = pr(0,0);
+                        //double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
+                        box.addDensity(rho);
+                        N_box+=rho*weights[p];
+                        
+//                        if(p%10000==0){
+//                            cout<<rho<<"\t"<<weights[p]<<endl;
+//                        }
+
+                    }
+                    N_thread[thread]+=N_box;
+
+                }
             }   
             for(int i=0;i<nthreads;++i){
                 N+=N_thread[i];
-               }   
+            }
+            
+               
+               
+            //find the number of electrons directly from Density and Overlap matrices
+//            AOOverlap overlap;
+            AOOverlapPeriodic overlap;
+            overlap.setBox(boxLen); //in Bohr
+            overlap.Initialize(_basis->AOBasisSize());   //this is the global, non expanded basis
+            overlap.Fill(*_basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
+            //_density_matrix is the _global_dmat
+            ub::matrix<double>& AO=overlap.Matrix();
+            double N_comp=0.0;
+            
+            //make the submatrices
+            //Only Shells from the molecule appear in the columns
+            ub::matrix<double> DMAT_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+            ub::matrix<double> AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+            ub::range everything = ub::range(0, AO.size1());
+            for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
+                ub::project(DMAT_submat, everything, global_mol_inv_aoranges[i]) = ub::project(_density_matrix, everything, global_mol_aoranges[i]);
+                ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
+            }
+            
+            //sum up N_comp
+            for (unsigned i = 0; i < AO_submat.size1(); i++) {
+                for (unsigned j = 0; j < AO_submat.size2(); j++) {
+//                    cout << "\t" << N_comp << "\t+=\t" << DMAT_submat(i,j)*AO_submat(i,j) <<endl<<flush;
+                    N_comp += DMAT_submat(i,j)*AO_submat(i,j);
+                }
+            }
+            
+//            double N_direct=0.0;
+//            for (unsigned i = 0; i < _density_matrix.size1(); i++) {
+//                for (unsigned j = 0; j < _density_matrix.size2(); j++) {
+//                    N_direct += _density_matrix(i,j)*AO(i,j);
+//                }
+//            }
+            
+            //check if the numbers of electrons are the same
+            if(std::abs(N-N_comp)>0.01 || true){
+                cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
+//                cout << "N_direct is: "<<N_direct << endl << flush;
+                cout <<"=======================" << endl << flush; 
+                cout <<"WARNING: Calculated Densities at Numerical Grid with boxes, Number of electrons "<< N <<" is far away from the the real value "<< N_comp<<", you should increase the accuracy of the integration grid." << endl << flush; 
+                cout <<"=======================" << endl << flush; 
+                cout <<"#of Boxes=" << _grid_boxes.size() << endl << flush; 
+                exit(-1);
+            }
+            
+               
             density_set=true;
             return N;
         }

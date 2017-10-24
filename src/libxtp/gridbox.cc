@@ -103,7 +103,7 @@ namespace votca { namespace xtp {
     //ReadFromBigMatrix_perMolecule needs to output all periodically expanded
     //signifficant shells in rows, and only the relevant shells from atoms in the first periodic cell.
     //For periodicity, just treat all atoms in the first periodic cell as the molecule.
-    void GridBox::PrepareForIntegration_perMolecule(std::vector<unsigned> relevant_atomids){
+    void GridBox::PrepareForIntegration_perMolecule(std::vector<unsigned> relevant_atomids, std::vector<AOShell*> central_cell_shells){
             //prepare the ranges for rows
             PrepareForIntegration();
             
@@ -119,11 +119,16 @@ namespace votca { namespace xtp {
                 const AOShell* shell=significant_shells[i];
                 //skip any significant shells not in this molecule
                 if(std::find(relevant_atomids.begin(), relevant_atomids.end(), shell->getIndex()) != relevant_atomids.end()){
-                    mol_aoranges.push_back(ub::range(mol_matrix_size, mol_matrix_size+shell->getNumFunc()));
-                    mol_matrix_size += shell->getNumFunc();
-                    start.push_back(shell->getStartIndex());
-                    end.push_back(shell->getStartIndex() + shell->getNumFunc());
-                    mol_shells.push_back(shell);
+                    //also check if the shell is from the first periodic box (unexpanded basis)
+                    //don't want projections onto periodic images counted as part of this molecule's charge
+                    if(std::find(central_cell_shells.begin(), central_cell_shells.end(), shell) != central_cell_shells.end())
+                    {
+                        mol_aoranges.push_back(ub::range(mol_matrix_size, mol_matrix_size+shell->getNumFunc()));
+                        mol_matrix_size += shell->getNumFunc();
+                        start.push_back(shell->getStartIndex());
+                        end.push_back(shell->getStartIndex() + shell->getNumFunc());
+                        mol_shells.push_back(shell);
+                    }
                 }
             }
             std::vector<unsigned> startindex;

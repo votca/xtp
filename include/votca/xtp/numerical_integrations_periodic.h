@@ -96,6 +96,11 @@ namespace votca { namespace xtp {
             vector<ctp::QMAtom*> _toclean_atoms;
             std::vector<unsigned> _relevant_atomids;
             
+            int nFuncInMol;
+            std::vector<ub::range> global_mol_aoranges;
+            std::vector<ub::range> global_mol_inv_aoranges;
+            std::vector<AOShell*> central_cell_shells;
+            
     };
         
     tools::vec WrapPoint(const tools::vec r, const tools::vec box);
