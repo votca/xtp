@@ -554,15 +554,41 @@ namespace votca {
         
         
         void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
-            const double boxsize=50;
+            const double boxsize=3;
             
             std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
             
             tools::vec min=vec(std::numeric_limits<double>::max());
             tools::vec max=vec(std::numeric_limits<double>::min());
                    
-            min = vec(0,0,0);
+            min = vec(0.0);
             max = boxLen;
+
+            //allow for grid positions that extend from atoms in the first periodic box into nearby boxes            
+            for ( unsigned i = 0 ; i < grid.size(); i++){
+                for ( unsigned j = 0 ; j < grid[i].size(); j++){
+                    const tools::vec& pos= grid[i][j].grid_pos;
+                    if(pos.getX()>max.getX()){
+                        max.x()=pos.getX();
+                    }
+                    else if(pos.getX()<min.getX()){
+                        min.x()=pos.getX();
+                    }
+                    if(pos.getY()>max.getY()){
+                        max.y()=pos.getY();
+                    }
+                    else if(pos.getY()<min.getY()){
+                        min.y()=pos.getY();
+                    }
+                    if(pos.getZ()>max.getZ()){
+                        max.z()=pos.getZ();
+                    }
+                    else if(pos.getZ()<min.getZ()){
+                        min.z()=pos.getZ();
+                        }
+                    }
+                }
+            
             
             vec molextension=(max-min);
             vec numberofboxes=molextension/boxsize;
@@ -587,7 +613,7 @@ namespace votca {
              for ( auto & atomgrid : grid){
                 for ( auto & gridpoint : atomgrid){
                     //gridpoint positions was already wrapped into the periodic box when it was assigned to the gridpoint
-                    tools::vec pos= gridpoint.grid_pos;
+                    tools::vec pos= gridpoint.grid_pos - min;
                     tools::vec index=pos/boxsize;
                     int i_x=int(index.getX());
                     int i_y=int(index.getY());
@@ -647,11 +673,8 @@ namespace votca {
 
                     const std::vector<tools::vec>& points=box.getGridPoints();
                     const std::vector<double>& weights=box.getGridWeights();
-                    //const std::vector<double> weights= std::vector<double>(box.getGridWeights().size(), 1.0);
 
                     ub::range one=ub::range(0,1);
-
-                    //ub::matrix<double> _temp = ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
 
                     ub::matrix<double> ao=ub::matrix<double>(1,box.Matrixsize());
                     ub::matrix<double> ao_mol=ub::matrix<double>(1,box.Matrixsize_perMolecule());
@@ -717,14 +740,8 @@ namespace votca {
     //                    cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao_mol("<< ao_mol.size1() <<","<< ao_mol.size2() <<")"<<endl<<flush;
                         ub::matrix<double> pr = ub::prod(_temp, tr );
                         double rho = pr(0,0);
-                        //double rho=ub::prod(_temp, ub::trans( ao_mol) )(0,0);
                         box.addDensity(rho);
                         N_box+=rho*weights[p];
-                        
-//                        if(p%10000==0){
-//                            cout<<rho<<"\t"<<weights[p]<<endl;
-//                        }
-
                     }
                     N_thread[thread]+=N_box;
 
