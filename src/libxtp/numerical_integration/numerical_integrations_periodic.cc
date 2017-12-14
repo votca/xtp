@@ -1049,7 +1049,7 @@ namespace votca {
                 const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
                 
                 
-//                #pragma omp parallel for
+                #pragma omp parallel for
                 for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
                     _ESPatGrid[p] = 0;
                     vec rvector = eval_grid.getGrid()[p] * tools::conv::nm2bohr; //Bohr
