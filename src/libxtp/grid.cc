@@ -461,10 +461,11 @@ void Grid::setupgrid(){
                 vec gridpos=vec(x,y,z);
                     for (std::vector<ctp::QMAtom* >::const_iterator atom = _atomlist->begin(); atom != _atomlist->end(); ++atom ) {
                         vec atompos=(*atom)->getPos();
-						vec dif = gridpos-atompos;
-						if(_periodic){
-							dif = WrapDisplacement(gridpos, atompos, _box);
-						}
+                        vec dif = gridpos-atompos;
+                        if(_periodic){
+                                dif = WrapDisplacement(gridpos, atompos, _box);
+                        }
+                        
                         double distance2 = dif*dif;
                         if(_useVdWcutoff) _cutoff=_elements.getVdWChelpG((*atom)->type)+_shift_cutoff;
                         if(_useVdWcutoff_inside)_cutoff_inside=_elements.getVdWChelpG((*atom)->type)+_shift_cutoff_inside;

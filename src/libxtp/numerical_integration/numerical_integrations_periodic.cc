@@ -1237,10 +1237,14 @@ namespace votca {
             tools::vec ret = a-b;
             for(int k=0; k<3; k++)
             {
-                ret[k] = fmod(ret[k], box[k]);
+                ret[k] = fmod(ret[k], box[k]); //if ret <0, then fmod<0 
+                if(ret[k] < 0){
+                    ret[k] += box[k];
+                }
                 if(ret[k] > box[k]*0.5){
                     ret[k] = box[k]-ret[k];
                 }
+                
             }
             return(ret);
         }

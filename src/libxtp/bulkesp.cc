@@ -596,6 +596,7 @@ namespace votca {
 
 
                 CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " done with molecule " << m - mols.begin() << endl << flush;
+                //exit(-1);
 
             }
             CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " All molecules processed." << endl << flush;
