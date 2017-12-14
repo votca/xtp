@@ -297,6 +297,7 @@ namespace votca {
 
                             GridContainers::integration_grid _gridpoint;
                             //wrap position into the periodic box. Pos is in Bohr.
+                            //Need to be wrapped into first periodic cell for potential evaluation from these points to make sense later.
                             //_gridpoint.grid_pos = WrapPoint(ppos, boxLen);
                             _gridpoint.grid_pos = ppos;
                             _gridpoint.grid_weight = _radial_grid.weight[_i_rad] * ws;
@@ -554,7 +555,7 @@ namespace votca {
         
         
         void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
-            const double boxsize=3;
+            const double boxsize=50;
             
             std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
             
@@ -789,7 +790,7 @@ namespace votca {
 //            }
             
             //check if the numbers of electrons are the same
-            if(std::abs(N-N_comp)>0.01 || true){
+            if(std::abs(N-N_comp)>0.005){
                 cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
 //                cout << "N_direct is: "<<N_direct << endl << flush;
                 cout <<"=======================" << endl << flush; 
@@ -854,10 +855,18 @@ namespace votca {
             if(_periodicGridBox.size()==0){
                 cout<<"Filling up _periodicGridBox"<<endl<<flush;
                 //fill the _periodicGridBox from all the smaller grid boxes
+                //The coordinates of all the gridpoints in the smaller boxes are sometimes outside the main periodic cell.
+                //So, need to wrap the positions of the densities into the first periodic cell.
                 for (unsigned i = 0; i < _grid_boxes.size(); i++) {
                     _periodicGridBox.appendBoxData(_grid_boxes[i]);
 //                    cout<<"grid box "<<i<< " size: "<<_grid_boxes[i].size() <<endl<<flush;
                 }
+                
+                //wrap
+                _periodicGridBox.wrapPositions(boxLen);
+                
+                
+                
                 cout<<"_periodicGridBox.size() due to electrons: "<<_periodicGridBox.size()<<endl<<flush;
 //                exit(0);
 

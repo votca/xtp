@@ -90,6 +90,16 @@ namespace votca { namespace xtp {
                 densities.insert(densities.end() , other.getGridDensities().begin(), other.getGridDensities().end());
             };
             
+            void wrapPositions(tools::vec boxLen){
+                std::vector< tools::vec >::iterator ip;
+                for(ip=grid_pos.begin(); ip!=grid_pos.end(); ++ip) {
+                    for(int k=0; k<3; k++)
+                    {
+                        (*ip)[k] = fmod( (*ip)[k], boxLen[k]);
+                    }
+                }
+            }
+            
             
         private:
             

@@ -259,7 +259,7 @@ namespace votca {
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
             numway.setBox(boxLen*tools::conv::ang2bohr);
             numway.SetRelevantAtomIds(_local_atomIndeces);
-            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Emtering Bulkesp::ComputeESP()"<< flush;
+            CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Entering Bulkesp::ComputeESP()"<< flush;
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculate Potentials at Numerical Grid with gridsize " << gridsize << flush;
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
