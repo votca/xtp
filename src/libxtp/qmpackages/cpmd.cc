@@ -83,6 +83,18 @@ namespace votca {
                 _convCutoff = options->get(key + ".optimizewf").as<double> ();
             }
             else _optWF=false;
+            
+            //use VDW correction?
+            if (options->exists(key + ".useGrimmeVDW")) {
+                _useGrimmeVDW=true;
+            }
+            else _useGrimmeVDW=false;
+            
+            //custom CPMD controlls
+            if (options->exists(key + ".customCPMDcontrolls")) {
+                _custom_CPMD_controlls=options->get(key + ".customCPMDcontrolls").as<std::string> ();
+            }
+            else _custom_CPMD_controlls="";
 
 
             //functional and pseudopotentials
@@ -166,11 +178,9 @@ namespace votca {
             if(_popAnalysis) _projectWF=true;
 
             if(_projectWF && _optWF){
-                cerr << "Error: Wavefunction optimization and projection onto atom-centric orbitals can not be done together.\nCPMD would crash.\n";
-                cerr << "Do Wavefunction optimization first and then do projection/population analysis\n";
-                cerr << "in a separate run with <restart>WAVEFUNCTION</restart>\n" << flush;
-                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Wavefunction optimization and projection onto atom-centric orbitals can not be done together." << flush;
-                throw std::runtime_error("Mutually exclusive options");
+                cerr << "Warning: Wavefunction optimization and projection onto atom-centric orbitals can not be done together.\nCPMD would crash.\n";
+                cerr << "Splitting into optimization on first run and projection/population analysis on second.\n";
+                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Splitting run into two steps." << flush;
             }
 
         }
@@ -234,6 +244,11 @@ namespace votca {
             if(_projectWF && !_optWF){
                 _com_file << "  PROPERTIES" << endl;
             }
+            
+            _com_file << endl <<"  " << _custom_CPMD_controlls << endl;        //custom CPMD controls from the .xml file
+            if(_useGrimmeVDW){                                          //VDW
+                _com_file << "  VDW CORRECTION" << endl;
+            }
             _com_file << "&END" << endl;
 
             //functional
@@ -242,6 +257,16 @@ namespace votca {
             _com_file << "  GC-CUTOFF" << endl;
             _com_file << "   1.0d-06" << endl;
             _com_file << "&END" << endl;
+            
+            //VDW
+            if(_useGrimmeVDW){  
+                _com_file << "\n&VDW" << endl;
+                _com_file << " VDW CORRECTION" << endl;
+                _com_file << " ALL GRIMME" << endl;
+                _com_file << " VDW-CELL" << endl;
+                _com_file << " 1 1 1" << endl;
+                _com_file << "&END" << endl;
+            }
             
             //cell
             _com_file << "\n&SYSTEM\n";

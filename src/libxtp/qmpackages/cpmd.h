@@ -103,6 +103,7 @@ private:
     bool _projectWF;        //project wavefunction onto localized atomic orbitals
     bool _popAnalysis;      //do population analysis, required to extract WF coefficients in atomic basis
     bool _getMat;           //get density and overlap matrices, requires _popAnalysis and _projectWF
+    bool _useGrimmeVDW;     //whether to use the Grimme correction to get VDW effects
     double _pwCutoff;       //plane wave cutoff (in Ry)
     double _convCutoff;     //cutoff for MO convergence
     int _symmetry;          //symmetry number (0=isolated, 1=simple cubic, 2=FCC, 3=BCC, ... check CPMD manual under "SYMETRY")
@@ -112,6 +113,7 @@ private:
     std::string _pplib_path;//full path to the pseudopotential library of CPMD
     std::string _wfOpt_input_file_name; //name of the input file for WF optimization, only used when running CPMD twice
     std::string _wfOpt_log_file_name;
+    std::string _custom_CPMD_controlls; //string to be added into the &CPMD section of the input file(s)
     
     
     std::map<std::string,std::string> _ppFileNames;   //pseudopotential file names indexed by element name
