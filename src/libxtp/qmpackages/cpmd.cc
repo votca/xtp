@@ -402,8 +402,16 @@ namespace votca {
             //now write the output file for the second run, if necessary
             if(_projectWF && _optWF){
                 _optWF=false;
+                //force reading of restart file on second run
+                bool old_rsrt=_rsrt;
+                std::string old_rsrt_kwds = _rsrt_kwds;
+                _rsrt = true;
+                _rsrt_kwds = "WAVEFUNCTION COORDINATES LATEST";
                 WriteInputFile(segments, orbitals_guess);
-                _optWF=true;
+                //reset variables
+                _optWF     = true;
+                _rsrt      = old_rsrt;
+                _rsrt_kwds = old_rsrt_kwds;
             }
 
             return true;
