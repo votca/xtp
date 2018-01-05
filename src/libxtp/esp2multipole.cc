@@ -86,11 +86,11 @@ void Esp2multipole::Initialize(Property* options) {
             boxLen[2]=options->get(key+".periodic.z").as<double>();
             _alpha=1.0;
             if(options->exists(key+".periodic.EwaldParam")){
-                _alpha = options->get(key+".EwaldParam").as<double>();
+                _alpha = options->get(key+".periodic.EwaldParam").as<double>();
             }
             _maxK = 32;
             if(options->exists(key+".periodic.maxK")){
-                _maxK = options->get(key+".maxK").as<unsigned int>();
+                _maxK = options->get(key+".periodic.maxK").as<unsigned int>();
             }
         }
         _maxBondScale=1.2;
