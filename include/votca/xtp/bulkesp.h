@@ -67,6 +67,11 @@ namespace votca { namespace xtp {
                 boxLen[1] = b[1];
                 boxLen[2] = b[2];
             }
+            
+            void setEwald(double alpha, unsigned int maxK){
+                _alpha = alpha;
+                _maxK  = maxK;
+            }
 
             std::vector<Bulkesp::Molecule> BreakIntoMolecules(std::vector< ctp::QMAtom* > a, double scale);
             double getNetcharge(std::vector< ctp::QMAtom* >& _atoms, double N, bool doround);
@@ -97,6 +102,9 @@ namespace votca { namespace xtp {
             ub::matrix<double> BuildDenMat(Orbitals &_orb, std::string _state, std::string _spin, int _state_no);
 
             ub::matrix<double> BuildOverlapMat(Orbitals &_molOrb, Orbitals &_globalOrb);
+            
+            double _alpha;
+            unsigned int _maxK;
         };
 }}
 

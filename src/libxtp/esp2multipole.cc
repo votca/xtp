@@ -84,11 +84,19 @@ void Esp2multipole::Initialize(Property* options) {
             boxLen[0]=options->get(key+".periodic.x").as<double>();
             boxLen[1]=options->get(key+".periodic.y").as<double>();
             boxLen[2]=options->get(key+".periodic.z").as<double>();
+            _alpha=1.0;
+            if(options->exists(key+".periodic.EwaldParam")){
+                _alpha = options->get(key+".EwaldParam").as<double>();
+            }
+            _maxK = 32;
+            if(options->exists(key+".periodic.maxK")){
+                _maxK = options->get(key+".maxK").as<unsigned int>();
+            }
         }
         _maxBondScale=1.2;
         if(options->exists(key+".bondscale")){
             _maxBondScale=options->get(key+".bondscale").as<double>();
-        }
+        }        
     }
     
     // get the path to the shared folders with xml files
@@ -244,7 +252,8 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
             Bulkesp esp=Bulkesp(_log);
             esp.setUseECPs(_use_ecp);
             if(periodic){
-                esp.setBox(boxLen);            
+                esp.setBox(boxLen);
+                esp.setEwald(_alpha, _maxK);
             }
             esp.Evaluate(_Atomlist, DMAT_tot, _orbitals, _MO_Coefficients, basis,bs,_gridsize, _maxBondScale, _state, _spin, _state_no); 
         }

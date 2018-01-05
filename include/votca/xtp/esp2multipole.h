@@ -82,6 +82,9 @@ private:
     bool periodic;
     double boxLen[3];
     double _maxBondScale;
+    double _alpha;
+    //int _maxKx,_maxKy,_maxKz;
+    unsigned int _maxK;
     
     
 

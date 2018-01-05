@@ -275,11 +275,6 @@ namespace votca {
             //boost::progress_display show_progress( _grid.getsize() );
 
 
-
-
-
-            double numK;
-
             //#define MADELUNG_TEST
 #ifdef MADELUNG_TEST
 
@@ -350,10 +345,7 @@ namespace votca {
                 CTP_LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
                 tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
-                numK = 32;
-                float alpha=1;
-
-                numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
+                numway.PrepKspaceDensity_gromacs_like(_alpha, _local_atomlist, _ECP, _grid, _maxK);
                 numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
                 
                 
