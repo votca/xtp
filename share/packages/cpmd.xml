@@ -1,34 +1,40 @@
 <package>
   <name>cpmd</name>
-  <executable>cpmd.x</executable>
+  <executable>mpirun -np 8 cpmd_mpi.x</executable>
   <charge>0</charge>
   <spin>0</spin>
   <options>none</options>
-  <threads>1</threads>
+  <threads help="ignored">1</threads>
   <scratch></scratch>
-  <memory>1Gb</memory>
+  <memory help="ignored">1Gb</memory>
   <cleanup></cleanup>
   
-  <restart>WAVEFUNCTION COORDINATES LATEST</restart>
-  <optimizewf>1.0e-3</optimizewf>
-  <pwcutoff>150.0</pwcutoff>
+  <optimizewf>1.0e-7</optimizewf>
+  <pwcutoff>90.0</pwcutoff>
   <elpot>1</elpot>
   <projectwf>1</projectwf>
-  <basisset>6-311G-singletype</basisset>
+  <basisset>ubecppol</basisset>
   <popanalysis>1</popanalysis>
   <getmatrices>1</getmatrices>
   <symmetry>0</symmetry>
-  <cell>20.0   1.0   1.0  0.0  0.0  0.0</cell>
+  <cell>22.167   1.0   1.0  0.0  0.0  0.0</cell>
+  
+  <useGrimmeVDW>1</useGrimmeVDW>
+  <customCPMDcontrolls>
+  LSD
+  STORE WAVEFUNCTIONS
+    10 SC=10
+  </customCPMDcontrolls>
   
   <functional>
-    <name>HCTH</name>
-    <pseudopotentials help="Pseudopotential file names for each atom and their read options. These files have to be present in the run directory.">
-      <O>O_MT_HCTH.psp KLEINMAN-BYLANDER</O>
-      <H>H_CVB_HCTH.psp</H>
+    <name>BLYP</name>
+    <pseudopotentials help="Pseudopotential file names for each atom and their read options. These need to be placed into the working directory manually.">
+      <O>O_MT_BLYP RAGGIO=1.0</O>
+      <H>H_GIA_BLYP RAGGIO=1.0</H>
     </pseudopotentials>
     <l help="Data about angular momentum of orbitals in each pseudopotential file.">
-      <O>LMAX=P</O>
-      <H>LMAX=S</H>
+      <O>LMAX=P LOC=P</O>
+      <H>LMAX=S LOC=S</H>
     </l>
     
   </functional>
