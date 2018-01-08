@@ -651,7 +651,7 @@ namespace votca {
             
             unsigned nthreads = 1;
             #ifdef _OPENMP
-               //nthreads = omp_get_max_threads();
+               nthreads = omp_get_max_threads();
             #endif
                
                std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
@@ -661,7 +661,7 @@ namespace votca {
             //need to project every relevant shell onto every relevant shell in this molecule
             
                
-//            #pragma omp parallel for
+            #pragma omp parallel for
             for (unsigned thread=0;thread<nthreads;++thread){
                 for (unsigned i = thread; i < _grid_boxes.size(); i+=nthreads) {
 
@@ -698,33 +698,7 @@ namespace votca {
                         
                         
                         ub::matrix<double> _temp=ub::prod( ao, DMAT_here);
-//                        if(p%10000==0){
-//                            cout<<"\n###############################\n_temp:\n";
-//                            for (unsigned i = 0; i < _temp.size1(); i++) {
-//                                for (unsigned j = 0; j < _temp.size2(); j++) {
-//                                    cout<< "_temp "<<i<<'\t'<<j<<'\t'<< _temp(i,j)<<'\n';
-//                                }
-//                                cout<<'\n';
-//                            }
-//                            cout<<"\n###############################\nao:\n";
-//                            for (unsigned i = 0; i < ao.size1(); i++) {
-//                                for (unsigned j = 0; j < ao.size2(); j++) {
-//                                    cout<< "ao "<<i<<'\t'<<j<<'\t'<< ao(i,j)<<'\n';
-//                                }
-//                                cout<<'\n';
-//                            }
-//                            cout<<"\n###############################\nDMAT_here:\n";
-//                            for (unsigned i = 0; i < DMAT_here.size1(); i++) {
-//                                for (unsigned j = 0; j < DMAT_here.size2(); j++) {
-//                                    cout<< "DMAT_here "<<i<<'\t'<<j<<'\t'<< DMAT_here(i,j)<<'\n';
-//                                }
-//                                cout<<'\n';
-//                            }
-//
-//                            cout<<"\t_temp("<< _temp.size1() <<"," << _temp.size2() <<")\tao("<< ao.size1() <<"," << ao.size2() <<")\tDMAT_here("<< DMAT_here.size1() <<","<< DMAT_here.size2() <<")"<<endl<<flush;
-//                            //exit(-1);
-//                        }
-
+                        
                         //For the column vector: only significant shells in the relevant molecule in the first periodic cell
                         ao_mol=ub::zero_matrix<double>(1,box.Matrixsize_perMolecule());
                         const std::vector<ub::range>& aoranges_mol=box.getAOranges_perMolecule();
