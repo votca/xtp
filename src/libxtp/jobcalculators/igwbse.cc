@@ -133,8 +133,9 @@ void IGWBSE::ParseOptionsXML( votca::tools::Property *opt ) {
 }
 
 std::map<std::string, int> IGWBSE::FillParseMaps(string Mapstring){
-    std::vector<string> strings_vec;
-    boost::algorithm::split( strings_vec, Mapstring, boost::is_any_of("\t,\n"),boost::token_compress_on );
+    Tokenizer tok_cleanup(Mapstring, ", \t\n");
+    std::vector <std::string> strings_vec;
+    tok_cleanup.ToVector(strings_vec);
     std::vector<string>::iterator sit;
     std::map<std::string, int> type2level;
     for(sit=strings_vec.begin();sit<strings_vec.end();++sit){
@@ -152,7 +153,7 @@ std::map<std::string, int> IGWBSE::FillParseMaps(string Mapstring){
         }
          
         //boost::algorithm::split( temp, (*sit), boost::is_any_of(""),boost::token_compress_on );
-        int number=boost::lexical_cast<int>(segmentpnumber[1].at(1));
+        int number=boost::lexical_cast<int>(segmentpnumber[1].at(1))-1;
         string type=boost::lexical_cast<string>(segmentpnumber[0]);
         type2level[type]=number; 
     }
@@ -589,8 +590,9 @@ void IGWBSE::ReadJobFile(ctp::Topology *top) {
             if (qmp == NULL) { // there is no pair in the neighbor list with this name
                 CTP_LOG_SAVE(ctp::logINFO, _log) << "No pair " <<  idA << ":" << idB << " found in the neighbor list. Ignoring" << flush; 
             }   else {
-                //CTP_LOG(logINFO, _log) << "Store in record: " <<  idA << ":" << idB << flush; 
+                //cout << "Store in record: " <<  idA << ":" << idB << flush; 
                 records[qmp->getId()] = & ((*it)->get("output.pair.type"));
+                
             }
         } else {
             throw runtime_error("\nERROR: Job file incomplete.\n Check your job file for FAIL, AVAILABLE, or ASSIGNED. Exiting\n");
@@ -615,13 +617,15 @@ void IGWBSE::ReadJobFile(ctp::Topology *top) {
         ctp::QMPair::PairType _ptype = pair->getType();
         Property* pair_property = records[ pair->getId() ];
  
-        
+       
        
         // If a pair is of a direct type 
-        if ( _ptype == ctp::QMPair::Hopping ||  _ptype == ctp::QMPair::SuperExchangeAndHopping ) {
-            //cout << ":hopping" ;
+        if ( _ptype == ctp::QMPair::PairType::Hopping ||  _ptype == ctp::QMPair::PairType::SuperExchangeAndHopping ) {
+            bool foundsinglet=false;
+            bool foundtriplet=false;
             
             if(pair_property->exists("singlets")){
+                
                 //bool found=false;
                 double coupling;
                 list<Property*> singlets = pair_property->Select("singlets.coupling");
@@ -630,14 +634,17 @@ void IGWBSE::ReadJobFile(ctp::Topology *top) {
                 for (list<Property*> ::iterator  iit = singlets.begin(); iit != singlets.end(); ++iit) {         
                     int state1=(*iit)->getAttribute<int>("excitonA");
                     int state2=(*iit)->getAttribute<int>("excitonB");
-                    if (state1==stateA && state2==stateB){
+                    if (state1==stateA && state2==stateB){   
                         coupling=boost::lexical_cast<double>((*iit)->value());
                         pair->setJeff2(coupling*coupling, 2);
                         pair->setIsPathCarrier(true, 2);
+                        foundsinglet=true;
+                        break;
                     }  
                 }
             }    
             if(pair_property->exists("triplets")){
+                
                 //bool found=false;
                 double coupling;
                 list<Property*> triplets = pair_property->Select("triplets.coupling");
@@ -650,10 +657,14 @@ void IGWBSE::ReadJobFile(ctp::Topology *top) {
                         coupling=boost::lexical_cast<double>((*iit)->value());
                         pair->setJeff2(coupling*coupling, 3);
                         pair->setIsPathCarrier(true, 3);
+                        foundtriplet=true;
+                        break;
                     }  
                 }   
             }
-            
+            if(foundsinglet || foundtriplet){
+                _current_pairs++;
+            }
         }
         else{
           cout << "WARNING Pair " << pair->getId() << " is not of any of the Hopping or SuperExchangeAndHopping type, what did you do to the jobfile?"<< flush;  

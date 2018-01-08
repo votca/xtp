@@ -124,11 +124,11 @@ namespace votca { namespace xtp {
         for ( AOShell::GaussianIterator itr = _shell_row->firstGaussian(); itr != _shell_row->lastGaussian(); ++itr){
             // iterate over Gaussians in this _shell_col
             // get decay constant
-            const double _decay_row = (*itr)->getDecay();
+            const double _decay_row = itr->getDecay();
             
             for ( AOShell::GaussianIterator itc = _shell_col->firstGaussian(); itc != _shell_col->lastGaussian(); ++itc){
                 //get decay constant
-                const double _decay_col = (*itc)->getDecay();
+                const double _decay_col = itc->getDecay();
         
                 const double _fak  = 0.5/(_decay_row + _decay_col);
                 const double _fak2 = 2.0 * _fak;
@@ -468,14 +468,17 @@ if (_lmax_col > 3) {
             return;
         }
 
-        void AOESP::Fillextpotential(const AOBasis& aobasis,const ctp::PolarSeg & _sites) {
-            cout<<_sites.size()<<endl;
+        void AOESP::Fillextpotential(const AOBasis& aobasis,const std::vector<ctp::PolarSeg*> & _sites) {
+            
             _externalpotential = ub::zero_matrix<double>(aobasis.AOBasisSize(), aobasis.AOBasisSize());
-            for (ctp::PolarSeg::const_iterator it = _sites.begin(); it < _sites.end(); ++it) {
-                vec positionofsite = (*it)->getPos() * tools::conv::nm2bohr;
-                _aomatrix = ub::zero_matrix<double>(aobasis.AOBasisSize(), aobasis.AOBasisSize());
-                Fill(aobasis, positionofsite);
-                _externalpotential -= (*it)->getQ00() * _aomatrix;
+
+            for (unsigned int i = 0; i < _sites.size(); i++) {
+                for (ctp::PolarSeg::const_iterator it = _sites[i]->begin(); it < _sites[i]->end(); ++it) {
+                    vec positionofsite = (*it)->getPos() * tools::conv::nm2bohr;
+                    _aomatrix = ub::zero_matrix<double>(aobasis.AOBasisSize(), aobasis.AOBasisSize());
+                    Fill(aobasis, positionofsite);
+                    _externalpotential -= (*it)->getQ00() * _aomatrix;
+                }
             }
             return;
         }    

@@ -67,6 +67,7 @@ namespace votca { namespace xtp {
             double IntegrateField(const std::vector<double>& externalfield);
             ub::matrix<double> IntegrateExternalPotential(const std::vector<double>& Potentialvalues);
             
+            ub::vector<double> IntegrateGyrationTensor(const ub::matrix<double>& _density_matrix);
             
            
            
@@ -99,13 +100,14 @@ namespace votca { namespace xtp {
             double  _totalgridsize;
             
             std::vector< GridBox > _grid_boxes;
-            
+            std::vector<unsigned> thread_start;
+            std::vector<unsigned> thread_stop;
             
             ExchangeCorrelation _xc;
             bool _use_votca;
             int xfunc_id;
             
-            
+           
             
             
             double EXC;

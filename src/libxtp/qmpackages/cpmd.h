@@ -44,15 +44,13 @@ public:
 
    void Initialize( Property *options );
 
-   /* Writes CPMD input file with coordinates of segments
-    * and a guess for the dimer (if requested) constructed from the
-    * monomer orbitals
+   /* Writes CPMD input file with coordinates of all atoms
     */
-   bool WriteInputFile( std::vector< ctp::Segment* > segments, Orbitals* orbitals_guess = NULL);
+   bool WriteInputFile( std::vector< ctp::Segment* > segments, Orbitals* orbitals_guess = NULL, std::vector<ctp::PolarSeg*> PolarSegments = {});
    
    bool WriteShellScript();
 
-   bool Run();
+   bool Run(Orbitals* _orbitals = NULL );
 
    void CleanUp();
    
@@ -61,6 +59,8 @@ public:
    bool ParseLogFile( Orbitals* _orbitals );
 
    bool ParseOrbitalsFile( Orbitals* _orbitals ){return true;};
+   
+   bool setMultipoleBackground( std::vector<ctp::PolarSeg*> multipoles){ return true; };
    
       
    std::string getScratchDir( ) { return _scratch_dir; }

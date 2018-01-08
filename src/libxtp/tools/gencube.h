@@ -19,7 +19,7 @@
 
 #ifndef _VOTCA_XTP_GENCUBE_H
 #define _VOTCA_XTP_GENCUBE_H
-
+#include <boost/progress.hpp>
 #include <stdio.h>
 #include <boost/format.hpp>
 #include <votca/xtp/elements.h>
@@ -53,8 +53,7 @@ namespace votca {
 
         private:
 
-            int element2number(string element);
-            double element2core_ECP(string element);
+         
             
             void calculateCube();
             void subtractCubes();
@@ -69,7 +68,8 @@ namespace votca {
             bool _do_transition;
             bool _do_singlet;
             bool _do_triplet;
-            
+            bool _do_ks;
+           
             double _padding;
             int _xsteps;
             int _ysteps;
@@ -90,6 +90,8 @@ namespace votca {
             _do_transition=false;
             _do_singlet=false;
             _do_triplet=false;
+            _do_ks=false;
+            
             // update options with the VOTCASHARE defaults   
             UpdateWithDefaults( options, "xtp" );
 
@@ -143,6 +145,7 @@ namespace votca {
             }
             else if (_type== "excited-gs") _do_bse=true;
             else if ( _type == "qp" ) _do_qp = true;
+            else if (_type == "ks") _do_ks = true;
             else {
                 throw std::runtime_error("Option for type not known");
             }
@@ -242,12 +245,16 @@ namespace votca {
                 } else if ( _do_bse ){
                     if ( _do_groundstate ){
                        fprintf(out, "Total electron density of excited state  %i spin %s \n", _state, _spin.c_str());
-                    } else {
+                    }
+                    else{
                        fprintf(out, "Difference electron density of excited state  %i spin %s \n", _state, _spin.c_str());
                     }
                 } 
                 else if ( _do_qp ){
-                    fprintf(out, "Quasiparticle state %i \n", _state);
+                    fprintf(out, "Quasiparticle state %i with energy %f eV \n", _state, _orbitals.QPdiagEnergies()[_state-1-_orbitals.getGWAmin()]*tools::conv::hrt2ev);
+                }
+                else if (_do_ks ){
+                    fprintf(out, "Kohn-Sham state %i with energy %f eV \n", _state, _orbitals.MOEnergies()[_state-1]*tools::conv::hrt2ev);
                 }
                 else if ( _do_transition ){
                     fprintf(out, "Transition state  between Groundstate and state %i \n", _state);
@@ -278,11 +285,10 @@ namespace votca {
 
                 }
 
-                if ( _do_qp ){
-                    fprintf(out, "  1 %d \n", _state+1);
+                if ( _do_qp || _do_ks ){
+                    fprintf(out, "  1 %d \n", _state);
                 } 
-                // prepare basis set information
-                ub::matrix<double> &_dft_orbitals = _orbitals.MOCoefficients();
+               
                 // load DFT basis set (element-wise information) from xml file
                 BasisSet dftbs;
                 dftbs.LoadBasisSet(_orbitals.getDFTbasis());
@@ -291,7 +297,7 @@ namespace votca {
                 // fill DFT AO basis by going through all atoms 
                 AOBasis dftbasis;
                 dftbasis.AOBasisFill(&dftbs, _orbitals.QMAtoms());
-                dftbasis.ReorderMOs(_dft_orbitals, _orbitals.getQMpackage(), "xtp");
+               
 
                 
                 // now depending on the type of cube
@@ -302,25 +308,24 @@ namespace votca {
 
                     // ground state only if requested
                     if ( _do_groundstate ) {
-                        ub::matrix<double> DMATGS = _orbitals.DensityMatrixGroundState(_dft_orbitals);
+                        ub::matrix<double> DMATGS = _orbitals.DensityMatrixGroundState();
                         DMAT_tot = DMATGS; // Ground state + hole_contribution + electron contribution
                         CTP_LOG(ctp::logDEBUG, _log) << " Calculated ground state density matrix " << flush;
                     }
                     
                     if(_state>0){
-                        ub::matrix<real_gwbse> BSECoefs;
-                        if (_spin=="singlet") BSECoefs = _orbitals.BSESingletCoefficients();
-                        else if (_spin =="triplet") BSECoefs = _orbitals.BSETripletCoefficients();
+
                     
                         if ( _do_transition ){
-                             DMAT_tot=_orbitals.TransitionDensityMatrix(_dft_orbitals, BSECoefs, _state - 1);
+                             DMAT_tot=_orbitals.TransitionDensityMatrix(_spin, _state - 1);
                              CTP_LOG(ctp::logDEBUG, _log) << " Calculated transition state density matrix " << flush;
                         }
 
                     // excited state if requested
                         else if ( _do_bse  ) {    
-                            std::vector< ub::matrix<double> > DMAT=_orbitals.DensityMatrixExcitedState(_dft_orbitals, BSECoefs, _state - 1);
-                            DMAT_tot = DMAT_tot - DMAT[0] + DMAT[1]; // Ground state + hole_contribution + electron contribution
+                            std::vector< ub::matrix<double> > DMAT=_orbitals.DensityMatrixExcitedState(_spin, _state - 1);
+                            
+                            DMAT_tot =DMAT_tot+DMAT[1]-DMAT[0];// Ground state + hole_contribution + electron contribution
                             CTP_LOG(ctp::logDEBUG, _log) << " Calculated excited state density matrix " << flush;
                         }
                     }
@@ -328,8 +333,8 @@ namespace votca {
    
                     CTP_LOG(ctp::logDEBUG, _log) << " Calculating cube data ... \n" << flush;
                     _log.setPreface(ctp::logDEBUG,   (format(" ... ...") ).str());
-                    float progress = 0.0;
-                    const ub::vector<double> DMAT_array = DMAT_tot.data();
+                    
+                    boost::progress_display progress(_xsteps) ;
                     // eval density at cube grid points
                     for (int _ix = 0; _ix <= _xsteps; _ix++) {
                         double _x = xstart + double(_ix) * xincr;
@@ -345,10 +350,18 @@ namespace votca {
                                 ub::matrix<double> tmat = ub::zero_matrix<double>( 1,dftbasis.AOBasisSize());
 
                                 for (AOBasis::AOShellIterator _row = dftbasis.firstShell(); _row != dftbasis.lastShell(); _row++) {
-                                   
+                                    
+                                    const double decay=(*_row)->getMinDecay();
+                                    const tools::vec& shellpos=(*_row)->getPos();
+                      
+                      
+                                    tools::vec dist=shellpos-pos;
+                                    double distsq=dist*dist;
+                          // if contribution is smaller than -ln(1e-10), calc density
+                                    if ( (decay * distsq) < 20.7 ){
                                     ub::matrix_range< ub::matrix<double> > _submatrix = ub::subrange(tmat,0,1, (*_row)->getStartIndex(), (*_row)->getStartIndex()+(*_row)->getNumFunc());
                                     (*_row)->EvalAOspace(_submatrix, pos);
-
+                                    }
                                 }
                                 
                                 
@@ -367,19 +380,8 @@ namespace votca {
                             
                         }// y-component
                         
+                        ++progress;
                         
-                        progress += 1.0/((_xsteps+1));
-                        int barWidth = 70;
-                        CTP_LOG(ctp::logDEBUG, _log) << "[";
-                        int pos = barWidth * progress;
-                        for (int i = 0; i < barWidth; ++i) {
-                            if (i < pos) CTP_LOG(ctp::logDEBUG, _log) << "=";
-                            else if (i == pos) CTP_LOG(ctp::logDEBUG, _log) << ">";
-                            else CTP_LOG(ctp::logDEBUG, _log) << " ";
-                        }
-                        int percent = progress * 100.0;
-                        CTP_LOG(ctp::logDEBUG, _log) << "] " << percent << " %\r";
-                        CTP_LOG(ctp::logDEBUG, _log) << flush;
                         
                     } // x-component
 
@@ -388,18 +390,26 @@ namespace votca {
                 _log.setPreface(ctp::logDEBUG,   (format("\n ... ...") ).str());
                 
                 // diagonalized QP, if requested
-                if ( _do_qp && _state > 0 ){
+                if ( ( _do_ks || _do_qp ) && _state > 0 ){
                     
-                    int GWAmin = _orbitals.getGWAmin();
-                    int GWAmax = _orbitals.getGWAmax();
+
+                    ub::matrix<double> Ftemp;
                     
-                    //cout << _orbitals.hasQPdiag()<< endl;
-                    ub::matrix<double> QPcoefs = ub::project(_orbitals.QPdiagCoefficients(),ub::range(GWAmin, GWAmax + 1), ub::range(_state, _state +1 ) ); // get QPdiag coefficients for the requested state
-              
+                    if ( _do_qp ){
+                        int GWAmin = _orbitals.getGWAmin();
+                        int GWAmax = _orbitals.getGWAmax();
+                        ub::matrix<double> QPcoefs = ub::project(_orbitals.QPdiagCoefficients(),
+                                ub::range(0, _orbitals.QPdiagCoefficients().size1() ), ub::range(_state-1-GWAmin, _state-GWAmin  ) ); 
+                        // get QPdiag coefficients for the requested state
+                        ub::matrix<double> MOs = ub::project(_orbitals.MOCoefficients(),ub::range(GWAmin, GWAmax + 1), ub::range(0, dftbasis.AOBasisSize())) ; 
+                        // get DFT MO coefficients
+                  
+                        Ftemp = ub::prod( ub::trans(MOs),QPcoefs );
+                    } 
                     
-                    ub::matrix<double> MOs = ub::project(_orbitals.MOCoefficients(),ub::range(GWAmin, GWAmax + 1), ub::range(0, dftbasis.AOBasisSize())) ; // get DFT MO coefficients
-            
-                    ub::matrix<double> Ftemp = ub::prod( ub::trans(MOs),QPcoefs );
+                    if ( _do_ks ) {
+                        Ftemp = ub::trans(ub::project(_orbitals.MOCoefficients(),ub::range(_state-1, _state), ub::range(0, dftbasis.AOBasisSize()))) ; // get DFT MO coefficients
+                    }
               
                     for (int _ix = 0; _ix <= _xsteps; _ix++) {
                         double _x = xstart + double(_ix) * xincr;
@@ -414,9 +424,18 @@ namespace votca {
                                 ub::matrix<double> tmat = ub::zero_matrix<double>(1,dftbasis.AOBasisSize());
                                 vec pos=vec(_x, _y, _z);
                                 for (AOBasis::AOShellIterator _row = dftbasis.firstShell(); _row != dftbasis.lastShell(); _row++) {
-
+                                    
+                                    const double decay=(*_row)->getMinDecay();
+                                    const tools::vec& shellpos=(*_row)->getPos();
+                      
+                      
+                                    tools::vec dist=shellpos-pos;
+                                    double distsq=dist*dist;
+                          // if contribution is smaller than -ln(1e-10), calc density
+                                    if ( (decay * distsq) < 20.7 ){
                                     ub::matrix_range< ub::matrix<double> > _submatrix = ub::subrange(tmat,0,1, (*_row)->getStartIndex(), (*_row)->getStartIndex()+(*_row)->getNumFunc());
-                                    (*_row)->EvalAOspace(_submatrix,pos);
+                                    (*_row)->EvalAOspace(_submatrix, pos);
+                                    }
                                 }
 
                                 double QP_at_grid = 0.0;

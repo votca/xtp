@@ -197,38 +197,38 @@ namespace votca {
             return (mols);
         }
 
-        ub::matrix<double> Bulkesp::BuildDenMat(Orbitals &_orb, std::string _state, std::string _spin, int _state_no) {
-            ub::matrix<double> DMAT_tot;
-            bool _do_transition = false;
-
-            if (_state != "ground")
-                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
-                << "It will likely not work correctly, as BSE Singlet and Triplet Coefficients are simply copied from the global orbital object.\n" << flush;
-
-            if (_state == "transition") {
-                _do_transition = true;
-                if (_spin == "singlet") {
-                    DMAT_tot = _orb.TransitionDensityMatrix(_orb.MOCoefficients(), _orb.BSESingletCoefficients(), _state_no - 1);
-                } else if (_spin == "triplet") {
-                    DMAT_tot = _orb.TransitionDensityMatrix(_orb.MOCoefficients(), _orb.BSETripletCoefficients(), _state_no - 1);
-                } else throw std::runtime_error("Spin entry not recognized");
-            } else if (_state == "ground" || _state == "excited") {
-                DMAT_tot = _orb.DensityMatrixGroundState(_orb.MOCoefficients());
-                if (_state_no > 0 && _state == "excited") {
-                    std::vector<ub::matrix<double> > DMAT;
-                    if (_spin == "singlet") {
-                        DMAT = _orb.DensityMatrixExcitedState(_orb.MOCoefficients(), _orb.BSESingletCoefficients(), _state_no - 1);
-                    } else if (_spin == "triplet") {
-                        DMAT = _orb.DensityMatrixExcitedState(_orb.MOCoefficients(), _orb.BSETripletCoefficients(), _state_no - 1);
-                    } else throw std::runtime_error("Spin entry not recognized");
-                    DMAT_tot = DMAT_tot - DMAT[0] + DMAT[1];
-                }
-                // Ground state + hole_contribution + electron contribution
-            } else throw std::runtime_error("State entry not recognized");
-
-
-            return (DMAT_tot);
-        }
+//        ub::matrix<double> Bulkesp::BuildDenMat(Orbitals &_orb, std::string _state, std::string _spin, int _state_no) {
+//            ub::matrix<double> DMAT_tot;
+//            bool _do_transition = false;
+//
+//            if (_state != "ground")
+//                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp is not tested for any state other than the ground state. "
+//                << "It will likely not work correctly, as BSE Singlet and Triplet Coefficients are simply copied from the global orbital object.\n" << flush;
+//
+//            if (_state == "transition") {
+//                _do_transition = true;
+//                if (_spin == "singlet") {
+//                    DMAT_tot = _orb.TransitionDensityMatrix(_orb.MOCoefficients(), _orb.BSESingletCoefficients(), _state_no - 1);
+//                } else if (_spin == "triplet") {
+//                    DMAT_tot = _orb.TransitionDensityMatrix(_orb.MOCoefficients(), _orb.BSETripletCoefficients(), _state_no - 1);
+//                } else throw std::runtime_error("Spin entry not recognized");
+//            } else if (_state == "ground" || _state == "excited") {
+//                DMAT_tot = _orb.DensityMatrixGroundState(_orb.MOCoefficients());
+//                if (_state_no > 0 && _state == "excited") {
+//                    std::vector<ub::matrix<double> > DMAT;
+//                    if (_spin == "singlet") {
+//                        DMAT = _orb.DensityMatrixExcitedState(_orb.MOCoefficients(), _orb.BSESingletCoefficients(), _state_no - 1);
+//                    } else if (_spin == "triplet") {
+//                        DMAT = _orb.DensityMatrixExcitedState(_orb.MOCoefficients(), _orb.BSETripletCoefficients(), _state_no - 1);
+//                    } else throw std::runtime_error("Spin entry not recognized");
+//                    DMAT_tot = DMAT_tot - DMAT[0] + DMAT[1];
+//                }
+//                // Ground state + hole_contribution + electron contribution
+//            } else throw std::runtime_error("State entry not recognized");
+//
+//
+//            return (DMAT_tot);
+//        }
 
         ub::matrix<double> Bulkesp::BuildOverlapMat(Orbitals &_molOrb, Orbitals &_globalOrb) {
             ub::matrix<double> ov;

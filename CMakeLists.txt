@@ -30,14 +30,11 @@ enable_language(CXX)
 #####################################################################
 
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON) 
+set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++11
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" AND CMAKE_VERSION VERSION_LESS "3.6.0") 
+message(FATAL_ERROR "Using the intel compiler requires cmake 3.6 or higher")
 endif()
 
 find_package(OpenMP)
@@ -83,19 +80,13 @@ endif()
 
 
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
-if (NOT DEFINED LIB)
-  set(LIB "lib")
-endif(NOT DEFINED LIB)
-if (NOT DEFINED MAN)
-  set(MAN "share/man")
-endif(NOT DEFINED MAN)
-if (NOT DEFINED DATA)
-  set(DATA "share/votca")
-endif(NOT DEFINED DATA)
-if (NOT DEFINED XTP_MANUAL_LOCATION)
-  set(XTP_MANUAL_LOCATION "share/votca/manual")
-endif(NOT DEFINED XTP_MANUAL_LOCATION)
+include(GNUInstallDirs)
 #option(WITH_DIPRO "Build mergeorbitals and DIPRO, which use fortran" ON)
+
+option(ENABLE_TESTING "Build and enable testing stuff" OFF)
+if(ENABLE_TESTING)
+  enable_testing()
+endif(ENABLE_TESTING)
 
 #for votca_config.h
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
@@ -178,26 +169,7 @@ add_subdirectory(src/tools)
 #add_subdirectory(share/scripts/dipro)
 add_subdirectory(share)
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/manual/xtp-manual.pdf COMMAND make -C ${CMAKE_SOURCE_DIR}/manual
-	XTP_SCRIPTS="${XTP_SCRIPTS}"
-	CSG_PROPERTY="${VOTCA_CSG_PROPERTY}"
-	VER=${PROJECT_VERSION}
-	ROOTDIR="${CMAKE_CURRENT_SOURCE_DIR}/manual"
-	XTP_PROGS="${XTP_PROGS}" VERBATIM)
-add_custom_target(manual DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/manual/xtp-manual.pdf)
-
-add_custom_target(cleanmanual COMMAND make clean -C ${CMAKE_SOURCE_DIR}/manual
-	XTP_SCRIPTS="${XTP_SCRIPTS}"
-	CSG_PROPERTY="${VOTCA_CSG_PROPERTY}"
-	VER=${PROJECT_VERSION}
-	ROOTDIR="${CMAKE_CURRENT_SOURCE_DIR}/manual"
-	XTP_PROGS="${XTP_PROGS}" VERBATIM)
-
-add_custom_target(installmanual COMMAND make install -C ${CMAKE_SOURCE_DIR}/manual
-	XTP_SCRIPTS="${XTP_SCRIPTS}"
-	CSG_PROPERTY="${VOTCA_CSG_PROPERTY}"
-	VER=${PROJECT_VERSION}
-	ROOTDIR="${CMAKE_CURRENT_SOURCE_DIR}/manual"
-	XTP_PROGS="${XTP_PROGS}"
-	XTP_MANUAL_LOCATION="${CMAKE_INSTALL_PREFIX}/${XTP_MANUAL_LOCATION}" VERBATIM)
-add_dependencies(installmanual manual)
+option(BUILD_XTP_MANUAL "Build xtp-manual" OFF)
+if(BUILD_XTP_MANUAL)
+  add_subdirectory(manual)
+endif()

@@ -137,6 +137,11 @@ namespace votca {
                 _number_of_electrons = electrons;
             }
 
+            
+            bool hasECP(){
+                return ( _ECP !="") ? true : false;
+            }
+            
             string getECP() {
                 return _ECP;
             };
@@ -365,6 +370,10 @@ namespace votca {
 
             // access to list of indices used in BSE
 
+            void setBSEtype(string bsetype){_bsetype=bsetype;}
+            string getBSEtype() const{return _bsetype;}
+            
+            
             bool hasBSEindices() {
                 return ( _bse_cmax > 0) ? true : false;
             }
@@ -448,6 +457,8 @@ namespace votca {
             }
 
             // access to eh interaction
+            
+         
 
             bool hasEHinteraction() {
                 return ( _eh_d.size1() > 0) ? true : false;
@@ -603,15 +614,10 @@ namespace votca {
 
 
             // functions for calculating density matrices
-            ub::matrix<double> DensityMatrixGroundState(const ub::matrix<double>& _MOs);
-            std::vector<ub::matrix<double> > DensityMatrixExcitedState(const ub::matrix<double>& _MOs, const ub::matrix<real_gwbse>& _BSECoefs, int state = 0);
-            ub::matrix<double > TransitionDensityMatrix(const ub::matrix<double>& _MOs, const ub::matrix<real_gwbse>& _BSECoefs, int state = 0);
+            ub::matrix<double> DensityMatrixGroundState();
+            std::vector<ub::matrix<double> > DensityMatrixExcitedState(const string& spin,int state = 0);
+            ub::matrix<double > TransitionDensityMatrix(const string& spin,int state = 0);
 
-
-            ub::matrix<double > TransitionDensityMatrix_BTDA(const ub::matrix<double>& _MOs, const ub::matrix<real_gwbse>& _BSECoefs,
-                    const ub::matrix<real_gwbse>& _BSECoefs_AR, int state = 0);
-            std::vector<ub::matrix<double> > DensityMatrixExcitedState_BTDA(const ub::matrix<double>& _MOs,
-                    const ub::matrix<real_gwbse>& _BSECoefs, const ub::matrix<real_gwbse>& _BSECoefs_AR, int state = 0);
 
             double GetTotalEnergy(string _spintype, int _opt_state);
 
@@ -624,13 +630,15 @@ namespace votca {
                 return (_DqS_frag.size() > 0) ? true : false;
             }
 
-            const std::vector< ub::vector<double> > &FragmentChargesSingEXC() const {
+            const std::vector< ub::vector<double> > &getFragmentChargesSingEXC() const {
                 return _DqS_frag;
             }
 
-            std::vector< ub::vector<double> > &FragmentChargesSingEXC() {
-                return _DqS_frag;
+             void setFragmentChargesSingEXC(std::vector< ub::vector<double> > DqS_frag) {
+                _DqS_frag=DqS_frag;
             }
+             
+            
 
             // access to fragment charges of triplet excitations
 
@@ -638,25 +646,53 @@ namespace votca {
                 return (_DqT_frag.size() > 0) ? true : false;
             }
 
-            const std::vector< ub::vector<double> > &FragmentChargesTripEXC() const {
+            const std::vector< ub::vector<double> > &getFragmentChargesTripEXC() const {
                 return _DqT_frag;
             }
 
-            std::vector< ub::vector<double> > &FragmentChargesTripEXC() {
-                return _DqT_frag;
+            void setFragmentChargesTripEXC(std::vector< ub::vector<double> > DqT_frag) {
+                _DqT_frag=DqT_frag;
             }
 
             // access to fragment charges in ground state
 
-            const ub::vector<double> &FragmentChargesGS() const {
+            const ub::vector<double> &getFragmentChargesGS() const {
                 return _GSq_frag;
             }
 
-            ub::vector<double> &FragmentChargesGS() {
-                return _GSq_frag;
+             void setFragmentChargesGS(ub::vector<double> GSq_frag) {
+                 _GSq_frag=GSq_frag;
             }
+             
+            void setFragment_E_localisation_singlet(std::vector< ub::vector<double> >& popE){
+                _popE_s=popE;
+            }
+            
+            void setFragment_H_localisation_singlet(std::vector< ub::vector<double> > & popH){
+                _popH_s=popH;
+            }
+            
+            void setFragment_E_localisation_triplet(std::vector< ub::vector<double> > & popE){
+                _popE_t=popE;
+            }
+            
+            void setFragment_H_localisation_triplet(std::vector< ub::vector<double> > & popH){
+                _popE_s=popH;
+            }
+            
 
-
+            const std::vector< ub::vector<double> >& getFragment_E_localisation_singlet()const{
+                return _popE_s;
+            }
+            const std::vector< ub::vector<double> >& getFragment_H_localisation_singlet()const{
+                return _popH_s;
+            }
+            const std::vector< ub::vector<double> >& getFragment_E_localisation_triplet()const{
+                return _popE_t;
+            }
+            const std::vector< ub::vector<double> >& getFragment_H_localisation_triplet()const{
+                return _popH_t;
+            }
 
             ub::vector<double> FragmentNuclearCharges(int _frag);
 
@@ -664,7 +700,7 @@ namespace votca {
 
 
             // returns indeces of a re-sorted in a descending order vector of energies
-            void SortEnergies(std::vector<int>* index);
+            std::vector<int> SortEnergies();
 
             /** Adds a QM atom to the atom list */
             ctp::QMAtom* AddAtom(std::string _type,
@@ -712,16 +748,20 @@ namespace votca {
             bool Save(std::string file_name);
 
             void LoadFromXYZ(std::string filename);
+           
 
         private:
-
-            std::vector<ub::matrix<double> >DensityMatrixExcitedState_AR(const ub::matrix<double>& _MOs, const ub::matrix<real_gwbse>& _BSECoefs_AR, int state = 0);
+            std::vector<ub::matrix<double> > DensityMatrixExcitedState_R(const string& spin,int state = 0);
+            std::vector<ub::matrix<double> >DensityMatrixExcitedState_AR(const string& spin,int state = 0);
 
             int _basis_set_size;
             int _occupied_levels;
             int _unoccupied_levels;
             int _number_of_electrons;
             string _ECP;
+            
+            string _bsetype;
+            
 
             std::map<int, std::vector<int> > _level_degeneracy;
 
@@ -799,8 +839,11 @@ namespace votca {
 
             ub::vector<double> _GSq_frag; // ground state effective fragment charges
 
+            std::vector< ub::vector<double> > _popE_s;
+            std::vector< ub::vector<double> > _popE_t;
+            std::vector< ub::vector<double> > _popH_s;
+            std::vector< ub::vector<double> > _popH_t;
 
-        private:
 
             /**
              * @param _energy_difference [ev] Two levels are degenerate if their energy is smaller than this value
@@ -832,9 +875,8 @@ namespace votca {
                     if (Archive::is_loading::value) {
                         string floatordouble = "float";
                         ar & floatordouble;
-
                         if (test != floatordouble) {
-                            throw std::runtime_error((boost::format("This votca is compiled with %. The orbitals file you want to read in is compiled with %") % test % floatordouble).str());
+                            throw std::runtime_error((boost::format("This votca is compiled with %1%. The orbitals file you want to read in is compiled with %2%") % test % floatordouble).str());
                         }
                     } else {
                         ar & test;
@@ -860,6 +902,10 @@ namespace votca {
                     unsigned int size;
                     ar & size;
                     _overlap.resize(size);
+                    if(version==0){
+                        cerr<<endl;
+                        cerr<<"WARNING! .orb file is of version 0. The overlap matrix will have the wrong ordering"<<endl;
+                    }
                 }
 
                 for (unsigned int i = 0; i < _overlap.size1(); ++i)
@@ -867,6 +913,8 @@ namespace votca {
                         ar & _overlap(i, j);
 
                 ar & _atoms;
+               
+                
                 ar & _qm_energy;
                 ar & _qm_package;
                 ar & _self_energy;
@@ -874,6 +922,8 @@ namespace votca {
 
                 // GW-BSE storage
                 if (version > 0) {
+                    
+                    
 
                     ar & _dftbasis;
                     ar & _gwbasis;
@@ -889,6 +939,15 @@ namespace votca {
                     ar & _index2c;
                     ar & _index2v;
                     ar & _ScaHFX;
+                    
+                    if (Archive::is_loading::value && version < 4) {
+                        _bsetype="TDA";
+                        _ECP="ecp";   
+                    } else {
+                        ar & _bsetype;
+                        ar & _ECP;
+                    }
+                    
 
                     if (Archive::is_loading::value && version < 3) {
                         ub::matrix<real_gwbse> temp;
@@ -958,6 +1017,13 @@ namespace votca {
 
 
                     ar & _BSE_singlet_coefficients;
+                    
+                    if (Archive::is_loading::value && version < 4) {
+                        _BSE_singlet_coefficients_AR=ub::matrix<double>(0,0);
+                    } else {
+                        ar & _BSE_singlet_coefficients_AR;
+                    }
+                    
 
                     if (Archive::is_loading::value && version == 1) {
                         std::vector< std::vector<double> > temp;
@@ -1042,7 +1108,36 @@ namespace votca {
                         for (unsigned int j = 0; j <= i; ++j)
                             ar & _vxc(i, j);
 
+            if (Archive::is_loading::value && version < 4) {
+                BasisSet _dftbasisset;
+                _dftbasisset.LoadBasisSet(_dftbasis);
 
+                if(!hasQMAtoms()){
+                    throw runtime_error("Orbitals object has no QMAtoms");
+                }
+            AOBasis _dftbasis;
+            _dftbasis.AOBasisFill(&_dftbasisset, QMAtoms());
+            if(this->hasAOOverlap()){
+                 _dftbasis.ReorderMatrix(_overlap,_qm_package , "xtp");
+
+            }
+            if(this->hasAOVxc()){
+                
+               
+                if(_qm_package=="gaussian"){
+                ub::matrix<double> vxc_full=_vxc;
+                
+                ub::matrix<double> _carttrafo=_dftbasis.getTransformationCartToSpherical(_qm_package);
+                ub::matrix<double> _temp = ub::prod(_carttrafo, vxc_full);
+                _vxc = ub::prod(_temp, ub::trans(_carttrafo));
+                }
+                 _dftbasis.ReorderMatrix(_vxc,_qm_package , "xtp");
+                
+            }   
+            if(this->hasMOCoefficients()){
+                _dftbasis.ReorderMOs(_mo_coefficients,_qm_package , "xtp");
+            }  
+                }
 
                 } // end version 1: GW-BSE storage
             }// end of serialization
@@ -1051,7 +1146,7 @@ namespace votca {
     }
 }
 
-BOOST_CLASS_VERSION(votca::xtp::Orbitals, 3)
+BOOST_CLASS_VERSION(votca::xtp::Orbitals, 4)
 
 #endif /* __VOTCA_XTP_ORBITALS_H */
 

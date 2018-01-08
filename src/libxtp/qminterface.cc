@@ -1,4 +1,4 @@
-/* 
+/*
  *            Copyright 2009-2017 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
@@ -106,7 +106,7 @@ namespace votca {
             }
 
             // MIDDLE SHELL MM1
-            for (unsigned int i = 0; i < ptop->MM1().size(); ++i) {
+           /* for (unsigned int i = 0; i < ptop->MM1().size(); ++i) {
                 ctp::PolarSeg *pseg = ptop->MM1()[i];
                 for (unsigned int j = 0; j < pseg->size(); ++j) {
                     ctp::APolarSite *aps = (*pseg)[j];
@@ -121,17 +121,42 @@ namespace votca {
                     ctp::APolarSite *aps = (*pseg)[j];
                     addMMAtomtoOrb(aps, orb, false);
                 }
-            }
+            }*/
             return;
         }
 
+
+        std::vector<ctp::PolarSeg*> QMMInterface::GenerateMultipoleList(ctp::PolarTop *ptop  ) {
+
+            std::vector<ctp::PolarSeg*> MultipoleList;
+
+            // MIDDLE SHELL MM1
+            for (unsigned int i = 0; i < ptop->MM1().size(); ++i) {
+                ctp::PolarSeg *pseg = new ctp::PolarSeg(ptop->MM1()[i],false);
+                MultipoleList.push_back(pseg);
+            }
+
+            // OUTER SHELL MM2
+            for (unsigned int i = 0; i < ptop->MM2().size(); ++i) {
+                ctp::PolarSeg *pseg = new ctp::PolarSeg(ptop->MM2()[i],false);
+                MultipoleList.push_back(pseg);
+            }
+
+            return MultipoleList;
+        }
+
+
+
+
+
+
         void QMMInterface::addMMAtomtoOrb(ctp::APolarSite * aps, Orbitals &orb, bool with_polarisation) {
-            vec pos = aps->getPos() * tools::conv::nm2ang;
+            const tools::vec pos = aps->getPos() * tools::conv::nm2ang;
             double Q = aps->getQ00();
             orb.AddAtom(aps->getName(), pos, Q, true);
 
             if (_split_dpl) {
-                vec tot_dpl = vec(0, 0, 0);
+                tools::vec tot_dpl = tools::vec(0.0);
                 if (with_polarisation) {
                     tot_dpl += aps->getU1();
                 }
@@ -142,10 +167,9 @@ namespace votca {
                 double a = _dpl_spacing; // this is in nm
                 double mag_d = abs(tot_dpl); // this is in e * nm
                 if (mag_d > 1e-9) {
-                    vec dir_d_0 = tot_dpl.normalize();
-                    vec dir_d = dir_d_0.normalize();
-                    vec A = pos + 0.5 * a * dir_d * tools::conv::nm2ang; // converted to AA
-                    vec B = pos - 0.5 * a * dir_d * tools::conv::nm2ang;
+                    tools::vec dir_d = tot_dpl.normalize();
+                    tools::vec A = pos + 0.5 * a * dir_d * tools::conv::nm2ang; // converted to AA
+                    tools::vec B = pos - 0.5 * a * dir_d * tools::conv::nm2ang;
                     double qA = mag_d / a;
                     double qB = -qA;
                     orb.AddAtom("A", A, qA, true);
@@ -157,13 +181,13 @@ namespace votca {
                 tools::matrix components = aps->getQ2cartesian();
                 tools::matrix::eigensystem_t system;
                 components.SolveEigensystem(system);
-                double a = _dpl_spacing;
-                string Atomnameplus[] = {"Xp", "Yp", "Zp"};
-                string Atomnameminus[] = {"Xm", "Ym", "Zm"};
+                double a = 2*_dpl_spacing;
+                string Atomnameplus[] = {"X", "Y", "Z"};
+                string Atomnameminus[] = {"X", "Y", "Z"};
                 for (unsigned i = 0; i < 3; i++) {
 
                     double q = system.eigenvalues[i] / (a * a);
-                    if (q < 1e-9) {
+                    if (std::abs(q) < 1e-9) {
                         continue;
                     }
                     tools::vec vec1 = pos + 0.5 * a * system.eigenvecs[i] * tools::conv::nm2ang;
@@ -172,6 +196,7 @@ namespace votca {
                     orb.AddAtom(Atomnameminus[i], vec2, q, true);
 
                 }
+
             }
 
             return;

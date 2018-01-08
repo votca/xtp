@@ -112,9 +112,9 @@ namespace votca {
                 Orbitals *_orbitalsAB = NULL;
                 if (_qmpackage->GuessRequested() && _do_guess) { // do not want to do an SCF loop for a dimer
                     if (_redirect_logger) {
-                       CTP_LOG(ctp::logINFO, _gwbse_engine_logger) << "Guess requested, reading molecular orbitals" << flush;
+                       CTP_LOG_SAVE(ctp::logINFO, _gwbse_engine_logger) << "Guess requested, reading molecular orbitals" << flush;
                     } else {
-                       CTP_LOG(ctp::logINFO, *_pLog) << "Guess requested, reading molecular orbitals" << flush;
+                       CTP_LOG_SAVE(ctp::logINFO, *_pLog) << "Guess requested, reading molecular orbitals" << flush;
                     }
                     Orbitals _orbitalsA, _orbitalsB;
                     _orbitalsAB = new Orbitals();
@@ -139,7 +139,7 @@ namespace votca {
 
             if (_do_dft_run) {
 
-                bool run_success = _qmpackage->Run();
+                bool run_success = _qmpackage->Run( _orbitals );
                 if (!run_success) {
                     throw runtime_error(string("\n GW-BSE without DFT is difficult. Stopping!"));
                 }
@@ -147,24 +147,27 @@ namespace votca {
 
             // parse DFT data, if required
             if (_do_dft_parse) {
-                if (_redirect_logger) {
-                    CTP_LOG(ctp::logINFO, _gwbse_engine_logger) << "Parsing DFT data from " << _dftlog_file << " and " << _MO_file << flush;
-                } else {
-                    CTP_LOG(ctp::logINFO, *_pLog) << "Parsing DFT data from " << _dftlog_file << " and " << _MO_file << flush;
+                if ( _qmpackage->getPackageName() != "xtp" ) {
+                    if (_redirect_logger) {
+                        CTP_LOG_SAVE(ctp::logINFO, _gwbse_engine_logger) << "Parsing DFT data from " << _dftlog_file << " and " << _MO_file << flush;
+                    } else {
+                        CTP_LOG_SAVE(ctp::logINFO, *_pLog) << "Parsing DFT data from " << _dftlog_file << " and " << _MO_file << flush;
+                    }
+                    _qmpackage->setLogFileName(_dftlog_file);
+                    _qmpackage->setOrbitalsFileName(_MO_file);
+                    _qmpackage->ParseLogFile(_orbitals);
+                    
+                    _qmpackage->ParseOrbitalsFile(_orbitals);
                 }
-                _qmpackage->setLogFileName(_dftlog_file);
-                _qmpackage->ParseLogFile(_orbitals);
-                _qmpackage->setOrbitalsFileName(_MO_file);
-                _qmpackage->ParseOrbitalsFile(_orbitals);
                 _orbitals->setDFTbasis(_qmpackage->getBasisSetName());
             }
 
             // if no parsing of DFT data is requested, reload serialized orbitals object
-            if (!_do_dft_parse) {
+            if (!_do_dft_parse && _do_gwbse) {
                 if (_redirect_logger) {
-                    CTP_LOG(ctp::logINFO, _gwbse_engine_logger) << "Loading serialized data from " << _archive_file << flush;
+                    CTP_LOG_SAVE(ctp::logINFO, _gwbse_engine_logger) << "Loading serialized data from " << _archive_file << flush;
                 } else {
-                    CTP_LOG(ctp::logINFO, *_pLog) << "Loading serialized data from " << _archive_file << flush;
+                    CTP_LOG_SAVE(ctp::logINFO, *_pLog) << "Loading serialized data from " << _archive_file << flush;
                 }
                 _orbitals->Load(_archive_file);
             }
@@ -176,6 +179,8 @@ namespace votca {
                 _gwbse.Initialize(&_gwbse_options);
                 _gwbse.Evaluate();
                 if (_redirect_logger) SaveRedirectedLogger(&_gwbse_engine_logger);
+                Property *_output_summary = &(_summary.add("output", ""));
+                _gwbse.addoutput(_output_summary);
             }
             return;
         }
@@ -184,9 +189,9 @@ namespace votca {
         void GWBSEENGINE::SaveRedirectedLogger(ctp::Logger* pLog) {
 
             // write logger to log file
-            ofstream ofs;
+            std::ofstream ofs;
             //string gwbse_logfile = "gwbse.log";
-            ofs.open(_logger_file.c_str(), ofstream::out);
+            ofs.open(_logger_file.c_str(), std::ofstream::out);
             if (!ofs.is_open()) {
                 throw runtime_error("Bad file handle: " + _logger_file);
             }
@@ -194,8 +199,6 @@ namespace votca {
             ofs.close();
             return;
         }
-
-
 
     }
 }

@@ -73,7 +73,7 @@ namespace votca { namespace xtp {
         static int getBlockSize( int size );
         
         
-        static ub::matrix<double> getTrafo( const AOGaussianPrimitive* gaussian);
+        static ub::matrix<double> getTrafo( const AOGaussianPrimitive& gaussian);
         
         void PrintIndexToFunction(const AOBasis& aobasis);
         
@@ -92,9 +92,7 @@ namespace votca { namespace xtp {
 
         const ub::matrix<double> &Matrix() const{ return _aomatrix ;};
         
-        void Initialize( int size ) {
-            this->_aomatrix = ub::zero_matrix<double>(size,size);
-        }
+        
         
         void Fill(const AOBasis& aobasis, vec r = vec(0,0,0) , AOBasis* ecp = NULL );
         
@@ -121,12 +119,7 @@ namespace votca { namespace xtp {
     public:
         
         
-        void Initialize( unsigned size ) {
-            _aomatrix.resize(3);
-            for (int i = 0; i < 3 ; i++){
-              _aomatrix[ i ] = ub::zero_matrix<double>(size,size);
-            }
-        }
+       
 
         const std::vector<ub::matrix<double> > &Matrix() const{ return _aomatrix ;};
 
@@ -182,7 +175,7 @@ namespace votca { namespace xtp {
         void FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp);
         //void Print();
         void Fillnucpotential(const AOBasis& aobasis, std::vector<ctp::QMAtom*>& _atoms,bool _with_ecp=false );
-        void Fillextpotential(const AOBasis& aobasis, const ctp::PolarSeg& _sites);
+        void Fillextpotential(const AOBasis& aobasis, const std::vector<ctp::PolarSeg*>& _sites);
         ub::matrix<double> &getNuclearpotential(){ return _nuclearpotential;}
         const ub::matrix<double> &getNuclearpotential()const{ return _nuclearpotential;}
         ub::matrix<double> &getExternalpotential(){ return _externalpotential;}
@@ -205,7 +198,7 @@ namespace votca { namespace xtp {
         typedef boost::multi_array<double, 3> type_3D;
         
         
-        ub::matrix<double> calcVNLmatrix(int _lmax_ecp,const vec& posC, const AOGaussianPrimitive* _g_row,const AOGaussianPrimitive* _g_col,const  ub::matrix<int>& _power_ecp,const ub::matrix<double>& _gamma_ecp,const ub::matrix<double>& _pref_ecp   );
+        ub::matrix<double> calcVNLmatrix(int _lmax_ecp,const vec& posC, const AOGaussianPrimitive& _g_row,const AOGaussianPrimitive& _g_col,const  ub::matrix<int>& _power_ecp,const ub::matrix<double>& _gamma_ecp,const ub::matrix<double>& _pref_ecp   );
         
         
         
@@ -253,7 +246,7 @@ namespace votca { namespace xtp {
         //block fill for overlap, implementation in aooverlap.cc
         void FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp);
         
-        void Fillextpotential(const AOBasis& aobasis, const ctp::PolarSeg& _sites);
+        void Fillextpotential(const AOBasis& aobasis, const std::vector<ctp::PolarSeg*>& _sites);
         ub::matrix<double> &getExternalpotential(){ return _externalpotential;}
         const ub::matrix<double> &getExternalpotential()const{ return _externalpotential;}
         
@@ -274,7 +267,7 @@ namespace votca { namespace xtp {
         void FillBlock( ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp);
         //void Print();
         
-        void Fillextpotential(const AOBasis& aobasis, const ctp::PolarSeg& _sites);
+        void Fillextpotential(const AOBasis& aobasis, const std::vector<ctp::PolarSeg*>& _sites);
         ub::matrix<double> &getExternalpotential(){ return _externalpotential;}
         const ub::matrix<double> &getExternalpotential()const{ return _externalpotential;}
         //void Print();
@@ -295,7 +288,8 @@ namespace votca { namespace xtp {
     class AOCoulomb : public AOMatrix{
     public:
         void FillBlock(ub::matrix_range< ub::matrix<double> >& _matrix,const AOShell* _shell_row,const AOShell* _shell_col, AOBasis* ecp);
-        void Symmetrize(const AOOverlap& _overlap ,const AOBasis& _basis, ub::matrix<double>& _overlap_inverse , ub::matrix<double>& _gwoverlap_cholesky_inverse );
+        int Symmetrize(const ub::matrix<double>& _gwoverlap_cholesky);
+        int Invert_DFT();
        
         
     private:

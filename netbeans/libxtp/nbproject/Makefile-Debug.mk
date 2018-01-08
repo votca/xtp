@@ -45,6 +45,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/2a3bfc3d/aomatrix.o \
 	${OBJECTDIR}/_ext/2a3bfc3d/aomomentum.o \
 	${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o \
+	${OBJECTDIR}/_ext/2a3bfc3d/aooverlap_periodic.o \
 	${OBJECTDIR}/_ext/2a3bfc3d/aoquadrupole_potential.o \
 	${OBJECTDIR}/_ext/1ce08c7a/aoshell.o \
 	${OBJECTDIR}/_ext/1ce08c7a/basisset.o \
@@ -75,6 +76,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/6916996f/gwbse.o \
 	${OBJECTDIR}/_ext/6916996f/gwbseengine.o \
 	${OBJECTDIR}/_ext/6916996f/rpa.o \
+	${OBJECTDIR}/_ext/1ce08c7a/gyration.o \
 	${OBJECTDIR}/_ext/1ce08c7a/jobapplication.o \
 	${OBJECTDIR}/_ext/1ce08c7a/jobcalculatorfactory.o \
 	${OBJECTDIR}/_ext/f632c409/dma.o \
@@ -98,6 +100,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/_ext/1ce08c7a/qminterface.o \
 	${OBJECTDIR}/_ext/1ce08c7a/qmiter.o \
 	${OBJECTDIR}/_ext/1ce08c7a/qmmachine.o \
+	${OBJECTDIR}/_ext/1ce08c7a/qmpackage.o \
 	${OBJECTDIR}/_ext/1ce08c7a/qmpackagefactory.o \
 	${OBJECTDIR}/_ext/60851bbe/cpmd.o \
 	${OBJECTDIR}/_ext/60851bbe/gaussian.o \
@@ -192,6 +195,11 @@ ${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o: ../../src/libxtp/aomatrices/aooverlap.cc
 	${MKDIR} -p ${OBJECTDIR}/_ext/2a3bfc3d
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/2a3bfc3d/aooverlap.o ../../src/libxtp/aomatrices/aooverlap.cc
+
+${OBJECTDIR}/_ext/2a3bfc3d/aooverlap_periodic.o: ../../src/libxtp/aomatrices/aooverlap_periodic.cc 
+	${MKDIR} -p ${OBJECTDIR}/_ext/2a3bfc3d
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/2a3bfc3d/aooverlap_periodic.o ../../src/libxtp/aomatrices/aooverlap_periodic.cc
 
 ${OBJECTDIR}/_ext/2a3bfc3d/aoquadrupole_potential.o: ../../src/libxtp/aomatrices/aoquadrupole_potential.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/2a3bfc3d
@@ -343,6 +351,11 @@ ${OBJECTDIR}/_ext/6916996f/rpa.o: ../../src/libxtp/gwbse/rpa.cc
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/6916996f/rpa.o ../../src/libxtp/gwbse/rpa.cc
 
+${OBJECTDIR}/_ext/1ce08c7a/gyration.o: ../../src/libxtp/gyration.cc 
+	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/gyration.o ../../src/libxtp/gyration.cc
+
 ${OBJECTDIR}/_ext/1ce08c7a/jobapplication.o: ../../src/libxtp/jobapplication.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
 	${RM} "$@.d"
@@ -457,6 +470,11 @@ ${OBJECTDIR}/_ext/1ce08c7a/qmmachine.o: ../../src/libxtp/qmmachine.cc
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/qmmachine.o ../../src/libxtp/qmmachine.cc
+
+${OBJECTDIR}/_ext/1ce08c7a/qmpackage.o: ../../src/libxtp/qmpackage.cc 
+	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -I../../include -I../../../tools/include -I../../../csg/include -I../../../xtp/include -I/usr/include/libxml2 -I/sw/linux/intel/XE13u2/mkl/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/_ext/1ce08c7a/qmpackage.o ../../src/libxtp/qmpackage.cc
 
 ${OBJECTDIR}/_ext/1ce08c7a/qmpackagefactory.o: ../../src/libxtp/qmpackagefactory.cc 
 	${MKDIR} -p ${OBJECTDIR}/_ext/1ce08c7a

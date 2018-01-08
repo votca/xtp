@@ -41,7 +41,7 @@ namespace votca { namespace xtp {
 
         ub::matrix<double> GridBox::ReadFromBigMatrix(const ub::matrix<double>& bigmatrix) {
             
-            ub::matrix<double> _matrix = ub::zero_matrix<double>(matrix_size);
+            ub::matrix<double> _matrix = ub::matrix<double>(matrix_size,matrix_size);
             for (unsigned i = 0; i < ranges.size(); i++) {
                 for (unsigned j = 0; j < ranges.size(); j++) {
                     
@@ -52,15 +52,16 @@ namespace votca { namespace xtp {
         }
 
         void GridBox::PrepareForIntegration() {
-            matrix_size = 0;
-
+            unsigned index = 0;
+            aoranges=std::vector<ub::range>(0);
+            ranges=std::vector<ub::range>(0);
+            inv_ranges=std::vector<ub::range>(0);   
             std::vector<unsigned> start;
             std::vector<unsigned> end;
 
-            for (unsigned i=0;i< significant_shells.size();++i) {
-                const AOShell* shell=significant_shells[i];
-                aoranges.push_back(ub::range(matrix_size, matrix_size+shell->getNumFunc()));
-                matrix_size += shell->getNumFunc();
+            for (const auto shell:significant_shells) {
+                aoranges.push_back(ub::range(index, index+shell->getNumFunc()));
+                index += shell->getNumFunc();
                 start.push_back(shell->getStartIndex());
                 end.push_back(shell->getStartIndex() + shell->getNumFunc());
             }

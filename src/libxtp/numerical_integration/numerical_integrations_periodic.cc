@@ -758,7 +758,7 @@ namespace votca {
 //            AOOverlap overlap;
             AOOverlapPeriodic overlap;
             overlap.setBox(boxLen); //in Bohr
-            overlap.Initialize(_basis->AOBasisSize());   //this is the global, non expanded basis
+            //this is the global, non expanded basis
             overlap.Fill(*_basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
             //_density_matrix is the _global_dmat
             ub::matrix<double>& AO=overlap.Matrix();

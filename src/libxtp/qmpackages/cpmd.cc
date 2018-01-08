@@ -185,7 +185,7 @@ namespace votca {
 
         }
 
-        bool Cpmd::WriteInputFile(std::vector<ctp::Segment* > segments, Orbitals* orbitals_guess) {
+        bool Cpmd::WriteInputFile(std::vector<ctp::Segment* > segments, Orbitals* orbitals_guess, std::vector<ctp::PolarSeg*> PolarSegments) {
 
             std::vector< ctp::Atom* > _atoms;
             std::vector< ctp::Atom* > ::iterator ait;
@@ -568,7 +568,7 @@ namespace votca {
         /**
          * Runs the CPMD job.
          */
-        bool Cpmd::Run() {
+        bool Cpmd::Run(Orbitals* _orbitals) {
             
             if(_optWF && _projectWF){ //CPMD needs to run twice, once for _optWF and once for _projectWF
                 //_optWF run:

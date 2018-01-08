@@ -53,6 +53,8 @@ namespace votca { namespace xtp {
             typedef boost::multi_array_types::extent_range range; //////////////////
             typedef ma_type::index index; /////////////////////
             ma_type::extent_gen extents; /////////////////////
+            
+            bool FillThreeCenterRepBlock(  ub::matrix<double> & _subvector, const AOShell* _shell, const AOShell* _shell_row,const AOShell* _shell_col);
     
     };
     
@@ -68,12 +70,12 @@ namespace votca { namespace xtp {
     
     std::vector< ub::symmetric_matrix<double> >& getData(){return  _matrix;}
     ub::symmetric_matrix<double>& getDatamatrix( int i ){return  _matrix[i];}
-    
+    const ub::symmetric_matrix<double>& getDatamatrix( int i )const{return  _matrix[i];}
     private:
         std::vector< ub::symmetric_matrix<double> > _matrix;
     
         void FillBlock(const AOShell* _shell,const AOBasis& dftbasis) ; 
-        bool FillThreeCenterRepBlock(  ub::matrix<double> & _subvector, const AOShell* _shell, const AOShell* _shell_row,const AOShell* _shell_col);
+        
     };
 
 
@@ -110,6 +112,8 @@ namespace votca { namespace xtp {
         int get_mtot() { return mtotal ;}
         int get_ntot() { return ntotal ;}
         
+        int get_beta()const{return basissize;}
+        
         
          int get_mmin() const{ return mmin ;}
          int get_mmax() const{ return mmax ;}
@@ -135,6 +139,7 @@ namespace votca { namespace xtp {
             set_nmax( nmax  );
             set_mtot( mmax - mmin +1 );
             set_ntot( nmax - nmin +1 );
+            basissize=_basissize;
 
             
             // vector has mtotal elements
@@ -142,7 +147,7 @@ namespace votca { namespace xtp {
             
             // each element is a gwabasis-by-n matrix, initialize to zero
             for ( int i = 0; i < this->get_mtot() ; i++){
-                _matrix[i] = ub::zero_matrix<real_gwbse>(_basissize,ntotal);
+                _matrix[i] = ub::zero_matrix<real_gwbse>(basissize,ntotal);
             }
         
         }
@@ -167,6 +172,7 @@ namespace votca { namespace xtp {
         int nmax;
         int ntotal;
         int mtotal;
+        int basissize;
         bool FillThreeCenterOLBlock(  ub::matrix<double> & _subvector, const AOShell* _shell, const AOShell* _shell_row, const AOShell* _shell_col); 
         void FillBlock(std::vector< ub::matrix<double> >& _matrix,const  AOShell* _shell, const AOBasis& dftbasis,const ub::matrix<double>& _dft_orbitals ) ;
         
