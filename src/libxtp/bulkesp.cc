@@ -62,10 +62,12 @@ namespace votca {
                     //cout << "dif: " << dif[0] << " " << dif[1] << " " << dif[2] << "\t";
                     for (int k = 0; k < 3; k++) {
                         if (periodic && std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
-                            if (dif[k] > 0) //i.x>j.x
+                            if (dif[k] > 0){ //i.x>j.x
                                 dif[k] -= boxLen[k];
-                            else //i.x<j.x
+                            }
+                            else{ //i.x<j.x
                                 dif[k] += boxLen[k];
+                            }
                     }
                     //cout << "PBC corrected: " << dif[0] << " " << dif[1] << " " << dif[2] << "\n";
                     vec v(dif);
@@ -144,7 +146,7 @@ namespace votca {
                 bonds.pop_back();
 
 
-                int oldMsize;
+                unsigned int oldMsize;
                 do {
                     oldMsize = m.atoms.size();
                     //loop through bonds to see what binds to what is already in the molecule
@@ -191,8 +193,9 @@ namespace votca {
                 }
             }
 
-            if (periodic)
+            if (periodic){
                 CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): Molecules have been unwrapped." << flush;
+            }
             
             return (mols);
         }
@@ -343,7 +346,7 @@ namespace votca {
 
             if (periodic) {
                 CTP_LOG(ctp::logDEBUG, *_log)  << "Bulkesp::ComputeESP(): " << ctp::TimeStamp() << " periodicity is on, including long range contributions." << flush;
-                tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
+//                tools::vec BL = boxLen * tools::conv::ang2bohr; //bohr
 
                 numway.PrepKspaceDensity_gromacs_like(_alpha, _local_atomlist, _ECP, _grid, _maxK);
                 numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
