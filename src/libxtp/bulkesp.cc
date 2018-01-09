@@ -61,13 +61,14 @@ namespace votca {
 
                     //cout << "dif: " << dif[0] << " " << dif[1] << " " << dif[2] << "\t";
                     for (int k = 0; k < 3; k++) {
-                        if (periodic && std::abs(dif[k]) > boxLen[k]*0.5) //correct for for bond crossing PBC, if it exists
+                        if (periodic && std::abs(dif[k]) > boxLen[k]*0.5){ //correct for for bond crossing PBC, if it exists
                             if (dif[k] > 0){ //i.x>j.x
                                 dif[k] -= boxLen[k];
                             }
                             else{ //i.x<j.x
                                 dif[k] += boxLen[k];
                             }
+                        }
                     }
                     //cout << "PBC corrected: " << dif[0] << " " << dif[1] << " " << dif[2] << "\n";
                     vec v(dif);
