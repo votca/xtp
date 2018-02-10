@@ -85,9 +85,9 @@ namespace votca { namespace xtp {
         void setCubegrid(bool cubegrid){_cubegrid=cubegrid;_createpolarsites=true;}
 		bool getCubegrid(void){return(_cubegrid);}     
 		void setAtomlist(std::vector< ctp::QMAtom* >* Atomlist){_atomlist=Atomlist;}
-        int  getsize(){return _gridpoints.size();}
+        unsigned int  getsize(){return _gridpoints.size();}
         
-        int getTotalSize(){
+        unsigned int getTotalSize(){
             int size=0.0;
             if(_cubegrid){size=_all_gridsites.size();}
             else{size=_gridpoints.size();}

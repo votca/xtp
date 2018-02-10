@@ -421,7 +421,7 @@ namespace votca {
 
                 //numway.SetGridToCharges(_local_atomlist);
 #pragma omp parallel for
-                for (int i = 0; i < _grid.getsize(); i++) {
+                for (unsigned int i = 0; i < _grid.getsize(); i++) {
                     _ESPatGrid(i) = numway.IntegratePotential(_grid.getGrid()[i] * tools::conv::nm2bohr);
                     //++show_progress;
                 }
@@ -545,7 +545,7 @@ namespace votca {
 //                        _global_dmat, _basis, bs, gridsize, _grid, netcharge);
 
                 //store the potential in apolarsites
-                for (int i = 0; i < _grid.getsize(); i++) {
+                for (unsigned int i = 0; i < _grid.getsize(); i++) {
                     //                ub::vector<double> point = _grid.getGrid()[i];
                     //                APolarSite* site = _grid.Sites()[i];
                     //                site->setPhi(ESP(i), 0.0);

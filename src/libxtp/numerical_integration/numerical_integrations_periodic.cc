@@ -722,7 +722,7 @@ namespace votca {
 
                 }
             }   
-            for(int i=0;i<nthreads;++i){
+            for(unsigned int i=0;i<nthreads;++i){
                 N+=N_thread[i];
             }
             
@@ -866,7 +866,7 @@ namespace votca {
             
             double totQ=0;
             double totQweighted=0;
-            for(int i=0; i<_densities.size(); i++){
+            for(unsigned int i=0; i<_densities.size(); i++){
                 totQ+=_densities[i];
                 totQweighted+=_densities[i]*_weights[i];
             }
@@ -917,7 +917,7 @@ namespace votca {
             for (unsigned m = 0; m < 3; m++) { //dimension
                 eikr[m].resize(numK[m]);
 //#pragma omp parallel for
-                for (unsigned k = 0; k < numK[m]; k++) { //k vectors
+                for (int k = 0; k < numK[m]; k++) { //k vectors
                     eikr[m][k].resize(_densities.size());    //density points
                 }
 
@@ -934,7 +934,7 @@ namespace votca {
                 for (unsigned m = 0; (m < 3); m++) { //dimensions
                     eikr[m][0][i] = std::complex<double>(1, 0);
                     eikr[m][1][i] = std::complex<double>(cos(r[m] * lll[m]), sin(r[m] * lll[m])); //this is where reduced units are applied
-                    for (unsigned k = 2; k < numK[m]; k++) { //k vectors
+                    for (int k = 2; k < numK[m]; k++) { //k vectors
                         eikr[m][k][i] = eikr[m][k - 1][i] * eikr[m][1][i];
                     }//k
                 }//m
@@ -946,7 +946,7 @@ namespace votca {
             eikR.resize(3); //3 dim
             for (unsigned m = 0; m < 3; m++) { //dimensions
                 eikR[m].resize(numK[m]);
-                for (unsigned k = 0; k < numK[m]; k++) {
+                for (int k = 0; k < numK[m]; k++) {
                     eikR[m][k].resize(eval_grid.getGrid().size());
                 }
             }
@@ -966,7 +966,7 @@ namespace votca {
                     //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     //k=1;
                     //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
-                    for (unsigned k = 2; k < numK[m]; k++) {
+                    for (int k = 2; k < numK[m]; k++) {
                         eikR[m][k][i] = eikR[m][k - 1][i] * eikR[m][1][i];
 //                        printf("\t%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     }//k
@@ -1149,7 +1149,7 @@ namespace votca {
                             //                            if(abs(cs)>1e-6 || abs(ss)>1e-6)
                             //                            if(ix==4 && iy==4 && iz==4)
                             //                                printf("k=[%d,%d,%d]\tcs=%f\t ss=%f \tak=%f=exp(%f * %f) / %f\n", ix, iy, iz, cs, ss, ak, m2, factor, m2);
-                            for (int n = 0; n < eval_grid.getsize(); n++) {
+                            for (unsigned int n = 0; n < eval_grid.getsize(); n++) {
                                 tmp = ak * (cs * tab_R_xyz[n].real() + ss * tab_R_xyz[n].imag());
                                 //                                if((abs(cs)>1e-6 || abs(ss)>1e-6) && n==0){
                                 //                                    printf("ak=%f=exp(%f * %f) / %f\n", ak, m2, factor, m2);

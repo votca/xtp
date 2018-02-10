@@ -81,7 +81,7 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;
     //boost::progress_display show_progress( _grid.getsize() );
     #pragma omp parallel for
-    for ( int i = 0 ; i < _grid.getsize(); i++){
+    for ( unsigned int i = 0 ; i < _grid.getsize(); i++){
         _ESPatGrid(i)=numway.IntegratePotential(_grid.getGrid()[i]*tools::conv::nm2bohr);
         //++show_progress;
     }
@@ -210,7 +210,7 @@ void Espfit::Fit2Density_analytic(std::vector< ctp::QMAtom* >& _atomlist, ub::ma
 
     CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points"  << flush;
     #pragma omp parallel for
-    for ( int i = 0 ; i < _grid.getsize(); i++){
+    for ( unsigned int i = 0 ; i < _grid.getsize(); i++){
         // AOESP matrix
          AOESP _aoesp;
          _aoesp.Fill(_basis, _grid.getGrid()[i]*Nm2Bohr);

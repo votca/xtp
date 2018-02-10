@@ -647,7 +647,6 @@ namespace votca {
 
             // check if the log file exists
             boost::filesystem::path arg_path;
-            char ch;
 
             std::string _full_name = (arg_path / _run_dir / _log_file_name).c_str();
             if(_optWF && _projectWF){ //CPMD needs to run twice; this is the _optWF run
@@ -769,7 +768,7 @@ namespace votca {
             }
             
             //store atoms to Orbitals in VOTCA's order
-            for(int v=0; v<positions.size(); v++){
+            for(unsigned int v=0; v<positions.size(); v++){
                 int c = ConvAtomIndex_VOTCA2CPMD(v);
                 _orbitals->AddAtom(CPMD2TYPE_map[c], positions[c].getX(), positions[c].getY(), positions[c].getZ(), 0); //core charges don't matter, VOTCA computes them on its own
             }
