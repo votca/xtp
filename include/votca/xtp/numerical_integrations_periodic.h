@@ -46,27 +46,15 @@ namespace votca { namespace xtp {
                 return;
             };
             
-            
-//            double IntegrateDensity_Molecule(ub::matrix<double>& _density_matrix, AOBasis* basis, std::vector<int> AtomIndeces);
-//            virtual double IntegratePotential(const vec& rvector);
-
-//            double IntegratePotential_w_PBC(vec rvector);
             virtual double IntegrateDensity(const ub::matrix<double>& _density_matrix);
             void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid);
-//            double IntegrateEnergy_w_PBC(vec rvector);
             double CalcDipole_w_PBC(vec rvector);
             void findAlpha(double Rc, double dtol);
-//            void PrepKspaceDensity(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, int nK);
             void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
-//            void FreeKspace(void);
             inline void setBox(vec box){
                 boxLen=box;
                 return;
             }
-            
-            //used for debuging and testing
-//            std::vector< std::vector< GridContainers::integration_grid > > _Madelung_grid;
-//            void FillMadelungGrid(vec boxLen, int natomsonside);
             
         protected:
             virtual void FindSignificantShells();
@@ -82,7 +70,7 @@ namespace votca { namespace xtp {
             std::vector< std::vector< std::vector< std::complex<double> > > > eikR;  //gromacs-like storage for exp(k*R) -> where to evaluate
             std::vector< std::vector< std::vector< std::complex<double> > > > eikr;  //gromacs-like storage for exp(k*r) -> charge distribution
             vec lll;
-            vec boxLen; //in Bohr
+            vec boxLen;    //in Bohr
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             double E_rspace;
