@@ -73,9 +73,6 @@ namespace votca { namespace xtp {
             vec boxLen;    //in Bohr
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
-            double E_rspace;
-            double E_kspace;
-            double E_erfc;
             GridBox _periodicGridBox;
             
             int _nExpantionCells; //expand basis and atoms to include atoms in this many periodic cells away
