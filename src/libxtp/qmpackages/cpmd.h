@@ -62,8 +62,6 @@ public:
    
    bool setMultipoleBackground( std::vector<ctp::PolarSeg*> multipoles){ return true; };
    
-      
-   std::string getScratchDir( ) { return _scratch_dir; }
    
    bool loadMatrices(Orbitals * _orbitals);
    
@@ -89,12 +87,8 @@ public:
    
 private:  
 
-    std::string                              _shell_file_name;
-    std::string                              _chk_file_name;
-    std::string                              _scratch_dir;
-    std::string                              _input_vxc_file_name;    
     std::string                              _cleanup;
-    std::string                              _vdWfooter;
+
     
     
     bool _rsrt;             //have data from previous run of CPMD we want to reuse

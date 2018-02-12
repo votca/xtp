@@ -46,7 +46,6 @@ namespace votca {
             _xyz_file_name = fileName + ".xyz";
             _input_file_name = fileName + ".inp";
             _log_file_name = fileName + ".log";
-            _shell_file_name = fileName + ".sh";
             _orb_file_name = "WFNCOEF" ;
 
             string key = "package";
@@ -61,12 +60,16 @@ namespace votca {
             _charge =           options->get(key + ".charge").as<int> ();
             _spin =             options->get(key + ".spin").as<int> ();
             _options =          options->get(key + ".options").as<string> ();
-            _memory =           options->get(key + ".memory").as<string> ();
-            _threads =          options->get(key + ".threads").as<int> ();
-            _scratch_dir =      options->get(key + ".scratch").as<string> ();
             _cleanup =          options->get(key + ".cleanup").as<string> ();
-
-
+            _threads =          options->get(key + ".threads").as<int> ();
+            if(_threads!=1){
+                CTP_LOG(ctp::logWARNING, *_pLog) << "CPMD: CPMD only supports "
+                        "MPI paralellization.\n"
+                        "If you want a parallel run of CPMD, set "
+                        " the executable name to: mpirun -np <# of threads> cpmd-mpi.x"
+                        "Setting number of threads to 1 and continuing." << flush;
+                _threads=1;
+            }
 
 
 
@@ -191,7 +194,6 @@ namespace votca {
             std::vector< ctp::Atom* > ::iterator ait;
             std::vector< ctp::Segment* >::iterator sit;
             std::string temp_suffix = "/id";
-            std::string scratch_dir_backup = _scratch_dir;
 
             ofstream _com_file;
 
@@ -569,7 +571,7 @@ namespace votca {
          * Runs the CPMD job.
          */
         bool Cpmd::Run(Orbitals* _orbitals) {
-            
+            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Run()" << flush;
             if(_optWF && _projectWF){ //CPMD needs to run twice, once for _optWF and once for _projectWF
                 //_optWF run:
                  CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: running [" << _executable << " " << _wfOpt_input_file_name << "]" << flush;
@@ -633,11 +635,95 @@ namespace votca {
         
 
         /**
-         * Cleans up after the CPMD job
+         * Cleans up after the CPMD job.
          */
         void Cpmd::CleanUp() {
 
-            //TODO: Yuriy, fill this in
+            // cleaning up the generated files
+            if (_cleanup.size() != 0) {
+
+                CTP_LOG(ctp::logDEBUG, *_pLog) << "Removing " << _cleanup << " files" << flush;
+                Tokenizer tok_cleanup(_cleanup, ", ");
+                std::vector <std::string> _cleanup_info;
+                tok_cleanup.ToVector(_cleanup_info);
+
+                std::vector<std::string> ::iterator it;
+
+                for (it = _cleanup_info.begin(); it != _cleanup_info.end(); ++it) {
+
+                    if (*it == "inp") {
+                        std::string file_name = _run_dir + "/" + _input_file_name;
+                        remove(file_name.c_str());
+                        if(_projectWF && _optWF)
+                        {
+                            remove(_wfOpt_input_file_name.c_str()); //also clean up the WF opt input
+                        }
+                    }
+
+                    if (*it == "log") {
+                        std::string file_name = _run_dir + "/" + _log_file_name;
+                        remove(file_name.c_str());
+                        if(_projectWF && _optWF)
+                        {
+                            remove(_wfOpt_log_file_name.c_str()); //also clean up the WF opt input
+                        }
+                    }
+
+                    if (*it == "chk") {
+                        std::string file_name = _run_dir + "/" + "LATEST";
+                        remove(file_name.c_str());
+                        //if user sets custom execution options for CPMD,
+                        //they may override this name and its not easy to track.
+                        file_name = _run_dir + "/" + "RESTART.1";
+                        remove(file_name.c_str());
+                    }
+
+                    if (*it == "fort.7") {
+                        std::string file_name = _run_dir + "/" + *it;
+                        remove(file_name.c_str());
+                        file_name = _run_dir + "/" + "OVERLAP";
+                        remove(file_name.c_str());
+                        file_name = _run_dir + "/" + "SPINDEN";
+                        remove(file_name.c_str());
+                        file_name = _run_dir + "/" + "WFNCOEF";
+                        remove(file_name.c_str());
+                        file_name = _run_dir + "/" + "CHOUT";
+                        remove(file_name.c_str());
+                    }
+
+                    if (*it == "basis") {
+                        std::vector<std::string> fileswithfileending;
+                        boost::filesystem::recursive_directory_iterator fit(_run_dir);
+                        boost::filesystem::recursive_directory_iterator endit;
+
+                        while (fit != endit) {
+                            if (boost::filesystem::is_regular_file(* fit) &&
+                                    fit->path().extension() == *it)
+                            {
+                                fileswithfileending.push_back(
+                                    fit->path().filename().string());
+                            }
+                            ++fit;
+                        }
+                        for (const auto filename : fileswithfileending) {
+                            std::string file_name = _run_dir + "/" + filename;
+                            remove(file_name.c_str());
+                        }
+                    }
+                    
+                    if (*it == "density") {
+                        std::string file_name = _run_dir + "/" + "DENSITY";
+                        remove(file_name.c_str());
+                    }
+                    
+                    if (*it == "elpot") {
+                        std::string file_name = _run_dir + "/" + "ELPOT";
+                        remove(file_name.c_str());
+                    }
+
+                }
+            }
+            return;
 
         }
 
