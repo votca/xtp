@@ -765,7 +765,7 @@ namespace votca {
 
         
         
-
+        ///Computes the dipole moment of a periodic density distribution
         double NumericalIntegrationPeriodic::CalcDipole_w_PBC(vec rvector) {
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
@@ -777,12 +777,11 @@ namespace votca {
             double z[3] = {0};
             vec dip(z);
             if (density_set) {
-                
                 const std::vector<double>& _densities = _periodicGridBox.getGridDensities();
                 const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
                 const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
                 
-                //                #pragma omp parallel for reduction(+:result)
+                //#pragma omp parallel for reduction(+:dip)
                 for (unsigned i = 0; i < _densities.size(); i++) {
                     double q = -_densities[i] * _weights[i]; //density is neg of charge
                     vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
@@ -797,7 +796,7 @@ namespace votca {
 
         
         
-        
+        // Prepares inverse space representation of density and the evaluation grid for Ewald Summation. Algorithm adapted from gromacs 4.6.
         void NumericalIntegrationPeriodic::PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK) {
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
@@ -810,23 +809,20 @@ namespace votca {
 
             //check if _periodicGridBox is already set up, if not fill it
             if(_periodicGridBox.size()==0){
+#ifdef DEBUG
                 cout<<"Filling up _periodicGridBox"<<endl<<flush;
+#endif
                 //fill the _periodicGridBox from all the smaller grid boxes
                 //The coordinates of all the gridpoints in the smaller boxes are sometimes outside the main periodic cell.
                 //So, need to wrap the positions of the densities into the first periodic cell.
                 for (unsigned i = 0; i < _grid_boxes.size(); i++) {
                     _periodicGridBox.appendBoxData(_grid_boxes[i]);
-//                    cout<<"grid box "<<i<< " size: "<<_grid_boxes[i].size() <<endl<<flush;
                 }
-                
                 //wrap
-                _periodicGridBox.wrapPositions(boxLen);
-                
-                
-                
+                _periodicGridBox.wrapPositions(boxLen); // wraping positions here works better than wraping when they are first created.
+#ifdef DEBUG                
                 cout<<"_periodicGridBox.size() due to electrons: "<<_periodicGridBox.size()<<endl<<flush;
-//                exit(0);
-
+#endif
                 //add nuclear charges to _periodicGridBox to avoid having to do periodic calculations on them separately;
                 Elements _elements;
                 for (std::vector< ctp::QMAtom* >::iterator it = _local_atomlist.begin(); it != _local_atomlist.end(); ++it) {
@@ -853,53 +849,32 @@ namespace votca {
                 totQ+=_densities[i];
                 totQweighted+=_densities[i]*_weights[i];
             }
+#ifdef DEBUG
             cout<<"totQ= "<<totQ<<"\ttotQweighted= "<<totQweighted<<endl<<flush;
-//            exit(0);
-            
+#endif            
 
             alpha = ext_alpha;
-            double fourasq = 4.0 * alpha*alpha;
 
             //this is going to be slow, as points we have density for are not on a periodic grid,
             //so will use simple Ewald summation, not any of the FFT methods.
 
             //find number of k-vectors in each lattice direction
-            double minSq = 1.0e15;
-            for (int i = 0; i < 3; i++) {
-                /*
-                //numK[i]=1+(boxLen[i]/Kspacing);
-                //if(numK[i]%2 == 0) numK[i]++; //keep it odd
-
-                //find maxK
-                int maxK;
-                double maxKsq;
-                double err;
-                double twoPiL=2.0*tools::conv::Pi/boxLen[i];
-                for(maxK=2; true; maxK++){
-                    maxKsq=maxK*maxK*twoPiL*twoPiL;
-                    err=std::exp(-maxKsq/fourasq)/maxKsq;
-                    if(err<1.0e-7){
-                            break;
-                    }
-                }
-
-                maxK=max(16, maxK);
-                
-                
-                numK[i]=maxK;
-                minSq=min(maxKsq, minSq);
-                 */
+            for (int i = 0; i < 3; i++)
+            {
                 numK[i] = nK;
             }
+            
+#ifdef DEBUG
             cout << "numK={" << numK[0] << ", " << numK[1] << ", " << numK[2] << "}" << endl<<flush;
-            cout << "rel err of k-sum ~ " << std::exp(-minSq / fourasq) / minSq << endl<<flush;
+#endif
 
 
             //allocate space for eikr
             eikr.resize(3); //3 dim
             for (unsigned m = 0; m < 3; m++) { //dimension
                 eikr[m].resize(numK[m]);
-//#pragma omp parallel for
+                
+                //#pragma omp parallel for
                 for (int k = 0; k < numK[m]; k++) { //k vectors
                     eikr[m][k].resize(_densities.size());    //density points
                 }
@@ -908,10 +883,12 @@ namespace votca {
                 lll[m] = 2.0 * boost::math::constants::pi<double>() / boxLen[m]; //units are 1/Bohr
             }
             //eikr indexing is [DIM][k][i][j]
+#ifdef DEBUG
             cout << "lll={" << lll[0] << ", " << lll[1] << ", " << lll[2] << "}" << endl<<flush;
-
+#endif
+            
             //based on gromacs 4.6 tabulate_eir()
-//#pragma omp parallel for
+            //#pragma omp parallel for
             for (unsigned i = 0; i < _densities.size(); i++) { //density points
                 vec r = _positions[i]; //grid is in Bohr, need it in reduced units (*2pi/box))
                 for (unsigned m = 0; (m < 3); m++) { //dimensions
@@ -936,53 +913,20 @@ namespace votca {
             //eikR indexing is [DIM][k][i]
 
             //based on gromacs 4.6 tabulate_eir()
-//#pragma omp parallel for
-            //printf("eval grid size = %d\n", eval_grid.getGrid().size());
-            //printf("lll_x = %f\n", lll[0]);
+            //#pragma omp parallel for
             for (unsigned i = 0; i < eval_grid.getGrid().size(); i++) {
                 vec R = eval_grid.getGrid()[i] * tools::conv::nm2bohr; //this is in Bohr, eval_grid is in nm
                 for (unsigned m = 0; (m < 3); m++) {
-//                    cout<<"m= "<<m<<endl<<flush;
                     eikR[m][0][i] = std::complex<double>(1, 0);
                     eikR[m][1][i] = std::complex<double>(cos(R[m] * lll[m]), sin(R[m] * lll[m]));
-                    //unsigned k=0;
-                    //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
-                    //k=1;
-                    //printf("%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     for (int k = 2; k < numK[m]; k++) {
                         eikR[m][k][i] = eikR[m][k - 1][i] * eikR[m][1][i];
-//                        printf("\t%d\t%f+i%f\t R_x=%f\n", k, eikR[m][k][i].real(),eikR[m][k][i].imag(), R[m]);
                     }//k
-                    //exit(0);
                 }//m
-//                exit(0);
             }//i
-//            exit(0);
         }
 
-//        void NumericalIntegrationPeriodic::FillMadelungGrid(vec box, int natomsonside) {
-//            //fill _Madelung_grid;
-//            _Madelung_grid.clear();
-//            std::vector< GridContainers::integration_grid > _Mad;
-//            boxLen = box;
-//            double a = boxLen[0]; //in bohr
-//            for (int l = 0; l < 2; l++) {
-//                for (int m = 0; m < 2; m++) {
-//                    for (int n = 0; n < 2; n++) {
-//                        GridContainers::integration_grid el;
-//                        el.grid_density = std::pow(-1.0, l + m + n);
-//                        el.grid_weight = 1.0;
-//                        el.grid_pos = vec(l, m, n) * (a / 2);
-//                        _Mad.push_back(el);
-//                        //cout<< "q= "<< el.grid_density << "\t @ " << el.grid_x << " " << el.grid_y << " " << el.grid_z << "\t box size:"<< boxLen[0] << endl;
-//                    }
-//                }
-//            }
-//            _Madelung_grid.push_back(_Mad);
-//            _grid = _Madelung_grid;
-//            //exit(0);
-//        }
-//
+        /// Integrates the potential from a periodic charge distribution using Ewald Summation. Algorithm adapted from gromacs 4.6.
         void NumericalIntegrationPeriodic::IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid) {
             if(boxLen*boxLen==0){
                 throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
@@ -1005,7 +949,7 @@ namespace votca {
                 const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
                 const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
                 
-                
+                //real space part
                 #pragma omp parallel for
                 for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
                     _ESPatGrid[p] = 0;
@@ -1014,7 +958,6 @@ namespace votca {
 
                             //charge at this point
                             double q = -_weights[i] * _densities[i]; //density is neg of charge
-                            //double q = -_Madelung_grid[i][j].grid_weight * _Madelung_grid[i][j].grid_density; //density is neg of charge
 
                             //r-space sum
                             vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
@@ -1030,16 +973,6 @@ namespace votca {
                             }
                     }//i
                 }//p
-                E_rspace = _ESPatGrid(0);
-                E_erfc = erfc(alpha);
-
-
-                //adapted from gromacs 4.6 do_ewald_pot()
-
-                //zero pot
-                //                for (unsigned p = 0; p < _ESPatGrid.size(); p++) {
-                //                    _ESPatGrid[p] = 0;
-                //                }
 
 
 
@@ -1057,14 +990,7 @@ namespace votca {
                 tab_R_xy.resize(eval_grid.getsize());
                 tab_R_xyz.resize(eval_grid.getsize());
 
-
-                //printf("factor = %f\n", factor);
-                //printf("scaleRecip = %f\n", scaleRecip);
-                //printf("vol = %f\n", vol);
-                //printf("actual box for Madelung: %f\t%f\t%f\n", boxLen[0], boxLen[1], boxLen[2]);
-                //exit(0);
-
-
+                //inverse space part
                 unsigned int lowiy = 0;
                 unsigned int lowiz = 1;
                 for (ix = 0; ix < numK[0]; ix++) {
@@ -1091,6 +1017,8 @@ namespace votca {
                                 tab_R_xy[n] = eikR[0][ix][n] * std::conj(eikR[1][-iy][n]);
                             }//n
                         }
+                        
+                        //#pragma omp parallel for
                         for (iz = lowiz; iz < numK[2]; iz++) {
                             mz = iz * lll[2];
                             m2 = mx * mx + my * my + mz * mz;
@@ -1119,49 +1047,21 @@ namespace votca {
                             for (unsigned i = 0; i < _densities.size(); i++) {
                                 cs += tab_qxyz[i].real();
                                 ss += tab_qxyz[i].imag();
-                                //                                    if(ix==4 && iy==4 && iz==4){
-                                //                                        printf("cs+= %f = %f * (%f+i%f) * (%f+i%f)\n", tab_qxyz[i][j].real(), -_grid[i][j].grid_weight * _grid[i][j].grid_density, tab_xy[i][j].real(), tab_xy[i][j].imag(), eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
-                                //                                        printf("\teikr=(%f+i%f) * (%f+i%f) * (%f+i%f)\n",eikr[0][ix][i][j].real(), eikr[0][ix][i][j].imag(),eikr[1][iy][i][j].real(), eikr[1][iy][i][j].imag(),eikr[2][iz][i][j].real(), eikr[2][iz][i][j].imag());
-                                //                                        printf("\tr=%f\t%f\t%f\n", _grid[i][j].grid_pos[0],_grid[i][j].grid_pos[1], _grid[i][j].grid_pos[2]);
-                                //                                        std::complex<double> krx = std::complex<double>(0, -_grid[i][j].grid_pos[0]*mz);
-                                //                                        krx=exp(krx);
-                                //                                        printf("\tkr_x=exp(-i%f)=%f+i%f\n",_grid[i][j].grid_pos[0]*mz, krx.real(), krx.imag());
-                                //                                    }
                             }
-                            //exit(0);
-                            //                            if(abs(cs)>1e-6 || abs(ss)>1e-6)
-                            //                            if(ix==4 && iy==4 && iz==4)
-                            //                                printf("k=[%d,%d,%d]\tcs=%f\t ss=%f \tak=%f=exp(%f * %f) / %f\n", ix, iy, iz, cs, ss, ak, m2, factor, m2);
                             for (unsigned int n = 0; n < eval_grid.getsize(); n++) {
                                 tmp = ak * (cs * tab_R_xyz[n].real() + ss * tab_R_xyz[n].imag());
-                                //                                if((abs(cs)>1e-6 || abs(ss)>1e-6) && n==0){
-                                //                                    printf("ak=%f=exp(%f * %f) / %f\n", ak, m2, factor, m2);
-                                //                                    printf("tab_R_xyz=%f+i%f= (%f+i%f) * (%f+i%f) * (%f+i%f)\n", tab_R_xyz[n].real(), tab_R_xyz[n].imag(), eikR[0][ix][n].real(), eikR[0][ix][n].imag(), eikR[1][abs(iy)][n].real(), eikR[1][abs(iy)][n].imag(), eikR[2][abs(iz)][n].real(), eikR[2][abs(iz)][n].imag());
-                                //                                    printf("\ttmp=%f=%f*(%f*%f + %f*%f)\t m2=%f\n", tmp, ak, cs, tab_R_xyz[n].real(), ss, tab_R_xyz[n].imag(), m2);
-                                //                                    printf("\tk=[%d,%d,%d] of [%d,%d,%d]\ttmp=%f \t sum=%f\n", ix, iy, iz, numK[0], numK[1], numK[2], tmp, k_pot(n));
-                                //                                }
                                 _ESPatGrid(n) += tmp * 2 * scaleRecip;
                                 k_pot(n) += tmp * 2 * scaleRecip;
-
                             }
-
                         }//iz
-                        lowiz = 1 - numK[2];
-                        //                        if(ix==1)
-                        //                            exit(0);                        
+                        lowiz = 1 - numK[2];                       
                     }//iy
                     lowiy = 1 - numK[1];
                 }//ix
-                //printf("%f=%f+%f\n", _ESPatGrid(0), E_rspace, k_pot(0));
-                //                exit(0);
-
 
             } else {
                 throw std::runtime_error("Density not calculated");
             }
-            E_kspace = k_pot(0);
-            //E_kspace = _ESPatGrid(1);
-            //_ESPatGrid(1)+=E_rspace;
         }
   
         
