@@ -781,14 +781,21 @@ namespace votca {
                 const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
                 const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
                 
-                //#pragma omp parallel for reduction(+:dip)
-                for (unsigned i = 0; i < _densities.size(); i++) {
-                    double q = -_densities[i] * _weights[i]; //density is neg of charge
-                    vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
-                    dip += dif * q;
-                }//i
-            }//density
-            else {
+                #pragma omp parallel
+                {
+                    vec thread_local_dip(0.0);  //avoids false sharing
+                    double q;
+                    #pragma omp for
+                    for (unsigned i = 0; i < _densities.size(); i++) {
+                        q = -_densities[i] * _weights[i]; //density is neg of charge
+                        vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
+                        thread_local_dip += dif * q;
+                    }//i
+                    
+                    #pragma omp critical
+                    dip += thread_local_dip;
+                }
+            } else {
                 throw std::runtime_error("Density not calculated");
             }
             return (abs(dip)); //in Bohr*elementary charge
