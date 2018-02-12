@@ -80,7 +80,7 @@ private:
     
     //periodicity parameters for bulkESP
     bool periodic;
-    double boxLen[3];
+    vec boxLen;
     double _maxBondScale;
     double _alpha;
     //int _maxKx,_maxKy,_maxKz;

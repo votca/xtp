@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef BULKESP_H
-#define BULKESP_H
+#ifndef BULKESP_XTP_H
+#define BULKESP_XTP_H
 
 #include <votca/xtp/espfit.h>
 #include <votca/xtp/orbitals.h>
@@ -50,9 +50,7 @@ namespace votca { namespace xtp {
 
             Bulkesp(ctp::Logger *log) : Espfit(log) {
                 periodic = false;
-                boxLen[0] = 0;
-                boxLen[1] = 0;
-                boxLen[2] = 0;
+                boxLen = vec(0.0);
 
                 dipolesLog = new std::ofstream();
             }
@@ -61,11 +59,9 @@ namespace votca { namespace xtp {
                 delete dipolesLog;
             }
 
-            void setBox(double b[3]) {
+            void setBox(vec b) {
                 periodic = true;
-                boxLen[0] = b[0];
-                boxLen[1] = b[1];
-                boxLen[2] = b[2];
+                boxLen=b;
             }
             
             void setEwald(double alpha, unsigned int maxK){
