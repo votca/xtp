@@ -41,9 +41,10 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
 
 
     // setting up grid
-    Grid _grid;
+    Grid _grid(true,false,false);
     _grid.setAtomlist(&_atomlist);
     _grid.setupCHELPgrid();
+    _grid.setCubegrid(true);
     //_grid.printGridtoxyzfile("grid.xyz");
     CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() <<  " Done setting up CHELPG grid with " << _grid.getsize() << " points " << endl;
 
@@ -91,6 +92,32 @@ void Espfit::Fit2Density(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<doub
     ub::vector<double> _NucPatGrid = EvalNuclearPotential(  _atomlist,  _grid );
     _ESPatGrid += _NucPatGrid;
     }
+    
+    /////////////////////
+    //store the potential in apolarsites
+    if(_grid.Sites().size()==_grid.getsize()){
+        for (unsigned int i = 0; i < _grid.getsize(); i++) {
+            _grid.Sites()[i]->setPhi(_ESPatGrid(i), 0.0);
+        }
+        //and save it to a .cube file
+        if (_grid.getCubegrid()) {
+            _grid.printgridtoCubefile("ESP.cube");
+        }
+
+        //output
+        //CHELPG grids aren't periodic and equally spaced,
+        //so can't output to .cube format.
+        //Create own format.
+        //note: just like printgridtoCubefile, this prints potential from apolar sites
+        _grid.writeIrregularGrid("ESP.grid", _atomlist, _ECP);
+    }
+    else
+    {
+        CTP_LOG(ctp::logDEBUG, *_log) <<"Espfit::Fit2Density: _grid has no/wrong number of apolarsites. Skipping output to .grid & .cube files." << flush;
+    }
+    ////////////////////
+    
+    
 
     std::vector< tools::vec > _fitcenters;
 
