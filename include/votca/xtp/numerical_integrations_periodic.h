@@ -31,8 +31,12 @@ namespace votca { namespace xtp {
     class NumericalIntegrationPeriodic: public NumericalIntegration {
         public: 
             
+            NumericalIntegrationPeriodic():NumericalIntegration(){
+                _expanded_basis=NULL;
+            };
+            
             ~NumericalIntegrationPeriodic(){
-                if(_expanded_basis!=_basis)
+                if(_expanded_basis!=_basis && _expanded_basis != NULL)
                     delete _expanded_basis;
                 for(const auto& imgatom:_toclean_atoms){
                     delete imgatom;
