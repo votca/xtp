@@ -448,6 +448,7 @@ namespace votca {
 
                     if (ite == elements.end()) {
                         elements.push_back(element_name);
+                        CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: writing Gaussian basis for element "<< element_name << flush;
 
                         Element* element = _bs.getElement(element_name);
                         
@@ -477,8 +478,9 @@ namespace votca {
                         
                         
                         //sort shells by L
-                        for (int L=0; L <= element->getLmax(); L++)
+                        for (int L=0; L <= Lmax; L++)
                         {
+                            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: sorting shells by L; L="<< L<<"; Lmax="<< Lmax << flush;
                             std::vector<Shell*> Lshells;
                             
                             int ndecays=0;
@@ -504,7 +506,7 @@ namespace votca {
                                     _com_file << L << " ";
                                 }
                             }
-                            
+                            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: writing decays; L="<< L<<"; Lmax="<< Lmax << flush;
                             if(!Lshells.empty()){   //only write things if there are shells with this L
                                 _el_file << "  Functions for l="<<L<<endl;
                                 _el_file << "  " << Lshells.size()<< " " << ndecays << endl;
