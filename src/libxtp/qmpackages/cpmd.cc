@@ -901,6 +901,9 @@ namespace votca {
                 _orbitals->setDFTbasis(_basisset_name);
             }
             
+            //fix order for version 5 of .orb files
+            ReorderOutput(_orbitals);
+            
             return true;
 
         }
