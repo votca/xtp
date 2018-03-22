@@ -23,6 +23,7 @@
 
 #include <votca/xtp/numerical_integrations.h>
 #include <votca/xtp/grid.h>
+#include <votca/xtp/orbitals.h>
 
 namespace votca { namespace xtp {
 
@@ -50,7 +51,7 @@ namespace votca { namespace xtp {
                 return;
             };
             
-            virtual double IntegrateDensity(const ub::matrix<double>& _density_matrix);
+            virtual double IntegrateDensity(const ub::matrix<double>& _density_matrix, Orbitals& _orbitals);
             void IntegratePotential_w_PBC_gromacs_like(Grid &eval_grid, ub::vector<double>& _ESPatGrid);
             double CalcDipole_w_PBC(vec rvector);
             void findAlpha(double Rc, double dtol);

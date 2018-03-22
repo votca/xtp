@@ -253,7 +253,7 @@ namespace votca {
          */
         ub::vector<double> Bulkesp::ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
                 std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<unsigned> _local_atomIndeces,
-                ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge) {
+                ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge, Orbitals& _orbitals) {
 
 
             ub::vector<double> _ESPatGrid = ub::zero_vector<double>(_grid.getsize());
@@ -269,7 +269,7 @@ namespace votca {
             //As long as basis functions are well supported and molecules are smaller than 0.5*boxLen along any axis, then
             //density integration should be accurate enough without making it explicitly periodic
             //double N = numway.IntegrateDensity_Molecule(_global_dmat, &_global_basis, _local_atomIndeces);
-            double N = numway.IntegrateDensity(_global_dmat);
+            double N = numway.IntegrateDensity(_global_dmat, _orbitals);
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculated Potentials at Numerical Grid, Number of electrons is " << N << flush;
 
             _do_round = false; //do not round net charge, we expect total charge to be non-int, as molecules can transfer some between themselves
@@ -535,7 +535,7 @@ namespace votca {
                 //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
                 double netcharge = 0.0;
                 ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
-                        _global_dmat, _basis, bs, gridsize, _grid, netcharge);
+                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
                 
 //                std::vector< unsigned > allIndeces;
 //                for (vector<ctp::QMAtom*>::iterator i = _atomlist.begin(); i != _atomlist.end(); ++i) {

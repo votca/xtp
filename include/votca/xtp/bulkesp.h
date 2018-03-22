@@ -74,7 +74,7 @@ namespace votca { namespace xtp {
 
             ub::vector<double> ComputeESP(std::vector< ctp::QMAtom* > & _global_atomlist,
                     std::vector< ctp::QMAtom* > & _local_atomlist, std::vector<unsigned> _local_atomIndeces,
-                    ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge);
+                    ub::matrix<double> &_global_dmat, AOBasis &_global_basis, BasisSet &bs, string gridsize, Grid &_grid, double &netcharge, Orbitals& _orbitals);
 
             void Evaluate(std::vector< ctp::QMAtom* >& _atomlist, ub::matrix<double> &_global_dmat, Orbitals& _orbitals, ub::matrix<double> _global_MO_Coeffs,
                     AOBasis &_basis, BasisSet &bs, string gridsize, double maxBondScale,

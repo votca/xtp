@@ -629,7 +629,7 @@ namespace votca {
         
         
         
-        double NumericalIntegrationPeriodic::IntegrateDensity(const ub::matrix<double>& _density_matrix){
+        double NumericalIntegrationPeriodic::IntegrateDensity(const ub::matrix<double>& _density_matrix, Orbitals& _orbitals){
             
             double N = 0;
             
@@ -743,6 +743,32 @@ namespace votca {
                     N_direct += _density_matrix(i,j)*AO(i,j);
                 }
             }
+            cout << "N="<<N<<"\tN_comp="<<N_comp<<"\tN_direct="<<N_direct<<endl<<endl<<flush;
+            
+            
+            ub::matrix<double> MO = _orbitals.MOCoefficients();
+            cout << "MO size:"<< MO.size1() <<" x "<< MO.size2() <<endl<<flush;
+            
+            cout << "MO linear independence:"<<endl;
+            ub::range all_basis_funcs = ub::range(0, MO.size2());
+            for (unsigned i = 0; i < MO.size1(); i++) {
+                ub::range ri = ub::range(i, i+1);
+                ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+                //ub::vector<double> Ci = ub::row(MO, i);
+                for (unsigned j = 0; j < MO.size1(); j++) {
+                    ub::range rj = ub::range(j, j+1);
+                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
+                    //ub::vector<double> Cj = ub::row(MO, j);
+                    ub::matrix<double> SCj = ub::prod(AO,Cj);
+//                    cout <<"Cj:\n"<< Cj <<"\n\n";
+//                    cout <<"SCj:\n"<< SCj <<"\n\n";
+//                    cout <<"Ci*SCj:\n"<<  <<"\n\n";
+                    cout << ub::prod(Ci,SCj) <<"\t";
+                }
+                cout<<endl<<endl;
+            }
+            cout<<endl<<flush;
+//            exit(0);
 #endif
             
             //check if the numbers of electrons are the same
