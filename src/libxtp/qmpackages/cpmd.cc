@@ -292,7 +292,7 @@ namespace votca {
             }
             
             //basis
-            if(_projectWF){
+            if(_projectWF && !_optWF){ //prevent initializing _optWF runs with this basis
                 _com_file << "\n&BASIS\n";
                 WriteBasisSet(segments, _com_file);
                 _com_file << "&END" << endl;
