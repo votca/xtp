@@ -32,6 +32,10 @@
 #include <sys/stat.h>
 #include <vector>
 
+#ifdef DEBUG
+#include <votca/xtp/aomatrix.h>
+#endif
+
 
 
 namespace votca {
@@ -901,8 +905,70 @@ namespace votca {
                 _orbitals->setDFTbasis(_basisset_name);
             }
             
+#ifdef DEBUG
+            {
+                //double check completeness of projection
+                cout << "\nMO linear independence diagonal components using non-reordered data from CPMD:"<<endl;
+                ub::matrix<double> MO = _orbitals->MOCoefficients();
+                const ub::matrix<double>& AO=_orbitals->AOOverlap();
+                ub::range all_basis_funcs = ub::range(0, MO.size2());
+                for (unsigned i = 0; i < MO.size1(); i++) {
+                    ub::range ri = ub::range(i, i+1);
+                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+                    unsigned j = i;
+                    ub::range rj = ub::range(j, j+1);
+                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
+                    ub::matrix<double> SCj = ub::prod(AO,Cj);
+                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
+                }
+                cout<<endl<<flush;
+            }
+#endif
+            
+            
             //fix order for version 5 of .orb files
             ReorderOutput(_orbitals);
+            
+#ifdef DEBUG            
+            {
+                //check if reordering is correct
+                cout << "\nMO linear independence diagonal components using reordered overlap and MO coefficients:"<<endl;
+                ub::matrix<double> MO = _orbitals->MOCoefficients();
+                const ub::matrix<double>& AO=_orbitals->AOOverlap();
+                ub::range all_basis_funcs = ub::range(0, MO.size2());
+                for (unsigned i = 0; i < MO.size1(); i++) {
+                    ub::range ri = ub::range(i, i+1);
+                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+                    ub::matrix<double> Cj = ub::trans(Ci);
+                    ub::matrix<double> SCj = ub::prod(AO,Cj);
+                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
+                }
+                cout<<endl<<flush;
+            }
+            {
+                cout << "\nMO linear independence diagonal components using reordered MO coefficients and non-periodic overlap matrix produced by VOTCA:"<<endl;
+                ub::matrix<double> MO = _orbitals->MOCoefficients();
+                
+                BasisSet bs;
+                bs.LoadBasisSet(_orbitals->getDFTbasis());
+                AOBasis basis;
+                basis.AOBasisFill(&bs, _orbitals->QMAtoms());
+                
+                AOOverlapPeriodic overlap;
+                overlap.setBox(tools::vec(10.0,10.0,10.0)); //in Bohr
+                overlap.Fill(basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
+                ub::matrix<double>& AO=overlap.Matrix();
+                ub::range all_basis_funcs = ub::range(0, MO.size2());
+                for (unsigned i = 0; i < MO.size1(); i++) {
+                    ub::range ri = ub::range(i, i+1);
+                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+                    ub::matrix<double> Cj = ub::trans(Ci);
+                    ub::matrix<double> SCj = ub::prod(AO,Cj);
+                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
+                }
+                cout<<endl<<flush;
+            }
+#endif
             
             return true;
 
