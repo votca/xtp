@@ -220,7 +220,6 @@
       <itemPath>../../src/libxtp/version.cc</itemPath>
       <itemPath>../../src/libxtp/version_nb.cc</itemPath>
     </logicalFolder>
-   
   </logicalFolder>
   <sourceRootList>
     <Elem>../../include</Elem>
@@ -266,6 +265,9 @@
             <pElem>/usr/include/libxml2</pElem>
             <pElem>/sw/linux/intel/XE13u2/mkl/include</pElem>
           </incDir>
+          <preprocessorList>
+            <Elem>DEBUG</Elem>
+          </preprocessorList>
         </ccTool>
         <archiverTool>
           <output>../../src/libxtp/libxtp.a</output>
