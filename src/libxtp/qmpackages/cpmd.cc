@@ -906,6 +906,7 @@ namespace votca {
             }
             
 #ifdef DEBUG
+            /*
             {
                 //double check completeness of projection
                 cout << "\nMO linear independence diagonal components using non-reordered data from CPMD:"<<endl;
@@ -923,14 +924,108 @@ namespace votca {
                 }
                 cout<<endl<<flush;
             }
+            */
 #endif
             
             
             //fix order for version 5 of .orb files
             ReorderOutput(_orbitals);
             
-#ifdef DEBUG            
+#ifdef DEBUG
+            
+
+            {   
+                ios::fmtflags f( cout.flags() );
+                
+                std::vector< ctp::QMAtom* > atoms = _orbitals->QMAtoms();
+                
+//                cout << "\n Is wrapping done right? Atom positions inside the basis (Angstroms):" <<endl;
+//                for (const auto a : atoms) {
+//                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
+//                }
+//                cout<<endl<<flush;
+//                cout.flags( f );
+                
+                
+                tools::vec box(10.0*tools::conv::bohr2ang);
+                for (const auto a : atoms) {
+                        tools::vec r(a->x, a->y, a->z);
+                        for(int k=0; k<3; k++)
+                        {
+                            r[k] = fmod(r[k], box[k]);
+                            if(r[k]<0) r[k] = box[k]+r[k];
+                        }
+                        a->x=r[0];
+                        a->y=r[1];
+                        a->z=r[2];
+                }
+                
+//                cout << "\n Wrapped positions inside the basis (Angstroms):" <<endl;
+//                for (const auto a : atoms) {
+//                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
+//                }
+//                cout<<endl<<flush;
+//                cout.flags( f );
+                
+
+                const ub::matrix<double>& CPMD_AO=_orbitals->AOOverlap();
+                
+                BasisSet bs;
+                bs.LoadBasisSet(_orbitals->getDFTbasis());
+                AOBasis basis;
+                basis.AOBasisFill(&bs, _orbitals->QMAtoms());
+                AOOverlap overlap;
+                overlap.Fill(basis);
+                ub::matrix<double>& VOTCA_AO=overlap.Matrix();
+
+                AOBasis p_basis;
+                cout << "\n Box (Angstroms):"<< box[0]<<"\t"<< box[1] <<"\t"<< box[2] <<endl;
+                p_basis.AOBasisFill(&bs, _orbitals->QMAtoms());
+                AOOverlapPeriodic p_overlap;
+                p_overlap.setBox(box*tools::conv::ang2bohr); //in Angstrom
+                p_overlap.Fill(p_basis);
+                const ub::matrix<double>& p_AO=p_overlap.Matrix();
+
+
+//                cout << std::fixed << setw(10) << setprecision(7);
+//                cout << "AO overlaps:"<<endl;
+//                cout << "   \t    \t\tO S  \t\t        \t|\t    \t\tO Pz \t\t        \t|\t    \t\tO Py \t\t        \t|\t    \t\tO Px \t\t        "<<endl;
+//                cout << "   \tCPMD\t\tVOTCA\t\tperiodic\t|\tCPMD\t\tVOTCA\t\tperiodic"<<endl;
+//                const std::vector<AOShell*> shells=basis.getShells();
+//                for (const auto s : shells) {
+//                    for (unsigned j = s->getStartIndex(); j < s->getStartIndex() + s->getNumFunc(); j++) {
+//                            cout << s->getName() <<" "<< s->getType()<< "\t" << CPMD_AO(0,j) <<"\t" << VOTCA_AO(0,j) <<"\t"<< p_AO(0,j) << "\t|\t"
+//                                    << CPMD_AO(4,j) <<"\t" << VOTCA_AO(4,j) <<"\t"<< p_AO(4,j) << "\t|\t"
+//                                    << CPMD_AO(5,j) <<"\t" << VOTCA_AO(5,j) <<"\t"<< p_AO(5,j) << "\t|\t"
+//                                    << CPMD_AO(6,j) <<"\t" << VOTCA_AO(6,j) <<"\t"<< p_AO(6,j) <<endl;
+//                    }
+//                }
+                
+                cout << std::fixed << setw(10) << setprecision(7);
+                cout << "MO linear independence:"<<endl;
+                cout << "   \tCPMD\t\tVOTCA\t\tperiodic"<<endl;
+                ub::matrix<double> MO = _orbitals->MOCoefficients();
+                ub::range all_basis_funcs = ub::range(0, MO.size2());
+                for (unsigned i = 0; i < MO.size1(); i++) {
+                    ub::range ri = ub::range(i, i+1);
+                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+                    ub::matrix<double> Cj = ub::trans(Ci);
+                    ub::matrix<double> CPMD_SCj = ub::prod(CPMD_AO,Cj);
+                    ub::matrix<double> VOTCA_SCj = ub::prod(VOTCA_AO,Cj);
+                    ub::matrix<double> p_SCj = ub::prod(p_AO,Cj);
+                    cout << "   \t" << ub::prod(Ci,CPMD_SCj)(0,0) <<"\t" << ub::prod(Ci,VOTCA_SCj)(0,0) <<"\t"<< ub::prod(Ci,p_SCj)(0,0) << endl;
+                }
+                
+                
+                cout<<endl<<flush;
+                cout.flags( f );
+            }
+            
+            
+            
+            /*
             {
+                ios::fmtflags f( cout.flags() );
                 //check if reordering is correct
                 cout << "\nMO linear independence diagonal components using reordered overlap and MO coefficients:"<<endl;
                 ub::matrix<double> MO = _orbitals->MOCoefficients();
@@ -944,8 +1039,20 @@ namespace votca {
                     cout << ub::prod(Ci,SCj)(0,0) <<"\t";
                 }
                 cout<<endl<<flush;
+                
+                cout << "\nReordered Overlap ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
+                //for (unsigned i = 0; i < AO.size1(); i++) {
+                for (unsigned i = 0; i < 1; i++) {
+                    for (unsigned j = 0; j < AO.size2(); j++) {
+                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
+                    }
+                    cout<<endl<<endl;
+                }
+                cout<<endl<<flush;
+                cout.flags( f );
             }
             {
+                ios::fmtflags f( cout.flags() );
                 cout << "\nMO linear independence diagonal components using reordered MO coefficients and non-periodic overlap matrix produced by VOTCA:"<<endl;
                 ub::matrix<double> MO = _orbitals->MOCoefficients();
                 
@@ -954,8 +1061,8 @@ namespace votca {
                 AOBasis basis;
                 basis.AOBasisFill(&bs, _orbitals->QMAtoms());
                 
-                AOOverlapPeriodic overlap;
-                overlap.setBox(tools::vec(10.0,10.0,10.0)); //in Bohr
+                AOOverlap overlap;
+                //overlap.setBox(tools::vec(10.0,10.0,10.0)); //in Bohr
                 overlap.Fill(basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
                 ub::matrix<double>& AO=overlap.Matrix();
                 ub::range all_basis_funcs = ub::range(0, MO.size2());
@@ -967,7 +1074,72 @@ namespace votca {
                     cout << ub::prod(Ci,SCj)(0,0) <<"\t";
                 }
                 cout<<endl<<flush;
+                
+                cout << "\nGenerated Overlap ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
+                //for (unsigned i = 0; i < AO.size1(); i++) {
+                for (unsigned i = 0; i < 1; i++) {
+                    for (unsigned j = 0; j < AO.size2(); j++) {
+                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
+                    }
+                    cout<<endl<<endl;
+                }
+                cout<<endl<<flush;
+                cout.flags( f );
+                
+                
+                cout << "\n Is wrapping done right? Atom positions inside the basis (Angstroms):" <<endl;
+                std::vector< ctp::QMAtom* > atoms = _orbitals->QMAtoms();
+                for (const auto a : atoms) {
+                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
+                }
+                cout<<endl<<flush;
+                cout.flags( f );
+                
+                
+                tools::vec box(10.0*tools::conv::bohr2ang);
+                cout << "\n Box (Angstroms):"<< box[0]<<"\t"<< box[1] <<"\t"<< box[2] <<endl;
+                cout << "\n Wrapped atom positions:" <<endl;
+                for (const auto a : atoms) {
+                    tools::vec r(a->x, a->y, a->z);
+                    for(int k=0; k<3; k++)
+                    {
+                        r[k] = fmod(r[k], box[k]);
+                        if(r[k]<0) r[k] = box[k]+r[k];
+                    }
+                    a->x=r[0];
+                    a->y=r[1];
+                    a->z=r[2];
+
+                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
+                }
+                cout<<endl<<flush;
+                cout.flags( f );
+                
+                
+                
+                cout << "\nGenerated Periodic Overlap from wrapped positions ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
+                AOBasis p_basis;
+                p_basis.AOBasisFill(&bs, _orbitals->QMAtoms());
+                AOOverlapPeriodic p_overlap;
+                p_overlap.setBox(box*tools::conv::ang2bohr); //in Angstrom
+                p_overlap.Fill(p_basis);
+                AO=p_overlap.Matrix();
+                for (unsigned i = 0; i < 1; i++) {
+                    for (unsigned j = 0; j < AO.size2(); j++) {
+                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
+                    }
+                    cout<<endl<<endl;
+                }
+                cout<<endl<<flush;
+                cout.flags( f );
+                
+
+
+                
             }
+            */
+            
+            
 #endif
             
             return true;

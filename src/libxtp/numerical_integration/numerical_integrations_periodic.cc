@@ -1114,6 +1114,7 @@ namespace votca {
             for(int k=0; k<3; k++)
             {
                 ret[k] = fmod(r[k], box[k]);
+                if(ret[k]<0) ret[k] = box[k]+ret[k];
             }
             return(ret);
         }

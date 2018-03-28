@@ -376,9 +376,9 @@ void AOBasis::addReorderShell(const string& start,const string& target,const str
                     order.push_back(_cur_pos + 3);
                     order.push_back(_cur_pos + 2);
                     order.push_back(_cur_pos + 1);
-				} else if(start == "cpmd"){ 
+		} else if(start == "cpmd"){ 
                     //cpmd order is -px -pz -py
-	            	order.push_back( _cur_pos + 3 );
+	            order.push_back( _cur_pos + 3 );
     	            order.push_back( _cur_pos + 1 );
     	            order.push_back( _cur_pos + 2 );
                 } else if (start == "votca") {//for usage with old orb files

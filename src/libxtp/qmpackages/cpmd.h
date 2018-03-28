@@ -71,6 +71,7 @@ public:
        _NUMAOR=NULL;
        VOTCA2CPMD_map=NULL;
        CPMD2VOTCA_map=NULL;
+       _box=tools::vec(0.0);
    }
    
    ~Cpmd(){
@@ -108,6 +109,7 @@ private:
     std::string _wfOpt_input_file_name; //name of the input file for WF optimization, only used when running CPMD twice
     std::string _wfOpt_log_file_name;
     std::string _custom_CPMD_controlls; //string to be added into the &CPMD section of the input file(s)
+    tools::vec _box;        //box dimensions in Bohr
     
     
     std::map<std::string,std::string> _ppFileNames;   //pseudopotential file names indexed by element name
