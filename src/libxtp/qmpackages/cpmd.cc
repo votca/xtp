@@ -499,7 +499,6 @@ namespace votca {
                         //sort shells by L
                         for (int L=0; L <= Lmax; L++)
                         {
-                            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: sorting shells by L; L="<< L<<"; Lmax="<< Lmax << flush;
                             std::vector<Shell*> Lshells;
                             
                             int ndecays=0;
@@ -525,7 +524,6 @@ namespace votca {
                                     _com_file << L << " ";
                                 }
                             }
-                            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: writing decays; L="<< L<<"; Lmax="<< Lmax << flush;
                             if(!Lshells.empty()){   //only write things if there are shells with this L
                                 _el_file << "  Functions for l="<<L<<endl;
                                 _el_file << "  " << Lshells.size()<< " " << ndecays << endl;
@@ -908,13 +906,6 @@ namespace votca {
                         }
                     }
                 }
-//                else
-//                {
-//                    cerr << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-//                    CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: _orbitals already has some atoms. Need to implement atom reordering for this case." << flush;
-//                    throw std::runtime_error("Unimplemented case");
-//                    return false;
-//                }
             }
             
             
@@ -930,29 +921,6 @@ namespace votca {
             else{
                 _orbitals->setDFTbasis(_basisset_name);
             }
-            
-#ifdef DEBUG
-            /*
-            {
-                //double check completeness of projection
-                cout << "\nMO linear independence diagonal components using non-reordered data from CPMD:"<<endl;
-                ub::matrix<double> MO = _orbitals->MOCoefficients();
-                const ub::matrix<double>& AO=_orbitals->AOOverlap();
-                ub::range all_basis_funcs = ub::range(0, MO.size2());
-                for (unsigned i = 0; i < MO.size1(); i++) {
-                    ub::range ri = ub::range(i, i+1);
-                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
-                    unsigned j = i;
-                    ub::range rj = ub::range(j, j+1);
-                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
-                    ub::matrix<double> SCj = ub::prod(AO,Cj);
-                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
-                }
-                cout<<endl<<flush;
-            }
-            */
-#endif
-            
             
             //fix order for version 5 of .orb files
             ReorderOutput(_orbitals);
@@ -986,24 +954,10 @@ namespace votca {
                 p_overlap.Fill(p_basis);
                 const ub::matrix<double>& p_AO=p_overlap.Matrix();
 
-
-//                cout << std::fixed << setw(10) << setprecision(7);
-//                cout << "AO overlaps:"<<endl;
-//                cout << "   \t    \t\tO S  \t\t        \t|\t    \t\tO Pz \t\t        \t|\t    \t\tO Py \t\t        \t|\t    \t\tO Px \t\t        "<<endl;
-//                cout << "   \tCPMD\t\tVOTCA\t\tperiodic\t|\tCPMD\t\tVOTCA\t\tperiodic"<<endl;
-//                const std::vector<AOShell*> shells=basis.getShells();
-//                for (const auto s : shells) {
-//                    for (unsigned j = s->getStartIndex(); j < s->getStartIndex() + s->getNumFunc(); j++) {
-//                            cout << s->getName() <<" "<< s->getType()<< "\t" << CPMD_AO(0,j) <<"\t" << VOTCA_AO(0,j) <<"\t"<< p_AO(0,j) << "\t|\t"
-//                                    << CPMD_AO(4,j) <<"\t" << VOTCA_AO(4,j) <<"\t"<< p_AO(4,j) << "\t|\t"
-//                                    << CPMD_AO(5,j) <<"\t" << VOTCA_AO(5,j) <<"\t"<< p_AO(5,j) << "\t|\t"
-//                                    << CPMD_AO(6,j) <<"\t" << VOTCA_AO(6,j) <<"\t"<< p_AO(6,j) <<endl;
-//                    }
-//                }
                 
                 cout << std::fixed << setw(10) << setprecision(7);
                 cout << "MO linear independence:"<<endl;
-                cout << "   \tCPMD\t\tVOTCA\t\tperiodic"<<endl;
+                cout << "   \tCPMD\t\tAOOverlap\tAOOverlapPeriodic"<<endl;
                 ub::matrix<double> MO = _orbitals->MOCoefficients();
                 ub::range all_basis_funcs = ub::range(0, MO.size2());
                 for (unsigned i = 0; i < MO.size1(); i++) {
