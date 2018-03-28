@@ -142,6 +142,21 @@ namespace votca {
             else
                 CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: no cell provided, assuming cube with side length of 20 Bohr." << flush;
             
+            //box for wrapping atomic coordinates
+            CTP_LOG(ctp::logDEBUG, *_pLog) << "Attempting to parse box dimensions"<< 
+                " cell definition. Assuming right-angled box & no ABSOLUTE."<<flush;
+            std::vector<std::string> cell_entries;
+            boost::algorithm::split(cell_entries, _cell, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
+            double a,sb,sc;
+            a = boost::lexical_cast<double>(cell_entries[0]);
+            sb= boost::lexical_cast<double>(cell_entries[1]);
+            sc= boost::lexical_cast<double>(cell_entries[2]);
+            _box=tools::vec(a, a*sb, a*sc);
+            CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: will wrap atoms to a "
+                <<_box[0]<<" "<<_box[1]<<" "<<_box[2]
+                <<" Bohr box when reading CPMD output."<<flush;
+            
+            
             //plane wave cutoff
             _pwCutoff=80.0;
             if (options->exists(key + ".pwcutoff")) {
@@ -185,9 +200,9 @@ namespace votca {
             if(_popAnalysis) _projectWF=true;
 
             if(_projectWF && _optWF){
+                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Splitting run into two steps." << endl << flush;
                 cerr << "Warning: Wavefunction optimization and projection onto atom-centric orbitals can not be done together.\nCPMD would crash.\n";
-                cerr << "Splitting into optimization on first run and projection/population analysis on second.\n";
-                CTP_LOG(ctp::logDEBUG, *_pLog) << "CPMD: Splitting run into two steps." << flush;
+                cerr << "Splitting into optimization on first run and projection/population analysis on second.";
             }
 
         }
@@ -812,6 +827,8 @@ namespace votca {
                  * atomic positions
                  */
                 if (_line.find("*** ATOMS ***") != std::string::npos) {
+                    CTP_LOG(ctp::logDEBUG, *_pLog) << "Wrapping atoms into periodic box of size "
+                        <<_box[0]<<" "<<_box[1]<<" "<<_box[2]<<" Bohr."<<endl<<flush;
                     getline(_input_file, _line);
                     do{
                         getline(_input_file, _line);
@@ -820,10 +837,19 @@ namespace votca {
                             break;
 
                         boost::algorithm::split(results, _line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-                        vec v;
+                        tools::vec v;
                         v.setX(boost::lexical_cast<double>(results[2]));
                         v.setY(boost::lexical_cast<double>(results[3]));
                         v.setZ(boost::lexical_cast<double>(results[4]));
+                        
+                        //wrap into box
+                        for(int k=0; k<3; k++)
+                        {
+                            v[k] = fmod(v[k], _box[k]);
+                            if(v[k]<0){
+                                v[k] = _box[k]+v[k];
+                            }
+                        }
                         v=v*tools::conv::bohr2ang;
                         positions.push_back(v); //store positions and core charges (later))
                     }while(true);
@@ -930,44 +956,19 @@ namespace votca {
             
             //fix order for version 5 of .orb files
             ReorderOutput(_orbitals);
-            
-#ifdef DEBUG
-            
 
-            {   
+
+#ifdef DEBUG
+            {
                 ios::fmtflags f( cout.flags() );
                 
-                std::vector< ctp::QMAtom* > atoms = _orbitals->QMAtoms();
-                
-//                cout << "\n Is wrapping done right? Atom positions inside the basis (Angstroms):" <<endl;
-//                for (const auto a : atoms) {
-//                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
-//                }
-//                cout<<endl<<flush;
-//                cout.flags( f );
-                
-                
-                tools::vec box(10.0*tools::conv::bohr2ang);
-                for (const auto a : atoms) {
-                        tools::vec r(a->x, a->y, a->z);
-                        for(int k=0; k<3; k++)
-                        {
-                            r[k] = fmod(r[k], box[k]);
-                            if(r[k]<0) r[k] = box[k]+r[k];
-                        }
-                        a->x=r[0];
-                        a->y=r[1];
-                        a->z=r[2];
+                cout << "\n Wrapped positions inside the basis (Angstroms):" <<endl;
+                for (const auto a : _orbitals->QMAtoms()) {
+                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
                 }
+                cout<<endl<<flush;
+                cout.flags( f );
                 
-//                cout << "\n Wrapped positions inside the basis (Angstroms):" <<endl;
-//                for (const auto a : atoms) {
-//                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
-//                }
-//                cout<<endl<<flush;
-//                cout.flags( f );
-                
-
                 const ub::matrix<double>& CPMD_AO=_orbitals->AOOverlap();
                 
                 BasisSet bs;
@@ -979,10 +980,9 @@ namespace votca {
                 ub::matrix<double>& VOTCA_AO=overlap.Matrix();
 
                 AOBasis p_basis;
-                cout << "\n Box (Angstroms):"<< box[0]<<"\t"<< box[1] <<"\t"<< box[2] <<endl;
                 p_basis.AOBasisFill(&bs, _orbitals->QMAtoms());
                 AOOverlapPeriodic p_overlap;
-                p_overlap.setBox(box*tools::conv::ang2bohr); //in Angstrom
+                p_overlap.setBox(_box); //box already in Bohr
                 p_overlap.Fill(p_basis);
                 const ub::matrix<double>& p_AO=p_overlap.Matrix();
 
@@ -1020,126 +1020,6 @@ namespace votca {
                 cout<<endl<<flush;
                 cout.flags( f );
             }
-            
-            
-            
-            /*
-            {
-                ios::fmtflags f( cout.flags() );
-                //check if reordering is correct
-                cout << "\nMO linear independence diagonal components using reordered overlap and MO coefficients:"<<endl;
-                ub::matrix<double> MO = _orbitals->MOCoefficients();
-                const ub::matrix<double>& AO=_orbitals->AOOverlap();
-                ub::range all_basis_funcs = ub::range(0, MO.size2());
-                for (unsigned i = 0; i < MO.size1(); i++) {
-                    ub::range ri = ub::range(i, i+1);
-                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
-                    ub::matrix<double> Cj = ub::trans(Ci);
-                    ub::matrix<double> SCj = ub::prod(AO,Cj);
-                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
-                }
-                cout<<endl<<flush;
-                
-                cout << "\nReordered Overlap ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
-                //for (unsigned i = 0; i < AO.size1(); i++) {
-                for (unsigned i = 0; i < 1; i++) {
-                    for (unsigned j = 0; j < AO.size2(); j++) {
-                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
-                    }
-                    cout<<endl<<endl;
-                }
-                cout<<endl<<flush;
-                cout.flags( f );
-            }
-            {
-                ios::fmtflags f( cout.flags() );
-                cout << "\nMO linear independence diagonal components using reordered MO coefficients and non-periodic overlap matrix produced by VOTCA:"<<endl;
-                ub::matrix<double> MO = _orbitals->MOCoefficients();
-                
-                BasisSet bs;
-                bs.LoadBasisSet(_orbitals->getDFTbasis());
-                AOBasis basis;
-                basis.AOBasisFill(&bs, _orbitals->QMAtoms());
-                
-                AOOverlap overlap;
-                //overlap.setBox(tools::vec(10.0,10.0,10.0)); //in Bohr
-                overlap.Fill(basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
-                ub::matrix<double>& AO=overlap.Matrix();
-                ub::range all_basis_funcs = ub::range(0, MO.size2());
-                for (unsigned i = 0; i < MO.size1(); i++) {
-                    ub::range ri = ub::range(i, i+1);
-                    ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
-                    ub::matrix<double> Cj = ub::trans(Ci);
-                    ub::matrix<double> SCj = ub::prod(AO,Cj);
-                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
-                }
-                cout<<endl<<flush;
-                
-                cout << "\nGenerated Overlap ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
-                //for (unsigned i = 0; i < AO.size1(); i++) {
-                for (unsigned i = 0; i < 1; i++) {
-                    for (unsigned j = 0; j < AO.size2(); j++) {
-                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
-                    }
-                    cout<<endl<<endl;
-                }
-                cout<<endl<<flush;
-                cout.flags( f );
-                
-                
-                cout << "\n Is wrapping done right? Atom positions inside the basis (Angstroms):" <<endl;
-                std::vector< ctp::QMAtom* > atoms = _orbitals->QMAtoms();
-                for (const auto a : atoms) {
-                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
-                }
-                cout<<endl<<flush;
-                cout.flags( f );
-                
-                
-                tools::vec box(10.0*tools::conv::bohr2ang);
-                cout << "\n Box (Angstroms):"<< box[0]<<"\t"<< box[1] <<"\t"<< box[2] <<endl;
-                cout << "\n Wrapped atom positions:" <<endl;
-                for (const auto a : atoms) {
-                    tools::vec r(a->x, a->y, a->z);
-                    for(int k=0; k<3; k++)
-                    {
-                        r[k] = fmod(r[k], box[k]);
-                        if(r[k]<0) r[k] = box[k]+r[k];
-                    }
-                    a->x=r[0];
-                    a->y=r[1];
-                    a->z=r[2];
-
-                    cout <<a->type<<"\t" << std::fixed << setw(6) << setprecision(3) << a->x <<"\t"<< a->y <<"\t"<< a->z <<"\t"<<endl;
-                }
-                cout<<endl<<flush;
-                cout.flags( f );
-                
-                
-                
-                cout << "\nGenerated Periodic Overlap from wrapped positions ("<<AO.size1()<<","<<AO.size2()<<")" <<endl;
-                AOBasis p_basis;
-                p_basis.AOBasisFill(&bs, _orbitals->QMAtoms());
-                AOOverlapPeriodic p_overlap;
-                p_overlap.setBox(box*tools::conv::ang2bohr); //in Angstrom
-                p_overlap.Fill(p_basis);
-                AO=p_overlap.Matrix();
-                for (unsigned i = 0; i < 1; i++) {
-                    for (unsigned j = 0; j < AO.size2(); j++) {
-                        cout << std::fixed << setw(6) << setprecision(3) << AO(i,j) <<" ";
-                    }
-                    cout<<endl<<endl;
-                }
-                cout<<endl<<flush;
-                cout.flags( f );
-                
-
-
-                
-            }
-            */
-            
-            
 #endif
             
             return true;
