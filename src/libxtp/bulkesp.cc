@@ -45,55 +45,33 @@ namespace votca {
 
             Elements _elements;
 
-            CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
-            
-            //find all the bonds;
-            for (vector<ctp::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i) {
-                for (vector<ctp::QMAtom*>::iterator j = i + 1; j != _atoms.end(); ++j) {
-                    tools::vec dif;
-                    if(periodic){
-//                        dif = WrapPoint((*i)->getPos(), boxLen) - WrapPoint((*j)->getPos(), boxLen); //Wrap points into periodic box
-                        dif = (*i)->getPos() - (*j)->getPos();
-                    }
-                    else{
-                        dif = (*i)->getPos() - (*j)->getPos();
-                    }
-
-                    //cout << "dif: " << dif[0] << " " << dif[1] << " " << dif[2] << "\t";
-                    for (int k = 0; k < 3; k++) {
-                        if (periodic && std::abs(dif[k]) > boxLen[k]*0.5){ //correct for for bond crossing PBC, if it exists
-                            if (dif[k] > 0){ //i.x>j.x
-                                dif[k] -= boxLen[k];
-                            }
-                            else{ //i.x<j.x
-                                dif[k] += boxLen[k];
-                            }
-                        }
-                    }
-                    //cout << "PBC corrected: " << dif[0] << " " << dif[1] << " " << dif[2] << "\n";
-                    vec v(dif);
-                    double distSq = v*v;
-
-                    double acceptDist = _elements.getCovRad((*i)->type) + _elements.getCovRad((*j)->type);
-//                    if(fabs((*i)->x - 14.905)<0.002 && fabs((*j)->x - 14.266)<0.002){
-//                    //if(fabs((*i)->x - 14.266)<0.002){
-//                        cout<< (*i)->type << "\t" << (*i)->x << " " << (*i)->y << " " << (*i)->z <<endl;
-//                        cout<< (*j)->type << "\t" << (*j)->x << " " << (*j)->y << " " << (*j)->z <<endl;
-//                        cout<<"\tacceptDist:"<<acceptDist<<"\tscale:"<<scale<< "\tdist:"<<sqrt(distSq)<<endl;
-//                        cout << "\tPBC corrected dist:" <<distSq <<endl<<flush;
-//                        //exit(0);
+//            CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): locating bonds.\n" << flush;
+//            
+//            //find all the bonds;
+//            for (vector<ctp::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i) {
+//                for (vector<ctp::QMAtom*>::iterator j = i + 1; j != _atoms.end(); ++j) {
+//                    tools::vec dif;
+//                    if(periodic){
+//                        //neds to be dist to nearest image
+//                        dif = WrapDisplacement((*i)->getPos(), (*j)->getPos() , boxLen);
 //                    }
-                    if (distSq <= acceptDist * acceptDist * scale * scale) {
-                        Bond nb; //bond goes
-                        nb.a = (*i); //from a
-                        nb.b = (*j); //to b
-                        nb.ba = v; //and has a (PBC corrected) vector ba (from b to a))
-                        nb.a_indx = i - _atoms.begin();
-                        nb.b_indx = j - _atoms.begin();
-                        bonds.push_back(nb);
-                    }
-                }
-            }
+//                    else{
+//                        dif = (*i)->getPos() - (*j)->getPos();
+//                    }         
+//                    vec v(dif);
+//                    double distSq = v*v;
+//                    double acceptDist = _elements.getCovRad((*i)->type) + _elements.getCovRad((*j)->type);
+//                    if (distSq <= acceptDist * acceptDist * scale * scale) {
+//                        Bond nb; //bond goes
+//                        nb.a = (*i); //from a
+//                        nb.b = (*j); //to b
+//                        nb.ba = v; //and has a (PBC corrected) vector ba (from b to a))
+//                        nb.a_indx = i - _atoms.begin();
+//                        nb.b_indx = j - _atoms.begin();
+//                        bonds.push_back(nb);
+//                    }
+//                }
+//            }
             CTP_LOG(ctp::logDEBUG, *_log) << " BreakIntoMolecules(): " << bonds.size() << " bonds found.\n" << flush;
             //        for (std::list<Bond>::iterator b = bonds.begin(); b != bonds.end(); ++b){
             //            CTP_LOG(ctp::logDEBUG, *_log) << b->a_indx <<" - "<<b->b_indx<<"\t"<<b->ba<<"\t"<<sqrt(b->ba*b->ba)<< flush;
@@ -122,7 +100,7 @@ namespace votca {
                     /* std::cout << *it; ... */
                     CTP_LOG(ctp::logDEBUG, *_log) << (*it)->type << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << endl << flush;
                 }
-                exit(-1);
+                //exit(-1);
                 
             }
 

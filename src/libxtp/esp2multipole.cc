@@ -21,6 +21,7 @@
 #include <votca/xtp/esp2multipole.h>
 #include <boost/format.hpp>
 #include <votca/xtp/orbitals.h>
+#include <votca/tools/constants.h>
 
 namespace votca { namespace xtp {
 
@@ -232,7 +233,7 @@ void Esp2multipole::Extractingcharges( Orbitals & _orbitals ){
             Bulkesp esp=Bulkesp(_log);
             esp.setUseECPs(_use_ecp);
             if(periodic){
-                esp.setBox(boxLen);
+                esp.setBox(boxLen*tools::conv::bohr2ang);
                 esp.setEwald(_alpha, _maxK);
             }
             esp.Evaluate(_Atomlist, DMAT_tot, _orbitals, _orbitals.MOCoefficients(), basis,bs,_gridsize, _maxBondScale, _state, _spin, _state_no); 

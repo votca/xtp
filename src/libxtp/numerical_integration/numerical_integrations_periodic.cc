@@ -62,11 +62,11 @@ namespace votca {
             
 #ifdef DEBUG
             //debug: list original shells
-            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-                AOShell* _store=(*_row);
-                vec orgpos = _store->getPos();
-                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
-            }
+//            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+//                AOShell* _store=(*_row);
+//                vec orgpos = _store->getPos();
+//                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
+//            }
 #endif
             
             
@@ -103,8 +103,8 @@ namespace votca {
                             vec imgpos = shift + (*ait)->getPos();
                             ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
 #ifdef DEBUG
-                            cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
-                            cout<<"\tfrom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<endl<<flush;
+                            //cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
+                            //cout<<"\tfrom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<endl<<flush;
 #endif
                             _expanded_atoms.push_back(imgatom);
                             _toclean_atoms.push_back(imgatom);
@@ -118,7 +118,7 @@ namespace votca {
 #ifdef DEBUG
             cout<<"adding original atoms to expanded atom list."<<endl<<flush;
             for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
-                cout<<"Original atom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<"\t ait="<<(*ait)<<endl<<flush;
+                //cout<<"Original atom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<"\t ait="<<(*ait)<<endl<<flush;
             }
 #endif
             for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
@@ -153,7 +153,7 @@ namespace votca {
                 throw std::runtime_error("_relevant_atomids not set. Run NumericalIntegrationPeriodic::SetRelevantAtomIds() first!"); 
             }
             
-            _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            _nExpantionCells=3; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
             _basis=global_basis;
             ExpandBasis(_atoms);
             
@@ -598,6 +598,9 @@ namespace votca {
              for ( auto & atomgrid : grid){
                 for ( auto & gridpoint : atomgrid){
                     //wrapping gridpoint positions creates wrong results
+                    //maybe not now that CPMD reading wraps atom positions
+                    gridpoint.grid_pos = WrapPoint(gridpoint.grid_pos, boxLen); //seems to fix the total density
+                    
                     tools::vec pos= gridpoint.grid_pos - min;
                     tools::vec index=pos/boxsize;
                     int i_x=int(index.getX());
@@ -713,6 +716,7 @@ namespace votca {
             //find the number of electrons directly from Density and Overlap matrices
             AOOverlapPeriodic overlap;
             overlap.setBox(boxLen); //in Bohr
+            cout<< "Setting up periodic overlap with box: "<<boxLen[0]<<"\t"<<boxLen[1]<<"\t"<<boxLen[2]<< " in Bohr."<<endl<<flush;
             //this is the global, non expanded basis
             overlap.Fill(*_basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
             //_density_matrix is the _global_dmat
@@ -736,7 +740,7 @@ namespace votca {
                 }
             }
 
-#ifdef DEBUG
+//#ifdef DEBUG
             double N_direct=0.0;
             for (unsigned i = 0; i < _density_matrix.size1(); i++) {
                 for (unsigned j = 0; j < _density_matrix.size2(); j++) {
@@ -773,7 +777,7 @@ namespace votca {
             cout<<endl<<flush;
             
             //exit(0);
-#endif
+//#endif
             
             //check if the numbers of electrons are the same
             if(std::abs(N-N_comp)>0.005){
