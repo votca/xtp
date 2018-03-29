@@ -99,7 +99,8 @@ namespace votca {
                         shift *= tools::conv::bohr2ang; //boxLen is in Bohr, AOBasis positions are in Bohr, QMAtom positions are in Angstroms
 
                         //loop over atoms (in Angstroms)
-                        for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) {
+                        //for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) { //why no image for first atom in molecule?
+                        for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
                             vec imgpos = shift + (*ait)->getPos();
                             ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
 #ifdef DEBUG
@@ -312,6 +313,34 @@ namespace votca {
 
                     } // spherical gridpoints
                 } // radial gridpoint
+                
+                
+                
+                //grid points need to be wrapped HERE, so rq has wrapped ones.
+//                tools::vec maxofset(0.0);
+//                tools::vec minofset(0.0);
+                for (auto& git: _atomgrid){
+//                    cout<<git.grid_pos[0]<<"\t"<<git.grid_pos[1]<<"\t"<<git.grid_pos[2]<<endl;
+//                    tools::vec dif=git.grid_pos-atomA_pos; //in Bohr
+//                    for(int k=0; k<3; k++){
+//                        maxofset[k]=max(maxofset[k], dif[k]);
+//                        minofset[k]=min(minofset[k], dif[k]);
+//                    }
+                    git.grid_pos = WrapPoint(git.grid_pos, boxLen); //seems to fix the total density
+                }
+//                cout<<flush;
+//                cout<<"around atom at: "<<atomA_pos[0]<<"\t"<<atomA_pos[1]<<"\t"<<atomA_pos[2]<<" Bohr"<<endl<<flush;
+//                cout<<"max ofset: "<<maxofset[0]<<"\t"<<maxofset[1]<<"\t"<<maxofset[2]<<" Bohr"<<endl<<flush;
+//                cout<<"min ofset: "<<minofset[0]<<"\t"<<minofset[1]<<"\t"<<minofset[2]<<" Bohr"<<endl<<flush;
+//                
+//                cout<<"All extended atoms (also in Bohr):"<<endl;
+//                for (auto& b: _expanded_atoms) {
+//                    tools::vec posb = b->getPos() * tools::conv::ang2bohr;
+//                    cout <<b->type <<"\t" <<posb[0]<<"\t"<<posb[1]<<"\t"<<posb[2]<<" Bohr"<<endl;
+//                }
+//                cout <<endl<<flush;
+////                exit(-1);
+                
                 
                 // get all distances from grid points to centers
                 std::vector< std::vector<double> > rq;
@@ -549,30 +578,30 @@ namespace votca {
             min = vec(0.0);
             max = boxLen;
 
-            //allow for grid positions that extend from atoms in the first periodic box into nearby boxes            
-            for ( unsigned i = 0 ; i < grid.size(); i++){
-                for ( unsigned j = 0 ; j < grid[i].size(); j++){
-                    const tools::vec& pos= grid[i][j].grid_pos;
-                    if(pos.getX()>max.getX()){
-                        max.x()=pos.getX();
-                    }
-                    else if(pos.getX()<min.getX()){
-                        min.x()=pos.getX();
-                    }
-                    if(pos.getY()>max.getY()){
-                        max.y()=pos.getY();
-                    }
-                    else if(pos.getY()<min.getY()){
-                        min.y()=pos.getY();
-                    }
-                    if(pos.getZ()>max.getZ()){
-                        max.z()=pos.getZ();
-                    }
-                    else if(pos.getZ()<min.getZ()){
-                        min.z()=pos.getZ();
-                        }
-                    }
-                }
+//            //allow for grid positions that extend from atoms in the first periodic box into nearby boxes            
+//            for ( unsigned i = 0 ; i < grid.size(); i++){
+//                for ( unsigned j = 0 ; j < grid[i].size(); j++){
+//                    const tools::vec& pos= grid[i][j].grid_pos;
+//                    if(pos.getX()>max.getX()){
+//                        max.x()=pos.getX();
+//                    }
+//                    else if(pos.getX()<min.getX()){
+//                        min.x()=pos.getX();
+//                    }
+//                    if(pos.getY()>max.getY()){
+//                        max.y()=pos.getY();
+//                    }
+//                    else if(pos.getY()<min.getY()){
+//                        min.y()=pos.getY();
+//                    }
+//                    if(pos.getZ()>max.getZ()){
+//                        max.z()=pos.getZ();
+//                    }
+//                    else if(pos.getZ()<min.getZ()){
+//                        min.z()=pos.getZ();
+//                        }
+//                    }
+//                }
             
             
             vec molextension=(max-min);
@@ -597,11 +626,8 @@ namespace votca {
             
              for ( auto & atomgrid : grid){
                 for ( auto & gridpoint : atomgrid){
-                    //wrapping gridpoint positions creates wrong results
-                    //maybe not now that CPMD reading wraps atom positions
-                    gridpoint.grid_pos = WrapPoint(gridpoint.grid_pos, boxLen); //seems to fix the total density
-                    
-                    tools::vec pos= gridpoint.grid_pos - min;
+                    //tools::vec pos= gridpoint.grid_pos - min;
+                    tools::vec pos= gridpoint.grid_pos;
                     tools::vec index=pos/boxsize;
                     int i_x=int(index.getX());
                     int i_y=int(index.getY());
@@ -740,7 +766,7 @@ namespace votca {
                 }
             }
 
-//#ifdef DEBUG
+#ifdef DEBUG
             double N_direct=0.0;
             for (unsigned i = 0; i < _density_matrix.size1(); i++) {
                 for (unsigned j = 0; j < _density_matrix.size2(); j++) {
@@ -777,7 +803,7 @@ namespace votca {
             cout<<endl<<flush;
             
             //exit(0);
-//#endif
+#endif
             
             //check if the numbers of electrons are the same
             if(std::abs(N-N_comp)>0.005){
@@ -859,8 +885,10 @@ namespace votca {
                 for (unsigned i = 0; i < _grid_boxes.size(); i++) {
                     _periodicGridBox.appendBoxData(_grid_boxes[i]);
                 }
+                
+                //already wrapped
                 //wrap
-                _periodicGridBox.wrapPositions(boxLen); // wraping positions here works better than wraping when they are first created.
+                //_periodicGridBox.wrapPositions(boxLen); // wraping positions here works better than wraping when they are first created.
 #ifdef DEBUG                
                 cout<<"_periodicGridBox.size() due to electrons: "<<_periodicGridBox.size()<<endl<<flush;
 #endif
