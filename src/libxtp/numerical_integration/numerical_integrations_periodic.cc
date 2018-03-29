@@ -186,16 +186,16 @@ namespace votca {
             int i = 1;
             
 #ifdef DEBUG
-            cout<<"\nPre Rij\n"<<flush;
-            for (ait = _atoms.begin(); ait != _atoms.end(); ++ait)
-            {
-                cout<<"ait="<<(*ait)<<endl<<flush;
-            }
-            cout<<"\n\n\n"<<flush;
-            for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit)
-            {
-                cout<<"bit="<<(*bit)<<endl<<flush;
-            }
+//            cout<<"\nPre Rij\n"<<flush;
+//            for (ait = _atoms.begin(); ait != _atoms.end(); ++ait)
+//            {
+//                cout<<"ait="<<(*ait)<<endl<<flush;
+//            }
+//            cout<<"\n\n\n"<<flush;
+//            for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit)
+//            {
+//                cout<<"bit="<<(*bit)<<endl<<flush;
+//            }
 #endif
 
             for (ait = _atoms.begin(); ait != _atoms.end(); ++ait)
@@ -238,7 +238,7 @@ namespace votca {
                 // for pruning of integration grid, get interval boundaries for this element
                 std::vector<double> PruningIntervals = _radialgrid.getPruningIntervals( name );
 #ifdef DEBUG
-                cout << " Pruning Intervals: " << PruningIntervals[0] << " " << PruningIntervals[1] << " " << PruningIntervals[2] << " " << PruningIntervals[3] << endl;
+                //cout << " Pruning Intervals: " << PruningIntervals[0] << " " << PruningIntervals[1] << " " << PruningIntervals[2] << " " << PruningIntervals[3] << endl;
 #endif
                 
                 int current_order = 0;
@@ -331,7 +331,7 @@ namespace votca {
                 } // centers
                 
 #ifdef DEBUG
-                cout << " Calculated all gridpoint distances to centers for atom " << i_atom << endl;
+                //cout << " Calculated all gridpoint distances to centers for atom " << i_atom << endl;
 #endif
                 
                 // find nearest-neighbor of this atom
@@ -399,11 +399,11 @@ namespace votca {
             
             SortGridpointsintoBlocks(grid);
 #ifdef DEBUG
-            cout<<"grid boxes after SortGridpointsintoBlocks: "<<_grid_boxes.size() <<endl<<flush;
+            //cout<<"grid boxes after SortGridpointsintoBlocks: "<<_grid_boxes.size() <<endl<<flush;
 #endif
             FindSignificantShells();
 #ifdef DEBUG
-            cout<<"grid boxes after FindSignificantShells: "<<_grid_boxes.size() <<endl<<flush;
+            //cout<<"grid boxes after FindSignificantShells: "<<_grid_boxes.size() <<endl<<flush;
 #endif
             
             
@@ -436,8 +436,8 @@ namespace votca {
             
             int nadded=(nexpandedcenters-ncenters); //number of centers added by expansion
 #ifdef DEBUG
-            cout<<"nadded= "<< nadded<< endl<< flush;
-            cout<<"igrid= "<< igrid<< endl<< flush;
+            //cout<<"nadded= "<< nadded<< endl<< flush;
+            //cout<<"igrid= "<< igrid<< endl<< flush;
 #endif
             
             const double tol_scr = 1e-10;
@@ -493,12 +493,12 @@ namespace votca {
                           tools::vec dist=shellpos-point;
                           double distsq=dist*dist;
 #ifdef DEBUG 
-                          cout<<"\tdist: "<<dist.getX()<<"\t"<<dist.getY()<<"\t"<<dist.getZ()<<"\tdistsq= "<<distsq<<"\tdecay= "<<decay<<endl<<flush;
+                          //cout<<"\tdist: "<<dist.getX()<<"\t"<<dist.getY()<<"\t"<<dist.getZ()<<"\tdistsq= "<<distsq<<"\tdecay= "<<decay<<endl<<flush;
 #endif
                           // if contribution is smaller than -ln(1e-10), add atom to list
                         if ( (decay * distsq) < 20.7 ){
 #ifdef DEBUG 
-                            cout<< "distsq= "<<distsq<<"\tdecay= "<<decay<<"\t(decay * distsq)="<<(decay * distsq)<<endl<<flush;
+                            //cout<< "distsq= "<<distsq<<"\tdecay= "<<decay<<"\t(decay * distsq)="<<(decay * distsq)<<endl<<flush;
 #endif
                             box.addShell(_store);
                             break;
