@@ -49,6 +49,8 @@ namespace votca {
             
             //find all the bonds;
             for (vector<ctp::QMAtom*>::iterator i = _atoms.begin(); i != _atoms.end(); ++i) {
+                tools::vec pi = (*i)->getPos();
+                cout << "Atom pos: "<< pi[0]<<" "<< pi[1]<<" "<< pi[2]<<endl;
                 for (vector<ctp::QMAtom*>::iterator j = i + 1; j != _atoms.end(); ++j) {
                     tools::vec dif;
                     if(periodic){
@@ -115,11 +117,11 @@ namespace votca {
                 m.atoms.push_back(last->a);
                 m.atomIndeces.push_back(last->a_indx);
                 leftover.atomIndeces.push_back(bonds.end()->a_indx);
-                if (periodic) {//unwrap system by moving b
-                    last->b->x = last->a->x - last->ba.getX();
-                    last->b->y = last->a->y - last->ba.getY();
-                    last->b->z = last->a->z - last->ba.getZ();
-                }
+//                if (periodic) {//unwrap system by moving b
+//                    last->b->x = last->a->x - last->ba.getX();
+//                    last->b->y = last->a->y - last->ba.getY();
+//                    last->b->z = last->a->z - last->ba.getZ();
+//                }
                 m.atoms.push_back(last->b);
                 m.atomIndeces.push_back(last->b_indx);
                 bonds.pop_back();
@@ -133,11 +135,11 @@ namespace votca {
                         if (find(m.atoms.begin(), m.atoms.end(), b->a) != m.atoms.end()) { //molecule contains a
                             //double check if molecule contains b already (don't double count atoms in circular molecules)
                             if (find(m.atoms.begin(), m.atoms.end(), b->b) == m.atoms.end()) { // contains a, but not b
-                                if (periodic) {//unwrap system by moving b
-                                    b->b->x = b->a->x - b->ba.getX();
-                                    b->b->y = b->a->y - b->ba.getY();
-                                    b->b->z = b->a->z - b->ba.getZ();
-                                }
+//                                if (periodic) {//unwrap system by moving b
+//                                    b->b->x = b->a->x - b->ba.getX();
+//                                    b->b->y = b->a->y - b->ba.getY();
+//                                    b->b->z = b->a->z - b->ba.getZ();
+//                                }
                                 m.atoms.push_back(b->b); //add b to molecule
                                 m.atomIndeces.push_back(b->b_indx);
                                 b = bonds.erase(b);
@@ -146,11 +148,11 @@ namespace votca {
                         } else if (find(m.atoms.begin(), m.atoms.end(), b->b) != m.atoms.end()) { //molecule contains b
                             //double check if molecule contains a already (don't double count atoms in circular molecules)
                             if (find(m.atoms.begin(), m.atoms.end(), b->a) == m.atoms.end()) { // contains b, but not a
-                                if (periodic) {//unwrap system by moving a
-                                    b->a->x = b->b->x + b->ba.getX();
-                                    b->a->y = b->b->y + b->ba.getY();
-                                    b->a->z = b->b->z + b->ba.getZ();
-                                }
+//                                if (periodic) {//unwrap system by moving a
+//                                    b->a->x = b->b->x + b->ba.getX();
+//                                    b->a->y = b->b->y + b->ba.getY();
+//                                    b->a->z = b->b->z + b->ba.getZ();
+//                                }
                                 m.atoms.push_back(b->a); //add a to molecule
                                 m.atomIndeces.push_back(b->a_indx);
                                 b = bonds.erase(b);

@@ -315,19 +315,18 @@ namespace votca {
                 } // radial gridpoint
                 
                 
-                
-                //grid points need to be wrapped HERE, so rq has wrapped ones.
+                //If wrapping, do it here, so rq has wrapped gridpoint coordinates.
+                //But wrapping gridpoints around already wrapped atoms causes the
+                //wrapped parts to fully overlap orbitals of image atoms.
+                //So DON'T WRAP GRIDPOINTS!
 //                tools::vec maxofset(0.0);
 //                tools::vec minofset(0.0);
-                for (auto& git: _atomgrid){
-//                    cout<<git.grid_pos[0]<<"\t"<<git.grid_pos[1]<<"\t"<<git.grid_pos[2]<<endl;
-//                    tools::vec dif=git.grid_pos-atomA_pos; //in Bohr
-//                    for(int k=0; k<3; k++){
-//                        maxofset[k]=max(maxofset[k], dif[k]);
-//                        minofset[k]=min(minofset[k], dif[k]);
-//                    }
-                    git.grid_pos = WrapPoint(git.grid_pos, boxLen); //seems to fix the total density
-                }
+//                for (auto& git: _atomgrid){
+////                    cout<<git.grid_pos[0]<<"\t"<<git.grid_pos[1]<<"\t"<<git.grid_pos[2]<<endl;
+//                    git.grid_pos = WrapPoint(git.grid_pos, boxLen); //seems to fix the total density
+//                }
+                
+                
 //                cout<<flush;
 //                cout<<"around atom at: "<<atomA_pos[0]<<"\t"<<atomA_pos[1]<<"\t"<<atomA_pos[2]<<" Bohr"<<endl<<flush;
 //                cout<<"max ofset: "<<maxofset[0]<<"\t"<<maxofset[1]<<"\t"<<maxofset[2]<<" Bohr"<<endl<<flush;
