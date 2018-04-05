@@ -63,7 +63,7 @@ namespace votca { namespace xtp {
             
         protected:
             virtual void FindSignificantShells();
-            virtual void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
+            //virtual void SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid);
             std::vector<double> SSWpartition(int igrid, int ncenters, int nexpandedcenters,  std::vector< std::vector<double> >& rq );
                     
         private:

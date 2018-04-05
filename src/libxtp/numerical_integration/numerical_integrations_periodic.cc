@@ -53,66 +53,68 @@ namespace votca {
             cout<<"boxLen = "<<boxLen<<" Bohr = "<<boxLen*tools::conv::bohr2ang << "A"<<endl<<flush;
 #endif            
             
-            if(_nExpantionCells==0){ //just one box, no need to expand
-                _expanded_basis=_basis;
-                _expanded_atoms=_atoms;
-                //no _toclean_atoms
-                return;
-            }
-            
-#ifdef DEBUG
-            //debug: list original shells
-//            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-//                AOShell* _store=(*_row);
-//                vec orgpos = _store->getPos();
-//                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
-//            }
-#endif
             
             
-            //need to expand
-#ifdef DEBUG
-            cout<<"\nexpanding atom list into nearby periodic boxes."<<endl<<flush;
-            cout<<"_nExpantionCells = "<< _nExpantionCells<<endl<<flush;
-#endif
             _expanded_basis =  new AOBasis;
             vector< ctp::QMAtom* > ::iterator ait;
-            for(int cx= -_nExpantionCells; cx<=_nExpantionCells; cx++){
-                for(int cy= -_nExpantionCells; cy<=_nExpantionCells; cy++){
-                    for(int cz= -_nExpantionCells; cz<=_nExpantionCells; cz++){
-                        if(cx==0 && cy==0 && cz==0){ //cell 0 0 0 needs to be at the very end of _expanded_atoms
-                            continue;
-                        }
-                        
-                        tools::vec shift = tools::vec(boxLen.getX()*cx, boxLen.getY()*cy, boxLen.getZ()*cz); //Bohr
-                        
-                        //loop over shells (in Bohr)
-                        for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-                            AOShell* _store=(*_row);
-                            vec imgpos = shift + _store->getPos();
-                            AOShell* newShell = _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
-                                                      _store->getStartIndex(), _store->getOffset(), imgpos, _store->getName(), _store->getIndex());
-                            newShell->copyGaussians(_store);
-                            newShell->CalcMinDecay();
-                        }                        
-                        
-                        shift *= tools::conv::bohr2ang; //boxLen is in Bohr, AOBasis positions are in Bohr, QMAtom positions are in Angstroms
+            if(_nExpantionCells>0){ //more than one box,  need to expand
 
-                        //loop over atoms (in Angstroms)
-                        //for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) { //why no image for first atom in molecule?
-                        for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
-                            vec imgpos = shift + (*ait)->getPos();
-                            ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
+
 #ifdef DEBUG
-                            //cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
-                            //cout<<"\tfrom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<endl<<flush;
+                //debug: list original shells
+    //            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+    //                AOShell* _store=(*_row);
+    //                vec orgpos = _store->getPos();
+    //                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
+    //            }
 #endif
-                            _expanded_atoms.push_back(imgatom);
-                            _toclean_atoms.push_back(imgatom);
+
+
+                //need to expand
+#ifdef DEBUG
+                cout<<"\nexpanding atom list into nearby periodic boxes."<<endl<<flush;
+                cout<<"_nExpantionCells = "<< _nExpantionCells<<endl<<flush;
+#endif
+
+                for(int cx= -_nExpantionCells; cx<=_nExpantionCells; cx++){
+                    for(int cy= -_nExpantionCells; cy<=_nExpantionCells; cy++){
+                        for(int cz= -_nExpantionCells; cz<=_nExpantionCells; cz++){
+                            if(cx==0 && cy==0 && cz==0){ //cell 0 0 0 needs to be at the very end of _expanded_atoms
+                                continue;
+                            }
+
+                            tools::vec shift = tools::vec(boxLen.getX()*cx, boxLen.getY()*cy, boxLen.getZ()*cz); //Bohr
+
+                            //loop over shells (in Bohr)
+                            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
+                                AOShell* _store=(*_row);
+                                vec imgpos = shift + _store->getPos();
+                                AOShell* newShell = _expanded_basis->addShell(_store->getType(), _store->getLmax(), _store->getLmin(), _store->getScale(), _store->getNumFunc(),
+                                                          _store->getStartIndex(), _store->getOffset(), imgpos, _store->getName(), _store->getIndex());
+                                newShell->copyGaussians(_store);
+                                newShell->CalcMinDecay();
+                            }                        
+
+                            shift *= tools::conv::bohr2ang; //boxLen is in Bohr, AOBasis positions are in Bohr, QMAtom positions are in Angstroms
+
+                            //loop over atoms (in Angstroms)
+                            //for (ait = _atoms.begin() + 1; ait != _atoms.end(); ++ait) { //why no image for first atom in molecule?
+                            for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
+                                vec imgpos = shift + (*ait)->getPos();
+                                ctp::QMAtom* imgatom = new ctp::QMAtom((*ait)->type, imgpos.getX(), imgpos.getY(), imgpos.getZ(), (*ait)->charge, (*ait)->from_environment);
+#ifdef DEBUG
+                                //cout<<"Image atom: "<<imgatom->type<<" at "<<imgatom->x<<" "<<imgatom->y<<" "<<imgatom->z<<" with charge "<<imgatom->charge<<endl<<flush;
+                                //cout<<"\tfrom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<endl<<flush;
+#endif
+                                _expanded_atoms.push_back(imgatom);
+                                _toclean_atoms.push_back(imgatom);
+                            }
                         }
                     }
                 }
-            }
+            
+            
+            }//more than one box in expansion
             
             //cell 0 0 0 needs to be at the very end of _expanded_atoms
             //atoms
@@ -534,7 +536,25 @@ namespace votca {
                       }
                 }
 #ifdef DEBUG 
-                cout<<"box "<<i<<"\t has "<<box.Shellsize()<<" shells \t and "<<box.size()<<" points."<<endl;
+//                if(i==2365){
+//                    cout<<"box "<<i<<"\t has "<<box.Shellsize()<<" shells \t and "<<box.size()<<" points."<<endl;
+//                    cout<<"the points are:\n";
+//                    for(auto& p:box.getGridPoints()){
+//                        cout<<"\t"<<p[0]<<"\t"<<p[1]<<"\t"<<p[2]<<endl;
+//                    }
+//                    cout<<"the shells are:\n";
+//                    for(auto& s:box.getShells()){
+//                        cout<<"\t"<<s->getName()<<"\t"<<s->getType()<<"\tmin decay:"<<s->getMinDecay()<<"\tpos:"<<s->getPos()[0]<<"\t"<<s->getPos()[1]<<"\t"<<s->getPos()[2]<<endl;
+//                    }
+//                }
+//                
+//                
+//                for(const auto& point : box.getGridPoints()){
+//                    if(point.getX()>9.75 && point.getX()<9.85 && point.getY()>4.95 && point.getY()<5.05 && point.getZ()>4.06 && point.getZ()<4.16){
+//                        cout<<"BOX "<<i<<" has acceptable points"<<endl;
+//                        break;
+//                    }
+//                }
 #endif
             }
             std::vector< GridBox > _grid_boxes_copy=_grid_boxes;
@@ -564,10 +584,10 @@ namespace votca {
             return;
         }
         
-        
+/*
         /// Sorts points into smaller boxes for easy parallelization during density integration.
         void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
-            const double boxsize=50;
+            const double boxsize=1.0;
             
             std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
             
@@ -577,36 +597,41 @@ namespace votca {
             min = vec(0.0);
             max = boxLen;
 
-//            //allow for grid positions that extend from atoms in the first periodic box into nearby boxes            
-//            for ( unsigned i = 0 ; i < grid.size(); i++){
-//                for ( unsigned j = 0 ; j < grid[i].size(); j++){
-//                    const tools::vec& pos= grid[i][j].grid_pos;
-//                    if(pos.getX()>max.getX()){
-//                        max.x()=pos.getX();
-//                    }
-//                    else if(pos.getX()<min.getX()){
-//                        min.x()=pos.getX();
-//                    }
-//                    if(pos.getY()>max.getY()){
-//                        max.y()=pos.getY();
-//                    }
-//                    else if(pos.getY()<min.getY()){
-//                        min.y()=pos.getY();
-//                    }
-//                    if(pos.getZ()>max.getZ()){
-//                        max.z()=pos.getZ();
-//                    }
-//                    else if(pos.getZ()<min.getZ()){
-//                        min.z()=pos.getZ();
-//                        }
-//                    }
-//                }
+            //Allow for grid positions that extend from atoms in the first periodic box into nearby periodic cells
+            //so that there are boxes for gridpoints outside the first periodic cell.
+            //These belonging to (wrapped) atoms near the periodic boundaries.
+            for ( unsigned i = 0 ; i < grid.size(); i++){
+                for ( unsigned j = 0 ; j < grid[i].size(); j++){
+                    const tools::vec& pos= grid[i][j].grid_pos;
+                    if(pos.getX()>max.getX()){
+                        max.x()=pos.getX();
+                    }
+                    else if(pos.getX()<min.getX()){
+                        min.x()=pos.getX();
+                    }
+                    if(pos.getY()>max.getY()){
+                        max.y()=pos.getY();
+                    }
+                    else if(pos.getY()<min.getY()){
+                        min.y()=pos.getY();
+                    }
+                    if(pos.getZ()>max.getZ()){
+                        max.z()=pos.getZ();
+                    }
+                    else if(pos.getZ()<min.getZ()){
+                        min.z()=pos.getZ();
+                        }
+                    }
+                }
             
             
             vec molextension=(max-min);
             vec numberofboxes=molextension/boxsize;
             vec roundednumofbox=vec(std::ceil(numberofboxes.getX()),std::ceil(numberofboxes.getY()),std::ceil(numberofboxes.getZ()));
-
+#ifdef DEBUG
+            cout<<"min:\t"<<min[0]<<"\t"<<min[1]<<"\t"<<min[2]<<endl<<flush;
+            cout<<"max:\t"<<max[0]<<"\t"<<max[1]<<"\t"<<max[2]<<endl<<flush;
+#endif
             
             //creating temparray
             for (unsigned i=0;i<unsigned(roundednumofbox.getX());i++){
@@ -622,11 +647,12 @@ namespace votca {
             }
                 boxes.push_back(boxes_yz);
             }
-            
+#ifdef DEBUG
+            cout<<"boxes size:\t"<<boxes.size()<<"\t"<<boxes[0].size()<<"\t"<<boxes[0][0].size()<<endl<<flush;
+#endif            
              for ( auto & atomgrid : grid){
                 for ( auto & gridpoint : atomgrid){
-                    //tools::vec pos= gridpoint.grid_pos - min;
-                    tools::vec pos= gridpoint.grid_pos;
+                    tools::vec pos = gridpoint.grid_pos - min;
                     tools::vec index=pos/boxsize;
                     int i_x=int(index.getX());
                     int i_y=int(index.getY());
@@ -653,7 +679,7 @@ namespace votca {
             
             return;
         }
-        
+*/                
         
         
         
@@ -692,7 +718,7 @@ namespace votca {
 
                     box.prepareDensity();
 #ifdef DEBUG
-                    cout<<endl<<"iterate over gridpoints"<<endl<<flush;
+                    //cout<<endl<<"iterate over gridpoints"<<endl<<flush;
 #endif
                     //iterate over gridpoints
                     for(unsigned p=0;p<box.size();p++){
@@ -804,6 +830,7 @@ namespace votca {
             //exit(0);
 #endif
             
+            cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
             //check if the numbers of electrons are the same
             if(std::abs(N-N_comp)>0.005){
                 cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
