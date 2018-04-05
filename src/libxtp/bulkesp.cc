@@ -133,9 +133,9 @@ namespace votca {
                 leftover.atomIndeces.push_back(bonds.end()->a_indx);
                 if (periodic) {//unwrap system by moving b
 //                    cout <<"last->b before:"<<"\t"<<last->b->x<<"\t"<<last->b->y<<"\t"<<last->b->z<<endl<<flush;
-                    last->b->x = last->a->x - last->ba.getX();
-                    last->b->y = last->a->y - last->ba.getY();
-                    last->b->z = last->a->z - last->ba.getZ();
+//                    last->b->x = last->a->x - last->ba.getX();
+//                    last->b->y = last->a->y - last->ba.getY();
+//                    last->b->z = last->a->z - last->ba.getZ();
 //                    cout <<"last->b after:"<<"\t"<<last->b->x<<"\t"<<last->b->y<<"\t"<<last->b->z<<endl<<flush;
                 }
                 m.atoms.push_back(last->b);
@@ -153,9 +153,9 @@ namespace votca {
                             if (find(m.atoms.begin(), m.atoms.end(), b->b) == m.atoms.end()) { // contains a, but not b
                                 if (periodic) {//unwrap system by moving b
 //                                    cout <<"b before:"<<"\t"<<b->b->x<<"\t"<<b->b->y<<"\t"<<b->b->z<<endl<<flush;
-                                    b->b->x = b->a->x - b->ba.getX();
-                                    b->b->y = b->a->y - b->ba.getY();
-                                    b->b->z = b->a->z - b->ba.getZ();
+//                                    b->b->x = b->a->x - b->ba.getX();
+//                                    b->b->y = b->a->y - b->ba.getY();
+//                                    b->b->z = b->a->z - b->ba.getZ();
 //                                    cout <<"b after:"<<"\t"<<b->b->x<<"\t"<<b->b->y<<"\t"<<b->b->z<<endl<<flush;
                                 }
                                 m.atoms.push_back(b->b); //add b to molecule
@@ -168,9 +168,9 @@ namespace votca {
                             if (find(m.atoms.begin(), m.atoms.end(), b->a) == m.atoms.end()) { // contains b, but not a
                                 if (periodic) {//unwrap system by moving a
 //                                    cout <<"a before:"<<"\t"<<b->a->x<<"\t"<<b->a->y<<"\t"<<b->a->z<<endl<<flush;
-                                    b->a->x = b->b->x + b->ba.getX();
-                                    b->a->y = b->b->y + b->ba.getY();
-                                    b->a->z = b->b->z + b->ba.getZ();
+//                                    b->a->x = b->b->x + b->ba.getX();
+//                                    b->a->y = b->b->y + b->ba.getY();
+//                                    b->a->z = b->b->z + b->ba.getZ();
 //                                    cout <<"a after:"<<"\t"<<b->a->x<<"\t"<<b->a->y<<"\t"<<b->a->z<<endl<<flush;
                                 }
                                 m.atoms.push_back(b->a); //add a to molecule
@@ -512,8 +512,8 @@ namespace votca {
 //                debug_indeces.push_back(m->atomIndeces[2]);
                 
                 //unwrapped basis built from unwrapped atom positions
-                AOBasis unwrapped_basis;
-                unwrapped_basis.AOBasisFill(&bs, _atomlist );
+//                AOBasis unwrapped_basis;
+//                unwrapped_basis.AOBasisFill(&bs, _atomlist );
                 
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
                     ctp::QMAtom* ap = *a;
@@ -554,10 +554,10 @@ namespace votca {
 
                 //calculate the ESP
                 double netcharge = 0.0;
-//                ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
-//                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
                 ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
-                        _global_dmat, unwrapped_basis, bs, gridsize, _grid, netcharge, _globalOrb);
+                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
+//                ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
+//                        _global_dmat, unwrapped_basis, bs, gridsize, _grid, netcharge, _globalOrb);
 //                ub::vector<double> ESP = ComputeESP(_atomlist, debug_mol, debug_indeces,
 //                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
                 
