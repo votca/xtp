@@ -55,7 +55,19 @@ namespace votca {
                     tools::vec dif;
                     if(periodic){
                         //neds to be dist to nearest image
-                        dif = WrapDisplacement((*i)->getPos(), (*j)->getPos() , boxLen);
+                        //dif = WrapDisplacement((*i)->getPos(), (*j)->getPos() , boxLen); //wrong, needs to preserve sign of displacement
+                        dif = (*i)->getPos()-(*j)->getPos();
+                        for(int k=0; k<3; k++)
+                        {
+                            dif[k] = fmod(dif[k], boxLen[k]); //if dif <0, then fmod<0 
+                            if(dif[k] > boxLen[k]*0.5){
+                                dif[k] = dif[k]-boxLen[k];
+                            }
+                            else if(-dif[k] > boxLen[k]*0.5){
+                                dif[k] = dif[k]+boxLen[k];
+                            }
+
+                        }
                     }
                     else{
                         dif = (*i)->getPos() - (*j)->getPos();
@@ -71,6 +83,8 @@ namespace votca {
                         nb.a_indx = i - _atoms.begin();
                         nb.b_indx = j - _atoms.begin();
                         bonds.push_back(nb);
+//                        cout <<"bond:"<<"\t"<<nb.a->x<<"\t"<<nb.a->y<<"\t"<<nb.a->z<<"\tto\t"<< nb.b->x<<"\t"<<nb.b->y<<"\t"<<nb.b->z <<endl<<flush;
+//                        cout <<"bond dif:"<<"\t"<<nb.ba[0]<<"\t"<<nb.ba[1]<<"\t"<<nb.ba[2]<<endl<<flush;
                     }
                 }
             }
@@ -117,11 +131,13 @@ namespace votca {
                 m.atoms.push_back(last->a);
                 m.atomIndeces.push_back(last->a_indx);
                 leftover.atomIndeces.push_back(bonds.end()->a_indx);
-//                if (periodic) {//unwrap system by moving b
-//                    last->b->x = last->a->x - last->ba.getX();
-//                    last->b->y = last->a->y - last->ba.getY();
-//                    last->b->z = last->a->z - last->ba.getZ();
-//                }
+                if (periodic) {//unwrap system by moving b
+//                    cout <<"last->b before:"<<"\t"<<last->b->x<<"\t"<<last->b->y<<"\t"<<last->b->z<<endl<<flush;
+                    last->b->x = last->a->x - last->ba.getX();
+                    last->b->y = last->a->y - last->ba.getY();
+                    last->b->z = last->a->z - last->ba.getZ();
+//                    cout <<"last->b after:"<<"\t"<<last->b->x<<"\t"<<last->b->y<<"\t"<<last->b->z<<endl<<flush;
+                }
                 m.atoms.push_back(last->b);
                 m.atomIndeces.push_back(last->b_indx);
                 bonds.pop_back();
@@ -135,11 +151,13 @@ namespace votca {
                         if (find(m.atoms.begin(), m.atoms.end(), b->a) != m.atoms.end()) { //molecule contains a
                             //double check if molecule contains b already (don't double count atoms in circular molecules)
                             if (find(m.atoms.begin(), m.atoms.end(), b->b) == m.atoms.end()) { // contains a, but not b
-//                                if (periodic) {//unwrap system by moving b
-//                                    b->b->x = b->a->x - b->ba.getX();
-//                                    b->b->y = b->a->y - b->ba.getY();
-//                                    b->b->z = b->a->z - b->ba.getZ();
-//                                }
+                                if (periodic) {//unwrap system by moving b
+//                                    cout <<"b before:"<<"\t"<<b->b->x<<"\t"<<b->b->y<<"\t"<<b->b->z<<endl<<flush;
+                                    b->b->x = b->a->x - b->ba.getX();
+                                    b->b->y = b->a->y - b->ba.getY();
+                                    b->b->z = b->a->z - b->ba.getZ();
+//                                    cout <<"b after:"<<"\t"<<b->b->x<<"\t"<<b->b->y<<"\t"<<b->b->z<<endl<<flush;
+                                }
                                 m.atoms.push_back(b->b); //add b to molecule
                                 m.atomIndeces.push_back(b->b_indx);
                                 b = bonds.erase(b);
@@ -148,11 +166,13 @@ namespace votca {
                         } else if (find(m.atoms.begin(), m.atoms.end(), b->b) != m.atoms.end()) { //molecule contains b
                             //double check if molecule contains a already (don't double count atoms in circular molecules)
                             if (find(m.atoms.begin(), m.atoms.end(), b->a) == m.atoms.end()) { // contains b, but not a
-//                                if (periodic) {//unwrap system by moving a
-//                                    b->a->x = b->b->x + b->ba.getX();
-//                                    b->a->y = b->b->y + b->ba.getY();
-//                                    b->a->z = b->b->z + b->ba.getZ();
-//                                }
+                                if (periodic) {//unwrap system by moving a
+//                                    cout <<"a before:"<<"\t"<<b->a->x<<"\t"<<b->a->y<<"\t"<<b->a->z<<endl<<flush;
+                                    b->a->x = b->b->x + b->ba.getX();
+                                    b->a->y = b->b->y + b->ba.getY();
+                                    b->a->z = b->b->z + b->ba.getZ();
+//                                    cout <<"a after:"<<"\t"<<b->a->x<<"\t"<<b->a->y<<"\t"<<b->a->z<<endl<<flush;
+                                }
                                 m.atoms.push_back(b->a); //add a to molecule
                                 m.atomIndeces.push_back(b->a_indx);
                                 b = bonds.erase(b);
@@ -482,11 +502,30 @@ namespace votca {
                 CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
 
                 //verify atomic coordinates and units
+//                std::vector<ctp::QMAtom*> debug_mol;
+//                std::vector< unsigned > debug_indeces;
+//                debug_mol.push_back(m->atoms[0]);
+//                debug_mol.push_back(m->atoms[1]);
+//                debug_mol.push_back(m->atoms[2]);
+//                debug_indeces.push_back(m->atomIndeces[0]);
+//                debug_indeces.push_back(m->atomIndeces[1]);
+//                debug_indeces.push_back(m->atomIndeces[2]);
+                
+                //unwrapped basis built from unwrapped atom positions
+                AOBasis unwrapped_basis;
+                unwrapped_basis.AOBasisFill(&bs, _atomlist );
+                
                 for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
                     ctp::QMAtom* ap = *a;
-                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << "A" << flush;
+                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x << '\t' << ap->y << '\t' << ap->z << "\tAngstrom" << flush;
                 }
-                CTP_LOG(ctp::logDEBUG, *_log) << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << "A" << flush;
+                CTP_LOG(ctp::logDEBUG, *_log) << "box: " << boxLen[0] << '\t' << boxLen[1] << '\t'<< boxLen[2] << "\tAngstrom"<<endl<<endl << flush;
+                
+                for (std::vector<ctp::QMAtom*>::iterator a = m->atoms.begin(); a != m->atoms.end(); ++a) {
+                    ctp::QMAtom* ap = *a;
+                    CTP_LOG(ctp::logDEBUG, *_log) << ap->type << '\t' << ap->x*tools::conv::ang2bohr << '\t' << ap->y*tools::conv::ang2bohr << '\t' << ap->z*tools::conv::ang2bohr << "\tBohr" << flush;
+                }
+                CTP_LOG(ctp::logDEBUG, *_log) << "box: " << boxLen[0]*tools::conv::ang2bohr << '\t' << boxLen[1]*tools::conv::ang2bohr << '\t'<< boxLen[2]*tools::conv::ang2bohr << "\tBohr" << flush;
 
                 //set up grid
                 Grid _grid(true, false, false); //create polarsites, so we can output grid to .cube file
@@ -505,30 +544,27 @@ namespace votca {
                 //test: set inner cutoff to 0 and calculate all potentials near nuclei
 //                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
 //                _grid.setSpacing(0.3); //defaults to 0.3 A
+                
+                
                 _grid.setAtomlist(&m->atoms);
-//                _grid.setAtomlist(&_atomlist);
+//                _grid.setAtomlist(&debug_mol);
                 _grid.setupgrid();
                 _grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP
-                //ub::vector<double> ESP=ComputeESP(m->atoms, _m_dmat, _m_ovmat, _m_basis, bs, gridsize, _grid);
                 double netcharge = 0.0;
+//                ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
+//                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
                 ub::vector<double> ESP = ComputeESP(_atomlist, m->atoms, m->atomIndeces,
-                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
+                        _global_dmat, unwrapped_basis, bs, gridsize, _grid, netcharge, _globalOrb);
+//                ub::vector<double> ESP = ComputeESP(_atomlist, debug_mol, debug_indeces,
+//                        _global_dmat, _basis, bs, gridsize, _grid, netcharge, _globalOrb);
                 
-//                std::vector< unsigned > allIndeces;
-//                for (vector<ctp::QMAtom*>::iterator i = _atomlist.begin(); i != _atomlist.end(); ++i) {
-//                    allIndeces.push_back(i - _atomlist.begin());
-//                }
-//                ub::vector<double> ESP = ComputeESP(_atomlist, _atomlist, allIndeces,
-//                        _global_dmat, _basis, bs, gridsize, _grid, netcharge);
+
 
                 //store the potential in apolarsites
                 for (unsigned int i = 0; i < _grid.getsize(); i++) {
-                    //                ub::vector<double> point = _grid.getGrid()[i];
-                    //                APolarSite* site = _grid.Sites()[i];
-                    //                site->setPhi(ESP(i), 0.0);
                     _grid.Sites()[i]->setPhi(ESP(i), 0.0);
                 }
                 
