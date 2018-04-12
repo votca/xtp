@@ -138,6 +138,18 @@ namespace votca {
                 central_cell_shells.push_back(newShell);
             }
             
+
+//#ifdef DEBUG
+//            cout<<"Expanded Basis:"<<endl<<flush;
+//            unsigned int lastInd=-1;
+//            for (auto& shell:_expanded_basis->getShells()) {
+//                if(shell->getIndex() != lastInd)
+//                    cout<<shell->getName()<<" "<<shell->getType()<<" "<<shell->getPos()<< " index:"<<shell->getIndex()<<endl<<flush;
+//                lastInd = shell->getIndex();
+//            }
+//#endif            
+            
+            
             return;
         }
 
@@ -156,7 +168,7 @@ namespace votca {
                 throw std::runtime_error("_relevant_atomids not set. Run NumericalIntegrationPeriodic::SetRelevantAtomIds() first!"); 
             }
             
-            _nExpantionCells=3; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
             _basis=global_basis;
             ExpandBasis(_atoms);
             
@@ -364,29 +376,51 @@ namespace votca {
                 //cout << " Calculated all gridpoint distances to centers for atom " << i_atom << endl;
 #endif
                 
-                // find nearest-neighbor of this atom
-                double distNN = 1e10;
-                vector< ctp::QMAtom* > ::iterator NNit;
-               
-                // now check all other centers
-                int i_b =0;
-                for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit) {
-                    if ((*bit) != (*ait)) {
-                        // get center coordinates
-                        const vec atomB_pos=(*bit)->getPos() * tools::conv::ang2bohr;
-                        double distSQ = (atomA_pos-atomB_pos)*(atomA_pos-atomB_pos);
-
-                        // update NN distance and iterator
-                        if ( distSQ < distNN )
-                        {
-                            distNN = distSQ;
-                            NNit = bit;          
-                        }
-
-                    } // if ( ait != bit) 
-                    i_b++;
-                }// bit centers
+//                // find nearest-neighbor of this atom
+//                double distNN = 1e10;
+//                vector< ctp::QMAtom* > ::iterator NNit;
+//               
+//                // now check all other centers
+//                int i_b =0;
+//                for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit) {
+//                    if ((*bit) != (*ait)) {
+//                        // get center coordinates
+//                        const vec atomB_pos=(*bit)->getPos() * tools::conv::ang2bohr;
+//                        double distSQ = (atomA_pos-atomB_pos)*(atomA_pos-atomB_pos);
+//
+//                        // update NN distance and iterator
+//                        if ( distSQ < distNN )
+//                        {
+//                            distNN = distSQ;
+//                            NNit = bit;          
+//                        }
+//
+//                    } // if ( ait != bit) 
+//                    i_b++;
+//                }// bit centers
                 
+                
+                /*
+                 * Periodic weights:
+                 * Points are around original atoms in the first periodic cell.
+                 * Points aren't wrapped.
+                 * Only the atom whose points these are can receive weights.
+                 * 
+                 * 
+                 * Procedure:
+                 *  for atom_i:
+                 *      for atom_j:
+                 *          for atom_j_image:
+                 *              p[atom_i] *= p(rq(atom_i,point), rq(atom_j_image, point), Rij(atom_i, atom_j_image))
+                 * 
+                 * The case of atom_i atom_i_image should also be counted, because
+                 * the image contribution goes to the weight of a different point on atom_i
+                 * 
+                 * Variables:
+                 * p[expanded atoms]
+                 * rq[expanded atoms][point] not wrapped
+                 * Rij[original atoms*expanded atoms/2] not wrapped
+                 */
                 for ( unsigned i_grid = 0; i_grid < _atomgrid.size() ; i_grid++){
                     // call some shit called grid_ssw0 in NWChem
                     std::vector<double> _p = SSWpartition( i_grid, _atoms.size(), _expanded_atoms.size(), rq);
@@ -693,6 +727,10 @@ namespace votca {
             #endif
                
             std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
+            
+            
+            
+//            ub::matrix<double> num_AO_bigmat = ub::zero_matrix<double>(_density_matrix.size1(), _density_matrix.size2());
                
             
             
@@ -753,6 +791,20 @@ namespace votca {
                         double rho = pr(0,0);
                         box.addDensity(rho);
                         N_box+=rho*weights[p];
+                        
+//                        ub::matrix<double> local_AO = ub::prod(tr, ao ) * weights[p];
+//                        #pragma omp critical
+//                        {
+//                            box.AddtoBigMatrix(num_AO_bigmat, local_AO);
+//                        }
+                        
+                        
+//                        tools::vec targetP1(2.8288,-2.36288,0.0259489);
+//                        tools::vec targetP2(1.96248,3.83502,4.39304);
+//                        if(abs(points[p]-targetP1)<0.2 || abs(points[p]-targetP2)<0.1){
+//                            cout<<points[p][0]<<" "<<points[p][1]<<" "<<points[p][2]<<" rho="<<rho<<" w="<<weights[p]<<endl<<flush;
+//                        }
+                        
                     }
                     N_thread[thread]+=N_box;
 
@@ -790,52 +842,52 @@ namespace votca {
                     N_comp += DMAT_submat(i,j)*AO_submat(i,j);
                 }
             }
-
-#ifdef DEBUG
-            double N_direct=0.0;
-            for (unsigned i = 0; i < _density_matrix.size1(); i++) {
-                for (unsigned j = 0; j < _density_matrix.size2(); j++) {
-                    N_direct += _density_matrix(i,j)*AO(i,j);
-                }
-            }
-            cout << "N="<<N<<"\tN_comp="<<N_comp<<"\tN_direct="<<N_direct<<endl<<endl<<flush;
             
-            ub::matrix<double> MO = _orbitals.MOCoefficients();
-            cout << "MO size:"<< MO.size1() <<" x "<< MO.size2() <<endl<<flush;
-            
-            cout << "MO linear independence:"<<endl;
-            ub::range all_basis_funcs = ub::range(0, MO.size2());
-            for (unsigned i = 0; i < MO.size1(); i++) {
-                ub::range ri = ub::range(i, i+1);
-                ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
-                for (unsigned j = 0; j < MO.size1(); j++) {
-                    ub::range rj = ub::range(j, j+1);
-                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
-                    ub::matrix<double> SCj = ub::prod(AO,Cj);
-                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
-                }
-                cout<<endl<<endl;
-            }
-            cout<<endl<<flush;
-            
-            cout<<"MO coefficients:"<<endl;
-            for (unsigned i = 0; i < MO.size1(); i++) {
-                for (unsigned j = 0; j < MO.size1(); j++) {
-                    cout<<MO(i,j)<<"\t";
-                }
-                cout<<endl;
-            }
-            cout<<endl<<flush;
-            
-            //exit(0);
-#endif
+//#ifdef DEBUG
+//            double N_direct=0.0;
+//            for (unsigned i = 0; i < _density_matrix.size1(); i++) {
+//                for (unsigned j = 0; j < _density_matrix.size2(); j++) {
+//                    N_direct += _density_matrix(i,j)*AO(i,j);
+//                }
+//            }
+//            cout << "N="<<N<<"\tN_comp="<<N_comp<<"\tN_direct="<<N_direct<<endl<<endl<<flush;
+//            
+//            ub::matrix<double> MO = _orbitals.MOCoefficients();
+//            cout << "MO size:"<< MO.size1() <<" x "<< MO.size2() <<endl<<flush;
+//            
+//            cout << "MO linear independence:"<<endl;
+//            ub::range all_basis_funcs = ub::range(0, MO.size2());
+//            for (unsigned i = 0; i < MO.size1(); i++) {
+//                ub::range ri = ub::range(i, i+1);
+//                ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
+//                for (unsigned j = 0; j < MO.size1(); j++) {
+//                    ub::range rj = ub::range(j, j+1);
+//                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
+//                    ub::matrix<double> SCj = ub::prod(AO,Cj);
+//                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
+//                }
+//                cout<<endl<<endl;
+//            }
+//            cout<<endl<<flush;
+//            
+//            cout<<"MO coefficients:"<<endl;
+//            for (unsigned i = 0; i < MO.size1(); i++) {
+//                for (unsigned j = 0; j < MO.size1(); j++) {
+//                    cout<<MO(i,j)<<"\t";
+//                }
+//                cout<<endl;
+//            }
+//            cout<<endl<<flush;
+//            
+//            //exit(0);
+//#endif
             
             cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
             //check if the numbers of electrons are the same
             if(std::abs(N-N_comp)>0.005){
                 cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
 #ifdef DEBUG
-                cout << "N_direct is: "<<N_direct << endl << flush;
+//                cout << "N_direct is: "<<N_direct << endl << flush;
 #endif
                 cout <<"=======================" << endl << flush; 
                 cout <<"WARNING: Calculated Densities at Numerical Grid with boxes, Number of electrons "<< N <<" is far away from the the real value "<< N_comp<<", you should increase the accuracy of the integration grid." << endl << flush; 
