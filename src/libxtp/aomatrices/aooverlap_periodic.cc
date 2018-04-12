@@ -35,7 +35,7 @@ namespace votca {
 
         void AOOverlapPeriodic::FillBlock(ub::matrix_range< ub::matrix<double> >& _matrix, const AOShell* _shell_row, const AOShell* _shell_col, AOBasis* ecp) {
 
-            _nimages = 3;
+            _nimages = 2;
 
             // shell info, only lmax tells how far to go
             int _lmax_row = _shell_row->getLmax();

@@ -171,7 +171,9 @@ namespace votca {
             _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
             _basis=global_basis;
             ExpandBasis(_atoms);
-            
+#ifdef DEBUG            
+//            int Ngp_generated=0;
+#endif            
             
             
             std::vector< std::vector< GridContainers::integration_grid > > grid;
@@ -329,6 +331,7 @@ namespace votca {
                 } // radial gridpoint
                 
                 
+                
                 //If wrapping, do it here, so rq has wrapped gridpoint coordinates.
                 //But wrapping gridpoints around already wrapped atoms causes the
                 //wrapped parts to fully overlap orbitals of image atoms.
@@ -374,6 +377,7 @@ namespace votca {
                 
 #ifdef DEBUG
                 //cout << " Calculated all gridpoint distances to centers for atom " << i_atom << endl;
+                //Ngp_generated+=_atomgrid.size();
 #endif
                 
 //                // find nearest-neighbor of this atom
@@ -425,9 +429,20 @@ namespace votca {
                     // call some shit called grid_ssw0 in NWChem
                     std::vector<double> _p = SSWpartition( i_grid, _atoms.size(), _expanded_atoms.size(), rq);
                     
+                    double _p_parent = 0; //summed p of the parent atom where the relative weights have been put onto the original (not expanded) atom
+                    for (unsigned i = 0 ; i < _p.size(); i++ )
+                    {
+                        if( i % _atoms.size() == i_atom){
+                            _p_parent += _p[i];
+                        }
+                    }
+                    
                     // check weight sum
                     double wsum = 0.0;
-                    for (unsigned i =0 ; i < _p.size(); i++ ){
+                    //int nadded=(_expanded_atoms.size() - _atoms.size()); //number of centers added by expansion
+                    //for (unsigned i = nadded ; i < _p.size(); i++ ) //only sum the weights of the original atoms. Periodic copies don't have grids around them.
+                    for (unsigned i =0 ; i < _p.size(); i++ )
+                    {
                         wsum += _p[i];
                     }
 
@@ -435,10 +450,18 @@ namespace votca {
                         
                         // update the weight of this grid point
                         //_p is indexed by expanded_atoms
-                        _atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p[i_atom + (_expanded_atoms.size()-_atoms.size())]/wsum;
+                        //_atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p[i_atom + nadded]/wsum;
+                        _atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p_parent/wsum;
                     } else {
                         
                        cerr << "\nSum of partition weights of grid point " << i_grid << " of atom " << i_atom << " is zero! ";
+//                       for (unsigned i =0 ; i < _p.size(); i++ )
+//                       {
+//                           cerr <<"\n _p["<< i <<"] = "<<_p[i]<< "\t\t atom image pos: "<<_expanded_atoms[i]->x<<"\t"<<_expanded_atoms[i]->y<<"\t"<<_expanded_atoms[i]->z;
+//                       }
+//                       cerr <<"\n number of atoms added by expansion: "<< nadded;
+//                       cerr <<"\n atom index = "<< i_atom << "\t so the parent atom index is "<< nadded+i_atom;
+//                       cerr <<"\n point position: = "<< _atomgrid[i_grid].grid_pos <<endl;
                        throw std::runtime_error("\nThis should never happen!");                   
                     }
                 } // partition weight for each gridpoint
@@ -487,6 +510,12 @@ namespace votca {
                 }
                 aoFuncCounter += shell->getNumFunc();
             }
+            
+            
+            
+#ifdef DEBUG
+            //cout<<"Number of Grid points generated = "<<Ngp_generated<<"\tand used = "<< _totalgridsize <<endl<<flush;
+#endif
             
             return;
         }
@@ -843,6 +872,29 @@ namespace votca {
                 }
             }
             
+            
+            //make the submatrices
+            //Only Shells from the molecule appear in the columns
+            AOOverlap overlap_np;
+            overlap_np.Fill(*_basis);
+            AO=overlap_np.Matrix();
+            double N_comp_non_periodic=0.0;
+            AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+            for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
+                ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
+            }
+            
+            //sum up N_comp
+            for (unsigned i = 0; i < AO_submat.size1(); i++) {
+                for (unsigned j = 0; j < AO_submat.size2(); j++) {
+                    N_comp_non_periodic += DMAT_submat(i,j)*AO_submat(i,j);
+                }
+            }
+            
+            
+            
+            
+            
 //#ifdef DEBUG
 //            double N_direct=0.0;
 //            for (unsigned i = 0; i < _density_matrix.size1(); i++) {
@@ -883,6 +935,7 @@ namespace votca {
 //#endif
             
             cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
+            cout << "N_comp_non_periodic from AO & DMAT is: " << N_comp_non_periodic << endl << flush;
             //check if the numbers of electrons are the same
             if(std::abs(N-N_comp)>0.005){
                 cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
