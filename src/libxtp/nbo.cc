@@ -167,17 +167,5 @@ void NBO::TransformMatrixtoNewBasis(ub::matrix<double>& Matrix, const ub::matrix
     return;
 }
 
-<<<<<<< HEAD
 }}
-=======
 
-
-void NBO::LoadMatrices(std::string fn_projectionMatrix, std::string fn_overlapMatrix){
-
-    //TODO: Yuriy, fill this in
-    
-    return;
-    }
-
-}}
->>>>>>> 0d32165325ed9d5e04182cec35280e9f4846a31f
