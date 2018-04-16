@@ -497,7 +497,7 @@ namespace votca {
 
             //loop over molecules
             CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): found " << mols.size() << " molecules." << endl << flush;
-            for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin()+1; m != mols.end(); ++m) {
+            for (std::vector<Bulkesp::Molecule>::iterator m = mols.begin(); m != mols.end(); ++m) {
 
                 CTP_LOG(ctp::logDEBUG, *_log) << "Bulkesp::Evaluate(): " << ctp::TimeStamp() << " processing molecule " << m - mols.begin() << flush;
 
