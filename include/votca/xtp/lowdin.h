@@ -17,11 +17,10 @@
  *
  */
 
-#ifndef __XTP_LOWDIN__H
-#define	__XTP_LOWDIN__H
+#ifndef __VOTCA_XTP_LOWDIN__H
+#define	__VOTCA_XTP_LOWDIN__H
 
 
-#include <votca/xtp/elements.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/qmatom.h>
 
@@ -32,8 +31,6 @@
 * 
 * 
 */
-
-
 
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;
@@ -48,8 +45,7 @@ public:
   
    
 private:
-   
- 
+
     
 };
 
@@ -58,4 +54,4 @@ private:
 
 }}
 
-#endif	/* ESPFIT_H */
+#endif	// VOTCA_XTP_ESPFIT_H 

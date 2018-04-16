@@ -17,7 +17,7 @@
  *
  */
 
-
+#include <exception>
 #include <votca/xtp/nbo.h>
 #include <votca/xtp/aomatrix.h>
 #include <votca/tools/linalg.h>
@@ -42,6 +42,9 @@ void NBO::EvaluateNBO(std::vector< QMAtom* >& _atomlist,const  ub::matrix<double
     vector < QMAtom* > :: iterator atom;
     for (atom = _atomlist.begin(); atom < _atomlist.end(); ++atom){
     
+      // TODO 
+    
+      throw invalid_argument("Evaluate NBO function is incomplete");    
    
       
     }
@@ -164,4 +167,17 @@ void NBO::TransformMatrixtoNewBasis(ub::matrix<double>& Matrix, const ub::matrix
     return;
 }
 
+<<<<<<< HEAD
 }}
+=======
+
+
+void NBO::LoadMatrices(std::string fn_projectionMatrix, std::string fn_overlapMatrix){
+
+    //TODO: Yuriy, fill this in
+    
+    return;
+    }
+
+}}
+>>>>>>> 0d32165325ed9d5e04182cec35280e9f4846a31f

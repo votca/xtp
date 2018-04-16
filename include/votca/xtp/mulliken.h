@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,11 +17,10 @@
  *
  */
 
-#ifndef __XTP_MULLIKEN__H
-#define	__XTP_MULLIKEN__H
+#ifndef __VOTCA_XTP_MULLIKEN__H
+#define	__VOTCA_XTP_MULLIKEN__H
 
 
-#include <votca/xtp/elements.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/qmatom.h>
 
@@ -47,11 +46,6 @@ public:
   
     void EvaluateMulliken(std::vector< QMAtom* >& _atomlist,const ub::matrix<double> &_dmat,const AOBasis &basis,bool _do_transition);
   
-
-   
-     
- 
-    
 };
 
 
@@ -59,4 +53,4 @@ public:
 
 }}
 
-#endif	/* ESPFIT_H */
+#endif	// VOTCA_XTP_ESPFIT_H
