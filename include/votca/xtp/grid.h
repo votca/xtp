@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __XTP_GRID__H
-#define	__XTP_GRID__H
+#ifndef _VOTCA_XTP_GRID__H
+#define	_VOTCA_XTP_GRID__H
 
 
 #include <votca/tools/elements.h>
@@ -131,4 +131,4 @@ namespace votca { namespace xtp {
     
 }}
 
-#endif	/* GRID_H */
+#endif	// VOTCA_XTP_GRID_H 
