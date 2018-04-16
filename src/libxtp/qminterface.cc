@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -25,7 +25,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include <votca/tools/elements.h>
 #include <votca/tools/linalg.h>
 #include <votca/xtp/espfit.h>
 #include <votca/xtp/qminterface.h>
