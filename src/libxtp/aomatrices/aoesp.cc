@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -30,7 +30,7 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <votca/tools/linalg.h>
-#include <votca/xtp/elements.h>
+#include <votca/tools/elements.h>
 #include <votca/tools/constants.h>
 
 #include "votca/xtp/qmatom.h"

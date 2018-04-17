@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,7 +17,7 @@
  *
  */
 
-
+#include <exception>
 #include <votca/xtp/nbo.h>
 #include <votca/xtp/aomatrix.h>
 #include <votca/tools/linalg.h>
@@ -42,6 +42,9 @@ void NBO::EvaluateNBO(std::vector< QMAtom* >& _atomlist,const  ub::matrix<double
     vector < QMAtom* > :: iterator atom;
     for (atom = _atomlist.begin(); atom < _atomlist.end(); ++atom){
     
+      // TODO 
+    
+      throw invalid_argument("Evaluate NBO function is incomplete");    
    
       
     }
@@ -165,3 +168,4 @@ void NBO::TransformMatrixtoNewBasis(ub::matrix<double>& Matrix, const ub::matrix
 }
 
 }}
+

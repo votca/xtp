@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -22,7 +22,7 @@
 
 #include <votca/ctp/segment.h>
 
-#include <votca/xtp/elements.h>
+#include <votca/tools/elements.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <vector>
 
-
+using namespace votca::tools;
 
 namespace votca {
     namespace xtp {

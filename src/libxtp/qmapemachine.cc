@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -25,7 +25,6 @@
 #include <boost/filesystem.hpp>
 #include <votca/ctp/logger.h>
 
-#include <votca/xtp/elements.h>
 #include <votca/xtp/espfit.h>
 
 using boost::format;

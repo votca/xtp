@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -19,11 +19,11 @@
 #include "votca/xtp/aobasis.h"
 #include "votca/xtp/aoshell.h"
 #include "votca/xtp/qmatom.h"
-#include "votca/xtp/elements.h"
+#include "votca/tools/elements.h"
 #include "votca/xtp/aomatrix.h"
 #include <votca/tools/constants.h>
 
-
+using namespace votca::tools;
 
 namespace votca { namespace xtp {
 

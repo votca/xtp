@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2016 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -31,12 +31,6 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/factorials.hpp>
 #include <votca/tools/linalg.h>
-#include <votca/xtp/elements.h>
-
-
-
-
-
 
 namespace votca { namespace xtp {
     namespace ub = boost::numeric::ublas;

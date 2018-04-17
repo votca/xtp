@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -36,7 +36,6 @@
 #include <votca/tools/linalg.h>
 #include <votca/tools/constants.h>
 
-#include <votca/xtp/elements.h>
 #include <votca/xtp/diis.h>
 
 #include <votca/ctp/xinteractor.h>
@@ -507,7 +506,6 @@ namespace votca {
                 }
             }
             CTP_LOG(ctp::logDEBUG, *_pLog) << ctp::TimeStamp() << " " << uniqueelements.size() << " unique elements found" << flush;
-            Elements _elements;
             for (st = uniqueelements.begin(); st < uniqueelements.end(); ++st) {
 
                 CTP_LOG(ctp::logDEBUG, *_pLog) << ctp::TimeStamp() << " Calculating atom density for " << (*st)->getType() << flush;
@@ -916,7 +914,6 @@ namespace votca {
 
         double DFTENGINE::ExternalRepulsion(ctp::Topology* top) {
            
-
             if (_externalsites.size() == 0) {
                 return 0;
             }

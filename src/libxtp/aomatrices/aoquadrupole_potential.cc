@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -19,15 +19,9 @@
 // Overload of uBLAS prod function with MKL/GSL implementations
 #include <votca/tools/linalg.h>
 #include <votca/xtp/aomatrix.h>
-
 #include <votca/xtp/aobasis.h>
-
 #include <vector>
-
-
-#include <votca/xtp/elements.h>
 #include <votca/tools/constants.h>
-
 
 using namespace votca::tools;
 

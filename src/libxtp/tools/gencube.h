@@ -1,5 +1,5 @@
 /* 
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -22,7 +22,7 @@
 #include <boost/progress.hpp>
 #include <stdio.h>
 #include <boost/format.hpp>
-#include <votca/xtp/elements.h>
+#include <votca/tools/elements.h>
 #include <votca/ctp/logger.h>
 // Overload of uBLAS prod function with MKL/GSL implementations
 #include <votca/tools/linalg.h>
@@ -267,7 +267,7 @@ namespace votca {
                 fprintf(out, "%d %f 0.0 0.0 \n", _xsteps + 1, xincr);
                 fprintf(out, "%d 0.0 %f 0.0 \n", _ysteps + 1, yincr);
                 fprintf(out, "%d 0.0 0.0 %f \n", _zsteps + 1, zincr);
-                Elements _elements;
+                votca::tools::Elements _elements;
                 for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
                     const tools::vec& pos=(*ait)->getPos();
                     // get center coordinates in Bohr
@@ -666,4 +666,4 @@ bool GenCube::Evaluate() {
 }}
 
 
-#endif
+#endif // _VOTCA_XTP_GENCUBE_H
