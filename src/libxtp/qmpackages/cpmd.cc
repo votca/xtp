@@ -100,6 +100,12 @@ namespace votca {
             //custom CPMD controlls
             if (options->exists(key + ".customCPMDcontrolls")) {
                 _custom_CPMD_controlls=options->get(key + ".customCPMDcontrolls").as<std::string> ();
+                if(_custom_CPMD_controlls.find("LSD")!=std::string::npos){
+                    CTP_LOG(ctp::logERROR, *_pLog) << "CPMD: LSD option not supported." << endl << flush;
+                    CTP_LOG(ctp::logERROR, *_pLog) << "XTPlib will not be able to read in basisfunction "<<
+                            "coefficients after CPMD is finished with an LSD-enabled calculation." << endl << flush;
+                    exit(-1);
+                }
             }
             else _custom_CPMD_controlls="";
 
