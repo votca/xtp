@@ -261,7 +261,9 @@ namespace votca {
             NumericalIntegrationPeriodic numway;
 
             //numway.GridSetup(gridsize,&bs,_global_atomlist);
-            numway.setBox(boxLen*tools::conv::ang2bohr);
+            if (periodic) {
+                numway.setBox(boxLen*tools::conv::ang2bohr);
+            }
             numway.SetRelevantAtomIds(_local_atomIndeces);
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Entering Bulkesp::ComputeESP()"<< flush;
             numway.GridSetup(gridsize, &bs, _local_atomlist, &_global_basis);

@@ -46,29 +46,17 @@ namespace votca {
         
         ///Creates an expanded AOBasis and vector of QMAtoms* to include periodic images of atoms up to _nExpantionCells away from the original cell.
         void NumericalIntegrationPeriodic::ExpandBasis(vector<ctp::QMAtom*> _atoms){
-            if(boxLen*boxLen==0){
-                throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
-            }
 #ifdef DEBUG            
             cout<<"boxLen = "<<boxLen<<" Bohr = "<<boxLen*tools::conv::bohr2ang << "A"<<endl<<flush;
 #endif            
-            
-            
-            
             _expanded_basis =  new AOBasis;
             vector< ctp::QMAtom* > ::iterator ait;
-            if(_nExpantionCells>0){ //more than one box,  need to expand
-
-
-#ifdef DEBUG
-                //debug: list original shells
-    //            for (AOBasis::AOShellIterator _row = _basis->firstShell(); _row != _basis->lastShell(); _row++) {
-    //                AOShell* _store=(*_row);
-    //                vec orgpos = _store->getPos();
-    //                cout<<"\tfrom: "<<_store->getType()<<" at "<<orgpos.getX()*tools::conv::bohr2ang<<" "<<orgpos.getY()*tools::conv::bohr2ang<<" "<<orgpos.getZ()*tools::conv::bohr2ang <<endl<<flush;
-    //            }
-#endif
-
+            if(_nExpantionCells>0) //more than one box,  need to expand
+            { 
+                
+                if(boxLen*boxLen<1e-5){
+                    throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
+                }
 
                 //need to expand
 #ifdef DEBUG
@@ -120,9 +108,6 @@ namespace votca {
             //atoms
 #ifdef DEBUG
             cout<<"adding original atoms to expanded atom list."<<endl<<flush;
-            for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
-                //cout<<"Original atom: "<<(*ait)->type<<" at "<<(*ait)->x<<" "<<(*ait)->y<<" "<<(*ait)->z<<" with charge "<<(*ait)->charge<<"\t ait="<<(*ait)<<endl<<flush;
-            }
 #endif
             for (ait = _atoms.begin(); ait != _atoms.end(); ++ait) {
                 _expanded_atoms.push_back((*ait));
@@ -137,18 +122,6 @@ namespace votca {
                 newShell->CalcMinDecay();
                 central_cell_shells.push_back(newShell);
             }
-            
-
-//#ifdef DEBUG
-//            cout<<"Expanded Basis:"<<endl<<flush;
-//            unsigned int lastInd=-1;
-//            for (auto& shell:_expanded_basis->getShells()) {
-//                if(shell->getIndex() != lastInd)
-//                    cout<<shell->getName()<<" "<<shell->getType()<<" "<<shell->getPos()<< " index:"<<shell->getIndex()<<endl<<flush;
-//                lastInd = shell->getIndex();
-//            }
-//#endif            
-            
             
             return;
         }
@@ -168,9 +141,19 @@ namespace votca {
                 throw std::runtime_error("_relevant_atomids not set. Run NumericalIntegrationPeriodic::SetRelevantAtomIds() first!"); 
             }
             
-            _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
             _basis=global_basis;
+            
+            if(boxLen*boxLen<1e6){//box uninitialized, means non-periodic case
+                _nExpantionCells=0;
+                //ExpandBasis will skip the expansion, but will still fill the
+                //appropriate std::vectors with the atoms from the original cell.
+            }
+            else{
+                _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            }
             ExpandBasis(_atoms);
+
+            
 #ifdef DEBUG            
 //            int Ngp_generated=0;
 #endif            
@@ -201,19 +184,6 @@ namespace votca {
             vector< ctp::QMAtom* > ::iterator ait;
             vector< ctp::QMAtom* > ::iterator bit;
             int i = 1;
-            
-#ifdef DEBUG
-//            cout<<"\nPre Rij\n"<<flush;
-//            for (ait = _atoms.begin(); ait != _atoms.end(); ++ait)
-//            {
-//                cout<<"ait="<<(*ait)<<endl<<flush;
-//            }
-//            cout<<"\n\n\n"<<flush;
-//            for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit)
-//            {
-//                cout<<"bit="<<(*bit)<<endl<<flush;
-//            }
-#endif
 
             for (ait = _atoms.begin(); ait != _atoms.end(); ++ait)
             {
@@ -336,26 +306,6 @@ namespace votca {
                 //But wrapping gridpoints around already wrapped atoms causes the
                 //wrapped parts to fully overlap orbitals of image atoms.
                 //So DON'T WRAP GRIDPOINTS!
-//                tools::vec maxofset(0.0);
-//                tools::vec minofset(0.0);
-//                for (auto& git: _atomgrid){
-////                    cout<<git.grid_pos[0]<<"\t"<<git.grid_pos[1]<<"\t"<<git.grid_pos[2]<<endl;
-//                    git.grid_pos = WrapPoint(git.grid_pos, boxLen); //seems to fix the total density
-//                }
-                
-                
-//                cout<<flush;
-//                cout<<"around atom at: "<<atomA_pos[0]<<"\t"<<atomA_pos[1]<<"\t"<<atomA_pos[2]<<" Bohr"<<endl<<flush;
-//                cout<<"max ofset: "<<maxofset[0]<<"\t"<<maxofset[1]<<"\t"<<maxofset[2]<<" Bohr"<<endl<<flush;
-//                cout<<"min ofset: "<<minofset[0]<<"\t"<<minofset[1]<<"\t"<<minofset[2]<<" Bohr"<<endl<<flush;
-//                
-//                cout<<"All extended atoms (also in Bohr):"<<endl;
-//                for (auto& b: _expanded_atoms) {
-//                    tools::vec posb = b->getPos() * tools::conv::ang2bohr;
-//                    cout <<b->type <<"\t" <<posb[0]<<"\t"<<posb[1]<<"\t"<<posb[2]<<" Bohr"<<endl;
-//                }
-//                cout <<endl<<flush;
-////                exit(-1);
                 
                 
                 // get all distances from grid points to centers
@@ -374,34 +324,7 @@ namespace votca {
                     rq.push_back(temp); 
 
                 } // centers
-                
-#ifdef DEBUG
-                //cout << " Calculated all gridpoint distances to centers for atom " << i_atom << endl;
-                //Ngp_generated+=_atomgrid.size();
-#endif
-                
-//                // find nearest-neighbor of this atom
-//                double distNN = 1e10;
-//                vector< ctp::QMAtom* > ::iterator NNit;
-//               
-//                // now check all other centers
-//                int i_b =0;
-//                for (bit = _expanded_atoms.begin(); bit != _expanded_atoms.end(); ++bit) {
-//                    if ((*bit) != (*ait)) {
-//                        // get center coordinates
-//                        const vec atomB_pos=(*bit)->getPos() * tools::conv::ang2bohr;
-//                        double distSQ = (atomA_pos-atomB_pos)*(atomA_pos-atomB_pos);
-//
-//                        // update NN distance and iterator
-//                        if ( distSQ < distNN )
-//                        {
-//                            distNN = distSQ;
-//                            NNit = bit;          
-//                        }
-//
-//                    } // if ( ait != bit) 
-//                    i_b++;
-//                }// bit centers
+ 
                 
                 
                 /*
@@ -439,8 +362,7 @@ namespace votca {
                     
                     // check weight sum
                     double wsum = 0.0;
-                    //int nadded=(_expanded_atoms.size() - _atoms.size()); //number of centers added by expansion
-                    //for (unsigned i = nadded ; i < _p.size(); i++ ) //only sum the weights of the original atoms. Periodic copies don't have grids around them.
+                    //only sum the weights of the original atoms. Periodic copies don't have grids around them.
                     for (unsigned i =0 ; i < _p.size(); i++ )
                     {
                         wsum += _p[i];
@@ -449,19 +371,10 @@ namespace votca {
                     if ( wsum != 0.0 ){
                         
                         // update the weight of this grid point
-                        //_p is indexed by expanded_atoms
-                        //_atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p[i_atom + nadded]/wsum;
                         _atomgrid[i_grid].grid_weight = _atomgrid[i_grid].grid_weight * _p_parent/wsum;
                     } else {
                         
                        cerr << "\nSum of partition weights of grid point " << i_grid << " of atom " << i_atom << " is zero! ";
-//                       for (unsigned i =0 ; i < _p.size(); i++ )
-//                       {
-//                           cerr <<"\n _p["<< i <<"] = "<<_p[i]<< "\t\t atom image pos: "<<_expanded_atoms[i]->x<<"\t"<<_expanded_atoms[i]->y<<"\t"<<_expanded_atoms[i]->z;
-//                       }
-//                       cerr <<"\n number of atoms added by expansion: "<< nadded;
-//                       cerr <<"\n atom index = "<< i_atom << "\t so the parent atom index is "<< nadded+i_atom;
-//                       cerr <<"\n point position: = "<< _atomgrid[i_grid].grid_pos <<endl;
                        throw std::runtime_error("\nThis should never happen!");                   
                     }
                 } // partition weight for each gridpoint
@@ -646,105 +559,7 @@ namespace votca {
             
             return;
         }
-        
-/*
-        /// Sorts points into smaller boxes for easy parallelization during density integration.
-        void NumericalIntegrationPeriodic::SortGridpointsintoBlocks(std::vector< std::vector< GridContainers::integration_grid > >& grid){
-            const double boxsize=1.0;
-            
-            std::vector< std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > >  boxes;
-            
-            tools::vec min=vec(std::numeric_limits<double>::max());
-            tools::vec max=vec(std::numeric_limits<double>::min());
-                   
-            min = vec(0.0);
-            max = boxLen;
-
-            //Allow for grid positions that extend from atoms in the first periodic box into nearby periodic cells
-            //so that there are boxes for gridpoints outside the first periodic cell.
-            //These belonging to (wrapped) atoms near the periodic boundaries.
-            for ( unsigned i = 0 ; i < grid.size(); i++){
-                for ( unsigned j = 0 ; j < grid[i].size(); j++){
-                    const tools::vec& pos= grid[i][j].grid_pos;
-                    if(pos.getX()>max.getX()){
-                        max.x()=pos.getX();
-                    }
-                    else if(pos.getX()<min.getX()){
-                        min.x()=pos.getX();
-                    }
-                    if(pos.getY()>max.getY()){
-                        max.y()=pos.getY();
-                    }
-                    else if(pos.getY()<min.getY()){
-                        min.y()=pos.getY();
-                    }
-                    if(pos.getZ()>max.getZ()){
-                        max.z()=pos.getZ();
-                    }
-                    else if(pos.getZ()<min.getZ()){
-                        min.z()=pos.getZ();
-                        }
-                    }
-                }
-            
-            
-            vec molextension=(max-min);
-            vec numberofboxes=molextension/boxsize;
-            vec roundednumofbox=vec(std::ceil(numberofboxes.getX()),std::ceil(numberofboxes.getY()),std::ceil(numberofboxes.getZ()));
-#ifdef DEBUG
-            cout<<"min:\t"<<min[0]<<"\t"<<min[1]<<"\t"<<min[2]<<endl<<flush;
-            cout<<"max:\t"<<max[0]<<"\t"<<max[1]<<"\t"<<max[2]<<endl<<flush;
-#endif
-            
-            //creating temparray
-            for (unsigned i=0;i<unsigned(roundednumofbox.getX());i++){
-                std::vector< std::vector< std::vector< GridContainers::integration_grid* > > > boxes_yz;
-                for (unsigned j=0;j<unsigned(roundednumofbox.getY());j++){
-                    std::vector< std::vector< GridContainers::integration_grid* > >  boxes_z;
-                    for (unsigned k=0;k<unsigned(roundednumofbox.getZ());k++){
-                        std::vector< GridContainers::integration_grid* >  box;
-                        box.reserve(100);
-                        boxes_z.push_back(box);
-                    }
-                    boxes_yz.push_back(boxes_z);
-            }
-                boxes.push_back(boxes_yz);
-            }
-#ifdef DEBUG
-            cout<<"boxes size:\t"<<boxes.size()<<"\t"<<boxes[0].size()<<"\t"<<boxes[0][0].size()<<endl<<flush;
-#endif            
-             for ( auto & atomgrid : grid){
-                for ( auto & gridpoint : atomgrid){
-                    tools::vec pos = gridpoint.grid_pos - min;
-                    tools::vec index=pos/boxsize;
-                    int i_x=int(index.getX());
-                    int i_y=int(index.getY());
-                    int i_z=int(index.getZ());
-                    boxes[i_x][i_y][i_z].push_back(&gridpoint);
-                }
-             }
-            
-            for ( auto& boxes_xy : boxes){
-                for( auto& boxes_z : boxes_xy){
-                    for ( auto& box : boxes_z){      
-                        if( box.size()<1){
-                            continue;
-                        }
-                        GridBox gridbox;
-                        
-                        for(const auto&point:box){
-                            gridbox.addGridPoint(*point);
-                        }
-                        _grid_boxes.push_back(gridbox);
-                    }
-                }
-            }
-            
-            return;
-        }
-*/                
-        
-        
+  
         
         double NumericalIntegrationPeriodic::IntegrateDensity(const ub::matrix<double>& _density_matrix, Orbitals& _orbitals){
             
@@ -757,10 +572,6 @@ namespace votca {
                
             std::vector<double> N_thread=std::vector<double>(nthreads,0.0);
             
-            
-            
-//            ub::matrix<double> num_AO_bigmat = ub::zero_matrix<double>(_density_matrix.size1(), _density_matrix.size2());
-               
             
             
             //need to project every relevant shell onto every relevant shell in this molecule
@@ -784,9 +595,7 @@ namespace votca {
                     ub::matrix<double> ao_mol=ub::matrix<double>(1,box.Matrixsize_perMolecule());
 
                     box.prepareDensity();
-#ifdef DEBUG
-                    //cout<<endl<<"iterate over gridpoints"<<endl<<flush;
-#endif
+
                     //iterate over gridpoints
                     for(unsigned p=0;p<box.size();p++){
                         //for row vector: use all significant shells
@@ -820,23 +629,8 @@ namespace votca {
                         double rho = pr(0,0);
                         box.addDensity(rho);
                         N_box+=rho*weights[p];
-                        
-//                        ub::matrix<double> local_AO = ub::prod(tr, ao ) * weights[p];
-//                        #pragma omp critical
-//                        {
-//                            box.AddtoBigMatrix(num_AO_bigmat, local_AO);
-//                        }
-                        
-                        
-//                        tools::vec targetP1(2.8288,-2.36288,0.0259489);
-//                        tools::vec targetP2(1.96248,3.83502,4.39304);
-//                        if(abs(points[p]-targetP1)<0.2 || abs(points[p]-targetP2)<0.1){
-//                            cout<<points[p][0]<<" "<<points[p][1]<<" "<<points[p][2]<<" rho="<<rho<<" w="<<weights[p]<<endl<<flush;
-//                        }
-                        
                     }
                     N_thread[thread]+=N_box;
-
                 }
             }   
             for(unsigned int i=0;i<nthreads;++i){
@@ -934,16 +728,25 @@ namespace votca {
 //            //exit(0);
 //#endif
             
-            cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
-            cout << "N_comp_non_periodic from AO & DMAT is: " << N_comp_non_periodic << endl << flush;
+            cout << "Expected number of electrons for periodic system is: "<<N_comp<< endl << flush;
+            cout << "Expected number of electrons for non-periodic system is: "<<N_comp_non_periodic<< endl << flush;
+            cout << "Number of electrons from numerical integration is: "<<N<< endl << flush;
+            
+            double N_ref;
+            if(boxLen*boxLen<1e-5)
+            {
+                cout << "You are using a non-periodic system." << endl << flush;
+                N_ref=N_comp_non_periodic;
+            }
+            else
+            {
+                cout << "You are using a periodic system." << endl << flush;
+                N_ref=N_comp;
+            }
             //check if the numbers of electrons are the same
-            if(std::abs(N-N_comp)>0.005){
-                cout << "N_comp from AO & DMAT is: " << N_comp << "\t and N from numerical density integration is: " << N << endl << flush;
-#ifdef DEBUG
-//                cout << "N_direct is: "<<N_direct << endl << flush;
-#endif
+            if(std::abs(N-N_ref)>0.005){
                 cout <<"=======================" << endl << flush; 
-                cout <<"WARNING: Calculated Densities at Numerical Grid with boxes, Number of electrons "<< N <<" is far away from the the real value "<< N_comp<<", you should increase the accuracy of the integration grid." << endl << flush; 
+                cout <<"WARNING: Calculated Densities at Numerical Grid with boxes, Number of electrons "<< N <<" is far away from the the real value "<< N_ref<<", you should increase the accuracy of the integration grid or check if you have correct periodicity." << endl << flush; 
                 cout <<"=======================" << endl << flush; 
                 cout <<"#of Boxes=" << _grid_boxes.size() << endl << flush; 
                 exit(-1);
