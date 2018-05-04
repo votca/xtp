@@ -34,7 +34,7 @@ namespace votca { namespace xtp {
             
             NumericalIntegrationPeriodic():NumericalIntegration(){
                 _expanded_basis=NULL;
-                boxLen=tools::vec(0);
+                boxLen=tools::vec(0.0);
             };
             
             ~NumericalIntegrationPeriodic(){
