@@ -276,73 +276,6 @@ namespace votca {
             netcharge = getNetcharge(_local_atomlist, N, false); //don't round
 
             CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Calculating ESP at CHELPG grid points" << flush;
-            //boost::progress_display show_progress( _grid.getsize() );
-
-
-            //#define MADELUNG_TEST
-#ifdef MADELUNG_TEST
-
-
-            double exactMadelung = 1.74756459463318;
-
-#define GROLIKE
-#ifdef GROLIKE
-            ofstream myfile("Energy_kmax8_gro.dat");
-#else
-            ofstream myfile("Energy_kmax8.dat");
-#endif
-
-            int natomsonside = 2;
-            double numK = 5;
-            double a = 5.6402 * tools::conv::ang2bohr;
-            cout << "a = " << a << endl;
-            cout << "nearest neighbour distance = " << a / 2 << endl;
-            double BL[3];
-            BL[0] = a;
-            BL[1] = a;
-            BL[2] = a;
-            std::vector< ctp::QMAtom* > fake_atom_list;
-            fake_atom_list.resize(0);
-            std::vector< vec > points;
-            points.push_back(vec(0, 0, 0) * tools::conv::bohr2nm); //0,0,0 in a
-            points.push_back(vec(0.0, 0.0, a / 2) * tools::conv::bohr2nm); //0,0,0.5 in a
-            Grid eval_grid(points); //in nm
-            _ESPatGrid = ub::zero_vector<double>(eval_grid.getsize());
-
-
-            for (double alpha = 0.01; alpha < 4; alpha += 0.01) {
-                numway.FillMadelungGrid(BL, natomsonside);
-#ifdef GROLIKE
-                numway.PrepKspaceDensity_gromacs_like(alpha, fake_atom_list, _ECP, eval_grid, numK);
-                numway.IntegratePotential_w_PBC_gromacs_like(eval_grid, _ESPatGrid);
-#else                
-                numway.PrepKspaceDensity(BL, alpha, fake_atom_list, _ECP, numK);
-                for (int i = 0; i < eval_grid.getsize(); i++) {
-                    _ESPatGrid(i) = numway.IntegratePotential_w_PBC(eval_grid.getGrid()[i] * tools::conv::nm2bohr, BL);
-                }
-                numway.FreeKspace();
-#endif
-
-                cout << "Madelung constant is: " << _ESPatGrid(0)*(a / 2) << "\n";
-                myfile << natomsonside << " \t" << numway.numK[0] << " \t" << numway.alpha << " \t"
-                        //<<std::abs(_ESPatGrid(0)*(a/natomsonside)) - exactMadelung<<" \t"
-                        << _ESPatGrid(0)*(a / 2) << " \t"
-                        << numway.E_rspace * (a / 2) << " \t" << numway.E_kspace * (a / 2) << " \t" << numway.E_erfc * (a / 2)
-                        << endl;
-
-            }
-            exit(0);
-
-#endif        
-
-
-
-
-
-
-
-
-
 
 
             if (periodic) {
@@ -351,58 +284,7 @@ namespace votca {
 
                 numway.PrepKspaceDensity_gromacs_like(_alpha, _local_atomlist, _ECP, _grid, _maxK);
                 numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-                
-                
-                
-//                cout<<endl;
-//                for(int i=0; i<10; i++){
-//                    alpha=1.0 + (i*1.0);
-//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
-//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
-//                }
-//                cout<<endl;
-//                numK = 32;
-//                for(int i=0; i<10; i++){
-//                    alpha=1.0 + (i*1.0);
-//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
-//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
-//                }
-//                cout<<endl;
-//                numK = 64;
-//                for(int i=0; i<10; i++){
-//                    alpha=1.0 + (i*1.0);
-//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
-//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
-//                }
-//                cout<<endl;
-//                numK = 128;
-//                for(int i=0; i<10; i++){
-//                    alpha=1.0 + (i*1.0);
-//                    numway.PrepKspaceDensity_gromacs_like(alpha, _local_atomlist, _ECP, _grid, numK);
-//                    numway.IntegratePotential_w_PBC_gromacs_like(_grid, _ESPatGrid);
-//                    cout<<"numK= "<< numK<< "\talpha= "<< alpha<<"\t"<< _ESPatGrid(1)<<"\t"<< _ESPatGrid(50)<<"\t"<< _ESPatGrid(100)<< endl<<flush;
-//                }
-//                exit(0);
-                
-                
-                
-
-                /*
-                numway.PrepKspaceDensity(BL, 0.5, _local_atomlist, _ECP);
-                CTP_LOG(ctp::logDEBUG, *_log) << " Bulkesp::ComputeESP(): Found density in Fourier space"<< endl;
-                #pragma omp parallel for
-                for ( int i = 0 ; i < _grid.getsize(); i++){
-                    _ESPatGrid(i)=numway.IntegratePotential_w_PBC(_grid.getGrid()[i]*tools::conv::nm2bohr, BL);
-                    //++show_progress;
-                }
-                 */
-
-
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Electron and Nuclear contributions calculated" << flush;
-                //exit(0);
 
                 //calculate and record the molecular dipole moments
                 ub::vector<double> dipPos(3);
