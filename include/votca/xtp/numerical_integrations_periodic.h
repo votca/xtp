@@ -34,7 +34,8 @@ namespace votca { namespace xtp {
             
             NumericalIntegrationPeriodic():NumericalIntegration(){
                 _expanded_basis=NULL;
-                boxLen=tools::vec(0);
+                boxLen=tools::vec(0.0);
+                _periodic=false;
             };
             
             ~NumericalIntegrationPeriodic(){
@@ -59,6 +60,7 @@ namespace votca { namespace xtp {
             void PrepKspaceDensity_gromacs_like(double ext_alpha, std::vector< ctp::QMAtom* > & _local_atomlist, bool ECP, Grid &eval_grid, int nK);
             inline void setBox(vec box){
                 boxLen=box;
+                _periodic=true;
                 return;
             }
             
@@ -80,6 +82,7 @@ namespace votca { namespace xtp {
             int numK[3];   //number of k-vectors along each axis
             double alpha;  //inverse length in Ewald summation
             GridBox _periodicGridBox;
+            bool _periodic;
             
             int _nExpantionCells; //expand basis and atoms to include atoms in this many periodic cells away
             AOBasis* _expanded_basis;

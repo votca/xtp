@@ -54,7 +54,7 @@ namespace votca {
             if(_nExpantionCells>0) //more than one box,  need to expand
             { 
                 
-                if(boxLen*boxLen<1e-5){
+                if(boxLen*boxLen==0){
                     throw std::runtime_error("NumericalIntegrationPeriodic: periodic box not set.");
                 }
 
@@ -143,13 +143,12 @@ namespace votca {
             
             _basis=global_basis;
             
-            if(boxLen*boxLen<1e6){//box uninitialized, means non-periodic case
-                _nExpantionCells=0;
-                //ExpandBasis will skip the expansion, but will still fill the
-                //appropriate std::vectors with the atoms from the original cell.
-            }
-            else{
-                _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            _nExpantionCells=2; //expand basis and atoms to include atoms in this many periodic cells away (2-> 5 cells wide)
+            
+            if(boxLen*boxLen==0)//box uninitialized
+            {
+                //throw std::runtime_error("NumericalIntegrationPeriodic::GridSetup : boxLen not set. Do you want an aperiodic system?"); 
+                _nExpantionCells=0; //non-periodic system, don't do expansion
             }
             ExpandBasis(_atoms);
 
@@ -398,14 +397,7 @@ namespace votca {
 
             
             SortGridpointsintoBlocks(grid);
-#ifdef DEBUG
-            //cout<<"grid boxes after SortGridpointsintoBlocks: "<<_grid_boxes.size() <<endl<<flush;
-#endif
             FindSignificantShells();
-#ifdef DEBUG
-            //cout<<"grid boxes after FindSignificantShells: "<<_grid_boxes.size() <<endl<<flush;
-#endif
-            
             
             //build a vector of ranges to what elements of DMAT & Overlap matrix belong to this molecule
             nFuncInMol=0;
@@ -423,13 +415,6 @@ namespace votca {
                 }
                 aoFuncCounter += shell->getNumFunc();
             }
-            
-            
-            
-#ifdef DEBUG
-            //cout<<"Number of Grid points generated = "<<Ngp_generated<<"\tand used = "<< _totalgridsize <<endl<<flush;
-#endif
-            
             return;
         }
         
@@ -441,10 +426,6 @@ namespace votca {
             std::vector<double> p(nexpandedcenters,1.0);
             
             int nadded=(nexpandedcenters-ncenters); //number of centers added by expansion
-#ifdef DEBUG
-            //cout<<"nadded= "<< nadded<< endl<< flush;
-            //cout<<"igrid= "<< igrid<< endl<< flush;
-#endif
             
             const double tol_scr = 1e-10;
             const double leps    = 1e-6; 
@@ -637,112 +618,73 @@ namespace votca {
                 N+=N_thread[i];
             }
             
-               
-               
+            
+            double N_ref=0.0;
+            ub::matrix<double> DMAT_submat;
+            ub::matrix<double> AO_submat;
+
             //find the number of electrons directly from Density and Overlap matrices
-            AOOverlapPeriodic overlap;
-            overlap.setBox(boxLen); //in Bohr
-            cout<< "Setting up periodic overlap with box: "<<boxLen[0]<<"\t"<<boxLen[1]<<"\t"<<boxLen[2]<< " in Bohr."<<endl<<flush;
-            //this is the global, non expanded basis
-            overlap.Fill(*_basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
-            //_density_matrix is the _global_dmat
-            ub::matrix<double>& AO=overlap.Matrix();
-            double N_comp=0.0;
-            
-            //make the submatrices
-            //Only Shells from the molecule appear in the columns
-            ub::matrix<double> DMAT_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
-            ub::matrix<double> AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
-            ub::range everything = ub::range(0, AO.size1());
-            for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
-                ub::project(DMAT_submat, everything, global_mol_inv_aoranges[i]) = ub::project(_density_matrix, everything, global_mol_aoranges[i]);
-                ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
-            }
-            
-            //sum up N_comp
-            for (unsigned i = 0; i < AO_submat.size1(); i++) {
-                for (unsigned j = 0; j < AO_submat.size2(); j++) {
-                    N_comp += DMAT_submat(i,j)*AO_submat(i,j);
-                }
-            }
-            
-            
-            //make the submatrices
-            //Only Shells from the molecule appear in the columns
-            AOOverlap overlap_np;
-            overlap_np.Fill(*_basis);
-            AO=overlap_np.Matrix();
-            double N_comp_non_periodic=0.0;
-            AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
-            for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
-                ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
-            }
-            
-            //sum up N_comp
-            for (unsigned i = 0; i < AO_submat.size1(); i++) {
-                for (unsigned j = 0; j < AO_submat.size2(); j++) {
-                    N_comp_non_periodic += DMAT_submat(i,j)*AO_submat(i,j);
-                }
-            }
-            
-            
-            
-            
-            
-//#ifdef DEBUG
-//            double N_direct=0.0;
-//            for (unsigned i = 0; i < _density_matrix.size1(); i++) {
-//                for (unsigned j = 0; j < _density_matrix.size2(); j++) {
-//                    N_direct += _density_matrix(i,j)*AO(i,j);
-//                }
-//            }
-//            cout << "N="<<N<<"\tN_comp="<<N_comp<<"\tN_direct="<<N_direct<<endl<<endl<<flush;
-//            
-//            ub::matrix<double> MO = _orbitals.MOCoefficients();
-//            cout << "MO size:"<< MO.size1() <<" x "<< MO.size2() <<endl<<flush;
-//            
-//            cout << "MO linear independence:"<<endl;
-//            ub::range all_basis_funcs = ub::range(0, MO.size2());
-//            for (unsigned i = 0; i < MO.size1(); i++) {
-//                ub::range ri = ub::range(i, i+1);
-//                ub::matrix<double> Ci = ub::project(MO, ri, all_basis_funcs);
-//                for (unsigned j = 0; j < MO.size1(); j++) {
-//                    ub::range rj = ub::range(j, j+1);
-//                    ub::matrix<double> Cj = ub::trans(ub::project(MO, rj, all_basis_funcs));
-//                    ub::matrix<double> SCj = ub::prod(AO,Cj);
-//                    cout << ub::prod(Ci,SCj)(0,0) <<"\t";
-//                }
-//                cout<<endl<<endl;
-//            }
-//            cout<<endl<<flush;
-//            
-//            cout<<"MO coefficients:"<<endl;
-//            for (unsigned i = 0; i < MO.size1(); i++) {
-//                for (unsigned j = 0; j < MO.size1(); j++) {
-//                    cout<<MO(i,j)<<"\t";
-//                }
-//                cout<<endl;
-//            }
-//            cout<<endl<<flush;
-//            
-//            //exit(0);
-//#endif
-            
-            cout << "Expected number of electrons for periodic system is: "<<N_comp<< endl << flush;
-            cout << "Expected number of electrons for non-periodic system is: "<<N_comp_non_periodic<< endl << flush;
-            cout << "Number of electrons from numerical integration is: "<<N<< endl << flush;
-            
-            double N_ref;
-            if(boxLen*boxLen<1e-5)
-            {
-                cout << "You are using a non-periodic system." << endl << flush;
-                N_ref=N_comp_non_periodic;
-            }
-            else
-            {
+            if(_periodic){ 
                 cout << "You are using a periodic system." << endl << flush;
-                N_ref=N_comp;
+
+                AOOverlapPeriodic overlap;
+                overlap.setBox(boxLen); //in Bohr
+                cout<< "Setting up periodic overlap with box: "<<boxLen[0]<<"\t"<<boxLen[1]<<"\t"<<boxLen[2]<< " in Bohr."<<endl<<flush;
+                //this is the global, non expanded basis
+                overlap.Fill(*_basis);   //AOOverlapPeriodic will build an overlap matrix taking periodicity into account here
+                //_density_matrix is the _global_dmat
+                ub::matrix<double>& AO=overlap.Matrix();
+                double N_comp=0.0;
+
+                //make the submatrices
+                //Only Shells from the molecule appear in the columns
+                DMAT_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+                AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+                ub::range everything = ub::range(0, AO.size1()); 
+                for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
+                    ub::project(DMAT_submat, everything, global_mol_inv_aoranges[i]) = ub::project(_density_matrix, everything, global_mol_aoranges[i]);
+                    ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
+                }
+
+                //sum up N_comp
+                for (unsigned i = 0; i < AO_submat.size1(); i++) {
+                    for (unsigned j = 0; j < AO_submat.size2(); j++) {
+                        N_ref += DMAT_submat(i,j)*AO_submat(i,j);
+                    }
+                }
             }
+            else{
+                cout << "You are using a non-periodic system." << endl << flush;
+
+                AOOverlap overlap_np;
+                overlap_np.Fill(*_basis);
+                ub::matrix<double>& AO=overlap_np.Matrix();
+                //cout << "AO matrix size is "<<AO.size1()<<"x"<<AO.size2()<<endl<<flush;
+                
+                //make the submatrices
+                //Only Shells from the molecule appear in the columns
+                DMAT_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+                AO_submat = ub::zero_matrix<double>(AO.size1(), nFuncInMol);
+                ub::range everything = ub::range(0, AO.size1());
+                for (unsigned i = 0; i < global_mol_aoranges.size(); i++) {
+                    ub::project(DMAT_submat, everything, global_mol_inv_aoranges[i]) = ub::project(_density_matrix, everything, global_mol_aoranges[i]);
+                    ub::project(AO_submat  , everything, global_mol_inv_aoranges[i]) = ub::project(AO             , everything, global_mol_aoranges[i]);
+                }
+                
+                //cout << "AO submat size is "<<AO_submat.size1()<<"x"<<AO_submat.size2()<<endl<<flush;
+
+                //sum up N_comp
+                for (unsigned i = 0; i < AO_submat.size1(); i++) {
+                    for (unsigned j = 0; j < AO_submat.size2(); j++) {
+                        N_ref += DMAT_submat(i,j)*AO_submat(i,j);
+                        //cout << DMAT_submat(i,j) <<"\t"<<AO_submat(i,j)<<endl;
+                    }
+                }
+            }
+            
+            cout << "Expected number of electrons for the system is: "<<N_ref<< endl << flush;
+            cout << "Number of electrons from numerical integration is: "<<N<< endl << flush;
+
             //check if the numbers of electrons are the same
             if(std::abs(N-N_ref)>0.005){
                 cout <<"=======================" << endl << flush; 
