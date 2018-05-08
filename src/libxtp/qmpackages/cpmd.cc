@@ -1119,7 +1119,7 @@ namespace votca {
             for(int i=0; i<NUMORB; i++){
                 for(int j=0; j<NATTOT; j++){  
                     wf_file.read((char*)&XXMAT, F_real_size);
-                    mo_coefficients(AO_CPMD2VOTCA_map[i],j)=XXMAT;
+                    mo_coefficients(i,AO_CPMD2VOTCA_map[j])=XXMAT; //(MO, basisfunc in votca atom order)
                     bl-=F_real_size;
                 }
             }
