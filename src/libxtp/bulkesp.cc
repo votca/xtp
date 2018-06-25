@@ -432,8 +432,13 @@ namespace votca {
                 
                 _grid.setAtomlist(&m->atoms);
 //                _grid.setAtomlist(&debug_mol);
+                
+                //custom grid to later be filtered with python
+                //used for cutoff scan
+                _grid.setupCutoffScanGrid();
+                
                 _grid.setupgrid();
-                _grid.setupCHELPgrid();
+                //_grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP

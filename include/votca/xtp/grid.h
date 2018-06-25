@@ -116,6 +116,16 @@ namespace votca { namespace xtp {
             setupgrid();
         }
         
+        //grid used to scan for optimal cutoffs. Scanning will happen later in python
+        void setupCutoffScanGrid(){
+            _gridspacing=0.3;
+            _cutoff=4.0;
+            _useVdWcutoff_inside=false;
+            _cutoff_inside=0.5
+            _useVdWcutoff=false;
+            setupgrid();
+        }
+        
         
         void writeIrregularGrid(std::string _filename, std::vector< ctp::QMAtom* > &_atoms, bool _ECP);
         void setPeriodicity(vec BL){
