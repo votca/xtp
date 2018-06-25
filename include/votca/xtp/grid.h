@@ -121,7 +121,7 @@ namespace votca { namespace xtp {
             _gridspacing=0.3;
             _cutoff=4.0;
             _useVdWcutoff_inside=false;
-            _cutoff_inside=0.5
+            _cutoff_inside=0.5;
             _useVdWcutoff=false;
             setupgrid();
         }
