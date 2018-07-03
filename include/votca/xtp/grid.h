@@ -119,7 +119,7 @@ namespace votca { namespace xtp {
         //grid used to scan for optimal cutoffs. Scanning will happen later in python
         void setupCutoffScanGrid(){
             _gridspacing=0.3;
-            _cutoff=4.0;
+            _cutoff=8.5;
             _useVdWcutoff_inside=false;
             _cutoff_inside=0.5;
             _useVdWcutoff=false;
