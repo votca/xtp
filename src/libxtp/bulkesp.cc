@@ -413,32 +413,22 @@ namespace votca {
 
                 //set up grid
                 Grid _grid(true, false, false); //create polarsites, so we can output grid to .cube file
-                //            _grid.setAtomlist(&m->atoms);
-                //            _grid.setupCHELPgrid();
+                
+//                //let's just consider the first Oxygen atom as a molecule
+//                m->atoms= vector<ctp::QMAtom*>(m->atoms.begin()+0, m->atoms.begin()+2);
+//                m->atomIndeces= vector<unsigned>(m->atomIndeces.begin()+0, m->atomIndeces.begin()+2);
+                _grid.setAtomlist(&m->atoms);
+//                _grid.setAtomlist(&debug_mol);
                 _grid.setCubegrid(true);
                 if (periodic) {
                     //_grid.setPadding(0.0);
                     _grid.setPeriodicity(boxLen);
                 }
                 
-//                //let's just consider the first Oxygen atom as a molecule
-//                m->atoms= vector<ctp::QMAtom*>(m->atoms.begin()+0, m->atoms.begin()+2);
-//                m->atomIndeces= vector<unsigned>(m->atomIndeces.begin()+0, m->atomIndeces.begin()+2);
-
-                //test: set inner cutoff to 0 and calculate all potentials near nuclei
-//                _grid.setCutoffs(20, 0.001); //between 1.5 and 3 A, as that is the region where water-water interactions take place
-//                _grid.setSpacing(0.3); //defaults to 0.3 A
-                
-                
-                _grid.setAtomlist(&m->atoms);
-//                _grid.setAtomlist(&debug_mol);
-                
-                //custom grid to later be filtered with python
-                //used for cutoff scan
-                _grid.setupCutoffScanGrid();
-                
-                _grid.setupgrid();
-                //_grid.setupCHELPgrid();
+//                //custom grid to later be filtered with python
+//                //used for cutoff scan
+//                _grid.setupCutoffScanGrid();
+                _grid.setupCHELPgrid();
                 CTP_LOG(ctp::logDEBUG, *_log) << ctp::TimeStamp() << " Done setting up CHELPG grid with " << _grid.getsize() << " points " << flush;
 
                 //calculate the ESP
