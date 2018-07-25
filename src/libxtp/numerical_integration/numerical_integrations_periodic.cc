@@ -716,7 +716,7 @@ namespace votca {
                 const std::vector<double>& _densities = _periodicGridBox.getGridDensities();
                 const std::vector<double>& _weights = _periodicGridBox.getGridWeights();
                 const std::vector<tools::vec>& _positions = _periodicGridBox.getGridPoints();
-                
+                                
                 #pragma omp parallel
                 {
                     vec thread_local_dip(0.0);  //avoids false sharing
@@ -726,14 +726,14 @@ namespace votca {
                         q = -_densities[i] * _weights[i]; //density is neg of charge
                         vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
                         thread_local_dip += dif * q;
-                    }//i
-                    
+                    }//i                    
                     #pragma omp critical
                     dip += thread_local_dip;
                 }
             } else {
                 throw std::runtime_error("Density not calculated");
             }
+            cout <<"dipole:"<< dip.getX()<<"\t"<<dip.getY()<<"\t"<<dip.getZ()<<"\t"<< abs(dip) << endl << flush; 
             return (abs(dip)); //in Bohr*elementary charge
         }
 
@@ -905,7 +905,7 @@ namespace votca {
                             double q = -_weights[i] * _densities[i]; //density is neg of charge
 
                             //r-space sum
-                            vec dif = WrapDisplacement(_positions[i], rvector, boxLen);
+                            vec dif = WrapDistance(_positions[i], rvector, boxLen);
                             double dist = abs(dif); //in bohr
                             
                             double potR = q * ((erfc(alpha * dist) / dist) - tools::conv::Pi / (vol * vol * alpha * alpha)); //erfc and shift average pot to 0
@@ -1034,7 +1034,32 @@ namespace votca {
          * @param vector a
          * @param vector b
          * @param vector box specifying the periodic box
-         * @return the shortest displacement
+         * @return the shortest displacement (with non-negative components)
+         */
+        tools::vec WrapDistance(const tools::vec a, const tools::vec b , const tools::vec box) {
+            tools::vec ret = a-b;
+            for(int k=0; k<3; k++)
+            {
+                ret[k] = fmod(ret[k], box[k]); //if ret <0, then fmod<0 
+                if(ret[k] < 0){
+                    ret[k] += box[k];
+                }
+                if(ret[k] > box[k]*0.5){
+                    ret[k] = box[k]-ret[k];
+                }
+                
+            }
+            return(ret);
+        }
+        
+        /**
+         * \brief Finds the shortest displacement between images of two vectors due to periodic boundary conditions.
+         * This eventually needs to be moved to tools::vec.
+         * 
+         * @param vector a
+         * @param vector b
+         * @param vector box specifying the periodic box
+         * @return the shortest displacement (components can be negative)
          */
         tools::vec WrapDisplacement(const tools::vec a, const tools::vec b , const tools::vec box) {
             tools::vec ret = a-b;
@@ -1045,7 +1070,7 @@ namespace votca {
                     ret[k] += box[k];
                 }
                 if(ret[k] > box[k]*0.5){
-                    ret[k] = box[k]-ret[k];
+                    ret[k] = ret[k]-box[k];
                 }
                 
             }

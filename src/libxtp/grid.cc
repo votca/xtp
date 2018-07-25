@@ -463,7 +463,7 @@ void Grid::setupgrid(){
                         vec atompos=(*atom)->getPos();
                         vec dif = gridpos-atompos;
                         if(_periodic){
-                                dif = WrapDisplacement(gridpos, atompos, _box);
+                                dif = WrapDistance(gridpos, atompos, _box);
                         }
                         
                         double distance2 = dif*dif;

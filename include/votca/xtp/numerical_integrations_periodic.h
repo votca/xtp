@@ -98,6 +98,7 @@ namespace votca { namespace xtp {
     };
         
     tools::vec WrapPoint(const tools::vec r, const tools::vec box);
+    tools::vec WrapDistance(const tools::vec a, const tools::vec b, const tools::vec box);
     tools::vec WrapDisplacement(const tools::vec a, const tools::vec b, const tools::vec box);
 
 }}
