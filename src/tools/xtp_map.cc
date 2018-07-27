@@ -80,6 +80,8 @@ void XtpMap::Initialize() {
                          "  topology");
     AddProgramOptions() ("coordinates,c", propt::value<string> (),
                          "  coordinates or trajectory");
+    AddProgramOptions() ("generate-segments,gs", 
+                         " auto generate a segments mapping file ");
     AddProgramOptions() ("segments,s",  propt::value<string> (),
                          "  definition of segments and fragments");
     AddProgramOptions() ("file,f", propt::value<string> (),
@@ -89,9 +91,20 @@ void XtpMap::Initialize() {
 bool XtpMap::EvaluateOptions() {
 
     CheckRequired("topology", "Missing topology file");
-    CheckRequired("segments", "Missing segment definition file");
     CheckRequired("coordinates", "Missing trajectory input");
     CheckRequired("file", "Missing state file");
+
+    if(_op_vm.count("segments"){
+      if(_op_vm.count("generate-segments"){
+        string err = "Cannot generate and specify segments at the same time";
+        throw std::runtime_error(err);
+      }
+      CheckRequired("segments", "Missing segment definition file");
+    }else if(!_op_vm.count("generate-segments")){
+      string err = "You must either specify a segments file or indicated that"
+        " you wish to generate one from scratch";
+      throw std::runtime_error(err);
+    }
 
     return 1;
 }
