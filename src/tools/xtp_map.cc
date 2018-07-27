@@ -96,13 +96,14 @@ bool XtpMap::EvaluateOptions() {
 
     if(_op_vm.count("segments")){
       if(_op_vm.count("generate-segments")){
-        string err = "Cannot generate and specify segments at the same time";
+        string err = "Cannot generate mapping file while also specifying an "
+          "existing file that you want to use.";
         throw std::runtime_error(err);
       }
       CheckRequired("segments", "Missing segment definition file");
     }else if(!_op_vm.count("generate-segments")){
       string err = "You must either specify a segments file or indicated that"
-        " you wish to generate one from scratch";
+        " you wish to generate one from scratch.";
       throw std::runtime_error(err);
     }
 
