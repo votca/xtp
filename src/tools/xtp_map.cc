@@ -80,8 +80,11 @@ void XtpMap::Initialize() {
                          "  topology");
     AddProgramOptions() ("coordinates,c", propt::value<string> (),
                          "  coordinates or trajectory");
-    AddProgramOptions() ("generate-segments,gs", 
+    AddProgramOptions() ("generate-segments,g", 
                          "  auto generate a segments mapping file ");
+    AddProgramOptions() ("prepare-files,p", 
+                         "  prepare the files that are needed in order to "
+                         "generate the segments mapping file");
     AddProgramOptions() ("segments,s",  propt::value<string> (),
                          "  definition of segments and fragments");
     AddProgramOptions() ("file,f", propt::value<string> (),
@@ -91,20 +94,33 @@ void XtpMap::Initialize() {
 bool XtpMap::EvaluateOptions() {
 
     CheckRequired("topology", "Missing topology file");
-    CheckRequired("coordinates", "Missing trajectory input");
-    CheckRequired("file", "Missing state file");
 
     if(_op_vm.count("segments")){
       if(_op_vm.count("generate-segments")){
         string err = "Cannot generate mapping file while also specifying an "
           "existing file that you want to use.";
-        throw std::runtime_error(err);
+        throw runtime_error(err);
       }
       CheckRequired("segments", "Missing segment definition file");
-    }else if(!_op_vm.count("generate-segments")){
-      string err = "You must either specify a segments file or indicated that"
-        " you wish to generate one from scratch.";
-      throw std::runtime_error(err);
+      CheckRequired("coordinates", "Missing trajectory input");
+      CheckRequired("file", "Missing state file");
+
+    }else if(!_op_vm.count("generate-segment-mapping-file") &&
+             !_op_vm.count("prepare-files")){
+      string err = "You must either specify a segment mapping file or indicate"
+        " that you wish to prepare files for calculating the necessary "
+        "information to generate one from scratch or given the information "
+        "generate the segments mapping file from scratch";
+      throw runtime_error(err);
+    }else{
+      if(_op_vm.count("file")){
+        string err = "The sql database will not be used at this stage.";
+        throw runtime_error(err);
+      }
+      if(_op_vm.count("coordinates")){
+        string err = "The trajectory file will not be used at this stage.";
+        throw runtime_error(err);
+      }
     }
 
     return 1;
@@ -132,9 +148,6 @@ void XtpMap::Run() {
     _statsav.Close();
     if (abort) return;
 
-    string cgfile = _op_vm["segments"].as<string> ();
-    _md2qm.Initialize(cgfile);
-
     
     // ++++++++++++++++++++++++++++ //
     // Create MD topology from file //
@@ -158,73 +171,83 @@ void XtpMap::Run() {
              << endl;
     }
 
-    // ++++++++++++++++++++++++++++++ //
-    // Create MD trajectory from file //
-    // ++++++++++++++++++++++++++++++ //
+    if(_op_vm.count("prepare-files")){
 
-    // Create trajectory reader and initialize
-    string trjfile =  _op_vm["coordinates"].as<string> ();
-    CSG::TrajectoryReader *trjread;
-    trjread = CSG::TrjReaderFactory().Create(trjfile);
+    }else if(_op_vm.count("generate-segment-mapping-file")){
 
-    if (trjread == NULL) {
+    }else{
+
+      // ++++++++++++++++++++++++++++++ //
+      // Create MD trajectory from file //
+      // ++++++++++++++++++++++++++++++ //
+
+      // Create trajectory reader and initialize
+      string trjfile =  _op_vm["coordinates"].as<string> ();
+      CSG::TrajectoryReader *trjread;
+      trjread = CSG::TrjReaderFactory().Create(trjfile);
+
+      if (trjread == NULL) {
         throw runtime_error( string("Input format not supported: ")
-                           + _op_vm["coordinates"].as<string> () );
-    }
-    trjread->Open(trjfile);
-    trjread->FirstFrame(this->_mdtopol);
+            + _op_vm["coordinates"].as<string> () );
+      }
+      trjread->Open(trjfile);
+      trjread->FirstFrame(this->_mdtopol);
 
-    int    firstFrame = 1;
-    int    nFrames    = 1;
-    bool   beginAt    = 0;
-    double startTime  = _mdtopol.getTime();
+      int    firstFrame = 1;
+      int    nFrames    = 1;
+      bool   beginAt    = 0;
+      double startTime  = _mdtopol.getTime();
 
-    if (_op_vm.count("nframes")) {
+      if (_op_vm.count("nframes")) {
         nFrames = _op_vm["nframes"].as<int> ();
-    }
-    if (_op_vm.count("first-frame")) {
+      }
+      if (_op_vm.count("first-frame")) {
         firstFrame = _op_vm["first-frame"].as<int> ();
-    }    
-    if (_op_vm.count("begin")) {
+      }    
+      if (_op_vm.count("begin")) {
         beginAt = true;
         startTime = _op_vm["begin"].as<double> ();
-    }
+      }
 
-    // Extract first frame specified
-    bool hasFrame;
+      // Extract first frame specified
+      bool hasFrame;
 
-    for (hasFrame = true; hasFrame == true;
-         hasFrame = trjread->NextFrame(this->_mdtopol)) {
-         if (  ((_mdtopol.getTime() < startTime) && beginAt )
-               || firstFrame > 1 ) {
-             firstFrame--;
-             continue;
-         }
-         break;
-    }
-    if ( ! hasFrame) {
+      for (hasFrame = true; hasFrame == true;
+          hasFrame = trjread->NextFrame(this->_mdtopol)) {
+        if (  ((_mdtopol.getTime() < startTime) && beginAt )
+            || firstFrame > 1 ) {
+          firstFrame--;
+          continue;
+        }
+        break;
+      }
+      if ( ! hasFrame) {
         trjread->Close();
         delete trjread;
 
         throw runtime_error("Time or frame number exceeds trajectory length");
-    }
-    
-    // +++++++++++++++++++++++++ //
-    // Convert MD to QM Topology //
-    // +++++++++++++++++++++++++ //
+      }
 
-    for (int saved = 0; hasFrame && saved < nFrames;
-         hasFrame = trjread->NextFrame(this->_mdtopol), saved++) {
+      // +++++++++++++++++++++++++ //
+      // Convert MD to QM Topology //
+      // +++++++++++++++++++++++++ //
+
+      string cgfile = _op_vm["segments"].as<string> ();
+      _md2qm.Initialize(cgfile);
+
+      for (int saved = 0; hasFrame && saved < nFrames;
+          hasFrame = trjread->NextFrame(this->_mdtopol), saved++) {
 
         _md2qm.Md2Qm(&_mdtopol, &_qmtopol);
 
-    // +++++++++++++++++++++++++ //
-    // Save to SQLite State File //
-    // +++++++++++++++++++++++++ //
+        // +++++++++++++++++++++++++ //
+        // Save to SQLite State File //
+        // +++++++++++++++++++++++++ //
 
         this->Save("");
-    }
+      }
 
+    }
     // trjread->Close();
     // delete trjread;
 
