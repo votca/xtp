@@ -84,7 +84,7 @@ void XtpMap::Initialize() {
                          "  auto generate a segments mapping file ");
     AddProgramOptions() ("prepare-files,p", 
                          "  prepare the files that are needed in order to "
-                         "generate the segments mapping file");
+                         "  generate the segments mapping file");
     AddProgramOptions() ("segments,s",  propt::value<string> (),
                          "  definition of segments and fragments");
     AddProgramOptions() ("file,f", propt::value<string> (),
@@ -123,6 +123,7 @@ bool XtpMap::EvaluateOptions() {
       }
     }
 
+    cout << "Success in evaluate options part " << endl;
     return 1;
 }
 
@@ -132,29 +133,14 @@ void XtpMap::Run() {
     if (VersionString() != "") name = name + ", version " + VersionString();
     votca::xtp::HelpTextHeader(name);
 
-    // +++++++++++++++++++++++++++++++++++++ //
-    // Initialize MD2QM Engine and SQLite Db //
-    // +++++++++++++++++++++++++++++++++++++ //
-
-    bool abort = false;
-    _outdb = _op_vm["file"].as<string> ();
-    _statsav.Open(_qmtopol, _outdb, false);
-    int frames_in_db = _statsav.FramesInDatabase();
-    if (frames_in_db > 0) {
-        cout << endl << "ERROR <xtp_map> : state file '" 
-             << _outdb << "' already in use. Abort." << endl;
-        abort = true;
-    }
-    _statsav.Close();
-    if (abort) return;
-
-    
+   
     // ++++++++++++++++++++++++++++ //
     // Create MD topology from file //
     // ++++++++++++++++++++++++++++ //
 
     // Create topology reader
     string topfile = _op_vm["topology"].as<string> ();
+    cout << "Getting topology option " << topfile << endl;
     CSG::TopologyReader *topread;
     topread = CSG::TopReaderFactory().Create(topfile);
 
@@ -172,10 +158,29 @@ void XtpMap::Run() {
     }
 
     if(_op_vm.count("prepare-files")){
-
+      cout << "Preparing files for QC calcualtions based on input" << endl;
     }else if(_op_vm.count("generate-segment-mapping-file")){
+      cout << "generating segment mapping file" << endl;
 
     }else{
+      // +++++++++++++++++++++++++++++++++++++ //
+      // Initialize SQLite Db                  //
+      // +++++++++++++++++++++++++++++++++++++ //
+
+      cout << "SQLite Db initialized" << endl;
+      bool abort = false;
+      _outdb = _op_vm["file"].as<string> ();
+      _statsav.Open(_qmtopol, _outdb, false);
+      int frames_in_db = _statsav.FramesInDatabase();
+      if (frames_in_db > 0) {
+        cout << endl << "ERROR <xtp_map> : state file '" 
+          << _outdb << "' already in use. Abort." << endl;
+        abort = true;
+      }
+      _statsav.Close();
+      cout << "Aborting " << abort << endl;
+      if (abort) return;
+      cout << "Success" << endl;
 
       // ++++++++++++++++++++++++++++++ //
       // Create MD trajectory from file //
