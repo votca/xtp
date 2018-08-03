@@ -535,7 +535,7 @@ namespace votca {
             for (i = 1; i <= _n_lines; i++) {
                 for (int j = 0; j < 3; j++) {
                     _input_file >> _occ[ _imo ];
-                    if (_occ[ _imo ] == 2.0) {
+                    if (_occ[ _imo ] != 0.0) {
                         _number_of_electrons++;
                     }
                     _imo++;
