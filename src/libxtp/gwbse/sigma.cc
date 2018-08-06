@@ -44,10 +44,6 @@ namespace votca {
       unsigned gwsize = Mmn.getAuxDimension(); // size of the GW basis
       _sigma_x=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
 
-      if ( ((int)_homo) < 0) {
-        throw std::runtime_error("homo < 0, probably an error while counting the number of electrons");
-      }
-
       #pragma omp parallel for
       for (unsigned gw_level = 0; gw_level < _qptotal; gw_level++) {
         const MatrixXfd & Mmn1 = Mmn[ gw_level + _qpmin ];

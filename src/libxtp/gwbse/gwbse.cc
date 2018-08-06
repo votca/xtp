@@ -99,6 +99,10 @@ std::string ranges = options.ifExistsReturnElseReturnDefault<std::string>(key + 
    *  - number of excitations calculates in BSE
    */
 
+  if (_orbitals.getNumberOfElectrons() <= 0) {
+    throw std::runtime_error("no electrons in the system??");
+  }
+
   _homo = _orbitals.getNumberOfElectrons() - 1;  // indexed from 0
 
  _reset_3c=options.ifExistsReturnElseReturnDefault<int>(
