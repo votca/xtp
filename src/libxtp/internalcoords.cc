@@ -10,10 +10,13 @@ namespace votca { namespace xtp {
 const std::vector<std::string> electroNegElements {"N", "O", "F", "P", "S", "Cl"};
 tools::Elements elements;
 
+template < typename T>
+inline bool VectorContains (const T& item, const std::vector<T>& vec){
+    return (std::find(vec.begin(), vec.end(), item) != vec.end());
+}
+
 inline bool IsElectronegative(const std::string& type){
-    return (std::find(electroNegElements.begin(),
-                      electroNegElements.end(),
-                      type) != electroNegElements.end());
+    return VectorContains(type, electroNegElements);
 }
 
 inline std::tuple<int, int, double> ClosestAtoms(const std::vector<int>& comp1,
@@ -41,14 +44,10 @@ inline std::tuple<int, int, double> ClosestAtoms(const std::vector<int>& comp1,
 
 
 void  InternalCoords::ConnectBonds(){
-    double threshFactor = 1.3;
-
-    if (withAuxiliary){
-        threshFactor = 2.5;
-    }
+    const double threshFactor = 1.3;
+    const double AuxThreshFactor = 2.5;
 
     int numAtoms = qmMolecule.size();
-    int numBonds = 0;
 
     for (int i = 0; i < numAtoms; ++i){
         auto atomI = qmMolecule[i];
@@ -62,16 +61,24 @@ void  InternalCoords::ConnectBonds(){
             const double jCovRad = elements.getCovRad(atomJ->getType(), "bohr");
             const tools::vec jPos = atomJ->getPos();
 
-            double thresh = threshFactor*(iCovRad + jCovRad);
+            double thresh = (iCovRad + jCovRad);
 
             double dist = abs(iPos - jPos);
 
-            if (dist < thresh){
+            if (dist < threshFactor*thresh){
                 bondMatrix(i,j) = dist;
                 bondMatrix(j,i) = dist;
 
                 boost::add_edge(i, j, bondGraph);
                 numBonds += 1;
+
+            } else if (withAuxiliary && dist < auxThreshFactor*thresh){
+                bondMatrix(i,j) = dist;
+                bondMatrix(j,i) = dist;
+
+                boost::add_edge(i, j, bondGraph);
+                numAuxBonds += 1;
+                auxBonds.emplace_back(std::make_pair(i,j));
             }
         }
     }
@@ -145,6 +152,7 @@ void InternalCoords::ConnectMolecules(){
                             if (dist <= thresholdDist){
                                 boost::add_edge(iAtom, jAtom, bondGraph);
                                 numInterMolBonds += 1;
+                                auxBonds.emplace_back(std::make_pair(iAtom, jAtom));
                             }
                         }
                     }
@@ -222,7 +230,7 @@ void InternalCoords::ConnectHBonds(){
                                 bondMatrix(neighBInd, HAtomInd) = dist;
                                 numHBonds+=1;
                             }
-                       }
+                        }
                     }
                 }
             }
@@ -249,14 +257,10 @@ InternalCoords::InternalCoords(const std::vector<QMAtom*>& _qmm, const bool _wit
 
     bondMatrix = Eigen::MatrixXd::Zero(numAtoms, numAtoms);
 
-    double threshFactor = 1.1;
 
-    if (withAuxiliary){
-        threshFactor = 2.5;
-    }
 
     // covalent bonds
-    ConnectAtomsWithin(threshFactor);
+    ConnectBonds();
 
     // Intermolecule bonds
     ConnectMolecules();
