@@ -7,8 +7,12 @@
 #include<votca/tools/elements.h>
 #include<votca/xtp/eigen.h>
 #include<votca/xtp/orbitals.h>
+#include<boost/graph/adjacency_list.hpp>
 
 namespace votca { namespace xtp {
+
+//Bonds will be stored in an undirected graph
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> BglGraph;
 
 class InternalCoords: public CoordBase {
 public:
@@ -19,9 +23,13 @@ public:
     InternalCoords(const std::vector<QMAtom*>& _qmm);
 
     int getPossibleNumMols();
+    int getNumBonds();
+    int getNumHBonds();
 
 private:
     int numBonds;
+    int numInterMolBonds; // interFragmentBonds
+    int numHBonds;
     int numAngles;
     int numDihedrals;
     int possibleNumMols;
@@ -29,6 +37,11 @@ private:
     const bool withAuxiliary;
 
     Eigen::MatrixXd bondMatrix;
+    BglGraph bondGraph;
+
+    void ConnectAtomsWithin(const double& threshFactor);
+    void ConnectMolecules();
+    void ConnectHBonds();
 };
 } // xtp
 } // votca
