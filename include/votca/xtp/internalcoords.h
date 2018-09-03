@@ -39,7 +39,8 @@ private:
     Eigen::MatrixXd bondMatrix;
     BglGraph bondGraph;
 
-    void ConnectAtomsWithin(const double& threshFactor);
+
+    void ConnectBonds();
     void ConnectMolecules();
     void ConnectHBonds();
 };

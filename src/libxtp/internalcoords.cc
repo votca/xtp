@@ -40,7 +40,13 @@ inline std::tuple<int, int, double> ClosestAtoms(const std::vector<int>& comp1,
 }
 
 
-void  InternalCoords::ConnectAtomsWithin(const double& threshFactor){
+void  InternalCoords::ConnectBonds(){
+    double threshFactor = 1.3;
+
+    if (withAuxiliary){
+        threshFactor = 2.5;
+    }
+
     int numAtoms = qmMolecule.size();
     int numBonds = 0;
 
