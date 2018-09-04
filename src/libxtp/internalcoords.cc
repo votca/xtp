@@ -342,15 +342,13 @@ void InternalCoords::CalculateAnglesDihedrals(){
     numDihedrals = dihedrals.size();
 
     if (numAtoms > 3 && numDihedrals == 0){
-
-
         // Need to do something here...
         // arbitrarily choose 4 atoms and check if they form a
         // valid dihedral
 
         std::random_device rd;
         std::mt19937 g(rd());
-        std::uniform_int_distribution<int> dist(0, numAtoms);
+        std::uniform_int_distribution<int> dist(0, numAtoms-1);
 
         auto RandomSelector = [&]() -> std::vector<int> {
             std::vector<int> inds;
