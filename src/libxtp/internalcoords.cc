@@ -295,9 +295,6 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 if (NotAnAngle(index) && NotAnAngle(index2)){
                     // If the angle is > 175, then a special orthogonal angle
                     // should be added, but I don't know how to do that...
-                    std::cout << "Angle " << qmMolecule[atomAIdx]->getType() << " " <<
-                        qmMolecule[atomBIdx]->getType() << " " << qmMolecule[atomCIdx]->getType() << " " << atomAIdx << " " << atomBIdx << " " << atomCIdx << std::endl;
-
                     angles[index] = std::acos(cosABC);
                     vector.emplace_back(std::acos(cosABC));
                 }
