@@ -276,15 +276,24 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
                 const tools::vec atomCPos = qmMolecule[atomCIdx]->getPos();
 
+                auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx);
+                auto index2 = std::make_tuple(atomCIdx, atomBIdx, atomAIdx);
+
+                auto NotAnAngle = [&] (std::tuple<int,int,int>& index) -> bool {
+                    return (angles.find(index)==angles.end());
+                };
+
                 const tools::vec BCVec = (atomCPos - atomBPos).normalize();
 
                 double cosABC = BAVec*BCVec;
 
-                // If the angle is > 175, then a special orthogonal angle
-                // should be added, but I don't know how to do that...
+                if (NotAnAngle(index) && NotAnAngle(index2)){
+                    // If the angle is > 175, then a special orthogonal angle
+                    // should be added, but I don't know how to do that...
 
-                angles[std::make_tuple(atomAIdx, atomBIdx, atomCIdx)] = std::acos(cosABC);
-                vector.emplace_back(std::acos(cosABC));
+                    angles[index] = std::acos(cosABC);
+                    vector.emplace_back(std::acos(cosABC));
+                }
 
 
                 // Now add proper dihedrals
@@ -300,22 +309,29 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
 
                     const tools::vec atomDPos = qmMolecule[atomDIdx]->getPos();
+                    auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx);
+                    auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
 
-                    const tools::vec CBVec = -BCVec;
-                    const tools::vec CDVec = (atomDPos - atomCPos).normalize();
+                    auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
+                        return (dihedrals.find(index)==dihedrals.end());
+                    };
 
-                    const double cosBCD = BCVec*CDVec;
+                    if (NotADihedral(index) && NotADihedral(index2)){
+                        const tools::vec CBVec = -BCVec;
+                        const tools::vec CDVec = (atomDPos - atomCPos).normalize();
 
-                    // ABC and BCD must not be 180 degrees
-                    if (abs(-1 - cosABC) > dihTol && abs(-1 - cosBCD) > dihTol){
+                        const double cosBCD = BCVec*CDVec;
 
-                        tools::vec normPlaneB = (CBVec^CDVec);
+                        // ABC and BCD must not be 180 degrees
+                        if (abs(-1 - cosABC) > dihTol && abs(-1 - cosBCD) > dihTol){
 
-                        const double cosPhi = normPlaneA*normPlaneB;
+                            tools::vec normPlaneB = (CBVec^CDVec);
 
-                        dihedrals[std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx)]
-                            = std::acos(cosPhi);
-                        vector.emplace_back(std::acos(cosPhi));
+                            const double cosPhi = normPlaneA*normPlaneB;
+
+                            dihedrals[index] = std::acos(cosPhi);
+                            vector.emplace_back(std::acos(cosPhi));
+                        }
                     }
                 }
             }
