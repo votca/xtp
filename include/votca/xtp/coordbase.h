@@ -12,6 +12,7 @@ enum CoordType{CARTESIAN, INTERNAL};
 class CoordBase{
 public:
     Eigen::VectorXd Vector();
+    Eigen::VectorXd operator()();
 protected:
     // CoordBase cannot be instantiated
     CoordBase(const CoordType& _type, const std::vector<QMAtom*>& _qmm);

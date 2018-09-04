@@ -13,5 +13,9 @@ Eigen::VectorXd CoordBase::Vector(){
     return temp;
 }
 
+Eigen::VectorXd CoordBase::operator()(){
+    return Vector();
+}
+
 }//xtp
 }//votca
