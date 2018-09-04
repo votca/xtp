@@ -362,9 +362,9 @@ void InternalCoords::CalculateAnglesDihedrals(){
         };
 
         do {
-            auto inds = RandomSelector();
+            std::vector<int> inds = RandomSelector();
+            std::sort(inds.begin(), inds.end());
             do {
-                std::sort(inds.begin(), inds.end());
                 const int atomAIdx = inds[0];
                 const int atomBIdx = inds[1];
                 const int atomCIdx = inds[2];
@@ -379,16 +379,24 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 const double cosABC = BAVec*BCVec;
                 const double cosBCD = CBVec*CDVec;
 
+
                 if(abs(-1 - cosABC) > dihTol && abs(-1 - cosBCD) > dihTol){
                     const tools::vec normPlaneA = BAVec^BCVec;
                     const tools::vec normPlaneB = CBVec^CDVec;
                     const double cosPhi = normPlaneA*normPlaneB;
+                    auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx);
+                    auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
 
-                    dihedrals[std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx)]
-                        = std::acos(cosPhi);
-                    vector.emplace_back(std::acos(cosPhi));
-                    numDihedrals += 1;
+                    auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
+                        return (dihedrals.find(index)==dihedrals.end());
+                    };
+                    if (NotADihedral(index)){
+                        dihedrals[index] = std::acos(cosPhi);
+                        vector.emplace_back(std::acos(cosPhi));
+                        numDihedrals += 1;
+                    }
                 }
+
             } while (std::next_permutation(inds.begin(), inds.end()));
         } while (numDihedrals < 1);
     }
