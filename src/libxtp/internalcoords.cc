@@ -251,7 +251,12 @@ void InternalCoords::CalculateAnglesDihedrals(){
     // Covalent, interfragment, and hbonds will generate angles
     // auxiliary bonds of all types will not
 
-    double dihTol = 1e-6;
+    double tol = 1e-6;
+
+    auto IsAnAuxBond = [&](const int& i, const int& j) -> bool {
+        return (VectorContains(std::make_pair(i, j), auxBonds) ||
+                VectorContains(std::make_pair(j, i), auxBonds));
+    };
 
     for (int atomAIdx = 0; atomAIdx < numAtoms; ++atomAIdx){
         BglGraph::adjacency_iterator itA, itA_end;
@@ -261,7 +266,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
         for (; itA!=itA_end; ++itA){
             const int atomBIdx = *itA;
-            if (VectorContains(std::make_pair(atomAIdx, atomBIdx), auxBonds)) continue;
+            if (IsAnAuxBond(atomAIdx, atomBIdx)) continue;
 
             const tools::vec atomBPos = qmMolecule[atomBIdx]->getPos();
             const tools::vec BAVec = (atomAPos - atomBPos).normalize();
@@ -271,7 +276,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
             for (; itB != itB_end; ++itB){
                 const int atomCIdx = *itB;
-                if (VectorContains(std::make_pair(atomBIdx, atomCIdx), auxBonds) ||
+                if (IsAnAuxBond(atomBIdx, atomCIdx) ||
                     atomCIdx == atomAIdx) continue;
 
                 const tools::vec atomCPos = qmMolecule[atomCIdx]->getPos();
@@ -290,6 +295,8 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 if (NotAnAngle(index) && NotAnAngle(index2)){
                     // If the angle is > 175, then a special orthogonal angle
                     // should be added, but I don't know how to do that...
+                    std::cout << "Angle " << qmMolecule[atomAIdx]->getType() << " " <<
+                        qmMolecule[atomBIdx]->getType() << " " << qmMolecule[atomCIdx]->getType() << " " << atomAIdx << " " << atomBIdx << " " << atomCIdx << std::endl;
 
                     angles[index] = std::acos(cosABC);
                     vector.emplace_back(std::acos(cosABC));
@@ -303,7 +310,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
                 for (; itC != itC_end; ++itC){
                     const int atomDIdx = *itC;
-                    if (VectorContains(std::make_pair(atomCIdx, atomDIdx), auxBonds) ||
+                    if (IsAnAuxBond(atomCIdx, atomDIdx) ||
                         atomDIdx == atomBIdx ||
                         atomDIdx == atomAIdx) continue;
 
@@ -323,7 +330,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
                         const double cosBCD = BCVec*CDVec;
 
                         // ABC and BCD must not be 180 degrees
-                        if (abs(-1 - cosABC) > dihTol && abs(-1 - cosBCD) > dihTol){
+                        if (abs(-1 - cosABC) > tol && abs(-1 - cosBCD) > tol){
 
                             tools::vec normPlaneB = (CBVec^CDVec);
 
@@ -380,7 +387,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 const double cosBCD = CBVec*CDVec;
 
 
-                if(abs(-1 - cosABC) > dihTol && abs(-1 - cosBCD) > dihTol){
+                if(abs(-1 - cosABC) > tol && abs(-1 - cosBCD) > tol){
                     const tools::vec normPlaneA = BAVec^BCVec;
                     const tools::vec normPlaneB = CBVec^CDVec;
                     const double cosPhi = normPlaneA*normPlaneB;
