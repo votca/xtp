@@ -414,7 +414,7 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool _withAux):
 InternalCoords::InternalCoords(const std::vector<QMAtom*>& _qmm, const bool _withAux):
     CoordBase(INTERNAL, _qmm), withAuxiliary(_withAux),
     numBonds(0), numInterMolBonds(0), numHBonds(0),
-    numAngles(0), numDihedrals(0), numAuxBonds(0),
+    numAngles(0), numDihedrals(0), numAuxBonds(0), bondGraph(numAtoms),
     bondMatrix(Eigen::MatrixXd::Zero(numAtoms, numAtoms))
 {
     // This code implements the algorithm described in
