@@ -25,12 +25,16 @@ public:
     int getPossibleNumMols();
     int getNumBonds();
     int getNumHBonds();
+    int getNumAngles();
+    int getNumAuxBonds();
+    int getNumDihedrals();
 
 private:
     int numBonds;
     int numInterMolBonds; // interFragmentBonds
     int numHBonds;
     int numAngles;
+    int numAuxBonds;
     int numDihedrals;
     int possibleNumMols;
 
@@ -39,10 +43,16 @@ private:
     Eigen::MatrixXd bondMatrix;
     BglGraph bondGraph;
 
+    std::map< std::tuple<int, int, int> , double> angles;
+    std::map< std::tuple<int, int, int, int>, double> dihedrals;
+
+    std::vector< std::pair<int, int> > auxBonds;
 
     void ConnectBonds();
     void ConnectMolecules();
     void ConnectHBonds();
+    void CalculateAnglesDihedrals();
+    void IsAuxBond();
 };
 } // xtp
 } // votca
