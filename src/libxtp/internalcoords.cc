@@ -358,21 +358,38 @@ void InternalCoords::CalculateAnglesDihedrals(){
             return (bondMatrix(i,j) > 0);
         };
 
+        std::vector<std::vector<int>> alreadyChosen;
         auto RandomSelector = [&]() -> std::vector<int> {
             std::vector<int> inds;
             do {
-                int ind = dist(g);
-                if (!VectorContains(ind, inds)){
-                    inds.emplace_back(ind);
-                }
-            } while (inds.size() < 4);
+                inds = std::vector<int>();
+                do {
+                    int ind = dist(g);
+                    if (!VectorContains(ind, inds)){
+                        inds.emplace_back(ind);
+                    }
+                } while (inds.size() < 4);
+            } while (VectorContains(inds, alreadyChosen));
 
+            std::sort(inds.begin(), inds.end());
+
+            do {
+                alreadyChosen.emplace_back(inds);
+            } while (std::next_permutation(inds.begin(), inds.end()));
+
+            std::reverse(inds.begin(), inds.end());
             return inds;
         };
 
+        std::function<int(int)> factorial =  [&](int num) -> int {
+            if (num == 1) return 1;
+            return num*factorial(num-1);
+        };
+
+        int checkCount = 0;
+        int checkCountMax = factorial(numAtoms)/(factorial(4));
         do {
             std::vector<int> inds = RandomSelector();
-            std::sort(inds.begin(), inds.end());
             do {
                 const int atomAIdx = inds[0];
                 const int atomBIdx = inds[1];
@@ -410,7 +427,8 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 }
 
             } while (std::next_permutation(inds.begin(), inds.end()));
-        } while (numDihedrals < 1);
+            ++checkCount;
+        } while (numDihedrals < 1 && checkCount < checkCountMax);
     }
 }
 
