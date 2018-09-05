@@ -11,6 +11,7 @@
 #include <votca/xtp/internalcoords.h>
 #include <votca/xtp/coordtransform.h>
 #include <votca/xtp/orbitals.h>
+#include <cmath>
 
 
 BOOST_AUTO_TEST_SUITE(test_coord_transform)
@@ -18,12 +19,7 @@ BOOST_AUTO_TEST_SUITE(test_coord_transform)
 using namespace votca::xtp;
 using namespace votca::tools;
 
-BOOST_AUTO_TEST_CASE(incorrect_transform_selection){
-
-    CoordinateTransform C2I(CARTESIAN, INTERNAL);
-
-    // xyz files of different systems
-
+BOOST_AUTO_TEST_CASE(four_bonds){
     std::ofstream ammoniaXYZ("ammonia.xyz");
 
     ammoniaXYZ << " 4" << std::endl;
@@ -36,44 +32,93 @@ BOOST_AUTO_TEST_CASE(incorrect_transform_selection){
 
     ammoniaXYZ.close();
 
-    // Read in ammonia
-
     Orbitals ammonia;
 
     ammonia.LoadFromXYZ("ammonia.xyz");
 
-    CartesianCoords CC(ammonia.QMAtoms());
+    InternalCoords ammoniaIC(ammonia);
 
-    InternalCoords ammoniaIC(ammonia.QMAtoms());
+    BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
+}
+BOOST_AUTO_TEST_CASE(single_angle){
+    std::ofstream single_angleXYZ("single_angle.xyz");
 
-    BOOST_CHECK_EQUAL(ammoniaIC.getPossibleNumMols(), 1);
+    single_angleXYZ << "3" << std::endl;
+    single_angleXYZ << " " << std::endl;
+    single_angleXYZ << "O          0.02272        2.28696        0.00000" << std::endl;
+    single_angleXYZ << "H          0.99272        2.28696        0.00000" << std::endl;
+    single_angleXYZ << "H         -0.30061        2.60542       -0.85729" << std::endl;
+
+    Orbitals single_angle;
+    single_angle.LoadFromXYZ("single_angle.xyz");
+    InternalCoords ic(single_angle);
+
+    BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
+    double tol = 1e-6;
+
+    BOOST_CHECK(std::abs(ic.Vector()[4] - acos(cos(109.5)) < tol));
+}
+
+BOOST_AUTO_TEST_CASE(single_dihedral_two_angles_ic_test){
+    std::ofstream single_dihedralXYZ ("single_dihedral.xyz");
+
+    single_dihedralXYZ << "4" << std::endl;
+    single_dihedralXYZ << "" << std::endl;
+    single_dihedralXYZ << "C         -6.56591        1.43600        0.00000" << std::endl;
+    single_dihedralXYZ << "C         -5.49591        1.43600        0.00000" << std::endl;
+    single_dihedralXYZ << "H         -6.92258        0.44220       -0.17333" << std::endl;
+    single_dihedralXYZ << "H         -5.13925        2.42980        0.17333" << std::endl;
+    single_dihedralXYZ.close();
+    Orbitals single_dihedral;
+    single_dihedral.LoadFromXYZ("single_dihedral.xyz");
+    InternalCoords ic(single_dihedral, true);
+
+    // std::cout << ic.getNumBonds() << std::endl;
+    // std::cout << ic.getNumAuxBonds() << std::endl;
+
+    BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 1);
+    BOOST_CHECK_EQUAL(ic.getNumAngles(), 2);
+
+}
+
+BOOST_AUTO_TEST_CASE(one_angles){
+    std::ofstream co2XYZ("co2.xyz");
+
+    co2XYZ << "3" << std::endl;
+    co2XYZ << " " << std::endl;
+    co2XYZ << "O         0.00000        0.00000        0.00000" << std::endl;
+    co2XYZ << "C         1.42000        0.00000        0.00000" << std::endl;
+    co2XYZ << "O         2.01000        0.00000        0.00000" << std::endl;
 
 
-    std::ofstream waterAmmoniaXYZ("water_ammonia.xyz");
+    Orbitals co2;
+    co2.LoadFromXYZ("co2.xyz");
 
-    waterAmmoniaXYZ << " 7" << std::endl;
-    waterAmmoniaXYZ << " water and ammonia" << std::endl;
+    InternalCoords co2IC(co2);
 
-    waterAmmoniaXYZ << " N         -7.63720        1.47740       -0.42514"
-                    << std::endl;
-    waterAmmoniaXYZ << " H         -6.60208        1.56651       -0.42220"
-                    << std::endl;
-    waterAmmoniaXYZ << " H         -7.89991        0.83024        0.28238"
-                    << std::endl;
-    waterAmmoniaXYZ << " H         -7.89740        1.24524       -1.37010"
-                    << std::endl;
-    waterAmmoniaXYZ << " O         -6.00031        3.14833       -0.46360"
-                    << std::endl;
-    waterAmmoniaXYZ << " H         -5.06057        3.14460       -0.49868"
-                    << std::endl;
-    waterAmmoniaXYZ << " H         -6.39546        3.97859       -0.79116"
-                    << std::endl;
+    BOOST_CHECK_EQUAL(co2IC.getNumBonds(), 2);
+    BOOST_CHECK_EQUAL(co2IC.getNumAngles(), 1);
+}
 
-    Orbitals waterAmmonia;
-    waterAmmonia.LoadFromXYZ("water_ammonia.xyz");
+BOOST_AUTO_TEST_CASE(no_dihedrals){
+    std::ofstream ethyneXYZ("ethyne.xyz");
 
-    InternalCoords WA(waterAmmonia);
+    ethyneXYZ << "" << std::endl;
+    ethyneXYZ << "" << std::endl;
+    ethyneXYZ << "C         -3.93046        0.00000        0.00000" << std::endl;
+    ethyneXYZ << "C         -2.14320        0.00000        0.00000" << std::endl;
+    ethyneXYZ << "H         -4.92442        0.00000        0.00000" << std::endl;
+    ethyneXYZ << "H         -1.14923        0.00000        0.00000" << std::endl;
 
-    BOOST_CHECK_EQUAL(WA.getPossibleNumMols(), 2);
+    Orbitals ethyne; ethyne.LoadFromXYZ("ethyne.xyz");
 
-BOOST_AUTO_TEST_SUITE_END()}
+
+    InternalCoords ethIC(ethyne, false);
+
+    BOOST_CHECK_EQUAL(ethIC.getNumDihedrals(), 0);
+    BOOST_CHECK_EQUAL(ethIC.getNumAngles(), 2);
+    BOOST_CHECK_EQUAL(ethIC.getNumBonds(), 3);
+
+}
+
+BOOST_AUTO_TEST_SUITE_END()
