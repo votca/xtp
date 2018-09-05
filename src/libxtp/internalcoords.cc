@@ -327,7 +327,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
                         const double cosBCD = BCVec*CDVec;
 
                         // ABC and BCD must not be 180 degrees
-                        if (abs(-1 - cosABC) > tol && abs(-1 - cosBCD) > tol){
+                        if (std::abs(-1 - cosABC) > tol && std::abs(-1 - cosBCD) > tol){
 
                             tools::vec normPlaneB = (CBVec^CDVec);
 
