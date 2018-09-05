@@ -19,27 +19,6 @@ BOOST_AUTO_TEST_SUITE(test_coord_transform)
 using namespace votca::xtp;
 using namespace votca::tools;
 
-BOOST_AUTO_TEST_CASE(four_bonds){
-    std::ofstream ammoniaXYZ("ammonia.xyz");
-
-    ammoniaXYZ << " 4" << std::endl;
-    ammoniaXYZ << " ammonia" << std::endl;
-
-    ammoniaXYZ << " H      -0.813712     -0.019797      0.024059" << std::endl;
-    ammoniaXYZ << " N       0.000059      0.450035      0.427708" << std::endl;
-    ammoniaXYZ << " H       0.813749     -0.019930      0.024104" << std::endl;
-    ammoniaXYZ << " H      -0.000096      1.389693      0.024103" << std::endl;
-
-    ammoniaXYZ.close();
-
-    Orbitals ammonia;
-
-    ammonia.LoadFromXYZ("ammonia.xyz");
-
-    InternalCoords ammoniaIC(ammonia);
-
-    BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
-}
 BOOST_AUTO_TEST_CASE(single_angle){
     std::ofstream single_angleXYZ("single_angle.xyz");
 
@@ -119,6 +98,30 @@ BOOST_AUTO_TEST_CASE(no_dihedrals){
     BOOST_CHECK_EQUAL(ethIC.getNumAngles(), 2);
     BOOST_CHECK_EQUAL(ethIC.getNumBonds(), 3);
 
+}
+
+BOOST_AUTO_TEST_CASE(ammonia_internal_coords){
+    std::ofstream ammoniaXYZ("ammonia.xyz");
+
+    ammoniaXYZ << " 4" << std::endl;
+    ammoniaXYZ << " ammonia" << std::endl;
+
+    ammoniaXYZ << " H      -0.813712     -0.019797      0.024059" << std::endl;
+    ammoniaXYZ << " N       0.000059      0.450035      0.427708" << std::endl;
+    ammoniaXYZ << " H       0.813749     -0.019930      0.024104" << std::endl;
+    ammoniaXYZ << " H      -0.000096      1.389693      0.024103" << std::endl;
+
+    ammoniaXYZ.close();
+
+    Orbitals ammonia;
+
+    ammonia.LoadFromXYZ("ammonia.xyz");
+
+    InternalCoords ammoniaIC(ammonia);
+
+    BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
+    BOOST_CHECK_EQUAL(ammoniaIC.getNumAngles(), 3);
+    BOOST_CHECK_EQUAL(ammoniaIC.getNumDihedrals(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
