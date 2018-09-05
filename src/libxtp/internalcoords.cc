@@ -354,12 +354,17 @@ void InternalCoords::CalculateAnglesDihedrals(){
         std::mt19937 g(rd());
         std::uniform_int_distribution<int> dist(0, numAtoms-1);
 
+        auto IsABond = [&] (const int& i, const int& j) -> bool{
+            return (bondMatrix(i,j) > 0);
+        };
+
         auto RandomSelector = [&]() -> std::vector<int> {
             std::vector<int> inds;
             do {
                 int ind = dist(g);
-                if (!VectorContains(ind, inds))
+                if (!VectorContains(ind, inds)){
                     inds.emplace_back(ind);
+                }
             } while (inds.size() < 4);
 
             return inds;
@@ -373,6 +378,9 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 const int atomBIdx = inds[1];
                 const int atomCIdx = inds[2];
                 const int atomDIdx = inds[3];
+
+                if (!(IsABond(atomAIdx, atomBIdx) && IsABond(atomBIdx, atomCIdx) &&
+                      IsABond(atomCIdx, atomDIdx))) continue;
 
                 const tools::vec BAVec = (qmMolecule[atomAIdx]->getPos() - qmMolecule[atomBIdx]->getPos()).normalize();
                 const tools::vec BCVec = (qmMolecule[atomCIdx]->getPos() - qmMolecule[atomBIdx]->getPos()).normalize();
