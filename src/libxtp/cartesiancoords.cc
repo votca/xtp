@@ -10,6 +10,8 @@ CartesianCoords::CartesianCoords(const Orbitals& system):
         _vector.push_back(pos.y());
         _vector.push_back(pos.z());
     }
+
+    _coords = Eigen::Map<Eigen::VectorXd>(_vector.data(), _vector.size());
 }
 
 } // xtp

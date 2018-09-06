@@ -461,6 +461,8 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool withAux):
 
     CalculateAnglesDihedrals();
 
+    _coords = Eigen::Map<Eigen::VectorXd>(_vector.data(), _vector.size());
+
 }
 
 int InternalCoords::getPossibleNumMols(){

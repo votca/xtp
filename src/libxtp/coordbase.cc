@@ -11,8 +11,7 @@ CoordBase::CoordBase(const CoordType& type, const Orbitals& system):
 
 
 Eigen::VectorXd CoordBase::Vector(){
-    Eigen::VectorXd temp = Eigen::Map<Eigen::VectorXd>(_vector.data(), _vector.size());
-    return temp;
+    return _coords;
 }
 
 Eigen::VectorXd CoordBase::operator()(){

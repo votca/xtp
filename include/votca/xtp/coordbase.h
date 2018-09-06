@@ -25,6 +25,7 @@ protected:
     const Orbitals& _system;
     const int _numAtoms;
     std::vector<double> _vector;
+    Eigen::VectorXd _coords;
 };
 typedef CoordBase CoordSystem;
 } //xtp
