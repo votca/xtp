@@ -12,7 +12,6 @@ namespace votca { namespace xtp {
 class CartesianCoords: public CoordBase{
 public:
     CartesianCoords(const Orbitals& orb);
-    CartesianCoords(const std::vector<QMAtom*>& _qmm);
 };
 
 

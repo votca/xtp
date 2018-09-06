@@ -17,10 +17,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> BglG
 class InternalCoords: public CoordBase {
 public:
     InternalCoords(const Orbitals& orb, const bool _withAuxiliary);
-    InternalCoords(const std::vector<QMAtom*>& _qmm, const bool _withAuxiliary);
-
     InternalCoords(const Orbitals& orb);
-    InternalCoords(const std::vector<QMAtom*>& _qmm);
 
     int getPossibleNumMols();
     int getNumBonds();

@@ -1,19 +1,16 @@
 #include<votca/xtp/cartesiancoords.h>
 
 namespace votca { namespace xtp{
-CartesianCoords::CartesianCoords(const std::vector<QMAtom*>& _qmm):
-    CoordBase(CARTESIAN, _qmm){
+CartesianCoords::CartesianCoords(const Orbitals& system):
+    CoordBase(CARTESIAN, system){
 
-    for (auto& qma:qmMolecule){
+    for (auto& qma: _qmMolecule){
         auto pos = qma->getPos();
-        vector.push_back(pos.x());
-        vector.push_back(pos.y());
-        vector.push_back(pos.z());
+        _vector.push_back(pos.x());
+        _vector.push_back(pos.y());
+        _vector.push_back(pos.z());
     }
 }
-
-CartesianCoords::CartesianCoords(const Orbitals& orb):
-    CartesianCoords(orb.QMAtoms()){}
 
 } // xtp
 } // votca
