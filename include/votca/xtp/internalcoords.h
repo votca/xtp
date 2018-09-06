@@ -30,23 +30,26 @@ public:
     int getNumDihedrals();
 
 private:
-    int numBonds;
-    int numInterMolBonds; // interFragmentBonds
-    int numHBonds;
-    int numAngles;
-    int numAuxBonds;
-    int numDihedrals;
-    int possibleNumMols;
+    int _numBonds;
+    int _numInterMolBonds; // interFragmentBonds
+    int _numHBonds;
+    int _numAngles;
+    int _numAuxBonds;
+    int _numDihedrals;
+    int _possibleNumMols;
 
-    const bool withAuxiliary;
+    const bool _withAuxiliary;
 
-    Eigen::MatrixXd bondMatrix;
-    BglGraph bondGraph;
+    Eigen::MatrixXd _bondMatrix;
+    Eigen::MatrixXd _wilsonBMatrix;
+    BglGraph _bondGraph;
 
-    std::map< std::tuple<int, int, int> , double> angles;
-    std::map< std::tuple<int, int, int, int>, double> dihedrals;
 
-    std::vector< std::pair<int, int> > auxBonds;
+    std::map< std::tuple<int, int>, double> _bonds;
+    std::map< std::tuple<int, int, int> , double> _angles;
+    std::map< std::tuple<int, int, int, int>, double> _dihedrals;
+
+    std::vector< std::pair<int, int> > _auxBonds;
 
     void ConnectBonds();
     void ConnectMolecules();

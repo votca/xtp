@@ -67,20 +67,20 @@ void  InternalCoords::ConnectBonds(){
             double dist = abs(iPos - jPos);
 
             if (dist < threshFactor*thresh){
-                bondMatrix(i,j) = dist;
-                bondMatrix(j,i) = dist;
+                _bondMatrix(i,j) = dist;
+                _bondMatrix(j,i) = dist;
 
-                boost::add_edge(i, j, bondGraph);
-                numBonds += 1;
+                boost::add_edge(i, j, _bondGraph);
+                _numBonds += 1;
                 vector.emplace_back(dist);
 
-            } else if (withAuxiliary && dist < auxThreshFactor*thresh){
-                bondMatrix(i,j) = dist;
-                bondMatrix(j,i) = dist;
+            } else if (_withAuxiliary && dist < auxThreshFactor*thresh){
+                _bondMatrix(i,j) = dist;
+                _bondMatrix(j,i) = dist;
 
-                boost::add_edge(i, j, bondGraph);
-                numAuxBonds += 1;
-                auxBonds.emplace_back(std::make_pair(i,j));
+                boost::add_edge(i, j, _bondGraph);
+                _numAuxBonds += 1;
+                _auxBonds.emplace_back(std::make_pair(i,j));
                 vector.emplace_back(dist);
             }
         }
@@ -100,14 +100,14 @@ void InternalCoords::ConnectMolecules(){
     // This probably has some name in Graph theory, but I don't know it.
 
     // this will contain the component index that an atom belongs to.
-    std::vector<int> idxInComponent(boost::num_vertices(bondGraph));
+    std::vector<int> idxInComponent(boost::num_vertices(_bondGraph));
 
-    int numComponents = boost::connected_components(bondGraph,
+    int numComponents = boost::connected_components(_bondGraph,
                                                     idxInComponent.data());
-    possibleNumMols = numComponents;
+    _possibleNumMols = numComponents;
 
     if (numComponents > 1){
-        std::vector<std::vector<int>> components(possibleNumMols);
+        std::vector<std::vector<int>> components(_possibleNumMols);
 
         for (int atomIdx = 0; atomIdx < numAtoms; ++atomIdx){
             int componentIdx = idxInComponent[atomIdx];
@@ -130,14 +130,14 @@ void InternalCoords::ConnectMolecules(){
                 const int j = std::get<1>(closest);
                 const double dist = std::get<2>(closest);
 
-                bondMatrix(i,j) = dist;
-                bondMatrix(j,i) = dist;
+                _bondMatrix(i,j) = dist;
+                _bondMatrix(j,i) = dist;
 
-                boost::add_edge(i, j, bondGraph);
+                boost::add_edge(i, j, _bondGraph);
                 numInterMolBonds += 1;
                 vector.emplace_back(dist);
 
-                if (withAuxiliary){
+                if (_withAuxiliary){
                     // auxiliary interfragment bonds if needed
 
                     // the paper says the threshold for this can be
@@ -154,9 +154,9 @@ void InternalCoords::ConnectMolecules(){
                             const double dist = abs(qmMolecule[iAtom]->getPos() -
                                                     qmMolecule[jAtom]->getPos());
                             if (dist <= thresholdDist){
-                                boost::add_edge(iAtom, jAtom, bondGraph);
+                                boost::add_edge(iAtom, jAtom, _bondGraph);
                                 numInterMolBonds += 1;
-                                auxBonds.emplace_back(std::make_pair(iAtom, jAtom));
+                                _auxBonds.emplace_back(std::make_pair(iAtom, jAtom));
                                 vector.emplace_back(dist);
                             }
                         }
@@ -166,7 +166,7 @@ void InternalCoords::ConnectMolecules(){
         }
     }
 
-    numComponents = boost::connected_components(bondGraph,
+    numComponents = boost::connected_components(_bondGraph,
                                                 idxInComponent.data());
 
     if (numComponents != 1){
@@ -195,7 +195,7 @@ void InternalCoords::ConnectHBonds(){
         if (qmMolecule[i]->getType() == "H"){
             const int HAtomInd = i;
             BglGraph::adjacency_iterator it, it_end;
-            boost::tie(it, it_end) = boost::adjacent_vertices(HAtomInd, bondGraph);
+            boost::tie(it, it_end) = boost::adjacent_vertices(HAtomInd, _bondGraph);
 
             const tools::vec HAtomPos = qmMolecule[i]->getPos();
 
@@ -230,10 +230,10 @@ void InternalCoords::ConnectHBonds(){
                             // And the angle is greater than 90
                             // ie cos(angle) < 0
                             if (cosTheta < 0){
-                                boost::add_edge(HAtomInd, neighBInd, bondGraph);
-                                bondMatrix(HAtomInd, neighBInd) = dist;
-                                bondMatrix(neighBInd, HAtomInd) = dist;
-                                numHBonds+=1;
+                                boost::add_edge(HAtomInd, neighBInd, _bondGraph);
+                                _bondMatrix(HAtomInd, neighBInd) = dist;
+                                _bondMatrix(neighBInd, HAtomInd) = dist;
+                                _numHBonds+=1;
                                 vector.emplace_back(dist);
                             }
                         }
@@ -254,13 +254,13 @@ void InternalCoords::CalculateAnglesDihedrals(){
     double tol = 1e-6;
 
     auto IsAnAuxBond = [&](const int& i, const int& j) -> bool {
-        return (VectorContains(std::make_pair(i, j), auxBonds) ||
-                VectorContains(std::make_pair(j, i), auxBonds));
+        return (VectorContains(std::make_pair(i, j), _auxBonds) ||
+                VectorContains(std::make_pair(j, i), _auxBonds));
     };
 
     for (int atomAIdx = 0; atomAIdx < numAtoms; ++atomAIdx){
         BglGraph::adjacency_iterator itA, itA_end;
-        boost::tie(itA, itA_end) = boost::adjacent_vertices(atomAIdx, bondGraph);
+        boost::tie(itA, itA_end) = boost::adjacent_vertices(atomAIdx, _bondGraph);
 
         const tools::vec atomAPos = qmMolecule[atomAIdx]->getPos();
 
@@ -272,7 +272,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
             const tools::vec BAVec = (atomAPos - atomBPos).normalize();
 
             BglGraph::adjacency_iterator itB, itB_end;
-            boost::tie(itB, itB_end) = boost::adjacent_vertices(atomBIdx, bondGraph);
+            boost::tie(itB, itB_end) = boost::adjacent_vertices(atomBIdx, _bondGraph);
 
             for (; itB != itB_end; ++itB){
                 const int atomCIdx = *itB;
@@ -285,7 +285,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 auto index2 = std::make_tuple(atomCIdx, atomBIdx, atomAIdx);
 
                 auto NotAnAngle = [&] (std::tuple<int,int,int>& index) -> bool {
-                    return (angles.find(index)==angles.end());
+                    return (_angles.find(index)==_angles.end());
                 };
 
                 const tools::vec BCVec = (atomCPos - atomBPos).normalize();
@@ -295,14 +295,14 @@ void InternalCoords::CalculateAnglesDihedrals(){
                 if (NotAnAngle(index) && NotAnAngle(index2)){
                     // If the angle is > 175, then a special orthogonal angle
                     // should be added, but I don't know how to do that...
-                    angles[index] = std::acos(cosABC);
+                    _angles[index] = std::acos(cosABC);
                     vector.emplace_back(std::acos(cosABC));
                 }
 
 
                 // Now add proper dihedrals
                 BglGraph::adjacency_iterator itC, itC_end;
-                boost::tie(itC, itC_end) = boost::adjacent_vertices(atomCIdx, bondGraph);
+                boost::tie(itC, itC_end) = boost::adjacent_vertices(atomCIdx, _bondGraph);
                 tools::vec normPlaneA = BAVec^BCVec;
 
                 for (; itC != itC_end; ++itC){
@@ -317,7 +317,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
                     auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
 
                     auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
-                        return (dihedrals.find(index)==dihedrals.end());
+                        return (_dihedralss.find(index)==_dihedralss.end());
                     };
 
                     if (NotADihedral(index) && NotADihedral(index2)){
@@ -333,7 +333,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
                             const double cosPhi = normPlaneA*normPlaneB;
 
-                            dihedrals[index] = std::acos(cosPhi);
+                            _dihedralss[index] = std::acos(cosPhi);
                             vector.emplace_back(std::acos(cosPhi));
                         }
                     }
@@ -342,10 +342,9 @@ void InternalCoords::CalculateAnglesDihedrals(){
         }
     }
 
-    numAngles = angles.size();
-    numDihedrals = dihedrals.size();
-
-    if (numAtoms > 3 && numDihedrals == 0){
+    _numAngles = _angles.size();
+    _numDihedrals = _dihedralss.size();
+    if (numAtoms > 3 && _numDihedrals == 0){
         // Need to do something here...
         // arbitrarily choose 4 atoms and check if they form a
         // valid dihedral
@@ -355,7 +354,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
         std::uniform_int_distribution<int> dist(0, numAtoms-1);
 
         auto IsABond = [&] (const int& i, const int& j) -> bool{
-            return (bondMatrix(i,j) > 0);
+            return (_bondMatrix(i,j) > 0);
         };
 
         std::vector<std::vector<int>> alreadyChosen;
@@ -417,18 +416,18 @@ void InternalCoords::CalculateAnglesDihedrals(){
                     auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
 
                     auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
-                        return (dihedrals.find(index)==dihedrals.end());
+                        return (_dihedralss.find(index)==_dihedralss.end());
                     };
                     if (NotADihedral(index)){
-                        dihedrals[index] = std::acos(cosPhi);
+                        _dihedralss[index] = std::acos(cosPhi);
                         vector.emplace_back(std::acos(cosPhi));
-                        numDihedrals += 1;
+                        _numDihedrals += 1;
                     }
                 }
 
             } while (std::next_permutation(inds.begin(), inds.end()));
             ++checkCount;
-        } while (numDihedrals < 1 && checkCount < checkCountMax);
+        } while (_numDihedrals < 1 && checkCount < checkCountMax);
     }
 }
 
@@ -442,10 +441,10 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool _withAux):
     InternalCoords(orb.QMAtoms(), _withAux){};
 
 InternalCoords::InternalCoords(const std::vector<QMAtom*>& _qmm, const bool _withAux):
-    CoordBase(INTERNAL, _qmm), withAuxiliary(_withAux),
-    numBonds(0), numInterMolBonds(0), numHBonds(0),
-    numAngles(0), numDihedrals(0), numAuxBonds(0), bondGraph(numAtoms),
-    bondMatrix(Eigen::MatrixXd::Zero(numAtoms, numAtoms))
+    CoordBase(INTERNAL, _qmm), _withAuxiliary(_withAux),
+    _numBonds(0), numInterMolBonds(0), _numHBonds(0),
+    _numAngles(0), _numDihedrals(0), _numAuxBonds(0), _bondGraph(numAtoms),
+    _bondMatrix(Eigen::MatrixXd::Zero(numAtoms, numAtoms))
 {
     // This code implements the algorithm described in
     // https://doi.org/10.1063/1.1515483
@@ -464,27 +463,27 @@ InternalCoords::InternalCoords(const std::vector<QMAtom*>& _qmm, const bool _wit
 }
 
 int InternalCoords::getPossibleNumMols(){
-    return possibleNumMols;
+    return _possibleNumMols;
 }
 
 int InternalCoords::getNumBonds(){
-    return numBonds;
+    return _numBonds;
 }
 
 int InternalCoords::getNumHBonds(){
-    return numHBonds;
+    return _numHBonds;
 }
 
 int InternalCoords::getNumAngles(){
-    return numAngles;
+    return _numAngles;
 }
 
 int InternalCoords::getNumAuxBonds(){
-    return numAuxBonds;
+    return _numAuxBonds;
 }
 
 int InternalCoords::getNumDihedrals(){
-    return numDihedrals;
+    return _numDihedrals;
 }
 
 } // xtp
