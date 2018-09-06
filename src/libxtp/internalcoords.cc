@@ -253,10 +253,21 @@ void InternalCoords::ConnectHBonds(){
 
 void InternalCoords::CalculateAnglesDihedrals(){
 
+    // Consider a system that looks like this:
+    //           A      D
+    //            \    /
+    //             B--C
 
-    // There will be an angle between every triplet of bonded atoms
-    // Covalent, interfragment, and hbonds will generate angles
-    // auxiliary bonds of all types will not
+    // That would mean we have two angles: ABC, BCD.
+    // And one dihedral ABCD, which is the angle formed by the planes
+    // ^    ^      ^    ^
+    // BA X BC and CB X CD (X is cross-product), named plane1, plane2
+    // respectively. In this case a normal is enough to define the planes
+    // orientations.
+    // If any of the bonds AB, BC, CD are auxiliary, then they don't
+    // contribute to an angle or a dihedral. ie if BC is auxiliary, then no
+    // angles or dihedrals. If either AB or CD is auxiliary, then only one angle
+    // is created: BCD, or ABC respectively.
 
     double tol = 1e-6;
 
