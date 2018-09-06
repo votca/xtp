@@ -17,6 +17,9 @@ public:
     Eigen::VectorXd Vector();
     Eigen::VectorXd operator()();
     const Orbitals& System();
+
+    void Increment(Eigen::VectorXd dx);
+
 protected:
     // CoordBase cannot be instantiated
     CoordBase(const CoordType& , const Orbitals& orb);
