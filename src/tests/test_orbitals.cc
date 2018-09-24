@@ -19,15 +19,58 @@
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/convergenceacc.h>
 #include <votca/xtp/orbitals.h>
-
+#include <fstream>
+#include "votca/xtp/aomatrix.h"
 
 using namespace votca::xtp;
-
+using std::endl;
 BOOST_AUTO_TEST_SUITE(orbitals_test)
+BOOST_AUTO_TEST_CASE(readxyztest){
+  std::ofstream xyzfile("molecule.xyz");
+  xyzfile << " C 0.0 3 1" << std::endl;
+  xyzfile << " methane" << std::endl;
+  xyzfile << " C            .000000     .000000     .000000" << std::endl;
+  xyzfile << " H            .629118     .629118     .629118" << std::endl;
+  xyzfile << " H           -.629118    -.629118     .629118" << std::endl;
+  xyzfile << " H            .629118    -.629118    -.629118" << std::endl;
+  xyzfile << " H           -.629118     .629118    -.629118" << std::endl;
+  xyzfile.close();
+  
+  bool errorhappen=false;
+  Orbitals orb;
+  try{
+    orb.LoadFromXYZ("molecule.xyz");
+  }catch (const std::runtime_error& error)
+{
+    std::cout<<error.what()<<std::endl;
+    errorhappen=true;
+  }
+  
+   BOOST_CHECK_EQUAL(errorhappen, true);
+}
+
+BOOST_AUTO_TEST_CASE(sortEnergies){
+  
+  Orbitals orb;
+  Eigen::VectorXd Energies=Eigen::VectorXd::LinSpaced(10,-5,5);
+  Eigen::VectorXd switched=Energies;
+  switched(3)=Energies(5);
+  switched(5)=Energies(3);
+  orb.MOEnergies()=switched;
+  orb.MOCoefficients()=Eigen::MatrixXd::Zero(10,10);
+  orb.OrderMOsbyEnergy();
+  bool issorted=Energies.isApprox(orb.MOEnergies(),0.001);
+  if(!issorted){
+    std::cout<<"before"<<std::endl;
+    std::cout<<Energies<<std::endl;
+    std::cout<<"after"<<std::endl;
+    std::cout<<orb.MOEnergies()<<std::endl;
+  }
+  BOOST_CHECK_EQUAL(issorted, true);
+}
+
 
 BOOST_AUTO_TEST_CASE(densmatgs_test) {
-  
-  
   
   Orbitals orb;
   orb.setBasisSetSize(17);
@@ -54,28 +97,76 @@ BOOST_AUTO_TEST_CASE(densmatgs_test) {
 -0.147466802,-1.89398582,0.599314142,-0.599314142,0.599314142,-2.47288528,0.99951947,-0.99951947,0.99951947,-0.512094198,-1.30279378,-0.512094198,-1.30279378,-0.512094198,-1.30279378,-2.29509192,-2.99604761;
 Eigen::MatrixXd overlap_ref=Eigen::MatrixXd::Zero(17,17);
  
-  overlap_ref<<
-1,0.191448,0,0,0,0.180314,0,0,0,0.0189724,0.0808612,0.0189724,0.0808612,0.0189724,0.0808612,0.0189724,0.0808612,
-0.191448,1.00001,0,0,0,0.761361,0,0,0,0.194748,0.401447,0.194748,0.401447,0.194748,0.401447,0.194748,0.401447,
-0,0,1,0,0,0,0.528959,0,0,0.169584,0.135615,0.169584,0.135615,-0.169584,-0.135615,-0.169584,-0.135615,
-0,0,0,1,0,0,0,0.528959,0,0.169584,0.135615,-0.169584,-0.135615,-0.169584,-0.135615,0.169584,0.135615,
-0,0,0,0,1,0,0,0,0.528959,0.169584,0.135615,-0.169584,-0.135615,0.169584,0.135615,-0.169584,-0.135615,
-0.180314,0.761361,0,0,0,1,0,0,0,0.338796,0.668849,0.338796,0.668849,0.338796,0.668849,0.338796,0.668849,
-0,0,0.528959,0,0,0,1,0,0,0.290649,0.340149,0.290649,0.340149,-0.290649,-0.340149,-0.290649,-0.340149,
-0,0,0,0.528959,0,0,0,1,0,0.290649,0.340149,-0.290649,-0.340149,-0.290649,-0.340149,0.290649,0.340149,
-0,0,0,0,0.528959,0,0,0,1,0.290649,0.340149,-0.290649,-0.340149,0.290649,0.340149,-0.290649,-0.340149,
-0.0189724,0.194748,0.169584,0.169584,0.169584,0.338796,0.290649,0.290649,0.290649,1,0.645899,0.00778321,0.116994,0.00778321,0.116994,0.00778321,0.116994,
-0.0808612,0.401447,0.135615,0.135615,0.135615,0.668849,0.340149,0.340149,0.340149,0.645899,1,0.116994,0.354983,0.116994,0.354983,0.116994,0.354983,
-0.0189724,0.194748,0.169584,-0.169584,-0.169584,0.338796,0.290649,-0.290649,-0.290649,0.00778321,0.116994,1,0.645899,0.00778321,0.116994,0.00778321,0.116994,
-0.0808612,0.401447,0.135615,-0.135615,-0.135615,0.668849,0.340149,-0.340149,-0.340149,0.116994,0.354983,0.645899,1,0.116994,0.354983,0.116994,0.354983,
-0.0189724,0.194748,-0.169584,-0.169584,0.169584,0.338796,-0.290649,-0.290649,0.290649,0.00778321,0.116994,0.00778321,0.116994,1,0.645899,0.00778321,0.116994,
-0.0808612,0.401447,-0.135615,-0.135615,0.135615,0.668849,-0.340149,-0.340149,0.340149,0.116994,0.354983,0.116994,0.354983,0.645899,1,0.116994,0.354983,
-0.0189724,0.194748,-0.169584,0.169584,-0.169584,0.338796,-0.290649,0.290649,-0.290649,0.00778321,0.116994,0.00778321,0.116994,0.00778321,0.116994,1,0.645899,
-0.0808612,0.401447,-0.135615,0.135615,-0.135615,0.668849,-0.340149,0.340149,-0.340149,0.116994,0.354983,0.116994,0.354983,0.116994,0.354983,0.645899,1;
+ std::ofstream xyzfile("molecule.xyz");
+  xyzfile << " 5" << std::endl;
+  xyzfile << " methane" << std::endl;
+  xyzfile << " C            .000000     .000000     .000000" << std::endl;
+  xyzfile << " H            .629118     .629118     .629118" << std::endl;
+  xyzfile << " H           -.629118    -.629118     .629118" << std::endl;
+  xyzfile << " H            .629118    -.629118    -.629118" << std::endl;
+  xyzfile << " H           -.629118     .629118    -.629118" << std::endl;
+  xyzfile.close();
+
+  std::ofstream basisfile("3-21G.xml");
+  basisfile <<"<basis name=\"3-21G\">" << endl;
+  basisfile << "  <element name=\"H\">" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"5.447178e+00\">" << endl;
+  basisfile << "        <contractions factor=\"1.562850e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"8.245470e-01\">" << endl;
+  basisfile << "        <contractions factor=\"9.046910e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"1.831920e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "  </element>" << endl;
+  basisfile << "  <element name=\"C\">" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"1.722560e+02\">" << endl;
+  basisfile << "        <contractions factor=\"6.176690e-02\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"2.591090e+01\">" << endl;
+  basisfile << "        <contractions factor=\"3.587940e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"5.533350e+00\">" << endl;
+  basisfile << "        <contractions factor=\"7.007130e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
+  basisfile << "      <constant decay=\"3.664980e+00\">" << endl;
+  basisfile << "        <contractions factor=\"-3.958970e-01\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"2.364600e-01\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"7.705450e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.215840e+00\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"8.606190e-01\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
+  basisfile << "      <constant decay=\"1.958570e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "  </element>" << endl;
+  basisfile << "</basis>" << endl;
+  basisfile.close();
+  
+  orb.LoadFromXYZ("molecule.xyz");
+  BasisSet basis;
+  basis.LoadBasisSet("3-21G.xml");
+  AOBasis aobasis;
+  aobasis.AOBasisFill(basis,orb.QMAtoms());
+  AOOverlap overlap;
+  overlap.Fill(aobasis);
   
   ConvergenceAcc d;
-  d.Configure(ConvergenceAcc::closed,false,false,10,false,0,0,0.0,0,4,0);
-  d.setOverlap(&overlap_ref,1e-8);
+  d.Configure(ConvergenceAcc::closed,false,false,10,false,0,0,0.0,0,8,0);
+  d.setOverlap(&overlap,1e-8);
   d.SolveFockmatrix(orb.MOEnergies(),orb.MOCoefficients(),H);
   Eigen::VectorXd MOEnergies_ref=Eigen::VectorXd::Zero(17);
   MOEnergies_ref<<-4.29332753,-3.99146858,-3.99146858,-3.99146858,-2.69172222,-2.69172222,-2.69172222,-2.61521973,-2.19277057,-2.19277057,-2.19277057,-1.75923211,-1.46241535,-1.46241535,-1.46241535,-1.21150295,14.6697624;
@@ -111,13 +202,80 @@ BOOST_CHECK_EQUAL(check_dmat, 1);
 }
 
 
-BOOST_AUTO_TEST_CASE(trim_test) {
-  
-  Orbitals orb;
-  orb.setBasisSetSize(17);
-  orb.setNumberOfLevels(4,13);
+BOOST_AUTO_TEST_CASE(dipole_test) {
 
-Eigen::MatrixXd MOs=Eigen::MatrixXd::Zero(17,17);
+  
+  std::ofstream xyzfile("molecule.xyz");
+  xyzfile << " 5" << endl;
+  xyzfile << " methane" << endl;
+  xyzfile << " C            .000000     .000000     .000000" << endl;
+  xyzfile << " H            .629118     .629118     .629118" << endl;
+  xyzfile << " H           -.629118    -.629118     .629118" << endl;
+  xyzfile << " H            .629118    -.629118    -.629118" << endl;
+  xyzfile << " H           -.629118     .629118    -.629118" << endl;
+  xyzfile.close();
+
+  std::ofstream basisfile("3-21G.xml");
+  basisfile <<"<basis name=\"3-21G\">" << endl;
+  basisfile << "  <element name=\"H\">" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"5.447178e+00\">" << endl;
+  basisfile << "        <contractions factor=\"1.562850e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"8.245470e-01\">" << endl;
+  basisfile << "        <contractions factor=\"9.046910e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"1.831920e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "  </element>" << endl;
+  basisfile << "  <element name=\"C\">" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
+  basisfile << "      <constant decay=\"1.722560e+02\">" << endl;
+  basisfile << "        <contractions factor=\"6.176690e-02\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"2.591090e+01\">" << endl;
+  basisfile << "        <contractions factor=\"3.587940e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"5.533350e+00\">" << endl;
+  basisfile << "        <contractions factor=\"7.007130e-01\" type=\"S\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
+  basisfile << "      <constant decay=\"3.664980e+00\">" << endl;
+  basisfile << "        <contractions factor=\"-3.958970e-01\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"2.364600e-01\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "      <constant decay=\"7.705450e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.215840e+00\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"8.606190e-01\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
+  basisfile << "      <constant decay=\"1.958570e-01\">" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"S\"/>" << endl;
+  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"P\"/>" << endl;
+  basisfile << "      </constant>" << endl;
+  basisfile << "    </shell>" << endl;
+  basisfile << "  </element>" << endl;
+  basisfile << "</basis>" << endl;
+  basisfile.close();
+  
+  Orbitals orbitals;
+  orbitals.LoadFromXYZ("molecule.xyz");
+  BasisSet basis;
+  basis.LoadBasisSet("3-21G.xml");
+  orbitals.setDFTbasis("3-21G.xml");
+  AOBasis aobasis;
+  aobasis.AOBasisFill(basis,orbitals.QMAtoms());
+
+  orbitals.setBasisSetSize(17);
+  orbitals.setNumberOfLevels(4,13);
+ Eigen::MatrixXd& MOs=orbitals.MOCoefficients();
+MOs=Eigen::MatrixXd::Zero(17,17);
 MOs<<-0.00761992, -4.69664e-13, 8.35009e-15, -1.15214e-14, -0.0156169, -2.23157e-12, 1.52916e-14, 2.10997e-15, 8.21478e-15, 3.18517e-15, 2.89043e-13, -0.00949189, 1.95787e-12, 1.22168e-14, -2.63092e-15, -0.22227, 1.00844,
 0.233602, -3.18103e-12, 4.05093e-14, -4.70943e-14, 0.1578, 4.75897e-11, -1.87447e-13, -1.02418e-14, 6.44484e-14, -2.6602e-14, 6.5906e-12, -0.281033, -6.67755e-12, 2.70339e-14, -9.78783e-14, -1.94373, -0.36629,
 -1.63678e-13, -0.22745, -0.054851, 0.30351, 3.78688e-11, -0.201627, -0.158318, -0.233561, -0.0509347, -0.650424, 0.452606, -5.88565e-11, 0.453936, -0.165715, -0.619056, 7.0149e-12, 2.395e-14,
@@ -136,29 +294,45 @@ MOs<<-0.00761992, -4.69664e-13, 8.35009e-15, -1.15214e-14, -0.0156169, -2.23157e
 0.129798, 0.0953806, 0.243102, -0.0847266, -0.0118465, -0.0475639, -0.132788, 0.00985812, 0.507751, 0.244188, -0.196253, 0.65313, 0.322032, -0.87828, -0.235242, -0.195084, 0.0246232,
 0.0541331, 0.088689, 0.226046, -0.0787824, -0.88576, -0.566373, -1.58119, 0.117387, 0.0916104, 0.0440574, -0.0354087, -0.362701, -0.512321, 1.39726, 0.374248, -0.793844, -0.035336;
 
-orb.MOCoefficients()=MOs;
+orbitals.setBSEindices(0,16,1);
+orbitals.setTDAApprox(true);
 
-orb.Trim(2);
+MatrixXfd spsi_ref=MatrixXfd::Zero(60,1);
+spsi_ref<<-0.000150849,0.00516987,0.0511522,0.00428958,-0.00966668,-0.000155227,1.02978e-08,5.82225e-05,-0.00216177,0.00907102,6.297e-09,-9.84993e-11,0.00159727,
+        0.0039042,0.0481196,0.00495382,-0.0106013,0.00025141,-0.000155626,-0.000382828,-0.00322057,0.0124251,1.32177e-05,6.794e-07,
+        -0.0153713,0.0200649,-0.067081,-0.0122678,0.0117612,-0.00358901,0.00605007,0.00404793,0.0108884,-0.0151075,-0.000513827,
+        -2.64139e-05,-0.0466653,0.0672016,0.021747,-0.0115096,-0.0124868,-0.0115055,0.0187191,0.0124754,0.0149534,0.0112807,-0.00158977,
+        -8.17254e-05,-0.00290157,0.0994541,0.984029,0.017835,-0.0401912,-0.000645537,-7.54896e-08,-5.91055e-05,0.00219348,-0.00920484,1.82832e-08,5.56223e-11;
 
-bool check=(orb.MOCoefficients().cols()==8);
-if(!check){
-    std::cout<<orb.MOCoefficients()<<std::endl;
+orbitals.BSESingletCoefficients()=spsi_ref;
+QMState state_trans=QMState("n2s1");
+
+Eigen::Vector3d res_trans=orbitals.CalcElDipole(state_trans);
+Eigen::Vector3d ref_trans=Eigen::Vector3d::Zero();
+ref_trans<<  0.118565, 0.0444239,-0.0505149;
+
+bool check_trans=ref_trans.isApprox(res_trans,0.0001);
+if(!check_trans){
+  std::cout<<"Result transition dipole"<<std::endl;
+  std::cout<<res_trans<<std::endl;
+  std::cout<<"Ref transition dipole"<<std::endl;
+  std::cout<<ref_trans<<std::endl;
 }
+BOOST_CHECK_EQUAL(check_trans, 1);
 
-BOOST_CHECK_EQUAL(check, true);
-
-
-orb.MOCoefficients()=MOs;
-orb.Trim(2,2);
-bool check2=(orb.MOCoefficients().cols()==4);
-if(!check2){
-    std::cout<<orb.MOCoefficients()<<std::endl;
+QMState state_s1=QMState("s1");
+Eigen::Vector3d res_s1=orbitals.CalcElDipole(state_s1);  
+Eigen::Vector3d ref_s1=Eigen::Vector3d::Zero();  
+ref_s1<<-0.15153501734,-0.42406579479,0.033954362839;
+bool check_s1=ref_s1.isApprox(res_s1,0.0001);
+if(!check_s1 ){
+  std::cout<<"Result s1 dipole"<<std::endl;
+  std::cout<<res_s1<<std::endl;
+  std::cout<<"Ref s1 dipole"<<std::endl;
+  std::cout<<ref_s1<<std::endl;
 }
-BOOST_CHECK_EQUAL(check2, true);
-
+BOOST_CHECK_EQUAL(check_s1, 1);
+  
 }
-
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
