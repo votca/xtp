@@ -17,14 +17,14 @@
  *
  */
 
-#ifndef __VOTCA_XTP_GDMA_H
-#define	__VOTCA_XTP_GDMA_H
+#ifndef VOTCA_XTP_GDMA_H
+#define	VOTCA_XTP_GDMA_H
 
 #include <string>
 #include <map>
 #include <fstream>
 #include <votca/tools/property.h>
-#include <votca/ctp/logger.h>
+#include <votca/xtp/logger.h>
 
 
 
@@ -39,15 +39,10 @@ class GDMA
 {
 public:   
 
-  
-
-    GDMA() { };
-   ~GDMA() { };
-
-   void WriteInputFile( );
+   void WriteInputFile();
    void RunExternal();
    void ParseOutputFile();
-   void Initialize( tools::Property *options  ); 
+   void Initialize( tools::Property &options  ); 
    
    // functions to override Initialize
    void SetLimit( double rank  ) { _limit = rank; } ;
@@ -58,7 +53,7 @@ public:
    void SetRadius( double radius ) { _radius = radius;};
    void SetSwitch( double sw ) { _switch = sw; };
    
-   void setLog( ctp::Logger* pLog ) { _log = pLog; };
+   void setLog( xtp::Logger* pLog ) { _log = pLog; };
    std::vector< std::vector<double> > &GetMultipoles() { return _multipoles; };
    
    
@@ -76,11 +71,11 @@ private:
     double  _radius; 
     double  _switch; 
     std::string  _outFile; 
-    ctp::Logger*                             _log;
+    xtp::Logger* _log;
     
  
 };
 }}
 
-#endif	/* __VOTCA_XTP_GDMA_H */
+#endif	// VOTCA_XTP_GDMA_H 
 

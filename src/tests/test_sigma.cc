@@ -18,7 +18,13 @@
 #define BOOST_TEST_MODULE sigma_test
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/sigma.h>
-
+#include <fstream> 
+#include <votca/xtp/orbitals.h>
+#include <votca/xtp/aobasis.h>
+#include <votca/xtp/aomatrix.h>
+#include <votca/xtp/threecenter.h>
+#include <votca/xtp/rpa.h>
+#include <votca/xtp/ppm.h>
 
 using namespace votca::xtp;
 using namespace std;
@@ -92,7 +98,7 @@ BOOST_AUTO_TEST_CASE(sigma_full){
   basis.LoadBasisSet("3-21G.xml");
   
   AOBasis aobasis;
-  aobasis.AOBasisFill(&basis,orbitals.QMAtoms());
+  aobasis.AOBasisFill(basis,orbitals.QMAtoms());
   
   Orbitals orb;
   orb.setBasisSetSize(17);
@@ -164,7 +170,7 @@ Mmn.MultiplyRightWithAuxMatrix(cou.Pseudo_InvSqrt_GWBSE(ov,1e-7));
   ppm.PPM_construct_parameters(rpa);
   Mmn.MultiplyRightWithAuxMatrix(ppm.getPpm_phi());
   
-   votca::ctp::Logger _log;
+   votca::xtp::Logger _log;
   Sigma sigma=Sigma(&_log);
   sigma.configure(4,0,16,20,1e-5);
   sigma.setDFTdata(0.0,&vxc,&mo_energy);

@@ -19,7 +19,7 @@
 #include <votca/xtp/gnode.h>
 #include <votca/tools/constants.h>
 #include <boost/format.hpp>
-#include <votca/ctp/topology.h>
+#include <votca/xtp/topology.h>
 #include <locale>
 
 using namespace std;
@@ -29,9 +29,9 @@ namespace votca {
         
         KMCCalculator::KMCCalculator(){};
 
-    void KMCCalculator::LoadGraph(ctp::Topology *top) {
+    void KMCCalculator::LoadGraph(xtp::Topology *top) {
 
-        std::vector< ctp::Segment* >& seg = top->Segments();
+        std::vector< xtp::Segment* >& seg = top->Segments();
         
         if(seg.size()<1){
           throw std::runtime_error("Your sql file contains no segments!");
@@ -48,13 +48,13 @@ namespace votca {
             _nodes.push_back(newNode);
         }
 
-        ctp::QMNBList &nblist = top->NBList();
+        xtp::QMNBList &nblist = top->NBList();
         if(nblist.size()<1){
           throw std::runtime_error("Your sql file contains no pairs!");    
         }
         
         
-        for (ctp::QMNBList::iterator it = nblist.begin(); it < nblist.end(); ++it) {
+        for (xtp::QMNBList::iterator it = nblist.begin(); it < nblist.end(); ++it) {
             _nodes[(*it)->Seg1()->getId()-1]->AddEventfromQmPair(*it, _carriertype);
             _nodes[(*it)->Seg2()->getId()-1]->AddEventfromQmPair(*it, _carriertype);
         }
@@ -241,7 +241,7 @@ namespace votca {
          void KMCCalculator::RandomlyAssignCarriertoSite(Chargecarrier* Charge){
             int nodeId_guess=-1;
             do{
-            nodeId_guess=_RandomVariable->rand_uniform_int(_nodes.size());   
+            nodeId_guess=_RandomVariable.rand_uniform_int(_nodes.size());   
             }
             while (_nodes[nodeId_guess]->occupied || _nodes[nodeId_guess]->injectable==false ); // maybe already occupied? or maybe not injectable?
             if (Charge->hasNode()){
@@ -348,10 +348,10 @@ namespace votca {
         
         double KMCCalculator::Promotetime(double cumulated_rate){
             double dt = 0;
-                double rand_u = 1 - _RandomVariable->rand_uniform();
+                double rand_u = 1 - _RandomVariable.rand_uniform();
                 while (rand_u == 0) {
                     cout << "WARNING: encountered 0 as a random variable! New try." << endl;
-                    rand_u = 1 - _RandomVariable->rand_uniform();
+                    rand_u = 1 - _RandomVariable.rand_uniform();
                 }
                 dt = -1 / cumulated_rate * log(rand_u);
             return dt;
@@ -359,7 +359,7 @@ namespace votca {
         
         
         GLink* KMCCalculator::ChooseHoppingDest(GNode* node){
-            double u = 1 - _RandomVariable->rand_uniform();
+            double u = 1 - _RandomVariable.rand_uniform();
             
             for (unsigned int j = 0; j < node->events.size(); j++) {
                 u -= node->events[j].rate / node->getEscapeRate();
@@ -376,7 +376,7 @@ namespace votca {
                 return _carriers[0];
             }
             Chargecarrier* carrier=NULL;
-            double u = 1 - _RandomVariable->rand_uniform();
+            double u = 1 - _RandomVariable.rand_uniform();
             for (unsigned int i = 0; i < _numberofcharges; i++) {
                 u -= _carriers[i]->getCurrentEscapeRate() / cumulated_rate;
 

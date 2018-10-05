@@ -17,14 +17,14 @@
  *
  */
 
-#ifndef __VOTCA_XTP_ESPFIT__H
-#define	__VOTCA_XTP_ESPFIT__H
+#ifndef VOTCA_XTP_ESPFIT_H
+#define	VOTCA_XTP_ESPFIT_H
 
 
 #include <votca/tools/elements.h>
 #include <votca/xtp/grid.h>
 #include <votca/xtp/aobasis.h>
-#include <votca/ctp/apolarsite.h>
+#include <votca/xtp/apolarsite.h>
 
 /**
 * \brief Takes a list of atoms, and the corresponding density matrix and puts out a table of partial charges
@@ -46,7 +46,7 @@ public:
          double charge;
      };
     
-    Espfit(ctp::Logger *log):_do_Transition(false),_do_svd(true) {_log = log;
+    Espfit(xtp::Logger *log):_do_Transition(false),_do_svd(true) {_log = log;
     _conditionnumber=1e-8;
     _pairconstraint.resize(0);
     _regionconstraint.resize(0);
@@ -68,7 +68,7 @@ public:
     void Fit2Density_analytic(std::vector< QMAtom* >& atomlist, const Eigen::MatrixXd &dmat,const AOBasis &basis);
 private:
     
-     ctp::Logger *_log;
+     xtp::Logger *_log;
      votca::tools::Elements _elements; 
      bool _do_Transition;
      bool _do_svd;

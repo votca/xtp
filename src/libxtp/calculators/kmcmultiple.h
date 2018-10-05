@@ -42,17 +42,16 @@ public:
         for(auto& carrier:_carriers){
            delete carrier;
        }
-    delete _RandomVariable;
    };
    std::string Identify() { return "kmcmultiple"; }
     void Initialize(tools::Property *options);
-    bool EvaluateFrame(ctp::Topology *top);
+    bool EvaluateFrame(xtp::Topology *top);
 
 
 
 private:
             
-            void  RunVSSM(ctp::Topology *top);
+            void  RunVSSM(xtp::Topology *top);
             double _runtime;
             double _outputtime;
             std::string _trajectoryfile;

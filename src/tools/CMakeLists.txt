@@ -1,13 +1,7 @@
 set(XTP_PROGS) 
 foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump)
   file(GLOB ${PROG}_SOURCES ${PROG}*.cc)
-
-  if( ${PROG} STREQUAL "xtp_map" )
-     add_executable(xtp_map xtp_map.cc Md2QmEngine.cc)
-  else()
-     add_executable(${PROG} ${${PROG}_SOURCES})
-  endif()
-
+  add_executable(${PROG} ${${PROG}_SOURCES})
   target_link_libraries(${PROG} votca_xtp)
   install(TARGETS ${PROG} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
@@ -25,7 +19,7 @@ foreach(PROG xtp_map xtp_run xtp_tools xtp_parallel xtp_dump)
   if(ENABLE_TESTING)
     add_test(${PROG}Help ${PROG} --help)
     # run tests for tools, csg, ctp as well for coverage
-    set_tests_properties(${PROG}Help PROPERTIES LABELS "xtp;tools;csg;ctp;votca")
+    set_tests_properties(${PROG}Help PROPERTIES LABELS "xtp;tools;csg;votca")
   endif(ENABLE_TESTING)
 endforeach(PROG)
 set(XTP_PROGS "${XTP_PROGS}" PARENT_SCOPE)

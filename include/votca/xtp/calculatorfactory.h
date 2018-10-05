@@ -17,19 +17,19 @@
  *
  */
 
-#ifndef __VOTCA_XTP_CALCULATORFACTORY_H
-#define	__VOTCA_XTP_CALCULATORFACTORY_H
+#ifndef VOTCA_XTP_CALCULATORFACTORY_H
+#define	VOTCA_XTP_CALCULATORFACTORY_H
 
 #include <map>
 #include <votca/tools/objectfactory.h>
-#include <votca/ctp/qmcalculator.h>
+#include <votca/xtp/qmcalculator.h>
 
 namespace votca { namespace xtp {
 
 
 
 class Calculatorfactory
-: public tools::ObjectFactory< std::string, ctp::QMCalculator >
+: public tools::ObjectFactory< std::string, xtp::QMCalculator >
 {
 private:
     Calculatorfactory() {}
@@ -41,23 +41,21 @@ public:
        Create an instance of the object identified by key.
     *  Overwritten to load calculator defaults
     */
-    ctp::QMCalculator *Create(const std::string &key);
+    xtp::QMCalculator *Create(const std::string &key);
 
     friend Calculatorfactory &Calculators();
     
 };
 
-inline Calculatorfactory &Calculators()
-{
-    static Calculatorfactory _instance;
-    return _instance;
+inline Calculatorfactory &Calculators(){
+    static Calculatorfactory instance;
+    return instance;
 }
 
-inline ctp::QMCalculator* Calculatorfactory::Create(const std::string &key)
-{
-     assoc_map::const_iterator it(getObjects().find(key));
+inline xtp::QMCalculator* Calculatorfactory::Create(const std::string &key){
+    assoc_map::const_iterator it(getObjects().find(key));
     if (it != getObjects().end()) {
-        ctp::QMCalculator* calc = (it->second)();
+        xtp::QMCalculator* calc = (it->second)();
         calc->LoadDefaults();
         return calc;
     } else
@@ -66,5 +64,6 @@ inline ctp::QMCalculator* Calculatorfactory::Create(const std::string &key)
 
 }}
 
-#endif	/* _Calculatorfactory_H */
+#endif // VOTCA_XTP_CALCULATORFACTORY_H
+
 

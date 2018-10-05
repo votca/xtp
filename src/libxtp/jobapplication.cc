@@ -91,8 +91,8 @@ void JobApplication::Run() {
     StateSaverSQLite statsav;
     statsav.Open(_top, statefile);    
 
-    ctp::ProgObserver< std::vector<ctp::Job*>, ctp::Job*, ctp::Job::JobResult > progObs
-        = ctp::ProgObserver< std::vector<ctp::Job*>, ctp::Job*, ctp::Job::JobResult >();
+    xtp::ProgObserver< std::vector<xtp::Job*>, xtp::Job*, xtp::Job::JobResult > progObs
+        = xtp::ProgObserver< std::vector<xtp::Job*>, xtp::Job*, xtp::Job::JobResult >();
     progObs.InitCmdLineOpts(OptionsMap());
     
     // INITIALIZE & RUN CALCULATORS
@@ -123,39 +123,37 @@ void JobApplication::Run() {
 
 
 
-void JobApplication::AddCalculator(ctp::JobCalculator* calculator) {
+void JobApplication::AddCalculator(xtp::JobCalculator* calculator) {
     _calculators.push_back(calculator);
 }
 
 
 void JobApplication::BeginEvaluate(int nThreads = 1, 
-        ctp::ProgObserver< std::vector<ctp::Job*>, ctp::Job*, ctp::Job::JobResult > *obs = NULL) {
-    list< ctp::JobCalculator* > ::iterator it;
-    for (it = _calculators.begin(); it != _calculators.end(); it++) {
-        cout << "... " << (*it)->Identify() << " ";
-        (*it)->setnThreads(nThreads);
-        (*it)->setProgObserver(obs);
-        (*it)->Initialize(&_options);  
+        xtp::ProgObserver< std::vector<xtp::Job*>, xtp::Job*, xtp::Job::JobResult > *obs = NULL) {
+
+    for (xtp::JobCalculator* calculator:_calculators) {
+        cout << "... " << calculator->Identify() << " ";
+        calculator->setnThreads(nThreads);
+        calculator->setProgObserver(obs);
+        calculator->Initialize(&_options);  
         cout << endl;
     }
 }
 
 bool JobApplication::EvaluateFrame() {
-    list< ctp::JobCalculator* > ::iterator it;
-    for (it = _calculators.begin(); it != _calculators.end(); it++) {
-        cout << "... " << (*it)->Identify() << " " << flush;
-        if (_generate_input) (*it)->WriteJobFile(&_top);
-        if (_run) (*it)->EvaluateFrame(&_top);
-        if (_import) (*it)->ReadJobFile(&_top);
+    for (xtp::JobCalculator* calculator:_calculators) {
+        cout << "... " << calculator->Identify() << " " << flush;
+        if (_generate_input) calculator->WriteJobFile(&_top);
+        if (_run) calculator->EvaluateFrame(&_top);
+        if (_import) calculator->ReadJobFile(&_top);
         cout << endl;
     }
     return true;
 }
 
 void JobApplication::EndEvaluate() {
-    list< ctp::JobCalculator* > ::iterator it;
-    for (it = _calculators.begin(); it != _calculators.end(); it++) {
-        (*it)->EndEvaluate(&_top);
+   for (xtp::JobCalculator* calculator:_calculators) {
+        calculator->EndEvaluate(&_top);
     }
 }
 

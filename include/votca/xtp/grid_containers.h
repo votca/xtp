@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __XTP_GRID_CONTAINERS__H
-#define	__XTP_GRID_CONTAINERS__H
+#ifndef VOTCA_XTP_GRID_CONTAINERS_H
+#define	VOTCA_XTP_GRID_CONTAINERS_H
 
 #include <votca/tools/vec.h>
 #include <votca/xtp/aobasis.h>
@@ -34,27 +34,25 @@ namespace votca { namespace xtp {
         class GridContainers {
         public: 
             
-            GridContainers(){};
             // containers for radial grids per element
             struct radial_grid {
-                std::vector<double> radius;
-                std::vector<double> weight;
+               Eigen::VectorXd radius;
+               Eigen::VectorXd weight;
             };
        
-            std::map<std::string,radial_grid> _radial_grids;
+            std::map<std::string,radial_grid> radial_grids;
 
             // containers for spherical grids on a unit sphere per element
             struct spherical_grid{
-                std::vector<double> theta;
-                std::vector<double> phi;
-                std::vector<double> weight;
-                
+                Eigen::VectorXd theta;
+                Eigen::VectorXd phi;
+                Eigen::VectorXd weight;
             };
             
-            std::map<std::string,spherical_grid> _spherical_grids;
+            std::map<std::string,spherical_grid> spherical_grids;
             
             // container for cartesian grid points and weights
-            struct integration_grid {
+            struct Cartesian_gridpoint {
                 tools::vec grid_pos;//bohr
                 double grid_weight;
             };
@@ -65,4 +63,4 @@ namespace votca { namespace xtp {
         };
 
     }}
-#endif	/* NUMERICAL_INTEGRATION_H */
+#endif	// VOTCA_XTP_GRID_CONTAINERS_H 

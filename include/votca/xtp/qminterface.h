@@ -17,56 +17,45 @@
  *
  */
 
-#ifndef __QMMINTERFACE__H
-#define	__QMMINTERFACE__H
+#ifndef VOTCA_XTP_QMMINTERFACE_H
+#define	VOTCA_XTP_QMMINTERFACE_H
 
+#include <votca/tools/elements.h>
 
+namespace votca { 
+  
+  namespace xtp {
 
+    class QMAtom;
+    class APolarSite;
+    class PolarSeg;
+    class Segment;
+    class PolarTop;
+    class Orbitals;
 
-#include <votca/ctp/apolarsite.h>
-#include <votca/xtp/qmatom.h>
-#include <votca/ctp/polarseg.h>
-#include <votca/ctp/segment.h>
-#include <votca/ctp/polartop.h>
-// add gwbse header for excited state support
-#include <votca/xtp/gwbse.h>
-#include <votca/xtp/qmpackagefactory.h>
-#include <votca/xtp/orbitals.h>
-#include <votca/xtp/espfit.h>
-#include <votca/xtp/gdma.h>
-
-
-namespace votca { namespace xtp {
-
-    
 // ========================================================================== //
 // QM-MM INTERFACE CLASS - CONVERTS BETWEEN QMATOMS <> POLAR OBJECTS          //
 // ========================================================================== //
     
-class QMMInterface
+class QMInterface
 {
 public:
     
-    QMMInterface() { _polar_table = ctp::POLAR_TABLE(); };
-   ~QMMInterface() {};
-    
     // CONVERSION QM -> MM
-    ctp::APolarSite *Convert(QMAtom *atm, int id = -1);
+    xtp::APolarSite *Convert(QMAtom *atm, int id = -1);
     
-    ctp::PolarSeg Convert(std::vector<QMAtom*> &atms);
+    xtp::PolarSeg Convert(std::vector<QMAtom*> &atms);
     
+    std::vector<QMAtom *> Convert( std::vector<xtp::Segment* > segments);
     
-    std::vector<QMAtom *> Convert( std::vector<ctp::Segment* > segments);
-    
-    void GenerateQMAtomsFromPolarSegs(ctp::PolarTop *ptop, Orbitals &orb);
-    std::vector<ctp::PolarSeg*> GenerateMultipoleList(ctp::PolarTop *ptop  );
-    void Orbitals2Segment(ctp::Segment* _segment, Orbitals* _orbitals);
-    
+    void GenerateQMAtomsFromPolarSegs(xtp::PolarTop *ptop, Orbitals &orb);
+    std::vector<std::shared_ptr<xtp::PolarSeg> > GenerateMultipoleList(xtp::PolarTop *ptop  );
+    void Orbitals2Segment(xtp::Segment& segment, const Orbitals& orbitals);
      
 private:
-    void addMMAtomtoOrb(ctp::APolarSite * aps,Orbitals &orb, bool with_polarisation);
+    void addMMAtomtoOrb(xtp::APolarSite * aps,Orbitals &orb, bool with_polarisation);
     // Allocates polarizabilities in A**3 to element types
-    std::map<std::string,double> _polar_table;
+    tools::Elements _element;
    
 };
 
@@ -75,4 +64,4 @@ private:
 
 }}
 
-#endif
+#endif // VOTCA_XTP_QMMINTERFACE_H

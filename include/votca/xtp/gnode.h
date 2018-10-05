@@ -15,13 +15,13 @@
  *
  */
 
-#ifndef _VOTCA_KMC_GNODE_H
-#define	_VOTCA_KMC_GNODE_H
+#ifndef VOTCA_XTP_GNODE_H
+#define	VOTCA_XTP_GNODE_H
 
 #include <votca/tools/vec.h>
 #include <votca/xtp/glink.h>
-#include <votca/ctp/segment.h>
-#include <votca/ctp/qmpair.h>
+#include <votca/xtp/segment.h>
+#include <votca/xtp/qmpair.h>
 
 
 
@@ -50,9 +50,9 @@ class GNode
         void AddEvent(int seg2, double rate12, tools::vec dr, double Jeff2, double reorg_out);
         const double &getEscapeRate(){return escape_rate;}
         void InitEscapeRate();
-        void AddDecayEvent(double _decayrate);
-        void ReadfromSegment(ctp::Segment* seg, int carriertype);
-        void AddEventfromQmPair(ctp::QMPair* pair,int carriertype);
+        void AddDecayEvent(double decayrate);
+        void ReadfromSegment(xtp::Segment* seg, int carriertype);
+        void AddEventfromQmPair(xtp::QMPair* pair,int carriertype);
 };
 
 
@@ -61,5 +61,5 @@ class GNode
 
 }}
 
-#endif	/* _VOTCA_KMC_GNODE_H */
+#endif	// VOTCA_XTP_GNODE_H
 

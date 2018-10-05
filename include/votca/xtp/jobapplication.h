@@ -23,11 +23,11 @@
 
 #include <votca/xtp/xtpapplication.h>
 
-#include <votca/ctp/progressobserver.h>
-#include <votca/ctp/topology.h>
+#include <votca/xtp/progressobserver.h>
+#include <votca/xtp/topology.h>
 
 #include "statesaversqlite.h"
-#include <votca/ctp/jobcalculator.h>
+#include <votca/xtp/jobcalculator.h>
 
 
 namespace votca { namespace xtp {
@@ -38,22 +38,26 @@ class JobApplication : public XtpApplication
 {
 public:
     JobApplication();
-   ~JobApplication() { };
+   ~JobApplication() {
+       for (xtp::JobCalculator* calculator : _calculators) {
+            delete calculator;
+        } 
+   };
 
    void Initialize();
    bool EvaluateOptions();
    void Run(void);
 
-   virtual void BeginEvaluate(int nThreads, ctp::ProgObserver< std::vector<ctp::Job*>, ctp::Job*, ctp::Job::JobResult> *obs);
+   virtual void BeginEvaluate(int nThreads, xtp::ProgObserver< std::vector<xtp::Job*>, xtp::Job*, xtp::Job::JobResult> *obs);
    virtual bool EvaluateFrame();
    virtual void EndEvaluate();
-   void AddCalculator(ctp::JobCalculator *calculator);
+   void AddCalculator(xtp::JobCalculator *calculator);
 
 protected:
     
     bool _generate_input, _run, _import;
-    ctp::Topology           _top;
-    std::list< ctp::JobCalculator* >   _calculators;
+    xtp::Topology           _top;
+    std::list< xtp::JobCalculator* >   _calculators;
 
 };
 
@@ -67,7 +71,8 @@ protected:
 
 
 
-#endif /* _QMApplication_H */
+#endif // VOTCA_XTP_JOBAPPLICATION
+
 
 
 

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __QMAPEMACHINE__H
-#define	__QMAPEMACHINE__H
+#ifndef VOTCA_XTP_QMAPEMACHINE_H
+#define	VOTCA_XTP_QMAPEMACHINE_H
 
 
 
@@ -28,12 +28,13 @@
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/espfit.h>
 
-#include <votca/ctp/ewaldnd.h>
-#include <votca/ctp/xjob.h>
-#include <votca/ctp/xinductor.h>
+#include <votca/xtp/ewaldnd.h>
+#include <votca/xtp/xjob.h>
+#include <votca/xtp/xinductor.h>
 
 #include <votca/xtp/qminterface.h>
 #include <votca/xtp/qmiter.h>
+#include <votca/xtp/statefilter.h>
 
 namespace votca { namespace xtp {
 
@@ -44,37 +45,35 @@ class QMAPEMachine
     
 public:
 
-	QMAPEMachine(ctp::XJob *job, ctp::Ewald3DnD *cape, 
-              Property *opt, std::string sfx, int nst);
+    QMAPEMachine(xtp::XJob *job, xtp::Ewald3DnD *cape, 
+              Property *opt, std::string sfx);
    ~QMAPEMachine();
     
-    void Evaluate(ctp::XJob *job);
-    bool Iterate(std::string jobFolder, int iterCnt);
-    bool EvaluateGWBSE(Orbitals &orb, std::string runFolder);
-    QMMIter *CreateNewIter();
-    bool hasConverged();
+    void Evaluate(xtp::XJob *job);
+ 
     bool AssertConvergence() { return _isConverged; }
     
-    void setLog(ctp::Logger *log) { _log = log; }
+    void setLog(xtp::Logger *log) { _log = log; }
     
-private:    
+private:
+    QMMIter *CreateNewIter();
+    bool EvaluateGWBSE(Orbitals &orb, std::string runFolder);
+    bool hasConverged();
+    bool Iterate(std::string jobFolder, int iterCnt);
+    void SetupPolarSiteGrids( const std::vector< const vec *>& gridpoints,const std::vector< QMAtom* >& atoms);
+    std::vector<double> ExtractNucGrid_fromPolarsites();
+    std::vector<double> ExtractElGrid_fromPolarsites();
     
-    QMMInterface qminterface;
-    ctp::Logger *_log;
+    Statefilter _filter;
+    QMInterface qminterface;
+    xtp::Logger *_log;
 
     bool _run_ape;
     bool _run_dft;
     bool _run_gwbse;
 
-    ctp::XJob *_job;
-    ctp::Ewald3DnD *_cape;
-    
-    DFTENGINE dftengine;
-    
-    void SetupPolarSiteGrids( const std::vector< const vec *>& gridpoints,const std::vector< QMAtom* >& atoms);
-    
-    std::vector<double> ExtractNucGrid_fromPolarsites();
-    std::vector<double> ExtractElGrid_fromPolarsites();
+    xtp::XJob *_job;
+    xtp::Ewald3DnD *_cape;
 
     std::vector<QMMIter*> _iters;
     int _maxIter;
@@ -85,33 +84,20 @@ private:
     
     Property _gwbse_options;
     Property _dft_options;
-    int      _state;
-    std::string   _type;
-    bool     _has_osc_filter=false;
-    double   _osc_threshold;
-    bool     _has_dQ_filter=false;
-    bool     _has_loc_filter=false;
-    double   _dQ_threshold;
-    double   _loc_threshold;
-    bool     _localiseonA=false;
+    QMState  _initialstate;
     
     double _crit_dR;
     double _crit_dQ;
     double _crit_dE_QM;
-    double _crit_dE_MM;
+    double _crit_dE_MM;   
     
-    bool _convg_dR;
-    bool _convg_dQ;
-    bool _convg_dE_QM;
-    bool _convg_dE_MM;
-    
-    
-    std::vector< ctp::PolarSeg* > target_bg;     
-    std::vector< ctp::PolarSeg* > target_fg;     
+    std::vector< xtp::PolarSeg* > target_bg;     
+    std::vector< xtp::PolarSeg* > target_fg;     
 
 };
 
 
 }}
 
-#endif
+#endif // VOTCA_XTP_QMAPEMACHINE_H
+

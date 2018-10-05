@@ -20,7 +20,7 @@
 #include <votca/tools/property.h>
 #include <votca/tools/constants.h>
 #include <boost/format.hpp>
-#include <votca/ctp/topology.h>
+#include <votca/xtp/topology.h>
 #include <locale>
 #include <votca/xtp/eigen.h>
 
@@ -146,7 +146,7 @@ namespace votca {
     }
 
         
-    void  KMCLifetime::RunVSSM(ctp::Topology *top) {
+    void  KMCLifetime::RunVSSM(xtp::Topology *top) {
 
         int realtime_start = time(NULL);
         cout << endl << "Algorithm: VSSM for Multiple Charges with finite Lifetime" << endl;
@@ -320,7 +320,7 @@ namespace votca {
 
         PrintJumplengthdistro();
         
-        vector< ctp::Segment* >& seg = top->Segments();
+        vector< xtp::Segment* >& seg = top->Segments();
 
         for (unsigned i = 0; i < seg.size(); i++) {
             double occupationprobability=_nodes[i]->occupationtime / simtime;
@@ -335,7 +335,7 @@ namespace votca {
 
 
 
-    bool KMCLifetime::EvaluateFrame(ctp::Topology *top) {
+    bool KMCLifetime::EvaluateFrame(xtp::Topology *top) {
         std::cout << "-----------------------------------" << std::endl;
         std::cout << "      KMCLIFETIME started" << std::endl;
         std::cout << "-----------------------------------" << std::endl << std::endl;
@@ -345,8 +345,8 @@ namespace votca {
             cout << endl << "Initialising random number generator" << endl;
         }
         std::srand(_seed); // srand expects any integer in order to initialise the random number generator
-        _RandomVariable = new tools::Random2();
-        _RandomVariable->init(rand(), rand(), rand(), rand());
+        _RandomVariable = tools::Random2();
+        _RandomVariable.init(rand(), rand(), rand(), rand());
         LoadGraph(top);
         ReadLifetimeFile(_lifetimefile);
         

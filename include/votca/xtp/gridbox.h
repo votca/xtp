@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __XTP_GRIDBOX__H
-#define	__XTP_GRIDBOX__H
+#ifndef VOTCA_XTP_GRIDBOX_H
+#define	VOTCA_XTP_GRIDBOX_H
 
 #include <votca/tools/vec.h>
 #include <votca/xtp/grid_containers.h>
@@ -34,8 +34,6 @@ namespace votca { namespace xtp {
         class GridBox {
             
         public: 
-            
-            
             
             const std::vector<tools::vec>& getGridPoints() const{return grid_pos;}
             
@@ -62,7 +60,7 @@ namespace votca { namespace xtp {
                 return;
             }
             
-            void addGridPoint(const GridContainers::integration_grid& point){
+            void addGridPoint(const GridContainers::Cartesian_gridpoint& point){
                 grid_pos.push_back(point.grid_pos);
                 weights.push_back(point.grid_weight);
             };
@@ -84,9 +82,9 @@ namespace votca { namespace xtp {
             
             void PrepareForIntegration();
             
-            Eigen::MatrixXd ReadFromBigMatrix(const Eigen::MatrixXd& bigmatrix);
+            Eigen::MatrixXd ReadFromBigMatrix (const Eigen::MatrixXd& bigmatrix)const;
             
-            void AddtoBigMatrix(Eigen::MatrixXd& bigmatrix,const Eigen::MatrixXd& smallmatrix);
+            void AddtoBigMatrix(Eigen::MatrixXd& bigmatrix,const Eigen::MatrixXd& smallmatrix)const;
             
             void setIndexoffirstgridpoint(unsigned indexoffirstgridpoint){_indexoffirstgridpoint=indexoffirstgridpoint;}
             unsigned getIndexoffirstgridpoint() const{return _indexoffirstgridpoint;}
@@ -127,4 +125,5 @@ namespace votca { namespace xtp {
        
 
     }}
-#endif	/* NUMERICAL_INTEGRATION_H */
+#endif	// VOTCA_XTP_GRIDBOX_H
+

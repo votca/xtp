@@ -16,8 +16,8 @@
  * author: Kordt
  */
 
-#ifndef __VOTCA_KMC_CALCULATOR_H
-#define	__VOTCA_KMC_CALCULATOR_H
+#ifndef VOTCA_XTP_CALCULATOR_H
+#define	VOTCA_XTP_CALCULATOR_H
 
 // #include <votca/xtp/vssmgroup.h>
 #include <vector>
@@ -38,7 +38,7 @@
 #include <votca/xtp/chargecarrier.h>
 
 #include <votca/xtp/gnode.h>
-#include <votca/ctp/qmcalculator.h>
+#include <votca/xtp/qmcalculator.h>
 using namespace std;
 
 namespace votca { namespace xtp {
@@ -46,7 +46,7 @@ namespace votca { namespace xtp {
    
 
 
-class KMCCalculator : public ctp::QMCalculator 
+class KMCCalculator : public xtp::QMCalculator 
 {
 public:
     
@@ -58,17 +58,17 @@ public:
    
    virtual std::string  Identify() = 0;
    virtual void    Initialize(tools::Property *options) = 0;
-int _carriertype;
+
 protected:
        
-       
+       int _carriertype;
             
             std::string CarrierInttoLongString(int carriertype);
             std::string CarrierInttoShortString(int carriertype);
             int StringtoCarriertype(std::string name);
             
-	    void LoadGraph(ctp::Topology *top);
-            virtual void  RunVSSM(ctp::Topology *top){};
+	    void LoadGraph(xtp::Topology *top);
+            virtual void  RunVSSM(xtp::Topology *top){};
             void InitialRates();
             
             double Promotetime(double cumulated_rate);
@@ -86,7 +86,7 @@ protected:
             void PrintJumplengthdistro();
             std::vector<GNode*> _nodes;
             std::vector< Chargecarrier* > _carriers;
-            tools::Random2 * _RandomVariable;
+            tools::Random2 _RandomVariable;
            
             std::string _injection_name;
             std::string _injectionmethod;
@@ -113,4 +113,4 @@ protected:
 }}
 
 
-#endif	/* __VOTCA_KMC_MULTIPLE_H */
+#endif	// VOTCA_XTP_CALCULATOR_H

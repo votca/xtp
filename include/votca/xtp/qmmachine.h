@@ -17,14 +17,11 @@
  *
  */
 
-#ifndef __QMMACHINE__H
-#define	__QMMACHINE__H
+#ifndef VOTCA_XTP_QMMACHINE_H
+#define	VOTCA_XTP_QMMACHINE_H
 
-
-#include <votca/ctp/xjob.h>
-#include <votca/ctp/xinductor.h>
-
-// add gwbse header for excited state support
+#include <votca/xtp/xjob.h>
+#include <votca/xtp/xinductor.h>
 #include <votca/xtp/gwbse.h>
 #include <votca/xtp/qmpackagefactory.h>
 #include <votca/xtp/orbitals.h>
@@ -32,76 +29,56 @@
 #include <votca/xtp/gdma.h>
 #include <votca/xtp/qminterface.h>
 #include <votca/xtp/qmiter.h>
+#include <votca/xtp/statefilter.h>
 
 namespace votca { namespace xtp {
 
 
 
-template< class QMPackage >
-class QMMachine
-{
+class QMMachine{
 
 public:
 
-    QMMachine(ctp::XJob *job, ctp::XInductor *xind, QMPackage *qmpack,
-              Property *opt, string sfx, int nst, bool mav);
+    QMMachine(xtp::XJob *job, xtp::XInductor *xind, QMPackage *qmpack,
+              Property *opt, string sfx);
    ~QMMachine();
 
-    int Evaluate(ctp::XJob *job);
+    int Evaluate(xtp::XJob *job);
 
-    
-    
-
-    void setLog(ctp::Logger *log) { _log = log; }
+    void setLog(xtp::Logger *log) { _log = log; }
 
 private:
     bool Iterate(string jobFolder, int iterCnt);
+    bool RunDFT(string& runFolder, std::vector<std::shared_ptr<xtp::PolarSeg> >& MultipolesBackground);
+    void RunGWBSE(string& runFolder);
+    void RunGDMA(QMMIter* thisIter, string& runFolder);
+    void Density2Charges(const QMState& state);
     
     QMMIter *CreateNewIter();
     bool hasConverged();
-    ctp::XJob *_job;
-    ctp::XInductor *_xind;
+    xtp::XJob *_job;
+    xtp::XInductor *_xind;
     QMPackage *_qmpack;
-    ctp::Logger *_log;
-    int _subthreads;
+    xtp::Logger *_log;
 
     std::vector<QMMIter*> _iters;
     bool _isConverged;
     int _maxIter;
 
-    // GDMA object
-    // GDMA _gdma;
     Property _gdma_options;
     bool _do_gdma;
-    QMMInterface qminterface;
-
-
-
-
 
     Property _gwbse_options;
-    int      _state;
-    string   _type;
-    bool     _has_osc_filter=false;
-    bool     _has_overlap_filter=false;
-    double   _osc_threshold;
-    bool     _has_dQ_filter=false;
-    bool     _has_loc_filter=false;
-    double   _dQ_threshold;
-    double   _loc_threshold;
-    bool     _localiseonA=false;
+    QMState  _initialstate;
+
+    Statefilter _filter;
+    
     double _crit_dR;
     double _crit_dQ;
     double _crit_dE_QM;
     double _crit_dE_MM;
 
-    bool _convg_dR;
-    bool _convg_dQ;
-    bool _convg_dE_QM;
-    bool _convg_dE_MM;
-
-
-    bool _do_gwbse; // needs to be set by options!!!
+    bool _do_gwbse=false; 
     bool _do_archive;
     bool _static_qmmm;
     Orbitals orb_iter_input;
@@ -109,11 +86,10 @@ private:
     double _alpha;
     Eigen::MatrixXd _DMAT_old;
 
-    void Density2Charges( std::vector<int> state_index ={});
-
 };
 
 
 }}
 
-#endif
+#endif //  VOTCA_XTP_QMMACHINE_H
+

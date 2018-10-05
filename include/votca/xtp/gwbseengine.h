@@ -17,22 +17,20 @@
  *
  */
 
-#ifndef _VOTCA_XTP_GWBSEENGINE_H
-#define _VOTCA_XTP_GWBSEENGINE_H
+#ifndef VOTCA_XTP_GWBSEENGINE_H
+#define VOTCA_XTP_GWBSEENGINE_H
 
-
-
-#include <votca/ctp/segment.h>
-#include <votca/xtp/orbitals.h>
-#include <votca/ctp/polarseg.h>
-#include <votca/xtp/qmpackage.h>
-#include <votca/ctp/topology.h>
-#include <votca/ctp/apolarsite.h>
+#include <votca/xtp/segment.h>
+#include <votca/xtp/polarseg.h>
+#include <votca/xtp/topology.h>
+#include <votca/xtp/apolarsite.h>
 #include <boost/filesystem.hpp>
-#include <votca/ctp/logger.h>
+#include <votca/xtp/logger.h>
 
 namespace votca {
     namespace xtp {
+        class QMPackage;
+        class Orbitals;
 
 /**
          * \brief Electronic Excitations via Density-Functional Theory
@@ -42,24 +40,22 @@ namespace votca {
          * 
          */
 
-        class GWBSEENGINE {
+        class GWBSEEngine {
         public:
-
-            GWBSEENGINE() {
-            };
-
-            ~GWBSEENGINE() {
-            };
 
             std::string Identify() {
                 return "gwbse_engine";
             }
 
-            void Initialize(tools::Property *options, std::string _archive_filename);
-            void ExcitationEnergies(QMPackage* _qmpackage, std::vector<ctp::Segment*> _segments, Orbitals* _orbitals);
+            void Initialize(tools::Property &options, std::string archive_filename);
+            void ExcitationEnergies(Orbitals& orbitals);
 
-            void setLog(ctp::Logger* pLog) {
+            void setLog(xtp::Logger* pLog) {
                 _pLog = pLog;
+            }
+            
+            void setQMPackage(QMPackage* qmpackage){
+                _qmpackage=qmpackage;
             }
 
             std::string GetDFTLog() {
@@ -75,12 +71,14 @@ namespace votca {
             };
             
             
-            tools::Property ReportSummary(){ return _summary;};
+            tools::Property& ReportSummary(){ return _summary;};
 
 
         private:
+            
+            QMPackage* _qmpackage;
 
-            ctp::Logger *_pLog;
+            xtp::Logger *_pLog;
 
             // task options
             bool _do_guess;
@@ -102,14 +100,11 @@ namespace votca {
             tools::Property _gwbse_options;
             tools::Property _summary;
 
-            void SaveRedirectedLogger(ctp::Logger* pLog);
-
-
-
+            void WriteLoggerToFile(xtp::Logger* pLog);
         };
 
 
     }
 }
 
-#endif /* _VOTCA_XTP_GWBSEENGINE_H */
+#endif // VOTCA_XTP_GWBSEENGINE_H 

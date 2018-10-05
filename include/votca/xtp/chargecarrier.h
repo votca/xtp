@@ -16,29 +16,12 @@
  * author: Kordt
  */
 
-#ifndef __VOTCA_CHARGECARRIER_H
-#define	__VOTCA_CHARGECARRIER_H
-
-// #include <votca/xtp/vssmgroup.h>
-#include <vector>
-#include <map>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <cmath> // needed for abs(double)
+#ifndef VOTCA_XTP_CHARGECARRIER_H
+#define	VOTCA_XTP_CHARGECARRIER_H
 
 #include <votca/tools/vec.h>
-#include <votca/tools/matrix.h>
-#include <votca/tools/tokenizer.h>
-#include <votca/tools/globals.h>
-#include <votca/tools/random2.h>
-
-
 #include <votca/xtp/gnode.h>
-#include <votca/ctp/qmcalculator.h>
+
 
 
 namespace votca { namespace xtp {
@@ -90,4 +73,4 @@ namespace votca { namespace xtp {
 }}
 
 
-#endif	/* __VOTCA_CHARGECARRIER_H */
+#endif	// VOTCA_XTP_CHARGECARRIER_H
