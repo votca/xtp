@@ -34,6 +34,8 @@ find_package(Boost 1.57.0 REQUIRED COMPONENTS unit_test_framework)
   list(APPEND test_cases test_dftcoupling)
   list(APPEND test_cases test_statefilter)
   list(APPEND test_cases test_bfgs-trm)
+  list(APPEND test_cases test_trustregion)
+  list(APPEND test_cases test_gnode)
   list(APPEND test_cases test_coord_transform)
 
   foreach(PROG ${test_cases} )
