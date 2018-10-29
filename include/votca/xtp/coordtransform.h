@@ -7,27 +7,23 @@
 #include <votca/xtp/coordbase.h>
 #include <votca/xtp/cartesiancoords.h>
 #include <votca/xtp/internalcoords.h>
+#include <votca/xtp/orbitals.h>
+#include <memory>
 
 namespace votca { namespace xtp {
 
-using namespace boost::algorithm;
-
-
 class CoordinateTransform{
 public:
-CoordinateTransform(CoordType _from, CoordType _to):
-    conversion{std::make_pair(_from, _to)}{
+    CoordinateTransform(CoordType from, CoordType to, const Orbitals& system);
 
-    }
-
-    /* CoordBase& operator()(CoordBase& coord){ */
-    /*     if (conversion == "cartesian_to_internal"){ */
-    /*         return InternalCoords(coord); */
-    /*     } */
-    /* } */
+    void operator()(const CoordSystem& inCoord, CoordSystem& outCoord);
 
 private:
-    std::pair<CoordType, CoordType> conversion;
+    std::pair<CoordType, CoordType> _conversion;
+    Eigen::MatrixXd _jac;
+    const Orbitals& _system;
+    std::unique_ptr<CoordSystem> _from;
+    std::unique_ptr<CoordSystem> _to;
 };
 } // xtp
 } // votca

@@ -16,9 +16,12 @@ public:
 
     Eigen::VectorXd Vector();
     Eigen::VectorXd operator()();
+
     const Orbitals& System();
 
     void Increment(Eigen::VectorXd dx);
+    int getNumAtoms();
+    bool isApprox(CoordBase& other, const double& tol);
 
 protected:
     // CoordBase cannot be instantiated

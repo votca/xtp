@@ -1,5 +1,5 @@
 #include<votca/xtp/cartesiancoords.h>
-
+#include<string>
 namespace votca { namespace xtp{
 CartesianCoords::CartesianCoords(const Orbitals& system):
     CoordBase(CARTESIAN, system){

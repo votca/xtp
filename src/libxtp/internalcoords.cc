@@ -3,9 +3,10 @@
 #include<iostream>
 #include<limits>
 #include<algorithm>
-#include<votca/tools/constants.h>
 #include<cmath>
 #include<random>
+#include<votca/xtp/CoordContainer.h>
+
 namespace votca { namespace xtp {
 
 const std::vector<std::string> electroNegElements {"N", "O", "F", "P", "S", "Cl"};
@@ -55,7 +56,6 @@ void  InternalCoords::ConnectBonds(){
 
         const double iCovRad = elements.getCovRad(atomI->getType(), "bohr");
         const tools::vec iPos = atomI->getPos();
-
         for (int j = i+1; j < _numAtoms; ++j){
             auto atomJ = _qmMolecule[j];
 
@@ -67,23 +67,18 @@ void  InternalCoords::ConnectBonds(){
             double dist = abs(iPos - jPos);
 
             if (dist < threshFactor*thresh){
-                _bondMatrix(i,j) = dist;
-                _bondMatrix(j,i) = dist;
 
                 boost::add_edge(i, j, _bondGraph);
                 _numBonds += 1;
                 _vector.emplace_back(dist);
-                _bonds[std::make_tuple(i, j)] = dist;
-
+                _bonds[{i,j}] = dist;
             } else if (_withAuxiliary && dist < auxThreshFactor*thresh){
-                _bondMatrix(i,j) = dist;
-                _bondMatrix(j,i) = dist;
-
                 boost::add_edge(i, j, _bondGraph);
                 _numAuxBonds += 1;
-                _auxBonds.emplace_back(std::make_pair(i,j));
+                _auxBonds[{i,j}]=dist;
                 _vector.emplace_back(dist);
-                _bonds[std::make_tuple(i, j)] = dist;
+
+                _bonds[{i,j}] = dist;
             }
         }
     }
@@ -132,13 +127,10 @@ void InternalCoords::ConnectMolecules(){
                 const int j = std::get<1>(closest);
                 const double dist = std::get<2>(closest);
 
-                _bondMatrix(i,j) = dist;
-                _bondMatrix(j,i) = dist;
-
                 boost::add_edge(i, j, _bondGraph);
                 _numInterMolBonds += 1;
                 _vector.emplace_back(dist);
-                _bonds[std::make_tuple(i, j)] = dist;
+                _bonds[{i, j}] = dist;
 
 
                 if (_withAuxiliary){
@@ -160,9 +152,9 @@ void InternalCoords::ConnectMolecules(){
                             if (dist <= thresholdDist){
                                 boost::add_edge(iAtom, jAtom, _bondGraph);
                                 _numInterMolBonds += 1;
-                                _auxBonds.emplace_back(std::make_pair(iAtom, jAtom));
+                                _auxBonds[{iAtom, jAtom}]=dist;
                                 _vector.emplace_back(dist);
-                                _bonds[std::make_tuple(i, j)] = dist;
+                                _bonds[{iAtom, jAtom}] = dist;
 
                             }
                         }
@@ -184,7 +176,7 @@ void InternalCoords::ConnectMolecules(){
 void InternalCoords::ConnectHBonds(){
     // we can proceed to calculate the hydrogen bonds
     // Assume we have this situation:
-    //                H-----B
+    //                H-.-.-.-B
     //               /
     //              A
     // Where A,B are some elements, A is bonded to H, and we are checking
@@ -237,11 +229,9 @@ void InternalCoords::ConnectHBonds(){
                             // ie cos(angle) < 0
                             if (cosTheta < 0){
                                 boost::add_edge(HAtomInd, neighBInd, _bondGraph);
-                                _bondMatrix(HAtomInd, neighBInd) = dist;
-                                _bondMatrix(neighBInd, HAtomInd) = dist;
                                 _numHBonds+=1;
                                 _vector.emplace_back(dist);
-                                _bonds[std::make_tuple(HAtomInd, neighBInd)] = dist;
+                                _bonds[{HAtomInd, neighBInd}] = dist;
                             }
                         }
                     }
@@ -271,11 +261,6 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
     double tol = 1e-6;
 
-    auto IsAnAuxBond = [&](const int& i, const int& j) -> bool {
-        return (VectorContains(std::make_pair(i, j), _auxBonds) ||
-                VectorContains(std::make_pair(j, i), _auxBonds));
-    };
-
     for (int atomAIdx = 0; atomAIdx < _numAtoms; ++atomAIdx){
         BglGraph::adjacency_iterator itA, itA_end;
         boost::tie(itA, itA_end) = boost::adjacent_vertices(atomAIdx, _bondGraph);
@@ -284,7 +269,7 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
         for (; itA!=itA_end; ++itA){
             const int atomBIdx = *itA;
-            if (IsAnAuxBond(atomAIdx, atomBIdx)) continue;
+            if (_auxBonds.Contains({atomAIdx, atomBIdx})) continue;
 
             const tools::vec atomBPos = _qmMolecule[atomBIdx]->getPos();
             const tools::vec BAVec = (atomAPos - atomBPos).normalize();
@@ -294,24 +279,19 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
             for (; itB != itB_end; ++itB){
                 const int atomCIdx = *itB;
-                if (IsAnAuxBond(atomBIdx, atomCIdx) ||
+                if (_auxBonds.Contains({atomBIdx, atomCIdx}) ||
                     atomCIdx == atomAIdx) continue;
 
                 const tools::vec atomCPos = _qmMolecule[atomCIdx]->getPos();
 
-                auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx);
-                auto index2 = std::make_tuple(atomCIdx, atomBIdx, atomAIdx);
-
-                auto NotAnAngle = [&] (std::tuple<int,int,int>& index) -> bool {
-                    return (_angles.find(index)==_angles.end());
-                };
+                auto index = AngleIdx{atomAIdx, atomBIdx, atomCIdx};
 
                 const tools::vec BCVec = (atomCPos - atomBPos).normalize();
 
                 double cosABC = BAVec*BCVec;
 
-                if (NotAnAngle(index) && NotAnAngle(index2)){
-                    // If the angle is > 175, then a special orthogonal angle
+                if (!_angles.Contains(index)){
+                    // If the 175<angle<180, then a special orthogonal angle
                     // should be added, but I don't know how to do that...
                     _angles[index] = std::acos(cosABC);
                     _vector.emplace_back(std::acos(cosABC));
@@ -325,26 +305,22 @@ void InternalCoords::CalculateAnglesDihedrals(){
 
                 for (; itC != itC_end; ++itC){
                     const int atomDIdx = *itC;
-                    if (IsAnAuxBond(atomCIdx, atomDIdx) ||
+                    if (_auxBonds.Contains({atomCIdx, atomDIdx}) ||
                         atomDIdx == atomBIdx ||
                         atomDIdx == atomAIdx) continue;
 
 
                     const tools::vec atomDPos = _qmMolecule[atomDIdx]->getPos();
-                    auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx);
-                    auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
+                    auto index = DihedralIdx{atomAIdx, atomBIdx, atomCIdx, atomDIdx};
 
-                    auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
-                        return (_dihedrals.find(index)==_dihedrals.end());
-                    };
-
-                    if (NotADihedral(index) && NotADihedral(index2)){
+                    if (!_dihedrals.Contains(index)){
                         const tools::vec CBVec = -BCVec;
                         const tools::vec CDVec = (atomDPos - atomCPos).normalize();
 
                         const double cosBCD = BCVec*CDVec;
 
                         // ABC and BCD must not be 180 degrees
+                        // abs(cosABC + 1) < tol
                         if (std::abs(-1 - cosABC) > tol && std::abs(-1 - cosBCD) > tol){
 
                             tools::vec normPlaneB = (CBVec^CDVec);
@@ -371,50 +347,51 @@ void InternalCoords::CalculateAnglesDihedrals(){
         std::mt19937 g(rd());
         std::uniform_int_distribution<int> dist(0, _numAtoms-1);
 
-        auto IsABond = [&] (const int& i, const int& j) -> bool{
-            return (_bondMatrix(i,j) > 0);
-        };
-
-        std::vector<std::vector<int>> alreadyChosen;
-        auto RandomSelector = [&]() -> std::vector<int> {
-            std::vector<int> inds;
-            do {
-                inds = std::vector<int>();
-                do {
-                    int ind = dist(g);
-                    if (!VectorContains(ind, inds)){
-                        inds.emplace_back(ind);
-                    }
-                } while (inds.size() < 4);
-            } while (VectorContains(inds, alreadyChosen));
-
-            std::sort(inds.begin(), inds.end());
-
-            do {
-                alreadyChosen.emplace_back(inds);
-            } while (std::next_permutation(inds.begin(), inds.end()));
-
-            std::reverse(inds.begin(), inds.end());
-            return inds;
+        auto RandomSelector = [&]() -> DihedralIdx {
+            DihedralIdx idx = {-1,-1,-1,-1};
+            for (int i = 0; i<4; ++i){
+                while (idx[i] == -1){
+                    int coord = dist(g);
+                    if (!IdxContains(coord, idx))
+                        idx[i] = coord;
+                }
+            }
+            std::sort(idx.begin(), idx.end());
+            return idx;
         };
 
         std::function<int(int)> factorial =  [&](int num) -> int {
-            if (num == 1) return 1;
+            if (num < 2) return 1;
             return num*factorial(num-1);
         };
 
         int checkCount = 0;
         int checkCountMax = factorial(_numAtoms)/(factorial(4));
         do {
-            std::vector<int> inds = RandomSelector();
-            do {
-                const int atomAIdx = inds[0];
-                const int atomBIdx = inds[1];
-                const int atomCIdx = inds[2];
-                const int atomDIdx = inds[3];
+            DihedralIdx ind = RandomSelector();
+            std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
+                      << ind[3] << ")"<< std::endl;
+            bool okay = true;
+            for (int i =0; i<4; ++i){
+                for (int j = i+1; i<4; ++i){
+                    if (_auxBonds.Contains({ind[i], ind[j]})){
+                        okay = false;
+                        break;
+                    }
+                }
+            }
+            if (!okay || _dihedrals.Contains(ind)){
+                ++checkCount;
+                continue;
+            }
 
-                if (!(IsABond(atomAIdx, atomBIdx) && IsABond(atomBIdx, atomCIdx) &&
-                      IsABond(atomCIdx, atomDIdx))) continue;
+            do {
+                const int atomAIdx = ind[0];
+                const int atomBIdx = ind[1];
+                const int atomCIdx = ind[2];
+                const int atomDIdx = ind[3];
+                // std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
+                //           << ind[3] << ")"<< std::endl;
 
                 const tools::vec BAVec = (_qmMolecule[atomAIdx]->getPos() - _qmMolecule[atomBIdx]->getPos()).normalize();
                 const tools::vec BCVec = (_qmMolecule[atomCIdx]->getPos() - _qmMolecule[atomBIdx]->getPos()).normalize();
@@ -430,22 +407,218 @@ void InternalCoords::CalculateAnglesDihedrals(){
                     const tools::vec normPlaneA = BAVec^BCVec;
                     const tools::vec normPlaneB = CBVec^CDVec;
                     const double cosPhi = normPlaneA*normPlaneB;
-                    auto index = std::make_tuple(atomAIdx, atomBIdx, atomCIdx, atomDIdx);
-                    auto index2 = std::make_tuple(atomDIdx, atomCIdx, atomBIdx, atomAIdx);
+                    auto index = DihedralIdx{atomAIdx, atomBIdx, atomCIdx, atomDIdx};
 
-                    auto NotADihedral = [&](std::tuple<int,int,int,int>& index) -> bool {
-                        return (_dihedrals.find(index)==_dihedrals.end());
-                    };
-                    if (NotADihedral(index)){
+                    if (!_dihedrals.Contains(index)){
+                        std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
+                                  << ind[3] << ")"<< std::endl;
                         _dihedrals[index] = std::acos(cosPhi);
                         _vector.emplace_back(std::acos(cosPhi));
                         _numDihedrals += 1;
                     }
                 }
-
-            } while (std::next_permutation(inds.begin(), inds.end()));
+            } while (std::next_permutation(ind.begin(), ind.end()));
             ++checkCount;
-        } while (_numDihedrals < 1 && checkCount < checkCountMax);
+        } while (checkCount < checkCountMax);
+    }
+}
+
+
+inline int delta(const int& i, const int& j){
+    if (i==j) return 1;
+    return 0;
+}
+
+inline int zeta(const int& a, const int& m, const int& n){
+    return (delta(a, m) - delta(a, n));
+}
+
+
+inline tools::vec GetPerpTo(const tools::vec& u, const tools::vec& v){
+    double tol = 1e-6;
+    if (std::abs(1-abs(u))>tol || std::abs(1-abs(v))>tol)
+        throw std::runtime_error("GetPerpTo only accepts normalized vectors.");
+
+    tools::vec x(1, -1, 1);
+    tools::vec y(-1, 1, 1);
+    tools::vec ret;
+
+    auto AreParallel = [] (const tools::vec& a, const tools::vec& b) -> bool{
+        return ( 1 - std::abs(a*b) < 1e-3 );
+    };
+
+    if (!AreParallel(u,v))
+        ret = u^v;
+    else if(!AreParallel(u, x) && !AreParallel(v, x))
+        ret = u^x;
+    else
+        ret = u^y;
+
+    ret = ret.normalize();
+
+    return ret;
+}
+
+
+void InternalCoords::PopulateWilsonMatrix(){
+    _wilsonBMatrix = Eigen::MatrixXd::Zero(_vector.size(),
+                                           _cartCoords().size());
+
+    int numBonds = _numBonds+_numInterMolBonds+_numHBonds+_numAuxBonds;
+    for (int b = 0; b < numBonds; ++b){
+        BondIdx bondIdx = _bonds._indices[b];
+        double bondLen = _bonds[bondIdx];
+
+        int atIdxM, atIdxN;
+
+        atIdxM = bondIdx[0];
+        atIdxN = bondIdx[1];
+
+
+        tools::vec bondVec = (  _qmMolecule[atIdxM]->getPos() -
+                                _qmMolecule[atIdxN]->getPos()   ).normalize();
+
+        auto writeBondElem = [&](int a) -> void{
+            double z_amn = zeta(a, atIdxM, atIdxN);
+            a *= 3;
+            _wilsonBMatrix(b, a+0) = z_amn * bondVec.x();
+            _wilsonBMatrix(b, a+1) = z_amn * bondVec.y();
+            _wilsonBMatrix(b, a+2) = z_amn * bondVec.z();
+        };
+
+        writeBondElem(atIdxM);
+        writeBondElem(atIdxN);
+    }
+
+
+    for (int a = 0; a < _numAngles; ++a){
+        int idx = a + numBonds;
+        AngleIdx angleIdx = _angles._indices[a];
+
+        double angle = _angles[angleIdx];
+
+        int atIdxM, atIdxN, atIdxO;
+
+        // Consider a system that looks like this:
+        //           A
+        //            \
+        //             B--C
+        // The labelling below is:
+        //           M
+        //            \
+        //             O--N
+        // to be in accordance with the paper. Our data structure
+        // stores it as A,B,C. We convert it to M, O, N.
+
+        atIdxM = angleIdx[0];
+        atIdxO = angleIdx[1];
+        atIdxN = angleIdx[2];
+
+        tools::vec u = (_qmMolecule[atIdxM]->getPos() -
+                        _qmMolecule[atIdxO]->getPos());
+
+        double lu = abs(u);
+        u = u.normalize();
+
+        tools::vec v = (_qmMolecule[atIdxN]->getPos() -
+                        _qmMolecule[atIdxO]->getPos());
+
+        double lv = abs(v);
+        v = v.normalize();
+
+        tools::vec w = GetPerpTo(u, v); // w = u^v
+                                        // UNLESS u is parallel to v
+
+        tools::vec uw = (u^w)/lu;
+
+        tools::vec wv = (w^v)/lv;
+
+        auto writeAngleElem = [&] (int a) -> void{
+            tools::vec t = zeta(a, atIdxM, atIdxO)*uw +
+                           zeta(a, atIdxN, atIdxO)*wv;
+            a *= 3;
+            _wilsonBMatrix(idx, a+0) = t.x();
+            _wilsonBMatrix(idx, a+1) = t.y();
+            _wilsonBMatrix(idx, a+2) = t.z();
+        };
+
+        writeAngleElem(atIdxM);
+        writeAngleElem(atIdxO);
+        writeAngleElem(atIdxN);
+    }
+
+
+    for (int d = 0; d<_numDihedrals; ++d){
+        int idx = d+numBonds+_numAngles;
+        DihedralIdx index = _dihedrals._indices[d];
+
+        int atIdxM, atIdxN, atIdxO, atIdxP;
+
+        // Consider a system that looks like this:
+        //           A      D
+        //            \    /
+        //             B--C
+        // The labelling below is:
+        //           M      N
+        //            \    /
+        //             O--P
+        //
+        // I don't know why. I think this labeling makes things
+        // harder...  We follow the paper, and it is easier to just
+        // use their notation.  Our data structure stores them in
+        // A,B,C,D order so we adjust it
+
+        atIdxM = index[0];
+        atIdxO = index[1];
+        atIdxP = index[2];
+        atIdxN = index[3];
+
+        tools::vec u = _qmMolecule[atIdxM]->getPos() -
+                       _qmMolecule[atIdxO]->getPos();
+
+        tools::vec v = _qmMolecule[atIdxN]->getPos() -
+                       _qmMolecule[atIdxP]->getPos();
+
+        tools::vec w = _qmMolecule[atIdxP]->getPos() -
+                       _qmMolecule[atIdxO]->getPos();
+
+        double lu = abs(u);
+        double lv = abs(v);
+        double lw = abs(w);
+
+        u = u.normalize();
+        v = v.normalize();
+        w = w.normalize();
+
+
+        double cosPhiU =  u*v;
+        double cosPhiV = -v*w;
+
+        double sinPhiU = sqrt(1 - cosPhiU*cosPhiU);
+        double sinPhiV = sqrt(1 - cosPhiV*cosPhiV);
+
+        double su2 = sinPhiU*sinPhiU;
+        double sv2 = sinPhiV*sinPhiV;
+
+        tools::vec uw = u^w;
+        tools::vec vw = v^w;
+
+
+        auto writeDihedralElem = [&](int a) -> void{
+            tools::vec t1 = ( zeta(a, atIdxM, atIdxO)/(lu*su2) )*uw;
+            tools::vec t2 = ( zeta(a, atIdxP, atIdxN)/(lv*sv2) )*vw;
+            tools::vec t3 = zeta(a, atIdxO, atIdxP)*(uw*cosPhiU/(lw*su2) - vw*cosPhiV/lw*sv2);
+            a *= 3;
+            _wilsonBMatrix(idx, a+0) = t1.x() - t2.x() - t3.x();
+            _wilsonBMatrix(idx, a+1) = t1.y() - t2.y() - t3.y();
+            _wilsonBMatrix(idx, a+2) = t1.z() - t2.z() - t3.z();
+
+        };
+
+        writeDihedralElem(atIdxM);
+        writeDihedralElem(atIdxN);
+        writeDihedralElem(atIdxO);
+        writeDihedralElem(atIdxP);
     }
 }
 
@@ -456,7 +629,7 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool withAux):
     CoordBase(INTERNAL, orb), _withAuxiliary(withAux),
     _numBonds(0), _numInterMolBonds(0), _numHBonds(0),
     _numAngles(0), _numDihedrals(0), _numAuxBonds(0), _bondGraph(_numAtoms),
-    _bondMatrix(Eigen::MatrixXd::Zero(_numAtoms, _numAtoms))
+    _cartCoords(orb)
 {
     // This code implements the algorithm described in
     // https://doi.org/10.1063/1.1515483
@@ -474,6 +647,11 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool withAux):
 
     _coords = Eigen::Map<Eigen::VectorXd>(_vector.data(), _vector.size());
 
+    PopulateWilsonMatrix();
+}
+
+void InternalCoords::Increment(Eigen::VectorXd dx){
+    CoordBase::Increment(dx);
 }
 
 int InternalCoords::getPossibleNumMols(){
@@ -498,6 +676,22 @@ int InternalCoords::getNumAuxBonds(){
 
 int InternalCoords::getNumDihedrals(){
     return _numDihedrals;
+}
+
+Eigen::MatrixXd InternalCoords::getWilsonBMatrix(){
+    return _wilsonBMatrix;
+}
+
+std::ostream& operator<<(std::ostream& s, const InternalCoords& ic){
+    s << "Bonds " << std::endl;
+    s << ic._bonds;
+    s << "AuxBonds" << std::endl;
+    s << ic._auxBonds;
+    s << "Angles " << std::endl;
+    s << ic._angles;
+    s << "Dihedrals" << std::endl;
+    s << ic._dihedrals;
+    return s;
 }
 
 } // xtp

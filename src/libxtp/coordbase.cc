@@ -35,5 +35,13 @@ void CoordBase::Increment(Eigen::VectorXd dx){
     _coords += dx;
 }
 
+int CoordBase::getNumAtoms(){
+    return _numAtoms;
+}
+
+bool CoordBase::isApprox(CoordBase& other, const double& tol){
+    return _coords.isApprox(other.Vector(), tol);
+}
+
 }//xtp
 }//votca
