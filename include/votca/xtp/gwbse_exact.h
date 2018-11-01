@@ -21,7 +21,10 @@
 #define _VOTCA_XTP_BSE_H
 
 #include <votca/xtp/orbitals.h>
+#include <votca/xtp/aobasis.h>
+#include <votca/xtp/threecenter.h>
 #include <unsupported/Eigen/MatrixFunctions>
+#include <eigen3/Eigen/src/Core/PlainObjectBase.h>
 
 namespace votca
 {
@@ -46,11 +49,11 @@ private:
 
     Orbitals &_orbitals;
     AOBasis &_gwbasis;
-    const TCMatrix_gwbse &_Mmn;
+    TCMatrix_gwbse &_Mmn;
 
     Eigen::VectorXd _AmB_sqrt; // (A - B)⁽1 / 2)
     Eigen::MatrixXd _C;
-    
+
     Eigen::VectorXd _Sigma; // Eigenvalues
     Eigen::MatrixXd _XS; // Eigenvectors
     Eigen::MatrixXd _YS; // Eigenvectors
