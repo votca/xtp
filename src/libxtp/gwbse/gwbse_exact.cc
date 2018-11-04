@@ -22,12 +22,6 @@
 namespace votca {
     namespace xtp {
 
-        void GWBSE_Exact::Initialize() {
-
-            return;
-
-        }
-
         void GWBSE_Exact::Fill_C() {
 
             // C = (A - B)^(1 / 2) * (A + B) * (A - B)^(1 / 2)
@@ -114,22 +108,104 @@ namespace votca {
 
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(_C);
             _Sigma = es.eigenvalues().sqrt();
-            Eigen::MatrixXd ZS = es.eigenvectors(); // TODO: Take single eigenvector
+            Eigen::MatrixXd ZS = es.eigenvectors();
 
             // Setup matrices XS and YS (eq. 42)
+            
+            _XS = Eigen::MatrixXd(_bse_size, _bse_size);
+            _YS = Eigen::MatrixXd(_bse_size, _bse_size);
+            
+            // TODO: Is this the correct way to inverse?
+            Eigen::MatrixXd AmB_sqrt_inv = _AmB_sqrt.pow(-1.0);
+            
+            for (int s = 0; s < _bse_size; s++) {
+                
+                double sigma_sqrt = std::sqrt(_Sigma(s));
 
-            // TODO: Use diagonal matrices
-
-            Eigen::VectorXd lhs, rhs;
-
-            lhs = _Sigma.pow(-0.5).cwiseProduct(_AmB_sqrt);
-            rhs = _Sigma.sqrt().cwiseProduct(_AmB_sqrt.pow(-1.0));
-
-            _XS = (1 / 2) * (lhs + rhs).asDiagonal() * ZS;
-            _YS = (1 / 2) * (lhs - rhs).asDiagonal() * ZS;
+                Eigen::MatrixXd lhs = (1 / sigma_sqrt) * _AmB_sqrt;
+                Eigen::MatrixXd rhs = sigma_sqrt * AmB_sqrt_inv;
+                
+                _XS.col(s) = (1 / 2) * (lhs + rhs) * ZS.col(s);
+                _YS.col(s) = (1 / 2) * (lhs - rhs) * ZS.col(s);
+                
+            }
 
             // TODO: More efficient way to solve eq. 36 without sqrt is
             // described in section 6.2.
+
+            return;
+
+        }
+        
+        void GWBSE_Exact::Calculate_Residues(int s, Eigen::MatrixXd& res) {
+            
+            Eigen::VectorXd x = _XS.col(s);
+            Eigen::VectorXd y = _YS.col(s);
+            
+            for (int m = 0; m < _qp_total; m++) {
+
+                for (int n = 0; n < _qp_total; n++) {
+
+                    for (int i_aux = 0; i_aux < _Mmn.getAuxDimension(); ++i_aux) {
+
+                        // Get three-center column for index (m, n)
+                        VectorXfd tc_1 = _Mmn[m].col(i_aux);
+
+                        for (int i = 0; i < _bse_size; i++) {
+
+                            int v = _index2v[i];
+                            int c = _index2v[i];
+
+                            // Get three-center column for index i
+                            VectorXfd tc = _Mmn[v].col(i_aux);
+                            
+                            // Fill residues vector
+                            res(m, n) += (tc_1(n) * tc(c)) * (x(i) + y(i)); // Eq. 45
+
+                        }
+                        
+                    }
+
+                }
+                
+            }
+            
+            return;
+            
+        }
+
+        void GWBSE_Exact::Calculate_Sigma_Diagonal(double freq) {
+            
+            _sigma_c = Eigen::VectorXd::Zero(_qp_total);
+            
+            for (int s = 0; s < _bse_size; s++ ) {
+                
+                Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
+                
+                Calculate_Residues(s, res);
+                
+                for (int n = 0; n < _qp_total; n++) {
+                    
+                    for (int i = 0; i < _bse_size; i++ ) {
+                        
+                        int v = _index2v[i];
+                        int c = _index2v[i];
+                        
+                        double numer1 = std::pow(res(n, v), 2.0);
+                        double denom1 = freq - _orbitals.MOEnergies()(v) + _Sigma(s);
+                        
+                        double numer2 = std::pow(res(n, c), 2.0);
+                        double denom2 = freq - _orbitals.MOEnergies()(c) + _Sigma(s);
+                        
+                        _sigma_c(n) += (numer1 / denom1) + (numer2 / denom2); // Eq. 47
+                        
+                    }
+                    
+                }
+                
+            }
+
+            return;
 
         }
 

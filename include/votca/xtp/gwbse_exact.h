@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef _VOTCA_XTP_BSE_H
-#define _VOTCA_XTP_BSE_H
+#ifndef _VOTCA_XTP_GWBSE_EXACT_H
+#define _VOTCA_XTP_GWBSE_EXACT_H
 
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/aobasis.h>
@@ -31,9 +31,18 @@ namespace votca
 namespace xtp
 {
 
-class GWBSE_Exact
-{
+class GWBSE_Exact {
+    
 private:
+    
+    // ****** Previous results ******
+    
+    Orbitals &_orbitals;
+    AOBasis &_gwbasis;
+    TCMatrix_gwbse &_Mmn;
+    
+    // ****** BSE ******
+    
     int _homo; // Index of homo energy level
     int _bse_vmin; // v: valance, i.e. occupied
     int _bse_vmax;
@@ -43,26 +52,66 @@ private:
     int _bse_vtotal;
     int _bse_ctotal;
     int _bse_size; // = _bse_vtotal * _bse_ctotal
-
+    
     std::vector<int> _index2v;
     std::vector<int> _index2c;
-
-    Orbitals &_orbitals;
-    AOBasis &_gwbasis;
-    TCMatrix_gwbse &_Mmn;
+    
+    // ****** Intermediate results ******
 
     Eigen::VectorXd _AmB_sqrt; // (A - B)⁽1 / 2)
     Eigen::MatrixXd _C;
 
     Eigen::VectorXd _Sigma; // Eigenvalues
+
     Eigen::MatrixXd _XS; // Eigenvectors
     Eigen::MatrixXd _YS; // Eigenvectors
 
-public:
-    void Initialize();
+    // ****** RPA ******
+    
+    /*
+    // (*) Use _home from BSE
+    int _rpamin;
+    int _rpamax;
+    int _rpa_total;
+    */
+    
+    // ****** QP ******
+    
+    // (*) Use _home from BSE
+    int _qpmin;
+    int _qpmax;
+    int _qp_total;
+    
+    // ****** Screening ******
 
-    void SetBSEIndices(int homo, int vmin, int cmax, int nmax)
-    {
+    // Container for the epsilon matrix
+    std::vector<Eigen::MatrixXd > _epsilon_r;
+    std::vector<Eigen::MatrixXd > _epsilon_i;
+    
+    // ****** Final results ******
+
+    Eigen::VectorXd _sigma_c;
+
+public:
+    
+    // ****** Constructor ******
+    
+    GWBSE_Exact(Orbitals& orbitals, AOBasis& gwbasis, TCMatrix_gwbse& Mmn) :
+        _orbitals(orbitals),
+        _gwbasis(gwbasis),
+        _Mmn(Mmn) {
+        
+    }
+    
+    // ****** Init ******
+    
+    void Initialize() {
+        
+    }
+    
+    // ****** BSE ******
+
+    void Configure_BSE(int homo, int vmin, int cmax, int nmax) {
 
         _homo = homo;
         _bse_vmin = vmin;
@@ -74,11 +123,9 @@ public:
         _bse_ctotal = _bse_cmax - _bse_cmin + 1;
         _bse_size = _bse_vtotal * _bse_ctotal;
 
-        for (int v = 0; v < _bse_vtotal; v++)
-        {
+        for (int v = 0; v < _bse_vtotal; v++) {
 
-            for (int c = 0; c < _bse_ctotal; c++)
-            {
+            for (int c = 0; c < _bse_ctotal; c++) {
 
                 _index2v.push_back(_bse_vmin + v);
                 _index2c.push_back(_bse_cmin + c);
@@ -86,29 +133,72 @@ public:
         }
 
         return;
+        
     }
-
-    void SetOrbitals(Orbitals &orbitals)
-    {
-        _orbitals = orbitals;
-    }
-
-    void SetAuxBasis(AOBasis &gwbasis)
-    {
-        _gwbasis = gwbasis;
-    }
-
-    void SetTCMatric(TCMatrix_gwbse &Mmn)
-    {
-        _Mmn = Mmn;
-    }
-
+    
+    // ****** Intermediate results ******
+    
     void Fill_C();
+    
     void Diag_C();
+    
+    Eigen::MatrixXd& Get_C() {
+        return _C;
+    }
+    
+    // ****** RPA ******
+    
+    /*
+    void Configure_RPA(int homo, int rpamin, int rpamax) {
+        
+        _homo = homo;
+        _rpamin = rpamin;
+        _rpamax = rpamax;
+        _rpa_total = _rpamax - _rpamin + 1;
+        
+        return;
+        
+    }
+    */
+    
+    // ****** QP ******
+
+    void Configure_QP(int homo, int qpmin, int qpmax) {
+        
+        _homo = homo;
+        _qpmin = qpmin;
+        _qpmax = qpmax;
+        _qp_total = _qpmax - _qpmin + 1;
+        
+        return;
+        
+    }
+    
+    void Calculate_Residues(int s, Eigen::MatrixXd& res);
+    
+    // ****** Final results ******
+    
+    void Calculate_Sigma_Diagonal(double freq);
+    
+    // ****** Clean-up ******
+
+    void FreeMatrices() {
+        
+        for (Eigen::MatrixXd& matrix : _epsilon_r) {
+            matrix.resize(0, 0);
+        }
+        
+        for (Eigen::MatrixXd& matrix : _epsilon_i) {
+            matrix.resize(0, 0);
+        }
+        
+        return;
+        
+    }
 
 };
 
 }
 }
 
-#endif /* _VOTCA_XTP_GWBSE_EXACT */
+#endif /* _VOTCA_XTP_GWBSE_EXACT_H */
