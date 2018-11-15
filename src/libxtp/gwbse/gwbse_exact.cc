@@ -97,6 +97,9 @@ namespace votca {
             
             // Eigenvalues
             _Omega = es.eigenvalues();
+            
+            std::cout << _Omega << std::endl;
+            
             _Omega(0) = _Omega(1); // Cheat: Get rid of negative eigenvalue
             _Omega = _Omega.cwiseSqrt();
             
@@ -183,14 +186,31 @@ namespace votca {
 
                         int v = _index2v[i];
                         int c = _index2c[i];
-
-                        double numer1 = res(n, v) * res(n, v);
-                        double denom1 = freq - _orbitals.MOEnergies()(v) + _Omega(s) - v * eta;
                         
-                        double numer2 = res(n, c) * res(n, c);
-                        double denom2 = freq - _orbitals.MOEnergies()(c) + _Omega(s) - v * eta;
+                        // w_{m, v}^s * w_{n, v}^s      A
+                        // ----------------------- = ------- = A * B
+                        //   w - ε_v + Ω_s + iη      (1 / B)
+                        
+                        // C = w - ε_v + Ω_s
+                        
+                        // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
+                        //   = ...
+                        //   = (C + iη) / (C² - η²)
+                        
+                        double A1 = res(n, v) * res(n, v);
+                        double A2 = res(n, c) * res(n, c);
+                        
+                        double C1 = freq - _orbitals.MOEnergies()(v) + _Omega(s);
+                        double C2 = freq - _orbitals.MOEnergies()(c) + _Omega(s);
+                        
+                        double B1_Real = C1 / (C1 * C1 - eta * eta);
+                        double B2_Real = C2 / (C2 * C2 - eta * eta);
+                        
+                        double B1_Imag = eta / (C1 * C1 - eta * eta);
+                        double B2_Imag = eta / (C2 * C2 - eta * eta);
 
-                        _Sigma_Diagonal(n) += (numer1 / denom1) + (numer2 / denom2); // Eq. 47
+                        // What to do with the imaginary part?
+                        _Sigma_Diagonal(n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
                         
                     }
                     
@@ -223,13 +243,29 @@ namespace votca {
                             int v = _index2v[i];
                             int c = _index2c[i];
 
-                            double numer1 = res(m, v) * res(n, v);
-                            double denom1 = freq - _orbitals.MOEnergies()(v) + _Omega(s) - v * eta;
+                            // w_{m, v}^s * w_{n, v}^s      A
+                            // ----------------------- = ------- = A * B
+                            //   w - ε_v + Ω_s + iη      (1 / B)
 
-                            double numer2 = res(m, c) * res(n, c);
-                            double denom2 = freq - _orbitals.MOEnergies()(c) + _Omega(s) - v * eta;
+                            // C = w - ε_v + Ω_s
 
-                            _Sigma(m, n) += (numer1 / denom1) + (numer2 / denom2); // Eq. 47
+                            // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
+                            //   = ...
+                            //   = (C + iη) / (C² - η²)
+
+                            double A1 = res(m, v) * res(n, v);
+                            double A2 = res(m, c) * res(n, c);
+
+                            double C1 = freq - _orbitals.MOEnergies()(v) + _Omega(s);
+                            double C2 = freq - _orbitals.MOEnergies()(c) + _Omega(s);
+
+                            double B1_Real = C1 / (C1 * C1 - eta * eta);
+                            double B2_Real = C2 / (C2 * C2 - eta * eta);
+
+                            double B1_Imag = eta / (C1 * C1 - eta * eta);
+                            double B2_Imag = eta / (C2 * C2 - eta * eta);
+
+                            _Sigma(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
 
                         }
 
