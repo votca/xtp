@@ -20,11 +20,14 @@
 #ifndef _VOTCA_XTP_GWBSE_EXACT_H
 #define _VOTCA_XTP_GWBSE_EXACT_H
 
-#include <votca/xtp/orbitals.h>
-#include <votca/xtp/aobasis.h>
-#include <votca/xtp/threecenter.h>
-#include <unsupported/Eigen/MatrixFunctions>
-#include <eigen3/Eigen/src/Core/PlainObjectBase.h>
+//#include <votca/xtp/orbitals.h>
+//#include <votca/xtp/aobasis.h>
+//#include <votca/xtp/threecenter.h>
+//#include <unsupported/Eigen/MatrixFunctions>
+//#include <eigen3/Eigen/src/Core/PlainObjectBase.h>
+
+#include <votca/ctp/logger.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca
 {
@@ -35,6 +38,15 @@ class GWBSE_Exact {
     
 private:
     
+    // Logger (unused)
+    ctp::Logger* _pLog;
+    
+    // Misc. options
+    int _bse_maxeigenvectors;
+    bool _do_full_BSE;
+    std::string _dftbasis_name;
+    int _fragA; // Fragment definition
+
     // ****** Previous results ******
     
     Orbitals &_orbitals;
@@ -61,20 +73,18 @@ private:
     Eigen::VectorXd _AmB_sqrt; // (A - B)⁽1 / 2)
     Eigen::MatrixXd _C;
 
-    Eigen::VectorXd _Sigma; // Eigenvalues
+    Eigen::VectorXd _Omega; // Eigenvalues
 
-    Eigen::MatrixXd _XS; // Eigenvectors
-    Eigen::MatrixXd _YS; // Eigenvectors
+    Eigen::MatrixXd _X; // Eigenvectors
+    Eigen::MatrixXd _Y; // Eigenvectors
 
     // ****** RPA ******
-    
-    /*
+
     // (*) Use _home from BSE
     int _rpamin;
     int _rpamax;
     int _rpa_total;
-    */
-    
+
     // ****** QP ******
     
     // (*) Use _home from BSE
@@ -88,12 +98,19 @@ private:
     std::vector<Eigen::MatrixXd > _epsilon_r;
     std::vector<Eigen::MatrixXd > _epsilon_i;
     
-    // ****** Final results ******
+    // ****** Sigma ******
 
-    Eigen::VectorXd _sigma_c;
+    Eigen::VectorXd _Sigma_Diagonal;
+    Eigen::MatrixXd _Sigma;
+    
+    // ****** QP Hamiltonian ******
+    
+    Eigen::VectorXd _gwa_energies;
+    
+    const Eigen::MatrixXd* _vxc;
 
 public:
-    
+
     // ****** Constructor ******
     
     GWBSE_Exact(Orbitals& orbitals, AOBasis& gwbasis, TCMatrix_gwbse& Mmn) :
@@ -107,6 +124,11 @@ public:
     
     void Initialize() {
         
+        // Set default options
+        _bse_maxeigenvectors = 25;
+        _do_full_BSE = false;
+        _dftbasis_name = "3-21G.xml";
+        _fragA = -1;
     }
     
     // ****** BSE ******
@@ -136,19 +158,38 @@ public:
         
     }
     
+    int Get_bse_vtotal() {
+        return _bse_vtotal;
+    }
+    
+    int Get_bse_ctotal() {
+        return _bse_ctotal;
+    }
+    
+    int Get_bse_size() {
+        return _bse_size;
+    }
+    
     // ****** Intermediate results ******
     
     void Fill_C();
-    
-    void Diag_C();
     
     Eigen::MatrixXd& Get_C() {
         return _C;
     }
     
-    // ****** RPA ******
+    void Diag_C();
     
-    /*
+    Eigen::MatrixXd& Get_X() {
+        return _X;
+    }
+    
+    Eigen::MatrixXd& Get_Y() {
+        return _Y;
+    }
+    
+    // ****** RPA ******
+
     void Configure_RPA(int homo, int rpamin, int rpamax) {
         
         _homo = homo;
@@ -159,8 +200,7 @@ public:
         return;
         
     }
-    */
-    
+
     // ****** QP ******
 
     void Configure_QP(int homo, int qpmin, int qpmax) {
@@ -176,9 +216,34 @@ public:
     
     void Calculate_Residues(int s, Eigen::MatrixXd& res);
     
-    // ****** Final results ******
+    // ****** Sigma ******
     
-    void Calculate_Sigma_Diagonal(double freq);
+    void Fill_Sigma_Diagonal(double freq);
+    void Fill_Sigma(double freq);
+    
+    Eigen::VectorXd& Get_Sigma_Diagonal() {
+        return _Sigma_Diagonal;
+    }
+    
+    Eigen::MatrixXd& Get_Sigma() {
+        return _Sigma;
+    }
+    
+    // QP Hamiltonian
+    
+    void Set_GWA_Energies(const Eigen::VectorXd& gwa_energies) {
+        _gwa_energies = gwa_energies;
+    }
+    
+    void Set_VXC(const Eigen::MatrixXd* vxc) {
+        _vxc = vxc;
+    }
+    
+    Eigen::MatrixXd SetupFullQPHamiltonian();
+    
+    // ****** Evaluate ******
+    
+    bool Evaluate();
     
     // ****** Clean-up ******
 
