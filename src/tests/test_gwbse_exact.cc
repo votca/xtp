@@ -21,6 +21,7 @@
 #include <votca/xtp/sigma.h>
 #include <votca/xtp/convergenceacc.h>
 #include <votca/xtp/gwbse_exact.h>
+#include <votca/xtp/sigma_spectral.h>
 
 using namespace votca::xtp;
 using namespace std;
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     moleculefile.close();
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="carbondioxide">
+    // <editor-fold defaultstate="collapsed" desc="co">
     moleculefile = ofstream("co.xyz");
     moleculefile << " 2"                                            << endl;
     moleculefile << " CO"                                           << endl;
@@ -329,14 +330,21 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     // </editor-fold>
     
     // ****** Read Input Files, Initiate objects ******
+    
+    std::string moleculefilename = "methane.xyz";
+    std::string dftbasisfilename = "3-21G.xml";
+    std::string auxbasisfilename = "3-21G.xml";
+    
+//    std::string moleculefilename = "methane.xyz";
+//    std::string dftbasisfilename = "def2-SVP.xml";
+//    std::string auxbasisfilename = "aux-def2-SVP.xml";
 
     Orbitals orbitals;
-    //orbitals.LoadFromXYZ("co.xyz");
-    orbitals.LoadFromXYZ("methane.xyz");
-    orbitals.setDFTbasis("def2-SVP.xml");
-    
+    orbitals.LoadFromXYZ(moleculefilename);
+    orbitals.setDFTbasis(dftbasisfilename);
+
     BasisSet basis;
-    basis.LoadBasisSet("aux-def2-SVP.xml");
+    basis.LoadBasisSet(auxbasisfilename);
 
     AOBasis aobasis;
     aobasis.AOBasisFill(basis, orbitals.QMAtoms());
@@ -451,6 +459,11 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     cout << gwbse_exact.Get_C() << endl;
     
     gwbse_exact.Diag_C();
+    
+    // Using new sigma object:
+    Sigma_Spectral sigma = Sigma_Spectral();
+    sigma.configure(4, 0, 16, 1);
+    sigma.prepare_decomp(orbitals, Mmn);
     
     return;
 

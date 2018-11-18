@@ -32,35 +32,35 @@ namespace votca {
 
             // Fill with (A + B)
             _C = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
-            
             // Fill with (A - B)
             _AmB_sqrt = Eigen::VectorXd::Zero(_bse_size);
 
             for (int i_1 = 0; i_1 < _bse_size; i_1++) {
 
+                // eps_{c_1} - eps_{v_1}
+                double denergy = _orbitals.MOEnergies()(_index2c[i_1]) - _orbitals.MOEnergies()(_index2v[i_1]);
+
+                _C(i_1, i_1) = denergy; // Fill (A + B)
+                _AmB_sqrt(i_1) = denergy; // Fill (A - B)
+
+            } // Composite index 1
+
+            for (int i_1 = 0; i_1 < _bse_size; i_1++) {
+
                 int v_1 = _index2v[i_1];
                 int c_1 = _index2c[i_1];
-                
-                // ε_{c_1} - ε_{v_1}
-                double denergy = _orbitals.MOEnergies()(c_1) - _orbitals.MOEnergies()(v_1);
 
                 for (int i_aux = 0; i_aux < _Mmn.getAuxDimension(); ++i_aux) {
 
                     // Get three-center column for index 1
                     VectorXfd tc_1 = _Mmn[v_1].col(i_aux);
 
+                    // TODO: Can we use Eigen sums instead of this for-loop?
                     for (int i_2 = 0; i_2 < _bse_size; i_2++) {
 
                         int v_2 = _index2v[i_2];
                         int c_2 = _index2c[i_2];
-                        
-                        // (ε_{c_1} - ε_{v_1}) * 𝛿_{v_1, v_2} * 𝛿_{c_1, c_2}
-                        if (v_1 == v_2 && c_1 == c_2) {
 
-                            _C(i_1, i_2) = denergy; // Fill (A + B)
-                            _AmB_sqrt(i_1) = denergy; // Fill (A - B)
-                        }
-                        
                         // Get three-center column for index 2
                         VectorXfd tc_2 = _Mmn[v_2].col(i_aux);
                         
@@ -68,9 +68,7 @@ namespace votca {
                         _C(i_1, i_2) -= 2 * tc_1(c_1) * tc_2(c_2);
                         
                     } // Composite index 2
-                    
                 } // Auxiliary basis functions
-            
             } // Composite index 1
 
             _AmB_sqrt = _AmB_sqrt.cwiseSqrt();
@@ -83,24 +81,16 @@ namespace votca {
 
         void GWBSE_Exact::Diag_C() {
 
-            // Diagonalize C to find the eigenvalues Sigma.
-            // For this, use Eigen's EigenSolver:
-
-            // https://eigen.tuxfamily.org/dox/classEigen_1_1EigenSolver.html
-
-            // TODO: Use SelfAdjointEigenSolver
-            // Because C is symmetric!
-
             // Solve eigenvalue problem (eq. 41)
-
+            // Diagonalize C to find the eigenvalues Sigma.
+            // Using SelfAdjointEigenSolver since C is symmetric!
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(_C);
             
             // Eigenvalues
             _Omega = es.eigenvalues();
             
             std::cout << _Omega << std::endl;
-            
-            _Omega(0) = _Omega(1); // Cheat: Get rid of negative eigenvalue
+
             _Omega = _Omega.cwiseSqrt();
             
             // Eigenvectors
@@ -156,13 +146,10 @@ namespace votca {
                             // Fill residues vector
                             res(m, n) += (tc_mn(n) * tc_vc(c)) * (x(i) + y(i)); // Eq. 45
 
-                        }
-                        
-                    }
-
-                }
-                
-            }
+                        } // Composite index i
+                    } // i_aux
+                } // Energy level n
+            } // Energy level m
             
             return;
             
@@ -187,12 +174,14 @@ namespace votca {
                         int v = _index2v[i];
                         int c = _index2c[i];
                         
+                        // Eq. 47
+                        //
                         // w_{m, v}^s * w_{n, v}^s      A
                         // ----------------------- = ------- = A * B
                         //   w - ε_v + Ω_s + iη      (1 / B)
-                        
+                        //
                         // C = w - ε_v + Ω_s
-                        
+                        //
                         // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
                         //   = ...
                         //   = (C + iη) / (C² - η²)
@@ -212,11 +201,9 @@ namespace votca {
                         // What to do with the imaginary part?
                         _Sigma_Diagonal(n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
                         
-                    }
-                    
-                }
-                
-            }
+                    } // Composite index i
+                } // Energy level n
+            } // Eigenvalues s
 
             return;
 
@@ -242,13 +229,15 @@ namespace votca {
 
                             int v = _index2v[i];
                             int c = _index2c[i];
-
+                            
+                            // Eq. 47
+                            //
                             // w_{m, v}^s * w_{n, v}^s      A
                             // ----------------------- = ------- = A * B
                             //   w - ε_v + Ω_s + iη      (1 / B)
-
+                            //
                             // C = w - ε_v + Ω_s
-
+                            //
                             // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
                             //   = ...
                             //   = (C + iη) / (C² - η²)
@@ -267,13 +256,10 @@ namespace votca {
 
                             _Sigma(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
 
-                        }
-
-                    }
-                
-                }
-                
-            }
+                        } // Composite index i
+                    } // Energy level n
+                } // Energy level m
+            } // Eigenvalues s
 
             return;
             
