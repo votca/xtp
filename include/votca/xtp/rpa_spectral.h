@@ -17,46 +17,43 @@
  *
  */
 
-#ifndef _VOTCA_XTP_SIGMA_SPECTRAL_H
-#define _VOTCA_XTP_SIGMA_SPECTRAL_H
+#ifndef _VOTCA_XTP_RPA_SPECTRAL_H
+#define _VOTCA_XTP_RPA_SPECTRAL_H
 
 #include <votca/xtp/eigen.h>
-#include <votca/xtp/rpa_spectral.h>
 
 namespace votca {
 namespace xtp {
 
 class TCMatrix_gwbse;
 
-class Sigma_Spectral {
+class RPA_Spectral {
     
 private:
     
     // BSE Options
     int _bse_size; // Total number of BSE energy levels
 
-    // QP Options
-    int _qp_size; // Total number of QP energy levels <= _bse_size
-    
     // Composite Indexing
     std::vector<int> _index2v;
     std::vector<int> _index2c;
     
     // GWA Energies
     Eigen::VectorXd _gwa_energies;
-
-    // Sigma
-    Eigen::MatrixXd _Sigma;
-
-    // Compute residues (eq. 45)
-    void Calculate_Residues(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, int s, Eigen::MatrixXd& res);
     
-    // Compute sigma (eq. 47)
-    void compute_sigma(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
+    // Spectral decomposition
+    Eigen::VectorXd _Omega; // Eigenvalues
+    Eigen::MatrixXd _X, _Y; // Eigenvector components
+
+    // Compute (A + B) and (A - B)
+    void Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
+    
+    // Do the spectral decomposition
+    void Diag_C(Eigen::VectorXd& AmB_sqrt, Eigen::MatrixXd& C);
     
 public:
 
-    Sigma_Spectral() {
+    RPA_Spectral() {
         _gwa_energies.resize(0);
     }
 
@@ -85,18 +82,6 @@ public:
         return;
 
     }
-
-    void configure_qp(int homo, int min, int max) {
-
-        // TODO: Which of these values should we keep as member?
-        int qp_homo = homo;
-        int qp_min = min;
-        int qp_max = max;
-        _qp_size = qp_max - qp_min + 1;
-        
-        return;
-        
-    }
     
     const Eigen::VectorXd& getGWAEnergies() const {
         return _gwa_energies;
@@ -106,7 +91,19 @@ public:
         _gwa_energies = gwa_energies;
     }
     
-    void updateEnergies(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
+    const Eigen::VectorXd& getOmega() const {
+        return _Omega;
+    }
+    
+    const Eigen::MatrixXd& getX() const {
+        return _X;
+    }
+    
+    const Eigen::MatrixXd& getY() const {
+        return _Y;
+    }
+
+    void prepare_decomp(const TCMatrix_gwbse& Mmn);
 
     void FreeMatrices() {
         
@@ -119,4 +116,4 @@ public:
 }
 }
 
-#endif /* _VOTCA_XTP_SIGMA_SPECTRAL_H */
+#endif /* _VOTCA_XTP_RPA_SPECTRAL_H */

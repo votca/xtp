@@ -460,13 +460,20 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     
     gwbse_exact.Diag_C();
     
-    // Using new sigma object:
+    // ****** Using new objects ******
+    
+    // Prepare spectral decomposition
+    RPA_Spectral rpa = RPA_Spectral();
+    rpa.configure_bse(4, 0, 16, 1);
+    rpa.setGWAEnergies(orbitals.MOEnergies());
+    rpa.prepare_decomp(Mmn);
+
+    // Compute sigma
     Sigma_Spectral sigma = Sigma_Spectral();
     sigma.configure_bse(4, 0, 16, 1);
     sigma.configure_qp(4, 0, 16);
     sigma.setGWAEnergies(orbitals.MOEnergies());
-    sigma.prepare_decomp(Mmn);
-    sigma.compute_sigma(Mmn, 0);
+    sigma.updateEnergies(Mmn, rpa, 0);
     
     return;
 
