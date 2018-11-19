@@ -18,19 +18,18 @@
  */
 
 #include <votca/xtp/sigma_spectral.h>
-#include <votca/xtp/orbitals.h>
 #include <votca/xtp/threecenter.h>
 
 namespace votca {
     namespace xtp {
 
-        void Sigma_Spectral::prepare_decomp(const Orbitals& orbitals, const TCMatrix_gwbse& Mmn) {
+        void Sigma_Spectral::prepare_decomp(const TCMatrix_gwbse& Mmn) {
             
             Eigen::MatrixXd C = Eigen::MatrixXd::Zero(_bse_size, _bse_size); // Fill with (A + B)
             Eigen::VectorXd AmB_sqrt = Eigen::VectorXd::Zero(_bse_size); // Fill with (A - B)
             
             // Fill (A + B), (A - B)
-            Fill_AB(orbitals, Mmn, C, AmB_sqrt);
+            Fill_AB(Mmn, C, AmB_sqrt);
             // Compute (A - B)^(1 / 2)
             AmB_sqrt = AmB_sqrt.cwiseSqrt();
             // Compute C
@@ -43,14 +42,14 @@ namespace votca {
             return;
         }
         
-        void Sigma_Spectral::Fill_AB(const Orbitals& orbitals, const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB) {
+        void Sigma_Spectral::Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB) {
 
             // TODO: Make use of the fact that C is symmetric!
 
             for (int i_1 = 0; i_1 < _bse_size; i_1++) {
 
                 // eps_{c_1} - eps_{v_1}
-                double denergy = orbitals.MOEnergies()(_index2c[i_1]) - orbitals.MOEnergies()(_index2v[i_1]);
+                double denergy = _gwa_energies(_index2c[i_1]) - _gwa_energies(_index2v[i_1]);
 
                 ApB(i_1, i_1) = denergy; // Fill (A + B)
                 AmB(i_1) = denergy; // Fill (A - B)
@@ -123,6 +122,96 @@ namespace votca {
 
             return;
 
+        }
+        
+        void Sigma_Spectral::compute_sigma(const TCMatrix_gwbse& Mmn, double freq) {
+
+            const double eta = 1e-6;
+
+            _Sigma = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
+            
+            for (int s = 0; s < _bse_size; s++ ) {
+                
+                Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
+
+                Calculate_Residues(Mmn, s, res);
+
+                for (int m = 0; m < _qp_size; m++) {
+                
+                    for (int n = 0; n < _qp_size; n++) {
+
+                        for (int i = 0; i < _bse_size; i++ ) {
+
+                            int v = _index2v[i];
+                            int c = _index2c[i];
+                            
+                            // Eq. 47
+                            //
+                            // w_{m, v}^s * w_{n, v}^s      A
+                            // ----------------------- = ------- = A * B
+                            //   w - ε_v + Ω_s + iη      (1 / B)
+                            //
+                            // C = w - ε_v + Ω_s
+                            //
+                            // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
+                            //   = ...
+                            //   = (C + iη) / (C² - η²)
+
+                            double A1 = res(m, v) * res(n, v);
+                            double A2 = res(m, c) * res(n, c);
+
+                            double C1 = freq - _gwa_energies(v) + _Omega(s);
+                            double C2 = freq - _gwa_energies(c) + _Omega(s);
+
+                            double B1_Real = C1 / (C1 * C1 - eta * eta);
+                            double B2_Real = C2 / (C2 * C2 - eta * eta);
+
+                            double B1_Imag = eta / (C1 * C1 - eta * eta);
+                            double B2_Imag = eta / (C2 * C2 - eta * eta);
+
+                            _Sigma(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
+
+                        } // Composite index i
+                    } // Energy level n
+                } // Energy level m
+            } // Eigenvalues s
+
+            return;
+
+        }
+        
+        void Sigma_Spectral::Calculate_Residues(const TCMatrix_gwbse& Mmn, int s, Eigen::MatrixXd& res) {
+
+            Eigen::VectorXd x = _X.col(s);
+            Eigen::VectorXd y = _Y.col(s);
+
+            for (int m = 0; m < _qp_size; m++) {
+
+                for (int n = 0; n < _qp_size; n++) {
+
+                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+
+                        // Get three-center column for index (m, n)
+                        VectorXfd tc_mn = Mmn[m].col(i_aux);
+
+                        for (int i = 0; i < _bse_size; i++) {
+
+                            int v = _index2v[i];
+                            int c = _index2v[i];
+
+                            // Get three-center column for index (v, c)
+                            VectorXfd tc_vc = Mmn[v].col(i_aux);
+
+                            // Fill residues vector
+                            res(m, n) += (tc_mn(n) * tc_vc(c)) * (x(i) + y(i)); // Eq. 45
+
+                        } // Composite index i
+                    } // i_aux
+                } // Energy level n
+            } // Energy level m
+            
+            return;
+            
         }
 
     }

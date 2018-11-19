@@ -462,8 +462,11 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     
     // Using new sigma object:
     Sigma_Spectral sigma = Sigma_Spectral();
-    sigma.configure(4, 0, 16, 1);
-    sigma.prepare_decomp(orbitals, Mmn);
+    sigma.configure_bse(4, 0, 16, 1);
+    sigma.configure_qp(4, 0, 16);
+    sigma.setGWAEnergies(orbitals.MOEnergies());
+    sigma.prepare_decomp(Mmn);
+    sigma.compute_sigma(Mmn, 0);
     
     return;
 

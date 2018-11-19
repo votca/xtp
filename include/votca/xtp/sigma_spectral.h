@@ -32,25 +32,42 @@ class Sigma_Spectral {
     
 private:
     
-    int _bse_size; // Total number of energy levels
+    // BSE Options
+    int _bse_size; // Total number of BSE energy levels
 
-    // Composite indexing
+    // QP Options
+    int _qp_size; // Total number of QP energy levels <= _bse_size
+    
+    // Composite Indexing
     std::vector<int> _index2v;
     std::vector<int> _index2c;
+    
+    // GWA Energies
+    Eigen::VectorXd _gwa_energies;
     
     // Spectral decomposition
     Eigen::VectorXd _Omega; // Eigenvalues
     Eigen::MatrixXd _X, _Y; // Eigenvector components
     
+    // Sigma
+    Eigen::MatrixXd _Sigma;
+    
     // Compute (A + B) and (A - B)
-    void Fill_AB(const Orbitals& orbitals, const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
+    void Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
     
     // Do the spectral decomposition
     void Diag_C(Eigen::VectorXd& AmB_sqrt, Eigen::MatrixXd& C);
     
+    // Compute residues (eq. 45)
+    void Calculate_Residues(const TCMatrix_gwbse& Mmn, int s, Eigen::MatrixXd& res);
+    
 public:
 
-    void configure(int homo, int vmin, int cmax, int nmax) {
+    Sigma_Spectral() {
+        _gwa_energies.resize(0);
+    }
+
+    void configure_bse(int homo, int vmin, int cmax, int nmax) {
 
         // TODO: Which of these values should we keep as member?
         int bse_homo = homo;
@@ -71,17 +88,39 @@ public:
                 _index2c.push_back(bse_cmin + c);
             } // Unoccupied (/coulomb) energy level index c
         } // Occupied (/valance) energy level index v
+        
+        return;
 
+    }
+
+    void configure_qp(int homo, int min, int max) {
+
+        // TODO: Which of these values should we keep as member?
+        int qp_homo = homo;
+        int qp_min = min;
+        int qp_max = max;
+        _qp_size = qp_max - qp_min + 1;
+        
         return;
         
     }
+    
+    const Eigen::VectorXd& getGWAEnergies() const {
+        return _gwa_energies;
+    }
+    
+    void setGWAEnergies(const Eigen::VectorXd& gwa_energies) {
+        _gwa_energies = gwa_energies;
+    }
 
     // Prepare the spectral decomposition
-    void prepare_decomp(const Orbitals& orbitals, const TCMatrix_gwbse& Mmn);
+    void prepare_decomp(const TCMatrix_gwbse& Mmn);
     
-    // TODO: Calc sigma diagonal
+    // TODO: Add public function to update gwa energies, call compute_sigma
     
-    // TODO: Calc sigma off diagonal
+    // TODO: Make private
+    // Fill the Sigma matrix
+    void compute_sigma(const TCMatrix_gwbse& Mmn, double freq);
 
     void FreeMatrices() {
         
