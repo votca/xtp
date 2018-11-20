@@ -34,6 +34,9 @@ private:
     // BSE Options
     int _bse_size; // Total number of BSE energy levels
 
+    // QP Options
+    int _qp_size; // Total number of QP energy levels <= _bse_size
+
     // Composite Indexing
     std::vector<int> _index2v;
     std::vector<int> _index2c;
@@ -43,7 +46,7 @@ private:
     
     // Spectral decomposition
     Eigen::VectorXd _Omega; // Eigenvalues
-    Eigen::MatrixXd _X, _Y; // Eigenvector components
+    Eigen::MatrixXd _XpY; // Eigenvector components (X + Y)
 
     // Compute (A + B) and (A - B)
     void Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
@@ -83,6 +86,18 @@ public:
 
     }
     
+    void configure_qp(int homo, int min, int max) {
+
+        // TODO: Which of these values should we keep as member?
+        int qp_homo = homo;
+        int qp_min = min;
+        int qp_max = max;
+        _qp_size = qp_max - qp_min + 1;
+        
+        return;
+        
+    }
+    
     const Eigen::VectorXd& getGWAEnergies() const {
         return _gwa_energies;
     }
@@ -94,16 +109,11 @@ public:
     const Eigen::VectorXd& getOmega() const {
         return _Omega;
     }
-    
-    const Eigen::MatrixXd& getX() const {
-        return _X;
-    }
-    
-    const Eigen::MatrixXd& getY() const {
-        return _Y;
-    }
 
     void prepare_decomp(const TCMatrix_gwbse& Mmn);
+    
+    // Compute residues (eq. 45)
+    void compute_residues(const TCMatrix_gwbse& Mmn, int s, Eigen::MatrixXd& res) const;
 
     void FreeMatrices() {
         

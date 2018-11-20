@@ -91,34 +91,69 @@ namespace votca {
             // Solve eigenvalue problem (eq. 41)
             // Diagonalize C to find the eigenvalues Sigma.
             // Using SelfAdjointEigenSolver since C is symmetric!
+            // (*) In MolGW, they diagonalize the block matrix (A, B; -B, -A) directly!
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
             
             // Eigenvalues
-            _Omega = es.eigenvalues().cwiseSqrt();
+            // (*) In MolGW (.../src/linear_response.f90, line 279), they take
+            // the absolute values of the "neutral excitation energies"
+            _Omega = es.eigenvalues().cwiseAbs().cwiseSqrt();
             
             // Eigenvectors
             Eigen::MatrixXd ZS = es.eigenvectors();
 
-            // Setup matrices XS and YS (eq. 42)
-            
-            _X = Eigen::MatrixXd(_bse_size, _bse_size);
-            _Y = Eigen::MatrixXd(_bse_size, _bse_size);
+            // Setup matrix (X + Y) (eq. 42)
+            _XpY = Eigen::MatrixXd(_bse_size, _bse_size);
 
             Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
             Eigen::VectorXd Omega_sqrt = _Omega.cwiseSqrt();
 
             for (int s = 0; s < _bse_size; s++) {
-                
+
                 Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
                 Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
 
-                _X.col(s) = (lhs + rhs).cwiseProduct(ZS.col(s)) / 2.0;
-                _Y.col(s) = (lhs - rhs).cwiseProduct(ZS.col(s)) / 2.0;
-                
+                _XpY.col(s) = 0.50 * (
+                        (lhs + rhs).cwiseProduct(ZS.col(s)) + // X
+                        (lhs - rhs).cwiseProduct(ZS.col(s))); // Y
+
             }
 
             // TODO: More efficient way to solve eq. 36 without sqrt is
             // described in section 6.2.
+
+            return;
+
+        }
+
+        void RPA_Spectral::compute_residues(const TCMatrix_gwbse& Mmn, int s, Eigen::MatrixXd& res) const {
+
+            Eigen::VectorXd xpy = _XpY.col(s);
+
+            for (int m = 0; m < _qp_size; m++) {
+
+                for (int n = 0; n < _qp_size; n++) {
+
+                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+
+                        // Get three-center column for index (m, n)
+                        VectorXfd tc_mn = Mmn[m].col(i_aux);
+
+                        for (int i = 0; i < _bse_size; i++) {
+
+                            int v = _index2v[i];
+                            int c = _index2v[i];
+
+                            // Get three-center column for index (v, c)
+                            VectorXfd tc_vc = Mmn[v].col(i_aux);
+
+                            // Fill residues vector
+                            res(m, n) += (tc_mn(n) * tc_vc(c)) * xpy(i); // Eq. 45
+
+                        } // Composite index i
+                    } // i_aux
+                } // Energy level n
+            } // Energy level m
 
             return;
 

@@ -48,9 +48,6 @@ private:
     // Sigma
     Eigen::MatrixXd _Sigma;
 
-    // Compute residues (eq. 45)
-    void Calculate_Residues(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, int s, Eigen::MatrixXd& res);
-    
     // Compute sigma (eq. 47)
     void compute_sigma(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
     

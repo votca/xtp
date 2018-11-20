@@ -465,6 +465,7 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     // Prepare spectral decomposition
     RPA_Spectral rpa = RPA_Spectral();
     rpa.configure_bse(4, 0, 16, 1);
+    rpa.configure_qp(4, 0, 16);
     rpa.setGWAEnergies(orbitals.MOEnergies());
     rpa.prepare_decomp(Mmn);
 
