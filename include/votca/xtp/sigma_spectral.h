@@ -123,7 +123,13 @@ public:
     void setGWAEnergies(Eigen::VectorXd& gwa_energies) {
         _gwa_energies = gwa_energies; // Creates a copy
     }
-
+    
+    // TEST
+    const Eigen::MatrixXd& get_sigma_x() const { return _Sigma_x; }
+    const Eigen::MatrixXd& get_sigma_c() const { return _Sigma_c; }
+    void compute_sigma(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX);
+    // TEST
+ 
     void refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
 
     void FreeMatrices() {

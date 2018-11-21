@@ -23,6 +23,15 @@
 
 namespace votca {
     namespace xtp {
+        
+        void Sigma_Spectral::compute_sigma(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX) {
+            
+            compute_sigma_x(freq, Mmn, scaHFX);
+            compute_sigma_c(freq, Mmn, rpa);
+            
+            return;
+            
+        }
 
         void Sigma_Spectral::refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa,
                 double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc) { // TODO: Pass object containing DFT data instead?

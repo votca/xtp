@@ -439,67 +439,54 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
     Mmn.Fill(aobasis, aobasis, MOs);
     Mmn.MultiplyRightWithAuxMatrix(cou.Pseudo_InvSqrt_GWBSE(ov, 1e-7));
-    
-    // ****** GWBSE_EXACT ******
-    
-    orbitals.MOEnergies() = mo_energies;
 
-    GWBSE_Exact gwbse_exact = GWBSE_Exact(orbitals, aobasis, Mmn);
+    // ***** BSE *****
 
-    gwbse_exact.Configure_BSE(4, 0, 16, 1);
-    gwbse_exact.Configure_RPA(4, 0, 16);
-    
-    cout << "bse_vtotal = " << gwbse_exact.Get_bse_vtotal() << endl;
-    cout << "bse_ctotal = " << gwbse_exact.Get_bse_ctotal() << endl;
-    cout << "bse_size = " << gwbse_exact.Get_bse_size() << endl;
-    
-    gwbse_exact.Fill_C();
-    
-    cout << "C:" << endl;
-    cout << gwbse_exact.Get_C() << endl;
-    
-    gwbse_exact.Diag_C();
+    RPA rpa;
+    rpa.configure(4, 0, 16);
+    PPM ppm;
+    Eigen::VectorXd screen_r = Eigen::VectorXd::Zero(1);
+    screen_r(0) = ppm.getScreening_r();
+    Eigen::VectorXd screen_i = Eigen::VectorXd::Zero(1);
+    screen_i(0) = ppm.getScreening_i();
+    rpa.setScreening(screen_r, screen_i);
+    rpa.calculate_epsilon(mo_energies, Mmn);
+    ppm.PPM_construct_parameters(rpa);
+    Mmn.MultiplyRightWithAuxMatrix(ppm.getPpm_phi());
+    votca::ctp::Logger log;
+    Sigma sigma = Sigma(&log);
+    sigma.configure(4, 0, 16, 20, 1e-5);
+    sigma.setDFTdata(0.0, &vxc, &mo_energies);
+    sigma.setGWAEnergies(mo_energies);
+    sigma.CalcdiagElements(Mmn, ppm);
+    sigma.CalcOffDiagElements(Mmn, ppm);
     
     // ****** Using new objects ******
     
     // Prepare spectral decomposition
-    RPA_Spectral rpa = RPA_Spectral();
-    rpa.configure_bse(4, 0, 16, 1);
-    rpa.configure_qp(4, 0, 16);
-    rpa.setGWAEnergies(orbitals.MOEnergies());
-    rpa.prepare_decomp(Mmn);
+    RPA_Spectral rpa_spectral = RPA_Spectral();
+    rpa_spectral.configure_bse(4, 0, 16, 1);
+    rpa_spectral.configure_qp(4, 0, 16);
+    rpa_spectral.setGWAEnergies(mo_energies);
+    rpa_spectral.prepare_decomp(Mmn);
 
     // Refine GWA energies
-    Sigma_Spectral sigma = Sigma_Spectral();
-    sigma.configure_bse(4, 0, 16, 1);
-    sigma.configure_qp(4, 0, 16);
-    sigma.configure_g_iter(40, 1e-5);
-    sigma.setGWAEnergies(orbitals.MOEnergies());
-    sigma.refine_energies(0, Mmn, rpa, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
+    Sigma_Spectral sigma_spectral = Sigma_Spectral();
+    sigma_spectral.configure_bse(4, 0, 16, 1);
+    sigma_spectral.configure_qp(4, 0, 16);
+    sigma_spectral.configure_g_iter(40, 1e-5);
+    sigma_spectral.setGWAEnergies(mo_energies);
+    //sigma_spectral.refine_energies(0, Mmn, rpa_spectral, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
     
-    return;
-
-    cout << "X:" << endl;
-    cout << gwbse_exact.Get_X() << endl;
-    cout << "Y:" << endl;
-    cout << gwbse_exact.Get_Y() << endl;
+    sigma_spectral.compute_sigma(0, Mmn, rpa_spectral, orbitals.getScaHFX());
     
-    gwbse_exact.Configure_QP(4, 0, 16);
-    gwbse_exact.Fill_Sigma_Diagonal(0);
-    gwbse_exact.Fill_Sigma(0);
+    std::cout << "sigma_x:" << std::endl << sigma.get_sigma_x() << std::endl;
+    std::cout << "sigma_c:" << std::endl << sigma.get_sigma_c() << std::endl;
     
-    cout << "Sigma_Diagonal:" << endl;
-    cout << gwbse_exact.Get_Sigma_Diagonal() << endl;
-    cout << "Sigma:" << endl;
-    cout << gwbse_exact.Get_Sigma() << endl;
+    std::cout << "sigma_x:" << std::endl << sigma_spectral.get_sigma_x() << std::endl;
+    std::cout << "sigma_c:" << std::endl << sigma_spectral.get_sigma_c() << std::endl;
     
-    gwbse_exact.Set_GWA_Energies(mo_energies);
-    gwbse_exact.Set_VXC(&vxc);
-    
-    Eigen::MatrixXd Hqp = gwbse_exact.SetupFullQPHamiltonian();
-    
-    cout << "Hqp:" << endl;
-    cout << Hqp << endl;
+    std::cout << "d_sigma_c:" << std::endl << sigma_spectral.get_sigma_c() - sigma.get_sigma_c() << std::endl;
 
 }
 

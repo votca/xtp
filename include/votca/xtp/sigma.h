@@ -63,6 +63,11 @@ void setGWAEnergies(const Eigen::VectorXd& gwa_energies){_gwa_energies=gwa_energ
 
 double x(int i)const{return _sigma_x(i,i);}
 double c(int i)const{return _sigma_c(i,i);}
+
+// TEST
+const Eigen::MatrixXd& get_sigma_x() const { return _sigma_x; }
+const Eigen::MatrixXd& get_sigma_c() const { return _sigma_c; }
+// TEST
   
 void FreeMatrices(){
     _sigma_x.resize(0,0);
