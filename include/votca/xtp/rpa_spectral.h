@@ -47,7 +47,10 @@ private:
     // Spectral decomposition
     Eigen::VectorXd _Omega; // Eigenvalues
     Eigen::MatrixXd _XpY; // Eigenvector components (X + Y)
+    
+    // Epsilon (eq. 46)
 
+    
     // Compute (A + B) and (A - B)
     void Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
     

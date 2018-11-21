@@ -26,19 +26,51 @@ namespace votca {
         
         void Sigma_Spectral::updateEnergies(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq) {
             
-            compute_sigma(Mmn, rpa, freq);
+            compute_sigma_x(Mmn, freq);
+            compute_sigma_c(Mmn, rpa, freq);
             
-            std::cout << _Sigma << std::endl;
+            std::cout << "Sigma_x:" << std::endl << _Sigma_x << std::endl;
+            std::cout << "Sigma_c:" << std::endl << _Sigma_c << std::endl;
             
             return;
             
         }
         
-        void Sigma_Spectral::compute_sigma(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq) {
+        void Sigma_Spectral::compute_sigma_x(const TCMatrix_gwbse& Mmn, double freq) {
+
+            // TODO: Make use of the fact that sigma_x is symmetric
+            
+            _Sigma_x = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
+
+            for (int m = 0; m < _qp_size; m++) {
+
+                const MatrixXfd& Mmn_m = Mmn[ m + _qp_min ];
+
+                for (int n = 0; n < _qp_size; n++) {
+
+                    const MatrixXfd & Mmn_n = Mmn[ n + _qp_min ];
+
+                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+
+                        // Loop over all occupied bands used in screening
+                        for (int i_occ = 0; i_occ <= _qp_homo; i_occ++) {
+
+                            _Sigma_x(m, n) -= Mmn_m(i_occ, i_aux) * Mmn_n(i_occ, i_aux);
+
+                        } // Occupied bands
+                    } // Auxiliary basis functions
+                } // Energy level n
+            } // Energy level m
+            
+            return;
+            
+        }
+        
+        void Sigma_Spectral::compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq) {
 
             const double eta = 1e-6;
 
-            _Sigma = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
+            _Sigma_c = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
             
             for (int s = 0; s < _bse_size; s++ ) {
                 
@@ -58,13 +90,13 @@ namespace votca {
                             //
                             // w_{m, v}^s * w_{n, v}^s      A
                             // ----------------------- = ------- = A * B
-                            //   w - ε_v + Ω_s + iη      (1 / B)
+                            // w - e_v + e_s + i * etaη  (1 / B)
                             //
-                            // C = w - ε_v + Ω_s
+                            // C = w - e_v + e_s
                             //
-                            // B = 1 / (C - iη) = (C + iη) / ((C + iη) * (C - iη))
+                            // B = 1 / (C - i * eta) = (C + i * eta) / ((C + i * eta) * (C - i * eta))
                             //   = ...
-                            //   = (C + iη) / (C² - η²)
+                            //   = (C + i * eta) / (C² - eta²)
 
                             double A1 = res(m, v) * res(n, v);
                             double A2 = res(m, c) * res(n, c);
@@ -78,7 +110,7 @@ namespace votca {
                             double B1_Imag = eta / (C1 * C1 - eta * eta);
                             double B2_Imag = eta / (C2 * C2 - eta * eta);
 
-                            _Sigma(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
+                            _Sigma_c(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
 
                         } // Composite index i
                     } // Energy level n

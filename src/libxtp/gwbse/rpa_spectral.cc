@@ -79,7 +79,7 @@ namespace votca {
                         ApB(i_1, i_2) -= 2 * tc_1(c_1) * tc_2(c_2); // Fill (A + B)
                         
                     } // Composite index 2
-                } // Auxiliary basis functions
+                } // Auxiliary basis function
             } // Composite index 1
 
             return;
@@ -151,7 +151,7 @@ namespace votca {
                             res(m, n) += (tc_mn(n) * tc_vc(c)) * xpy(i); // Eq. 45
 
                         } // Composite index i
-                    } // i_aux
+                    } // Auxiliary basis function
                 } // Energy level n
             } // Energy level m
 

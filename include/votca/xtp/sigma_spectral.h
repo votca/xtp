@@ -36,6 +36,8 @@ private:
     int _bse_size; // Total number of BSE energy levels
 
     // QP Options
+    int _qp_homo; // Index of homo energy level
+    int _qp_min; // Minimal energy level index
     int _qp_size; // Total number of QP energy levels <= _bse_size
     
     // Composite Indexing
@@ -45,11 +47,13 @@ private:
     // GWA Energies
     Eigen::VectorXd _gwa_energies;
 
-    // Sigma
-    Eigen::MatrixXd _Sigma;
+    // Sigma matrix
+    Eigen::MatrixXd _Sigma_x; // Exchange part of sigma
+    Eigen::MatrixXd _Sigma_c; // Correlation part of sigma
 
     // Compute sigma (eq. 47)
-    void compute_sigma(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
+    void compute_sigma_x(const TCMatrix_gwbse& Mmn, double freq);
+    void compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
     
 public:
 
@@ -86,10 +90,10 @@ public:
     void configure_qp(int homo, int min, int max) {
 
         // TODO: Which of these values should we keep as member?
-        int qp_homo = homo;
-        int qp_min = min;
+        _qp_homo = homo;
+        _qp_min = min;
         int qp_max = max;
-        _qp_size = qp_max - qp_min + 1;
+        _qp_size = qp_max - _qp_min + 1;
         
         return;
         
