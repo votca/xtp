@@ -35,16 +35,20 @@ private:
     // BSE Options
     int _bse_size; // Total number of BSE energy levels
 
+    // Composite Indexing
+    std::vector<int> _index2v;
+    std::vector<int> _index2c;
+
     // QP Options
     int _qp_homo; // Index of homo energy level
     int _qp_min; // Minimal energy level index
     int _qp_size; // Total number of QP energy levels <= _bse_size
-    
-    // Composite Indexing
-    std::vector<int> _index2v;
-    std::vector<int> _index2c;
-    
-    // GWA Energies
+
+    // Convergence criteria for g iteration (Hartree)
+    double _g_sc_limit;
+    int _g_sc_max_iterations;
+
+    // Energies
     Eigen::VectorXd _gwa_energies;
 
     // Sigma matrix
@@ -52,8 +56,8 @@ private:
     Eigen::MatrixXd _Sigma_c; // Correlation part of sigma
 
     // Compute sigma (eq. 47)
-    void compute_sigma_x(const TCMatrix_gwbse& Mmn, double freq);
-    void compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
+    void compute_sigma_x(double freq, const TCMatrix_gwbse& Mmn, double scaHFX);
+    void compute_sigma_c(double freq, const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
     
 public:
 
@@ -98,16 +102,29 @@ public:
         return;
         
     }
+
+    void configure_g_iter(int g_sc_max_iterations, double g_sc_limit) {
+        
+        _g_sc_limit = g_sc_limit;
+        _g_sc_max_iterations = g_sc_max_iterations;
+        
+        if (_g_sc_max_iterations < 1) {
+            _g_sc_max_iterations = 1;
+        }
+        
+        return;
+        
+    }
     
     const Eigen::VectorXd& getGWAEnergies() const {
         return _gwa_energies;
     }
     
-    void setGWAEnergies(const Eigen::VectorXd& gwa_energies) {
-        _gwa_energies = gwa_energies;
+    void setGWAEnergies(Eigen::VectorXd& gwa_energies) {
+        _gwa_energies = gwa_energies; // Creates a copy
     }
-    
-    void updateEnergies(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq);
+
+    void refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
 
     void FreeMatrices() {
         

@@ -23,20 +23,69 @@
 
 namespace votca {
     namespace xtp {
-        
-        void Sigma_Spectral::updateEnergies(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq) {
+
+        void Sigma_Spectral::refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa,
+                double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc) { // TODO: Pass object containing DFT data instead?
+
+            if (_gwa_energies.size() < 1) {
+                throw std::runtime_error("Sigma gwa_energies not set!");
+            }
             
-            compute_sigma_x(Mmn, freq);
-            compute_sigma_c(Mmn, rpa, freq);
+            std::cout << "_gwa_energies:" << std::endl << _gwa_energies << std::endl;
             
-            std::cout << "Sigma_x:" << std::endl << _Sigma_x << std::endl;
-            std::cout << "Sigma_c:" << std::endl << _Sigma_c << std::endl;
-            
+            // TODO: Only compute diagonal of sigma_x
+            compute_sigma_x(freq, Mmn, scaHFX);
+
+            // Previous energies
+            Eigen::VectorXd gwa_energies_prev = _gwa_energies; // Creates a copy
+
+            // TODO: Only diagonal elements except for in final iteration
+            for (int g_iter = 0; g_iter < _g_sc_max_iterations; g_iter++) {
+                
+                // TODO: Only re-compute diagonal of Sigma_C
+                compute_sigma_c(freq, Mmn, rpa);
+                
+                // Update energies
+                for (int m = 0; m < _qp_size; m++) {
+                    _gwa_energies(m + _qp_min) = dft_energies(m + _qp_min) + _Sigma_c(m, m) + _Sigma_x(m, m) - vxc(m, m);
+                }
+
+                Eigen::VectorXd diff = gwa_energies_prev - _gwa_energies;
+
+                int index = 0;
+                double diff_max = diff.cwiseAbs().maxCoeff(&index);
+                double qp_gap = _gwa_energies(_qp_homo + 1) - _gwa_energies(_qp_homo);
+                double dft_gap = dft_energies(_qp_homo + 1) - dft_energies(_qp_homo);
+                
+                std::cout
+                        << "g_iter: " << g_iter + 1
+                        << ", shift = " << qp_gap - dft_gap
+                        << ", diff max = " << diff_max
+                        << ", index = " << index
+                        << std::endl;
+
+                const double alpha = 0.0;
+                _gwa_energies = (1 - alpha) * _gwa_energies + alpha * gwa_energies_prev;
+                
+                bool conv = (diff_max <= _g_sc_limit);
+
+                if (conv) {
+                    std::cout << "G self consistency cycle converged after " << g_iter + 1 << " iterations." << std::endl; break;
+                } else if (g_iter == _g_sc_max_iterations - 1) {
+                    std::cout << "G self consistency cycle not converged after " << _g_sc_max_iterations << " iterations." << std::endl; break;
+                } else {
+                    gwa_energies_prev = _gwa_energies; // Creates a copy
+                }
+                
+            } // g_iter
+
+            std::cout << "_gwa_energies:" << std::endl << _gwa_energies << std::endl;
+
             return;
-            
+
         }
         
-        void Sigma_Spectral::compute_sigma_x(const TCMatrix_gwbse& Mmn, double freq) {
+        void Sigma_Spectral::compute_sigma_x(double freq, const TCMatrix_gwbse& Mmn, double scaHFX) {
 
             // TODO: Make use of the fact that sigma_x is symmetric
             
@@ -49,16 +98,21 @@ namespace votca {
                 for (int n = 0; n < _qp_size; n++) {
 
                     const MatrixXfd & Mmn_n = Mmn[ n + _qp_min ];
+                    
+                    double sigma_x = 0.0;
 
                     for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
 
                         // Loop over all occupied bands used in screening
                         for (int i_occ = 0; i_occ <= _qp_homo; i_occ++) {
 
-                            _Sigma_x(m, n) -= Mmn_m(i_occ, i_aux) * Mmn_n(i_occ, i_aux);
+                            sigma_x -= Mmn_m(i_occ, i_aux) * Mmn_n(i_occ, i_aux);
 
                         } // Occupied bands
                     } // Auxiliary basis functions
+                    
+                    _Sigma_x(m, n) = (1.0 - scaHFX) * sigma_x;
+                    
                 } // Energy level n
             } // Energy level m
             
@@ -66,7 +120,7 @@ namespace votca {
             
         }
         
-        void Sigma_Spectral::compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa, double freq) {
+        void Sigma_Spectral::compute_sigma_c(double freq, const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa) {
 
             const double eta = 1e-6;
 

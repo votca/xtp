@@ -469,12 +469,13 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     rpa.setGWAEnergies(orbitals.MOEnergies());
     rpa.prepare_decomp(Mmn);
 
-    // Compute sigma
+    // Refine GWA energies
     Sigma_Spectral sigma = Sigma_Spectral();
     sigma.configure_bse(4, 0, 16, 1);
     sigma.configure_qp(4, 0, 16);
+    sigma.configure_g_iter(40, 1e-5);
     sigma.setGWAEnergies(orbitals.MOEnergies());
-    sigma.updateEnergies(Mmn, rpa, 0);
+    sigma.refine_energies(0, Mmn, rpa, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
     
     return;
 
