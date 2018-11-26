@@ -43,58 +43,55 @@ GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& qpenergies,const T
 
 
 Eigen::MatrixXcd GaussianQuadrature::Integrate(RPA& rpa){
-    Eigen::VectorXd qpenergies;
-    int AmountOfGaussianBasisFunctions = qpenergies.size();
+    int basissetsize = _qpenergies.size();
     const std::complex<double> I(0.0,1.0);       
     //initialise the resulting matrix
-    Eigen::MatrixXcd result;
-    result=Eigen::MatrixXd::Zero(AmountOfGaussianBasisFunctions,AmountOfGaussianBasisFunctions);
+    Eigen::MatrixXcd result=Eigen::MatrixXcd::Zero(basissetsize,basissetsize);
     
    //fill the frequency vector
-    Eigen::VectorXd frequencies;
+    Eigen::VectorXd frequencies(_order);
     for (int k = 0 ; k < _order ; ++k){
         frequencies(k) = std::log((1+_integrationpoints(k))/(1-_integrationpoints(k)));
     }
     
-    std::cout<<_Mmn[0](0,0)<<std::endl;
    //fill the matrix
-    for (int n = 0; n < AmountOfGaussianBasisFunctions; ++n){
-        for (int m = 0; m < AmountOfGaussianBasisFunctions; ++m){
+    for (int n = 0; n < basissetsize; ++n){
+        for (int m = 0; m < basissetsize; ++m){
             for (int j = 0; j < _order ; ++j){
                 Eigen::MatrixXd DielectricMatrixInverse 
                 = CalcInverse(frequencies(j),rpa);
                 int AmountOfAuxiliaryBasisFunctions = DielectricMatrixInverse.rows();
                 for (int mu = 0; mu < AmountOfAuxiliaryBasisFunctions; ++mu){
                     for (int nu = 0; nu < AmountOfAuxiliaryBasisFunctions; ++nu){
-                        for (int k = 0; k < AmountOfGaussianBasisFunctions; ++k){
+                        for (int k = 0; k < basissetsize; ++k){
                             //First, we consider the off-diagonal terms of the self energy matrix
                            if (m != n){
                                 result(n,m)+=0.5*(_Mmn[k](m,mu)*_Mmn[k](n,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(qpenergies(m)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(qpenergies(m)-qpenergies(k)))+
+                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)))+
                                 _Mmn[k](m,mu)*_Mmn[k](n,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(qpenergies(n)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(qpenergies(n)-qpenergies(k)))); 
+                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(n)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                *(frequencies(j)+I*(_qpenergies(n)-_qpenergies(k)))); 
                                 if (mu != nu){
                                 result(n,m)+=0.5*(_Mmn[k](m,mu)*_Mmn[k](n,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                (DielectricMatrixInverse(mu,nu)/(std::pow(qpenergies(m)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(qpenergies(m)-qpenergies(k)))+
+                                (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)))+
                                 _Mmn[k](m,mu)*_Mmn[k](n,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                (DielectricMatrixInverse(mu,nu)/(std::pow(qpenergies(n)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(qpenergies(n)-qpenergies(k)))); 
+                                (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(n)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                *(frequencies(j)+I*(_qpenergies(n)-_qpenergies(k)))); 
                                 }
                                 }
                                     // Now, m = n (diagonal terms of the self-energy matrix)
                                  if (mu != nu){
                                      //contributing terms without Kronecker delta, when mu != nu and m = n
                                 result(m,m)+=_Mmn[k](m,mu)*_Mmn[k](m,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                 (DielectricMatrixInverse(mu,nu)/(std::pow(qpenergies(m)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                 *(frequencies(j)+I*(qpenergies(m)-qpenergies(k))); 
+                                 (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                 *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k))); 
                                 }
                                  //contributing term with Kronecker delta, when mu = nu and m = n
                                  result(m,m)+=_Mmn[k](m,mu)*_Mmn[k](m,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                 ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(qpenergies(m)-qpenergies(k),2)+pow(frequencies(j),2)))
-                                 *(frequencies(j)+I*(qpenergies(m)-qpenergies(k)));
+                                 ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
+                                 *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)));
                                  
                             }                  
                         }
