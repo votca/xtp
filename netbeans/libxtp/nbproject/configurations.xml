@@ -92,6 +92,7 @@
       <itemPath>../../include/votca/xtp/forces.h</itemPath>
       <itemPath>../../include/votca/xtp/fourcenter.h</itemPath>
       <itemPath>../../include/votca/xtp/fragment.h</itemPath>
+      <itemPath>../../include/votca/xtp/gaussian_quadrature.h</itemPath>
       <itemPath>../../include/votca/xtp/gdma.h</itemPath>
       <itemPath>../../include/votca/xtp/geometry_optimization.h</itemPath>
       <itemPath>../../include/votca/xtp/glink.h</itemPath>
@@ -233,6 +234,7 @@
       <itemPath>../../src/libxtp/dftcoupling.cc</itemPath>
       <itemPath>../../src/libxtp/esp2multipole.cc</itemPath>
       <itemPath>../../src/libxtp/espfit.cc</itemPath>
+      <itemPath>../../src/libxtp/gaussian_quadrature.cc</itemPath>
       <itemPath>../../src/libxtp/gdma.cc</itemPath>
       <itemPath>../../src/libxtp/grid.cc</itemPath>
       <itemPath>../../src/libxtp/gyration.cc</itemPath>
@@ -267,6 +269,7 @@
       <itemPath>../../src/tests/test_eris.cc</itemPath>
       <itemPath>../../src/tests/test_espfit.cc</itemPath>
       <itemPath>../../src/tests/test_fragment.cc</itemPath>
+      <itemPath>../../src/tests/test_gaussian_quadrature.cc</itemPath>
       <itemPath>../../src/tests/test_glink.cc</itemPath>
       <itemPath>../../src/tests/test_hdf5.cc</itemPath>
       <itemPath>../../src/tests/test_molecule.cc</itemPath>
@@ -1333,6 +1336,11 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gaussian_quadrature.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gdma.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/geometry_optimization.h"
@@ -1873,6 +1881,11 @@
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/gdma.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/geometry_optimization.cc"
@@ -2135,6 +2148,11 @@
       </item>
       <item path="../../src/tests/test_fragment.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/tests/test_gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_glink.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_hdf5.cc" ex="false" tool="1" flavor2="0">
@@ -2315,6 +2333,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/gaussian_quadrature.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gdma.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -2856,6 +2879,11 @@
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/gdma.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/geometry_optimization.cc"
@@ -3117,6 +3145,11 @@
       <item path="../../src/tests/test_espfit.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_fragment.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/tests/test_gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="../../src/tests/test_glink.cc" ex="false" tool="1" flavor2="0">
       </item>

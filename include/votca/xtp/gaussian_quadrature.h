@@ -22,6 +22,7 @@
 
 #include <votca/xtp/eigen.h>
 #include <iostream>
+#include <votca/xtp/rpa.h>
 
 // Computes the Gaussian quadrature used for numerical integration of the complex integrals used for the self-energy
 
@@ -30,9 +31,26 @@ namespace votca {
        
         class GaussianQuadrature {
         public:
+            
+            GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn);
 
+            Eigen::MatrixXcd Integrate(RPA& rpa);
+            
+            int Order()const{return _order;}
+        private:   
+            
+            Eigen::MatrixXd CalcInverse(double frequency, RPA& rpa);
+            
+            int _order=12;
+            
+            const Eigen::VectorXd& _qpenergies;
+            const TCMatrix_gwbse& _Mmn;
+            
+            Eigen::VectorXd _integrationpoints;
+            
+            Eigen::VectorXd _integrationweights;
+            
           
-        private:    
             
             
                         

@@ -94,7 +94,7 @@ namespace votca {
             MatrixXfd& operator[](int i) {
                 return _matrix[i];
             }
-
+//this is dimension of aux basis
             int getAuxDimension()const {
                 return basissize;
             }
