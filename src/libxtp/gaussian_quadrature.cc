@@ -24,6 +24,8 @@
 #include <complex>
 #include <cmath>
 #include <votca/xtp/threecenter.h>
+#include <unsupported/Eigen/CXX11/Tensor>
+
 namespace votca {
   namespace xtp {
 GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn):_qpenergies(qpenergies),_Mmn(Mmn){
@@ -42,64 +44,12 @@ GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& qpenergies,const T
 }
 
 
-Eigen::MatrixXcd GaussianQuadrature::Integrate(RPA& rpa){
-    int basissetsize = _qpenergies.size();
-    const std::complex<double> I(0.0,1.0);       
-    //initialise the resulting matrix
-    Eigen::MatrixXcd result=Eigen::MatrixXcd::Zero(basissetsize,basissetsize);
-    
-   //fill the frequency vector
-    Eigen::VectorXd frequencies(_order);
-    for (int k = 0 ; k < _order ; ++k){
-        frequencies(k) = std::log((1+_integrationpoints(k))/(1-_integrationpoints(k)));
+Eigen::VectorXd GaussianQuadrature::TranslateFrequencies() {
+    Eigen::VectorXd result(_order);
+       for (int k = 0 ; k < _order ; ++k){
+        result(k) = std::log((1+_integrationpoints(k))/(1-_integrationpoints(k)));
     }
-    
-   //fill the matrix
-    for (int n = 0; n < basissetsize; ++n){
-        for (int m = 0; m < basissetsize; ++m){
-            for (int j = 0; j < _order ; ++j){
-                Eigen::MatrixXd DielectricMatrixInverse 
-                = CalcInverse(frequencies(j),rpa);
-                int AmountOfAuxiliaryBasisFunctions = DielectricMatrixInverse.rows();
-                for (int mu = 0; mu < AmountOfAuxiliaryBasisFunctions; ++mu){
-                    for (int nu = 0; nu < AmountOfAuxiliaryBasisFunctions; ++nu){
-                        for (int k = 0; k < basissetsize; ++k){
-                            //First, we consider the off-diagonal terms of the self energy matrix
-                           if (m != n){
-                                result(n,m)+=0.5*(_Mmn[k](m,mu)*_Mmn[k](n,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)))+
-                                _Mmn[k](m,mu)*_Mmn[k](n,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(n)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(_qpenergies(n)-_qpenergies(k)))); 
-                                if (mu != nu){
-                                result(n,m)+=0.5*(_Mmn[k](m,mu)*_Mmn[k](n,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)))+
-                                _Mmn[k](m,mu)*_Mmn[k](n,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(n)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                *(frequencies(j)+I*(_qpenergies(n)-_qpenergies(k)))); 
-                                }
-                                }
-                                    // Now, m = n (diagonal terms of the self-energy matrix)
-                                 if (mu != nu){
-                                     //contributing terms without Kronecker delta, when mu != nu and m = n
-                                result(m,m)+=_Mmn[k](m,mu)*_Mmn[k](m,nu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                 (DielectricMatrixInverse(mu,nu)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                 *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k))); 
-                                }
-                                 //contributing term with Kronecker delta, when mu = nu and m = n
-                                 result(m,m)+=_Mmn[k](m,mu)*_Mmn[k](m,mu)*_integrationweights(j)*(2.0*I/(1-std::pow(_integrationpoints(j),2)))*
-                                 ((DielectricMatrixInverse(mu,mu)-1)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(frequencies(j),2)))
-                                 *(frequencies(j)+I*(_qpenergies(m)-_qpenergies(k)));
-                                 
-                            }                  
-                        }
-                    }
-                }
-            }
-        }
- return result;    
+   return result;
 }
 
 Eigen::MatrixXd GaussianQuadrature::CalcInverse(double frequency, RPA& rpa){
@@ -110,6 +60,51 @@ Eigen::MatrixXd GaussianQuadrature::CalcInverse(double frequency, RPA& rpa){
     const Eigen::MatrixXd& dielectric_matrix=rpa.GetEpsilon_i()[0];
     return dielectric_matrix.inverse();
 }
-    
-  }
+
+Eigen::MatrixXd GaussianQuadrature::SumInversesMinusOne(RPA& rpa){
+    Eigen::MatrixXd result=Eigen::MatrixXd::Zero(numofqplevels,numofqplevels);
+    Eigen::VectorXd TranslatedFrequencies = TranslateFrequencies();
+    for (int k = 0 ; k < _order ; ++k){
+        result+=CalcInverse(TranslatedFrequencies(k),rpa);
+    }
+    result-=Eigen::MatrixXd::Identity(numofqplevels,numofqplevels);
+    return result;
+}
+
+Eigen::MatrixXcd GaussianQuadrature::Integrate(RPA& rpa){
+const std::complex<double> I(0.0,1.0);
+Eigen::MatrixXd resultRealDiagonal=Eigen::MatrixXd::Zero(numofqplevels,numofqplevels);
+Eigen::MatrixXd resultImagDiagonal=Eigen::MatrixXd::Zero(numofqplevels,numofqplevels);
+Eigen::MatrixXd resultRealOffDiagonal=Eigen::MatrixXd::Zero(numofqplevels,numofqplevels);
+Eigen::MatrixXd resultImagOffDiagonal=Eigen::MatrixXd::Zero(numofqplevels,numofqplevels);
+Eigen::VectorXd TranslatedFrequencies = TranslateFrequencies();
+Eigen::MatrixXd SummedInversesMinusOne=SumInversesMinusOne(rpa);
+
+for (int k = 0 ; k < numofqplevels ; ++k){
+    Eigen::MatrixXd AdaptedFrequencyReal=Eigen::MatrixXd::Zero(_order,numofqplevels);
+    Eigen::MatrixXd AdaptedFrequencyImag=Eigen::MatrixXd::Zero(_order,numofqplevels);
+    #if (GWBSE_DOUBLE)
+                const Eigen::MatrixXd& MMatrix = _Mmn[  k ];
+#else
+                const Eigen::MatrixXd MMatrix = _Mmn[  k ].cast<double>();       
+#endif
+                
+    for (int m = 0 ; m < numofqplevels ; ++m){
+                for (int j = 0 ; j < _order ; ++j){
+                    AdaptedFrequencyReal(j,m) = TranslatedFrequencies(j)/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(TranslatedFrequencies(j),2));
+                    AdaptedFrequencyImag(j,m) = (_qpenergies(m)-_qpenergies(k))/(std::pow(_qpenergies(m)-_qpenergies(k),2)+std::pow(TranslatedFrequencies(j),2));
+                }
+        }
+resultRealDiagonal+=2*_integrationweights.transpose()*AdaptedFrequencyReal*((MMatrix*SummedInversesMinusOne*MMatrix.transpose()).diagonal()).asDiagonal();
+resultImagDiagonal+=2*_integrationweights.transpose()*AdaptedFrequencyImag*((MMatrix*SummedInversesMinusOne*MMatrix.transpose()).diagonal()).asDiagonal();
+resultRealOffDiagonal+=(_integrationweights.transpose()*AdaptedFrequencyReal).asDiagonal()*(MMatrix*(SummedInversesMinusOne+SummedInversesMinusOne.transpose())*MMatrix.transpose());
+resultImagOffDiagonal+=(_integrationweights.transpose()*AdaptedFrequencyImag).asDiagonal()*(MMatrix*(SummedInversesMinusOne+SummedInversesMinusOne.transpose())*MMatrix.transpose());
+}
+resultRealDiagonal=resultRealDiagonal.asDiagonal();
+resultImagDiagonal=resultImagDiagonal.asDiagonal();
+resultRealOffDiagonal-= (resultRealOffDiagonal.diagonal()).asDiagonal();
+resultImagOffDiagonal-= (resultImagOffDiagonal.diagonal()).asDiagonal();
+return resultRealDiagonal+resultRealOffDiagonal+I*(resultImagOffDiagonal+resultImagDiagonal);
+}
+}
 }
