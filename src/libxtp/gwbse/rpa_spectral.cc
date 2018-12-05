@@ -46,41 +46,40 @@ namespace votca {
 
             // TODO: Make use of the fact that C is symmetric!
 
-            for (int i_1 = 0; i_1 < _bse_size; i_1++) {
+            for (int i = 0; i < _bse_size; i++) {
 
-                // eps_{c_1} - eps_{v_1}
-                double denergy = _gwa_energies(_index2c[i_1]) - _gwa_energies(_index2v[i_1]);
+                double denergy = _gwa_energies(_index2c[i]) - _gwa_energies(_index2v[i]);
 
-                ApB(i_1, i_1) = denergy; // Fill (A + B)
-                AmB(i_1) = denergy; // Fill (A - B)
+                ApB(i, i) = denergy; // Fill (A + B)
+                AmB(i) = denergy; // Fill (A - B)
 
-            } // Composite index 1
+            } // Composite index i
 
             for (int i_1 = 0; i_1 < _bse_size; i_1++) {
 
                 int v_1 = _index2v[i_1];
                 int c_1 = _index2c[i_1];
-
-                for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
-
-                    // Get three-center column for index 1
-                    VectorXfd tc_1 = Mmn[v_1].col(i_aux);
-
-                    // TODO: Can we use Eigen sums instead of this for-loop?
-                    for (int i_2 = 0; i_2 < _bse_size; i_2++) {
-
-                        int v_2 = _index2v[i_2];
-                        int c_2 = _index2c[i_2];
-
-                        // Get three-center column for index 2
-                        VectorXfd tc_2 = Mmn[v_2].col(i_aux);
+                
+                for (int i_2 = 0; i_2 < _bse_size; i_2++) {
+                    
+                    int v_2 = _index2v[i_2];
+                    int c_2 = _index2c[i_2];
+                    
+                    double fourcenter = 0.0;
+                    
+                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
                         
-                        // -2 * (v1c1|v2c2)
-                        ApB(i_1, i_2) -= 2 * tc_1(c_1) * tc_2(c_2); // Fill (A + B)
+                        VectorXfd tc_vc_1 = Mmn[v_1].col(i_aux);
+                        VectorXfd tc_vc_2 = Mmn[v_2].col(i_aux);
                         
-                    } // Composite index 2
-                } // Auxiliary basis function
-            } // Composite index 1
+                        fourcenter += tc_vc_1(c_1) * tc_vc_2(c_2);
+                        
+                    } // Auxiliary basis function
+
+                    ApB(i_1, i_2) -= 2 * fourcenter; // Fill (A + B)
+                    
+                } // Composite index i_2
+            } // Composite index i_1
 
             return;
 
@@ -134,7 +133,7 @@ namespace votca {
 
                 for (int n = 0; n < _qp_size; n++) {
 
-                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); i_aux++) {
 
                         // Get three-center column for index (m, n)
                         VectorXfd tc_mn = Mmn[m].col(i_aux);
@@ -142,13 +141,13 @@ namespace votca {
                         for (int i = 0; i < _bse_size; i++) {
 
                             int v = _index2v[i];
-                            int c = _index2v[i];
+                            int c = _index2c[i];
 
                             // Get three-center column for index (v, c)
                             VectorXfd tc_vc = Mmn[v].col(i_aux);
 
                             // Fill residues vector
-                            res(m, n) += (tc_mn(n) * tc_vc(c)) * xpy(i); // Eq. 45
+                            res(m, n) += tc_mn(n) * tc_vc(c) * xpy(i); // Eq. 45
 
                         } // Composite index i
                     } // Auxiliary basis function
