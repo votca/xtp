@@ -22,6 +22,7 @@
 
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/rpa_spectral.h>
+#include <vector>
 
 namespace votca {
 namespace xtp {
@@ -43,6 +44,9 @@ private:
     int _qp_homo; // Index of homo energy level
     int _qp_min; // Minimal energy level index
     int _qp_size; // Total number of QP energy levels <= _bse_size
+    
+    // Internal Options
+    bool _Hedin; // Heddin's Static Approximation
 
     // Convergence criteria for g iteration (Hartree)
     double _g_sc_limit;
@@ -56,8 +60,8 @@ private:
     Eigen::MatrixXd _Sigma_c; // Correlation part of sigma
 
     // Compute sigma (eq. 47)
-    void compute_sigma_x(double freq, const TCMatrix_gwbse& Mmn, double scaHFX);
-    void compute_sigma_c(double freq, const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
+    void compute_sigma_x(const TCMatrix_gwbse& Mmn, double scaHFX);
+    void compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
     
 public:
 
@@ -102,6 +106,14 @@ public:
         return;
         
     }
+    
+    bool getHedin() {
+        return _Hedin;
+    }
+    
+    void setHedin(bool value) {
+        _Hedin = value;
+    }
 
     void configure_g_iter(int g_sc_max_iterations, double g_sc_limit) {
         
@@ -127,10 +139,10 @@ public:
     // TEST
     const Eigen::MatrixXd& get_sigma_x() const { return _Sigma_x; }
     const Eigen::MatrixXd& get_sigma_c() const { return _Sigma_c; }
-    void compute_sigma(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX);
+    void compute_sigma(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX);
     // TEST
  
-    void refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
+    void refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
 
     void FreeMatrices() {
         

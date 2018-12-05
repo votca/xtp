@@ -100,7 +100,7 @@ namespace votca {
             _Omega = es.eigenvalues().cwiseAbs().cwiseSqrt();
             
             // Eigenvectors
-            Eigen::MatrixXd ZS = es.eigenvectors();
+            Eigen::MatrixXd Z = es.eigenvectors();
 
             // Setup matrix (X + Y) (eq. 42)
             _XpY = Eigen::MatrixXd(_bse_size, _bse_size);
@@ -114,8 +114,8 @@ namespace votca {
                 Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
 
                 _XpY.col(s) = 0.50 * (
-                        (lhs + rhs).cwiseProduct(ZS.col(s)) + // X
-                        (lhs - rhs).cwiseProduct(ZS.col(s))); // Y
+                        (lhs + rhs).cwiseProduct(Z.col(s)) + // X
+                        (lhs - rhs).cwiseProduct(Z.col(s))); // Y
 
             }
 

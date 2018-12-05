@@ -476,17 +476,27 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     sigma_spectral.configure_qp(4, 0, 16);
     sigma_spectral.configure_g_iter(40, 1e-5);
     sigma_spectral.setGWAEnergies(mo_energies);
-    //sigma_spectral.refine_energies(0, Mmn, rpa_spectral, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
+    //sigma_spectral.refine_energies(Mmn, rpa_spectral, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
+
+    sigma_spectral.setHedin(false);
+    sigma_spectral.compute_sigma(Mmn, rpa_spectral, orbitals.getScaHFX());
     
-    sigma_spectral.compute_sigma(0, Mmn, rpa_spectral, orbitals.getScaHFX());
+    std::cout
+            << "Correlation:"    << std::endl
+            << "sigma:"          << std::endl << sigma.get_sigma_c()          << std::endl
+            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c() << std::endl
+            << std::endl;
     
-    std::cout << "sigma_x:" << std::endl << sigma.get_sigma_x() << std::endl;
-    std::cout << "sigma_c:" << std::endl << sigma.get_sigma_c() << std::endl;
+    sigma_spectral.setHedin(true);
+    sigma_spectral.compute_sigma(Mmn, rpa_spectral, orbitals.getScaHFX());
     
-    std::cout << "sigma_x:" << std::endl << sigma_spectral.get_sigma_x() << std::endl;
-    std::cout << "sigma_c:" << std::endl << sigma_spectral.get_sigma_c() << std::endl;
+    std::cout
+            << "Correlation:"    << std::endl
+            << "sigma:"          << std::endl << sigma.get_sigma_c()          << std::endl
+            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c() << std::endl
+            << std::endl;
     
-    std::cout << "d_sigma_c:" << std::endl << sigma_spectral.get_sigma_c() - sigma.get_sigma_c() << std::endl;
+    //std::cout << "d_sigma_c:" << std::endl << sigma_spectral.get_sigma_c() - sigma.get_sigma_c() << std::endl;
 
 }
 

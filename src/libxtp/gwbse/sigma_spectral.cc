@@ -24,16 +24,16 @@
 namespace votca {
     namespace xtp {
         
-        void Sigma_Spectral::compute_sigma(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX) {
+        void Sigma_Spectral::compute_sigma(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX) {
             
-            compute_sigma_x(freq, Mmn, scaHFX);
-            compute_sigma_c(freq, Mmn, rpa);
+            compute_sigma_x(Mmn, scaHFX);
+            compute_sigma_c(Mmn, rpa);
             
             return;
             
         }
 
-        void Sigma_Spectral::refine_energies(double freq, TCMatrix_gwbse& Mmn, RPA_Spectral& rpa,
+        void Sigma_Spectral::refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa,
                 double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc) { // TODO: Pass object containing DFT data instead?
 
             if (_gwa_energies.size() < 1) {
@@ -43,7 +43,7 @@ namespace votca {
             std::cout << "_gwa_energies:" << std::endl << _gwa_energies << std::endl;
             
             // TODO: Only compute diagonal of sigma_x
-            compute_sigma_x(freq, Mmn, scaHFX);
+            compute_sigma_x(Mmn, scaHFX);
 
             // Previous energies
             Eigen::VectorXd gwa_energies_prev = _gwa_energies; // Creates a copy
@@ -52,7 +52,7 @@ namespace votca {
             for (int g_iter = 0; g_iter < _g_sc_max_iterations; g_iter++) {
                 
                 // TODO: Only re-compute diagonal of Sigma_C
-                compute_sigma_c(freq, Mmn, rpa);
+                compute_sigma_c(Mmn, rpa);
                 
                 // Update energies
                 for (int m = 0; m < _qp_size; m++) {
@@ -94,7 +94,7 @@ namespace votca {
 
         }
         
-        void Sigma_Spectral::compute_sigma_x(double freq, const TCMatrix_gwbse& Mmn, double scaHFX) {
+        void Sigma_Spectral::compute_sigma_x(const TCMatrix_gwbse& Mmn, double scaHFX) {
 
             // TODO: Make use of the fact that sigma_x is symmetric
             
@@ -129,56 +129,86 @@ namespace votca {
             
         }
         
-        void Sigma_Spectral::compute_sigma_c(double freq, const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa) {
+        void Sigma_Spectral::compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa) {
 
             const double eta = 1e-6;
 
             _Sigma_c = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
             
-            for (int s = 0; s < _bse_size; s++ ) {
+            if (_Hedin) {
                 
-                Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
-                rpa.compute_residues(Mmn, s, res);
+                // TODO: Perhaps use Hedin's approximation for certain values of sigma?
+                for (int s = 0; s < _bse_size; s++ ) {
+                    
+                    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
+                    rpa.compute_residues(Mmn, s, res);
+                    
+                    double omega = rpa.getOmega()(s);
+                    
+                    for (int m = 0; m < _qp_size; m++) {
+                        
+                        for (int n = 0; n < _qp_size; n++) {
 
-                for (int m = 0; m < _qp_size; m++) {
+                            double s1 = 0.0;
+                            double s2 = 0.0;
+
+                            // TODO: Use Eigen for summations
+                            for (int v = 0; v <= _qp_homo; v++) { s1 += res(m, v) * res(n, v); } // Occupied energy levels v
+                            for (int k = 0; k <  _qp_size; k++) { s2 += res(m, k) * res(n, k); } // All energy levels m
+
+                            _Sigma_c(m, n) += (2 * s1 - s2) / omega; // Eq. 48
+
+                        } // Energy level n
+                    } // Energy level m
+                } // Eigenvalues/poles s
                 
-                    for (int n = 0; n < _qp_size; n++) {
+            } else {
+                
+                for (int s = 0; s < _bse_size; s++ ) {
 
-                        for (int i = 0; i < _bse_size; i++ ) {
+                    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
+                    rpa.compute_residues(Mmn, s, res);
+                    
+                    double omega = rpa.getOmega()(s);
 
-                            int v = _index2v[i];
-                            int c = _index2c[i];
+                    for (int m = 0; m < _qp_size; m++) {
+                        
+                        for (int n = 0; n < _qp_size; n++) {
                             
-                            // Eq. 47
-                            //
-                            // w_{m, v}^s * w_{n, v}^s      A
-                            // ----------------------- = ------- = A * B
-                            // w - e_v + e_s + i * etaη  (1 / B)
-                            //
-                            // C = w - e_v + e_s
-                            //
-                            // B = 1 / (C - i * eta) = (C + i * eta) / ((C + i * eta) * (C - i * eta))
-                            //   = ...
-                            //   = (C + i * eta) / (C² - eta²)
+                            // TODO: Use both e_m, e_n to correctly compute sigma:
+                            // (m|S(w)|n) = 0.5 * (m|S(e_m)|n) + 0.5 * (m|S(e_n)|n)
+                            double w = _gwa_energies(m); // Frequency/energy
+                            
+                            double s1 = 0.0;
+                            double s2 = 0.0;
+                            
+                            for (int v = 0; v <= _qp_homo; v++) {
+                                
+                                double A = res(m, v) * res(n, v);
+                                double B = w - _gwa_energies(v) + omega;
+                                double C_Real = A * B / (B * B + eta * eta);
+                                
+                                s1 += C_Real; // Eq. 47, part 1
+                                
+                            } // Occupied energy levels v
+                            
+                            for (int c = _qp_homo + 1; c < _qp_size; c++) {
+                                
+                                double A = res(m, c) * res(n, c);
+                                double B = w - _gwa_energies(c) - omega;
+                                double C_Real = A * B / (B * B + eta * eta);
+                                
+                                s2 += C_Real; // Eq. 47, part 2
+                                
+                            } // Occupied energy levels c
 
-                            double A1 = res(m, v) * res(n, v);
-                            double A2 = res(m, c) * res(n, c);
-
-                            double C1 = freq - _gwa_energies(v) + rpa.getOmega()(s);
-                            double C2 = freq - _gwa_energies(c) + rpa.getOmega()(s);
-
-                            double B1_Real = C1 / (C1 * C1 - eta * eta);
-                            double B2_Real = C2 / (C2 * C2 - eta * eta);
-
-                            double B1_Imag = eta / (C1 * C1 - eta * eta);
-                            double B2_Imag = eta / (C2 * C2 - eta * eta);
-
-                            _Sigma_c(m, n) += A1 * B1_Real + A2 * B2_Real; // Eq. 47
-
-                        } // Composite index i
-                    } // Energy level n
-                } // Energy level m
-            } // Eigenvalues s
+                            _Sigma_c(m, n) += s1 + s2; // Eq. 47
+                            
+                        } // Energy level n
+                    } // Energy level m
+                } // Eigenvalues/poles s
+                
+            }
 
             return;
 

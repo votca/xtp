@@ -21,6 +21,7 @@
 #define _VOTCA_XTP_RPA_SPECTRAL_H
 
 #include <votca/xtp/eigen.h>
+#include <vector>
 
 namespace votca {
 namespace xtp {
