@@ -33,7 +33,7 @@ namespace votca {
         public:
             
             GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn);
-
+            
             Eigen::MatrixXcd Integrate(RPA& rpa);
             
             int Order()const{return _order;}
@@ -41,9 +41,15 @@ namespace votca {
             
             Eigen::MatrixXd CalcInverse(double frequency, RPA& rpa);
             
+            Eigen::VectorXd TranslateFrequencies();
+            
+            Eigen::MatrixXd SumInversesMinusOne(RPA& rpa);
+                        
             int _order=12;
             
             const Eigen::VectorXd& _qpenergies;
+            int numofqplevels = _qpenergies.size();
+            
             const TCMatrix_gwbse& _Mmn;
             
             Eigen::VectorXd _integrationpoints;
