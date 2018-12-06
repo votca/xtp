@@ -51,6 +51,11 @@ namespace votca {
         public:
 
             Orbitals();
+
+            Orbitals(const Orbitals& orbital);
+
+            Orbitals& operator=(const Orbitals& orbital);
+
             ~Orbitals();
 
             
@@ -603,25 +608,23 @@ namespace votca {
             
         private:
 
-            struct Index2MO{
-                std::vector<int> I2v;
-                std::vector<int> I2c;
-            };
-            
-            
-            Index2MO BSEIndex2MOIndex()const;
 
+
+            void copy(const Orbitals& orbital);
 
             void WriteToCpt(CheckpointFile f)const;
-            void WriteToCpt(CptLoc parent)const;
-            
+            void WriteToCpt(CheckpointWriter w)const;
+
             void ReadFromCpt(CheckpointFile f);
-            void ReadFromCpt(CptLoc parent);
-            
-            
+            void ReadFromCpt(CheckpointReader parent);
+
+
             Eigen::MatrixXd TransitionDensityMatrix(const QMState& state)const;
             std::vector<Eigen::MatrixXd > DensityMatrixExcitedState_R(const QMState& state)const;
             std::vector<Eigen::MatrixXd >DensityMatrixExcitedState_AR(const QMState& state)const;
+            Eigen::MatrixXd CalcAuxMat_cc(const Eigen::VectorXd& coeffs)const;
+            Eigen::MatrixXd CalcAuxMat_vv(const Eigen::VectorXd& coeffs)const;
+
 
             int _basis_set_size;
             int _occupied_levels;
