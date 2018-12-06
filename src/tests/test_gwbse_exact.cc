@@ -331,13 +331,13 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     
     // ****** Read Input Files, Initiate objects ******
     
-    std::string moleculefilename = "methane.xyz";
-    std::string dftbasisfilename = "3-21G.xml";
-    std::string auxbasisfilename = "3-21G.xml";
-    
 //    std::string moleculefilename = "methane.xyz";
-//    std::string dftbasisfilename = "def2-SVP.xml";
-//    std::string auxbasisfilename = "aux-def2-SVP.xml";
+//    std::string dftbasisfilename = "3-21G.xml";
+//    std::string auxbasisfilename = "3-21G.xml";
+    
+    std::string moleculefilename = "methane.xyz";
+    std::string dftbasisfilename = "def2-SVP.xml";
+    std::string auxbasisfilename = "aux-def2-SVP.xml";
 
     Orbitals orbitals;
     orbitals.LoadFromXYZ(moleculefilename);
@@ -483,8 +483,8 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     
     std::cout
             << "Correlation:"    << std::endl
-            << "sigma:"          << std::endl << sigma.get_sigma_c()          << std::endl
-            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c() << std::endl
+            << "sigma:"          << std::endl << sigma.get_sigma_c().diagonal() << std::endl
+            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c().diagonal() << std::endl
             << std::endl;
     
     sigma_spectral.setHedin(true);
@@ -492,8 +492,8 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     
     std::cout
             << "Correlation:"    << std::endl
-            << "sigma:"          << std::endl << sigma.get_sigma_c()          << std::endl
-            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c() << std::endl
+            << "sigma:"          << std::endl << sigma.get_sigma_c().diagonal() << std::endl
+            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c().diagonal() << std::endl
             << std::endl;
     
     //std::cout << "d_sigma_c:" << std::endl << sigma_spectral.get_sigma_c() - sigma.get_sigma_c() << std::endl;
