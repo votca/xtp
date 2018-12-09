@@ -30,6 +30,7 @@
 #include <votca/xtp/bse.h>
 #include <votca/xtp/sigma.h>
 #include <votca/xtp/orbitals.h>
+#include <votca/xtp/gwbse_exact.h>
 
 using boost::format;
 using namespace boost::filesystem;
@@ -604,6 +605,10 @@ void GWBSE::PrintQP_Energies(const Eigen::VectorXd& gwa_energies, const Eigen::V
 }
 
 bool GWBSE::Evaluate() {
+    
+    GWBSE_Exact gwbse_exact = GWBSE_Exact(_orbitals);
+    gwbse_exact.setLogger(_pLog);
+    gwbse_exact.Evaluate();
 
 // set the parallelization
 #ifdef _OPENMP
