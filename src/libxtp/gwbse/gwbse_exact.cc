@@ -352,6 +352,7 @@ namespace votca {
             Mmn.MultiplyRightWithAuxMatrix(ppm.getPpm_phi());
             sigma.CalcdiagElements(Mmn,ppm);
             sigma.CalcOffDiagElements(Mmn,ppm);
+            Eigen::MatrixXd Hqp = sigma.SetupFullQPHamiltonian();
 
             CTP_LOG(ctp::logDEBUG, *_pLog)
                     << ctp::TimeStamp()
@@ -362,6 +363,12 @@ namespace votca {
                     << ctp::TimeStamp()
                     << " sigma_c:\n"
                     << sigma.get_sigma_c()
+                    << std::flush;
+            
+            CTP_LOG(ctp::logDEBUG, *_pLog)
+                    << ctp::TimeStamp()
+                    << " Hqp:\n"
+                    << Hqp
                     << std::flush;
             
             // ****** Prepare RPA ******
@@ -380,7 +387,7 @@ namespace votca {
             CTP_LOG(ctp::logDEBUG, *_pLog)
                     << ctp::TimeStamp()
                     << " Eigenvalues:\n"
-                    << rpa_spectral.get_Omega()
+                    << rpa_spectral.get_Omega().transpose()
                     << std::flush;
             
             // ****** Prepare Sigma ******
@@ -412,6 +419,7 @@ namespace votca {
                     << sigma_spectral.get_sigma_c()
                     << std::flush;
             
+            /*
             sigma_spectral.setHedin(true);
             sigma_spectral.compute_sigma(Mmn, rpa_spectral, _orbitals.getScaHFX());
             
@@ -424,6 +432,17 @@ namespace votca {
                     << ctp::TimeStamp()
                     << " sigma_c:\n"
                     << sigma_spectral.get_sigma_c()
+                    << std::flush;
+            */
+            
+            // ****** Set-up Hamiltonian
+            
+            Eigen::MatrixXd Hqp_spectral = sigma_spectral.SetupFullQPHamiltonian(vxc);
+            
+            CTP_LOG(ctp::logDEBUG, *_pLog)
+                    << ctp::TimeStamp()
+                    << " Hqp:\n"
+                    << Hqp_spectral
                     << std::flush;
 
             CTP_LOG(ctp::logDEBUG, *_pLog) << std::flush;
