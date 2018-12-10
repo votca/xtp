@@ -65,14 +65,43 @@ private:
     
 public:
 
-    void setLogger(ctp::Logger* pLog) {
-        _pLog = pLog;
-    }
-
     GWBSE_Exact(Orbitals& orbitals)
         : _orbitals(orbitals) {
     };
+    
+    void set_Logger(ctp::Logger* pLog) {
+        _pLog = pLog;
+    }
+    
+    void set_homo(int homo) {
+        _homo = homo;
+    }
+    
+    void configure_RPA(int rpamin, int rpamax) {
+        _rpamin = rpamin;
+        _rpamax = rpamax;
+    }
+    
+    void configure_QP(int qpmin, int qpmax, int qptotal) {
+        _qpmin = qpmin;
+        _qpmax = qpmax;
+        _qptotal = qptotal;
+    }
+    
+    void configure_BSE(int bse_vmin, int bse_vmax, int bse_cmin, int bse_cmax, int bse_maxeigenvectors ) {
+        _bse_vmin = bse_vmin;
+        _bse_vmax = bse_vmax;
+        _bse_cmin = bse_cmin;
+        _bse_cmax = bse_cmax;
+        _bse_maxeigenvectors = bse_maxeigenvectors;
+    }
+    
+    void set_basis(std::string auxbasis_name, std::string dftbasis_name) {
+        _auxbasis_name = auxbasis_name;
+        _dftbasis_name = dftbasis_name;
+    }
 
+    Eigen::MatrixXd CalculateVXC(const AOBasis& dftbasis);
     bool Evaluate();
 
 };

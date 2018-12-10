@@ -607,8 +607,14 @@ void GWBSE::PrintQP_Energies(const Eigen::VectorXd& gwa_energies, const Eigen::V
 bool GWBSE::Evaluate() {
     
     GWBSE_Exact gwbse_exact = GWBSE_Exact(_orbitals);
-    gwbse_exact.setLogger(_pLog);
+    gwbse_exact.set_Logger(_pLog);
+    gwbse_exact.set_homo(_homo);
+    gwbse_exact.configure_RPA(_rpamin, _rpamax);
+    gwbse_exact.configure_QP(_qpmin, _qpmax, _qptotal);
+    gwbse_exact.configure_BSE(_bse_vmin, _bse_vmax, _bse_cmin, _bse_cmax, _bse_maxeigenvectors);
+    gwbse_exact.set_basis(_auxbasis_name, _dftbasis_name);
     gwbse_exact.Evaluate();
+    return false;
 
 // set the parallelization
 #ifdef _OPENMP

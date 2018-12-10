@@ -143,7 +143,7 @@ namespace votca {
                     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
                     rpa.compute_residues(Mmn, s, res);
                     
-                    double omega = rpa.getOmega()(s);
+                    double omega = rpa.get_Omega()(s);
                     
                     for (int m = 0; m < _qp_size; m++) {
                         
@@ -169,7 +169,7 @@ namespace votca {
                     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_bse_size, _bse_size);
                     rpa.compute_residues(Mmn, s, res);
                     
-                    double omega = rpa.getOmega()(s);
+                    double omega = rpa.get_Omega()(s);
 
                     for (int m = 0; m < _qp_size; m++) {
                         

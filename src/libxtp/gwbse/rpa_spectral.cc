@@ -36,8 +36,6 @@ namespace votca {
             C = AmB_sqrt.asDiagonal() * C * AmB_sqrt.asDiagonal();
             // Diagonalize C
             Diag_C(AmB_sqrt, C);
-            
-            std::cout << _Omega << std::endl;
 
             return;
         }
@@ -48,7 +46,7 @@ namespace votca {
 
             for (int i = 0; i < _bse_size; i++) {
 
-                double denergy = _gwa_energies(_index2c[i]) - _gwa_energies(_index2v[i]);
+                double denergy = _gwa_energies(_vc2index.c(i)) - _gwa_energies(_vc2index.v(i));
 
                 ApB(i, i) = denergy; // Fill (A + B)
                 AmB(i) = denergy; // Fill (A - B)
@@ -57,13 +55,13 @@ namespace votca {
 
             for (int i_1 = 0; i_1 < _bse_size; i_1++) {
 
-                int v_1 = _index2v[i_1];
-                int c_1 = _index2c[i_1];
+                int v_1 = _vc2index.v(i_1);
+                int c_1 = _vc2index.c(i_1);
                 
                 for (int i_2 = 0; i_2 < _bse_size; i_2++) {
                     
-                    int v_2 = _index2v[i_2];
-                    int c_2 = _index2c[i_2];
+                    int v_2 = _vc2index.v(i_2);
+                    int c_2 = _vc2index.c(i_2);
                     
                     double fourcenter = 0.0;
                     
@@ -96,7 +94,7 @@ namespace votca {
             // Eigenvalues
             // (*) In MolGW (.../src/linear_response.f90, line 279), they take
             // the absolute values of the "neutral excitation energies"
-            _Omega = es.eigenvalues().cwiseAbs().cwiseSqrt();
+            _Omega = es.eigenvalues().cwiseSqrt();
             
             // Eigenvectors
             Eigen::MatrixXd Z = es.eigenvectors();
@@ -140,8 +138,8 @@ namespace votca {
 
                         for (int i = 0; i < _bse_size; i++) {
 
-                            int v = _index2v[i];
-                            int c = _index2c[i];
+                            int v = _vc2index.v(i);
+                            int c = _vc2index.c(i);
 
                             // Get three-center column for index (v, c)
                             VectorXfd tc_vc = Mmn[v].col(i_aux);

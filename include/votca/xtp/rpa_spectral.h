@@ -21,7 +21,7 @@
 #define _VOTCA_XTP_RPA_SPECTRAL_H
 
 #include <votca/xtp/eigen.h>
-#include <vector>
+#include <votca/xtp/vc2index.h>
 
 namespace votca {
 namespace xtp {
@@ -39,8 +39,7 @@ private:
     int _qp_size; // Total number of QP energy levels <= _bse_size
 
     // Composite Indexing
-    std::vector<int> _index2v;
-    std::vector<int> _index2c;
+    vc2index _vc2index;
     
     // GWA Energies
     Eigen::VectorXd _gwa_energies;
@@ -48,9 +47,6 @@ private:
     // Spectral decomposition
     Eigen::VectorXd _Omega; // Eigenvalues
     Eigen::MatrixXd _XpY; // Eigenvector components (X + Y)
-    
-    // Epsilon (eq. 46)
-
     
     // Compute (A + B) and (A - B)
     void Fill_AB(const TCMatrix_gwbse& Mmn, Eigen::MatrixXd& ApB, Eigen::VectorXd& AmB);
@@ -60,11 +56,11 @@ private:
     
 public:
 
-    RPA_Spectral() {
+    RPA_Spectral() : _vc2index(0, 0, 0) { // TODO: Pass vmin, cmin, ctotal as input?
         _gwa_energies.resize(0);
     }
 
-    void configure_bse(int homo, int vmin, int cmax, int nmax) {
+    void configure_bse(int homo, int vmin, int cmax) {
 
         // TODO: Which of these values should we keep as member?
         int bse_homo = homo;
@@ -72,19 +68,10 @@ public:
         int bse_vmax = homo;
         int bse_cmin = homo + 1;
         int bse_cmax = cmax;
-        int bse_nmax = nmax;
         int bse_vtotal = bse_vmax - bse_vmin + 1;
         int bse_ctotal = bse_cmax - bse_cmin + 1;
         _bse_size = bse_vtotal * bse_ctotal;
-
-        for (int v = 0; v < bse_vtotal; v++) {
-
-            for (int c = 0; c < bse_ctotal; c++) {
-
-                _index2v.push_back(bse_vmin + v);
-                _index2c.push_back(bse_cmin + c);
-            } // Unoccupied (/coulomb) energy level index c
-        } // Occupied (/valance) energy level index v
+        _vc2index = vc2index(bse_vmin, bse_cmin, bse_ctotal);
         
         return;
 
@@ -106,11 +93,11 @@ public:
         return _gwa_energies;
     }
     
-    void setGWAEnergies(const Eigen::VectorXd& gwa_energies) {
+    void set_GWAEnergies(const Eigen::VectorXd& gwa_energies) {
         _gwa_energies = gwa_energies;
     }
     
-    const Eigen::VectorXd& getOmega() const {
+    const Eigen::VectorXd& get_Omega() const {
         return _Omega;
     }
 

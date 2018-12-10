@@ -18,8 +18,6 @@
 #define BOOST_TEST_MODULE gwbse_exact_test
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/bse.h>
-#include <votca/xtp/sigma.h>
-#include <votca/xtp/convergenceacc.h>
 #include <votca/xtp/gwbse_exact.h>
 #include <votca/xtp/sigma_spectral.h>
 
@@ -439,64 +437,24 @@ BOOST_AUTO_TEST_CASE(bse_hamiltonian) {
     Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
     Mmn.Fill(aobasis, aobasis, MOs);
     Mmn.MultiplyRightWithAuxMatrix(cou.Pseudo_InvSqrt_GWBSE(ov, 1e-7));
-
-    // ***** BSE *****
-
-    RPA rpa;
-    rpa.configure(4, 0, 16);
-    PPM ppm;
-    Eigen::VectorXd screen_r = Eigen::VectorXd::Zero(1);
-    screen_r(0) = ppm.getScreening_r();
-    Eigen::VectorXd screen_i = Eigen::VectorXd::Zero(1);
-    screen_i(0) = ppm.getScreening_i();
-    rpa.setScreening(screen_r, screen_i);
-    rpa.calculate_epsilon(mo_energies, Mmn);
-    ppm.PPM_construct_parameters(rpa);
-    Mmn.MultiplyRightWithAuxMatrix(ppm.getPpm_phi());
-    votca::ctp::Logger log;
-    Sigma sigma = Sigma(&log);
-    sigma.configure(4, 0, 16, 20, 1e-5);
-    sigma.setDFTdata(0.0, &vxc, &mo_energies);
-    sigma.setGWAEnergies(mo_energies);
-    sigma.CalcdiagElements(Mmn, ppm);
-    sigma.CalcOffDiagElements(Mmn, ppm);
     
-    // ****** Using new objects ******
-    
-    // Prepare spectral decomposition
+    // ****** Set-up RPA ******
+
     RPA_Spectral rpa_spectral = RPA_Spectral();
-    rpa_spectral.configure_bse(4, 0, 16, 1);
+    rpa_spectral.configure_bse(4, 0, 16);
     rpa_spectral.configure_qp(4, 0, 16);
-    rpa_spectral.setGWAEnergies(mo_energies);
+    rpa_spectral.set_GWAEnergies(mo_energies);
     rpa_spectral.prepare_decomp(Mmn);
 
-    // Refine GWA energies
+    // ****** Set-up Sigma ******
+    
     Sigma_Spectral sigma_spectral = Sigma_Spectral();
-    sigma_spectral.configure_bse(4, 0, 16, 1);
+    sigma_spectral.configure_bse(4, 0, 16);
     sigma_spectral.configure_qp(4, 0, 16);
     sigma_spectral.configure_g_iter(40, 1e-5);
-    sigma_spectral.setGWAEnergies(mo_energies);
-    //sigma_spectral.refine_energies(Mmn, rpa_spectral, orbitals.getScaHFX(), vxc, orbitals.MOEnergies());
-
-    sigma_spectral.setHedin(false);
-    sigma_spectral.compute_sigma(Mmn, rpa_spectral, orbitals.getScaHFX());
+    sigma_spectral.set_GWAEnergies(mo_energies);
     
-    std::cout
-            << "Correlation:"    << std::endl
-            << "sigma:"          << std::endl << sigma.get_sigma_c().diagonal() << std::endl
-            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c().diagonal() << std::endl
-            << std::endl;
-    
-    sigma_spectral.setHedin(true);
-    sigma_spectral.compute_sigma(Mmn, rpa_spectral, orbitals.getScaHFX());
-    
-    std::cout
-            << "Correlation:"    << std::endl
-            << "sigma:"          << std::endl << sigma.get_sigma_c().diagonal() << std::endl
-            << "sigma_spectral:" << std::endl << sigma_spectral.get_sigma_c().diagonal() << std::endl
-            << std::endl;
-    
-    //std::cout << "d_sigma_c:" << std::endl << sigma_spectral.get_sigma_c() - sigma.get_sigma_c() << std::endl;
+    // ****** Test Sigma ******
 
 }
 

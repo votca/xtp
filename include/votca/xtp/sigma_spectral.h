@@ -22,7 +22,6 @@
 
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/rpa_spectral.h>
-#include <vector>
 
 namespace votca {
 namespace xtp {
@@ -35,10 +34,6 @@ private:
     
     // BSE Options
     int _bse_size; // Total number of BSE energy levels
-
-    // Composite Indexing
-    std::vector<int> _index2v;
-    std::vector<int> _index2c;
 
     // QP Options
     int _qp_homo; // Index of homo energy level
@@ -69,7 +64,7 @@ public:
         _gwa_energies.resize(0);
     }
 
-    void configure_bse(int homo, int vmin, int cmax, int nmax) {
+    void configure_bse(int homo, int vmin, int cmax) {
 
         // TODO: Which of these values should we keep as member?
         int bse_homo = homo;
@@ -77,20 +72,10 @@ public:
         int bse_vmax = homo;
         int bse_cmin = homo + 1;
         int bse_cmax = cmax;
-        int bse_nmax = nmax;
         int bse_vtotal = bse_vmax - bse_vmin + 1;
         int bse_ctotal = bse_cmax - bse_cmin + 1;
         _bse_size = bse_vtotal * bse_ctotal;
 
-        for (int v = 0; v < bse_vtotal; v++) {
-
-            for (int c = 0; c < bse_ctotal; c++) {
-
-                _index2v.push_back(bse_vmin + v);
-                _index2c.push_back(bse_cmin + c);
-            } // Unoccupied (/coulomb) energy level index c
-        } // Occupied (/valance) energy level index v
-        
         return;
 
     }
@@ -128,11 +113,11 @@ public:
         
     }
     
-    const Eigen::VectorXd& getGWAEnergies() const {
+    const Eigen::VectorXd& get_GWAEnergies() const {
         return _gwa_energies;
     }
     
-    void setGWAEnergies(Eigen::VectorXd& gwa_energies) {
+    void set_GWAEnergies(Eigen::VectorXd& gwa_energies) {
         _gwa_energies = gwa_energies; // Creates a copy
     }
     
