@@ -35,7 +35,7 @@ namespace votca {
 
         Eigen::MatrixXd Sigma_Spectral::SetupFullQPHamiltonian(Eigen::MatrixXd& vxc) {
 
-            Eigen::MatrixXd Hqp = _Sigma_x + _Sigma_c - vxc;
+            Eigen::MatrixXd Hqp = _Sigma_x + _Sigma_c.real() - vxc;
 
             for (int m = 0; m < Hqp.rows(); m++) {
                 Hqp(m, m) = _gwa_energies(m + _qp_min);
@@ -91,7 +91,7 @@ namespace votca {
         
         void Sigma_Spectral::clear_sigma_c() {
             
-            _Sigma_c = Eigen::MatrixXd::Zero(_qp_size, _qp_size);
+            _Sigma_c = Eigen::MatrixXcd::Zero(_qp_size, _qp_size);
             
             return;
             
@@ -201,34 +201,43 @@ namespace votca {
 
         }
 
-        double Sigma_Spectral::Equation47(int m, int n, double w, Eigen::MatrixXd& res, double omega) {
+        std::complex<double> Sigma_Spectral::Equation47(int m, int n, double w, Eigen::MatrixXd& res, double omega) {
 
             const double eta = 1e-6;
 
-            double s1 = 0.0;
-            double s2 = 0.0;
+            double s1_Real = 0.0; double s1_Imag = 0.0;
+            double s2_Real = 0.0; double s2_Imag = 0.0;
 
+            // Eq. 47, part 1
             for (int v = 0; v <= _qp_homo; v++) {
 
                 double A = res(m, v) * res(n, v);
                 double B = w - _gwa_energies(v) + omega;
                 double C_Real = A * B / (B * B + eta * eta);
+                double C_Imag = A * eta / (B * B + eta * eta);
 
-                s1 += C_Real; // Eq. 47, part 1
+                s1_Real += C_Real;
+                s1_Imag += C_Imag;
 
             } // Occupied energy levels v
 
+            // Eq. 47, part 2
             for (int c = _qp_homo + 1; c < _qp_size; c++) {
 
                 double A = res(m, c) * res(n, c);
                 double B = w - _gwa_energies(c) - omega;
                 double C_Real = A * B / (B * B + eta * eta);
+                double C_Imag = A * eta / (B * B + eta * eta);
 
-                s2 += C_Real; // Eq. 47, part 2
+                s2_Real += C_Real;
+                s2_Imag += C_Imag;
 
             } // Occupied energy levels c
 
-            return s1 + s2; // Eq. 47
+            // Eq. 47
+            std::complex<double> result(s1_Real + s2_Real, s1_Imag + s2_Imag);
+
+            return result;
 
         }
 
@@ -245,6 +254,7 @@ namespace votca {
 
         }
         
+        /*
         void Sigma_Spectral::refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa,
                 double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc) { // TODO: Pass object containing DFT data instead?
 
@@ -305,6 +315,7 @@ namespace votca {
             return;
 
         }
+        */
 
     }
 };

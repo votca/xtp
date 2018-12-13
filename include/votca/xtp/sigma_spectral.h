@@ -20,6 +20,8 @@
 #ifndef _VOTCA_XTP_SIGMA_SPECTRAL_H
 #define _VOTCA_XTP_SIGMA_SPECTRAL_H
 
+#include <complex>
+#include <cmath>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/rpa_spectral.h>
 
@@ -52,7 +54,7 @@ private:
 
     // Sigma matrix
     Eigen::MatrixXd _Sigma_x; // Exchange part of sigma
-    Eigen::MatrixXd _Sigma_c; // Correlation part of sigma
+    Eigen::MatrixXcd _Sigma_c; // Correlation part of sigma
 
     void compute_sigma_x(const TCMatrix_gwbse& Mmn, double scaHFX);
     void compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
@@ -61,7 +63,7 @@ private:
     void clear_sigma_c();
     void fill_sigma_c_diag(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
     void fill_sigma_c_offdiag(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
-    double Equation47(int m, int n, double w, Eigen::MatrixXd& res, double omega);
+    std::complex<double> Equation47(int m, int n, double w, Eigen::MatrixXd& res, double omega);
     double Equation48(int m, int n, Eigen::MatrixXd& res, double omega);
     
 public:
@@ -131,13 +133,13 @@ public:
         return _Sigma_x;
     }
     
-    const Eigen::MatrixXd& get_sigma_c() const {
+    const Eigen::MatrixXcd& get_sigma_c() const {
         return _Sigma_c;
     }
 
     void compute_sigma(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX);
     Eigen::MatrixXd SetupFullQPHamiltonian(Eigen::MatrixXd& vxc);
-    void refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
+    //void refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
 
     void FreeMatrices() {
         
