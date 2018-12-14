@@ -119,8 +119,15 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   rpa.configure(4,0,17-1);
   
   GaussianQuadrature gq=GaussianQuadrature(es.eigenvalues(),Mmn);
-  Eigen::MatrixXcd result=gq.Integrate(rpa);
-  std::cout<<result<<std::endl;
+  //Eigen::MatrixXcd result=gq.Sigma(rpa);
+  //Eigen::MatrixXd result2=gq.SigmaRes(rpa);
+  
+  //std::cout<<result<<std::endl;
+  //std::cout<<std::endl;
+//  std::cout<<result2<<std::endl;
+ // std::cout<<std::endl;
+  //std::cout<<result3<<std::endl;
+
   
 }
         

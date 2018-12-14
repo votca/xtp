@@ -24,47 +24,83 @@
 #include <iostream>
 #include <votca/xtp/rpa.h>
 
-// Computes the Gaussian quadrature used for numerical integration of the complex integrals used for the self-energy
+//Computes the self-energy expectation matrix for given Kohn-Sham energies and
+//M coefficients, using a Gaussian quadrature and expressions for the residuals
+//arising from complex contour integration
 
 namespace votca {
     namespace xtp {
        
         class GaussianQuadrature {
+        
         public:
             
+            //Default constructor
             GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn);
             
-            Eigen::MatrixXcd Integrate(RPA& rpa);
+            //This function returns the whole self-energy expectation matrix
+            //for given Kohn-Sham energies and M coefficients (hence "RPA")
+            Eigen::MatrixXcd Sigma(RPA& rpa);
             
+            //This function only returns the diagonal of aforementioned matrix
+            //Sigma in vector form
+            Eigen::VectorXcd SigmaDiag(RPA& rpa);
+            Eigen::VectorXd SigmaResDiag(RPA& rpa);
+            
+            //This function checks the answer using the alternative method, 
+            //using a sextuple for loop
+            Eigen::VectorXd CheckFunctionSigmaResDiag(RPA& rpa);
+            
+            
+            
+            //This function returns the chosen order (default=12)
             int Order()const{return _order;}
-        private:   
+        
+        private:
             
-            Eigen::MatrixXd CalcInverse(double frequency, RPA& rpa);
+            //This function returns the coordinate transformation applied to the
+            //quadrature points. These vector entries will serve as frequencies
+            //for the dielectric matrix inverses; hence the name
+            Eigen::VectorXd CooTfFreq();
             
-            Eigen::VectorXd TranslateFrequencies();
+            //This function calculates the inverse of the microscopic dielectric
+            //matrix for given complex frequency and Kohn-Sham energies
+            Eigen::MatrixXd CalcDielInv(double frequencyReal, double frequencyImag, RPA& rpa);
             
-            Eigen::MatrixXd SumInversesMinusOne(RPA& rpa);
-                        
+            //This function returns the B matrix, which contains the sum of
+            //the dielectric matrices evaluated at the translated frequency vector 
+            //entries from aforementioned vector CooTfFreq
+            Eigen::MatrixXd SumDielInvMinId(RPA& rpa);
+            
+            //This function returns the residual contribution matrix
+            //Eigen::MatrixXd SigmaRes(RPA& rpa);
+            Eigen::MatrixXd SigmaRes(RPA& rpa);
+            
+            //This function returns the diagonal of aforementioned matrix 
+            //SigmaRes in vector form
+            //Eigen::VectorXd SigmaResDiag(RPA& rpa);
+            
+            
+            //Here, we pick the value of int Order() (default=12)            
             int _order=12;
             
+            //Here, we load in the constant vector containing the Kohn-Sham
+            //energies, which appears in the constructor. The number of KS wave
+            //functions, J, which is the length of that vector, is also defined
+            //here
             const Eigen::VectorXd& _qpenergies;
-            int numofqplevels = _qpenergies.size();
+            int noqplevels = _qpenergies.size();
             
+            //Here, we load in the M coefficients, which are stored in a matrix
+            //array (tensor), which appear in the constructor
             const TCMatrix_gwbse& _Mmn;
             
-            Eigen::VectorXd _integrationpoints;
-            
-            Eigen::VectorXd _integrationweights;
-            
-          
-            
-            
-                        
-
-            
-        
-        };
-
+            //Here, the vectors containing the quadrature evaluation points, 
+            //resp. the quadrature weights, are stored
+            Eigen::VectorXd _quadpoints;            
+            Eigen::VectorXd _quadweights;
+                
+            };
+        }
     }
-}
 #endif /* GAUSSIAN_QUADRATURE_H */
