@@ -23,10 +23,8 @@
 #include <votca/xtp/logger.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/tools/property.h>
-#include <votca/xtp/segment.h>
-#include <votca/xtp/polarseg.h>
-#include <votca/xtp/qmpair.h>
-#include <votca/xtp/topology.h>
+#include <votca/xtp/mmregion.h>
+#include "votca/xtp/aobasis.h"
 #include <boost/format.hpp>
 
 namespace votca {
@@ -39,21 +37,18 @@ namespace votca {
 
         class QMPackage {
         public:
-
-            static std::vector<std::string> FindUniqueElements(const std::vector<QMAtom*> atoms);
    
             virtual ~QMPackage() {
             };
 
-            virtual std::string getPackageName() = 0;
-
+            virtual std::string getPackageName()const = 0;
 
             virtual void Initialize(tools::Property &options) = 0;
 
             /// writes a coordinate file WITHOUT taking into account PBCs
-            virtual bool WriteInputFile(Orbitals& orbitals) = 0;
+            virtual bool WriteInputFile(const Orbitals& orbitals) = 0;
 
-            virtual bool Run(Orbitals& orbitals) = 0;
+            virtual bool Run() = 0;
 
             virtual bool ParseLogFile(Orbitals& orbitals) = 0;
 
@@ -61,8 +56,7 @@ namespace votca {
 
             virtual void CleanUp() = 0;
             
-            
-            void setMultipoleBackground( std::vector<std::shared_ptr<xtp::PolarSeg> > PolarSegments);
+            void setMultipoleBackground(const std::shared_ptr<MMRegion>& PolarSegments);
 
             void setRunDir(const std::string& run_dir) {
                 _run_dir = run_dir;
@@ -80,7 +74,7 @@ namespace votca {
                 _orb_file_name = orb_file;
             }
 
-            void setLog(xtp::Logger* pLog) {
+            void setLog(Logger* pLog) {
                 _pLog = pLog;
             }
 
@@ -131,11 +125,17 @@ namespace votca {
             }
 
         protected:
+
+            struct MinimalMMCharge{
+                MinimalMMCharge(const Eigen::Vector3d& pos,double q):_pos(pos),_q(q){};
+                Eigen::Vector3d _pos;
+                double _q;
+            };
+
             virtual void WriteChargeOption() =0;
-             std::vector<std::vector<double> > SplitMultipoles(xtp::APolarSite* site);
-            void ReorderOutput(Orbitals& _orbitals);
-            void ReorderMOsBack(Orbitals& _orbitals);
-            void addLinkers(std::vector< xtp::Segment* > &segments, xtp::QMPair* pair, std::vector< std::string> linker_names );
+            std::vector<MinimalMMCharge > SplitMultipoles(const PolarSite& site);
+            void ReorderOutput(Orbitals& orbitals);
+            Eigen::MatrixXd ReorderMOsBack(const Orbitals& orbitals)const;
             bool isLinker( std::string name, std::vector< std::string> linker_names );
             
             
@@ -172,10 +172,10 @@ namespace votca {
 
             bool _output_Vxc;
 
-            xtp::Logger* _pLog;
+            Logger* _pLog;
 
             
-            std::vector<std::shared_ptr<xtp::PolarSeg>  >_PolarSegments;
+            std::shared_ptr<MMRegion>  _PolarSegments;
             double _dpl_spacing;
             bool _with_polarization;
             

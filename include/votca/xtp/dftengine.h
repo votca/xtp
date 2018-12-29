@@ -23,7 +23,7 @@
 #include <votca/xtp/numerical_integrations.h>
 #include <boost/filesystem.hpp>
 #include <votca/xtp/logger.h>
-#include <votca/xtp/polarseg.h>
+#include <votca/xtp/polarsegment.h>
 #include <votca/xtp/topology.h>
 #include <votca/xtp/ERIs.h>
 #include <votca/xtp/convergenceacc.h>
@@ -43,19 +43,14 @@ namespace votca {
         class DFTEngine {
         public:
 
-            DFTEngine() {
-                _numofelectrons = 0;
-                _addexternalsites = false;
-                _do_externalfield = false;
-                _integrate_ext_density=false;
-            };
+            DFTEngine(Orbitals& orbitals):_orbitals(orbitals){};
 
          
             void Initialize(tools::Property &options);
 
             void CleanUp();
 
-            void setLogger(xtp::Logger* pLog) {
+            void setLogger(Logger* pLog) {
                 _pLog = pLog;
             }
 
@@ -64,7 +59,7 @@ namespace votca {
                 _do_externalfield = true;
             }
 
-            void setExternalcharges(std::vector<std::shared_ptr<xtp::PolarSeg> > externalsites) {
+            void setExternalcharges(std::shared_ptr<MMRegion>& externalsites) {
                 _externalsites = externalsites;           
                 _addexternalsites = true;
             }
@@ -74,14 +69,13 @@ namespace votca {
                 _externalgrid_nuc = nucleigrid;
             }
 
-            std::vector< const tools::vec *> getExternalGridpoints() {
+            std::vector< const Eigen::Vector3d *> getExternalGridpoints() {
                 return _gridIntegration_ext.getGridpoints();
             }
 
-            bool Evaluate(Orbitals& orbitals);
-            
-
-            void Prepare(Orbitals& orbitals);
+            bool Evaluate();
+   
+            void Prepare();
 
             std::string getDFTBasisName() const{
                 return _dftbasis_name;
@@ -91,31 +85,30 @@ namespace votca {
 
         private:
             
-            Eigen::MatrixXd OrthogonalizeGuess(const Eigen::MatrixXd& GuessMOs );
+            Eigen::MatrixXd OrthogonalizeGuess(const Eigen::MatrixXd& GuessMOs )const;
             void PrintMOs(const Eigen::VectorXd& MOEnergies);
-            void CalcElDipole();
+            void CalcElDipole()const;
             void CalculateERIs(const AOBasis& dftbasis, const Eigen::MatrixXd &DMAT);
-            void ConfigOrbfile(Orbitals& orbitals);
+            void ConfigOrbfile();
             void SetupInvariantMatrices();
-            Eigen::MatrixXd AtomicGuess(Orbitals& orbitals);
+            Eigen::MatrixXd AtomicGuess();
             std::string ReturnSmallGrid(const std::string& largegrid);
             
-            Eigen::MatrixXd IntegrateExternalDensity(Orbitals& extdensity);
+            Eigen::MatrixXd IntegrateExternalDensity(const Orbitals& extdensity);
             
-            Eigen::MatrixXd RunAtomicDFT_unrestricted(QMAtom* uniqueAtom);
-            Eigen::MatrixXd RunAtomicDFT_fractional(QMAtom* uniqueAtom);
+            Eigen::MatrixXd RunAtomicDFT_unrestricted(const QMAtom& uniqueAtom);
             
             void NuclearRepulsion();
-            double ExternalRepulsion(xtp::Topology* top = NULL);
+            double ExternalRepulsion();
             double ExternalGridRepulsion(std::vector<double> externalpotential_nuc);
             Eigen::MatrixXd SphericalAverageShells(const Eigen::MatrixXd& dmat, AOBasis& dftbasis);
 
-            xtp::Logger *_pLog;
+            Logger *_pLog;
 
             int _openmp_threads;
 
             // atoms
-            std::vector<QMAtom*> _atoms;
+            Orbitals& _orbitals;
 
             // basis sets
             std::string _auxbasis_name;
@@ -147,7 +140,7 @@ namespace votca {
 
             //numerical integration externalfield;
             //this will not remain here but be moved to qmape
-            bool _do_externalfield;
+            bool _do_externalfield=false;
             std::string _grid_name_ext;
             NumericalIntegration _gridIntegration_ext;
             std::vector<double> _externalgrid;
@@ -172,7 +165,7 @@ namespace votca {
             double _mixingparameter;
             double _Econverged;
             double _error_converged;
-            int _numofelectrons;
+            int _numofelectrons=0;
             int _max_iter;
             
         
@@ -191,14 +184,14 @@ namespace votca {
             ERIs _ERIs;
 
             // external charges
-            std::vector<std::shared_ptr<xtp::PolarSeg> > _externalsites;
-            bool _addexternalsites;
+            std::shared_ptr<MMRegion> _externalsites;
+            bool _addexternalsites=false;
 
             // exchange and correlation
             double _ScaHFX;
             std::string _xc_functional_name;
 
-            bool _integrate_ext_density;
+            bool _integrate_ext_density=false;
             //integrate external density
             std::string _orbfilename;
             std::string _gridquality;

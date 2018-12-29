@@ -17,20 +17,23 @@
 
 #ifndef VOTCA_XTP_GLINK_H
 #define VOTCA_XTP_GLINK_H
-#include <votca/tools/vec.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
 
+class GNode;
 struct GLink {
-  int destination;
+  GNode* destination;
   double rate;
-  votca::tools::vec dr;
+  Eigen::Vector3d dr;
   bool decayevent;
-  // new stuff for Coulomb interaction
   double Jeff2;
   double reorg_out;
   double initialrate;
+  double getValue()const{
+  	return rate;
+  }
 };
 }
 }

@@ -20,10 +20,8 @@
 #ifndef VOTCA_XTP_QMATOM_H
 #define	VOTCA_XTP_QMATOM_H
 
-#include <votca/tools/vec.h> 
-#include <votca/xtp/checkpointwriter.h>
-#include <votca/xtp/checkpointreader.h>
-
+#include <votca/tools/elements.h>
+#include <votca/xtp/checkpoint.h>
 
 namespace votca { namespace xtp {
     
@@ -37,65 +35,68 @@ class QMAtom
      friend class AOBasis;
 public:
     
-   QMAtom (int index,std::string element, double x, double y, double z)
-            :_index(index), _type( element), _nuccharge(0), _ecpcharge(0),_partialcharge(0.0)
-            {_pos=tools::vec(x,y,z);}
+   
             
-   QMAtom (int index,std::string element,const tools::vec& pos)
-            :_index(index), _type(element ),_nuccharge(0), _ecpcharge(0),_partialcharge(0.0)
-            {_pos=pos;}
-   
-   
-   QMAtom ()
-            :_index(0), _type(""),_nuccharge(0), _ecpcharge(0),_partialcharge(0.0)
-            {_pos=tools::vec(0.0);}
-       
-   const tools::vec & getPos() const {return _pos;}
-   
-  
-   void setPos(tools::vec position){_pos=position;}
+   QMAtom (int index,std::string element,Eigen::Vector3d pos)
+            :_index(index), _element(element ),_pos(pos),_nuccharge(0)
+            , _ecpcharge(0)
+            {
+                tools::Elements elements;
+                _nuccharge=elements.getNucCrg(element);
+            }
 
-   const std::string & getType() const { return _type;}
+    QMAtom(const CheckpointReader& r){
+        ReadFromCpt(r);
+    }
+
+
+   static std::string Identify(){return "qmatom";}
+       
+   const Eigen::Vector3d& getPos() const {return _pos;}
+   
+   void Translate(const Eigen::Vector3d& shift){
+       _pos+=shift;
+   }
+   
+    void Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d &refPos) {
+      Translate(-refPos);
+      _pos = R*_pos;
+      Translate(refPos); //Rotated Position
+    }
+   
+   void setPos(const Eigen::Vector3d& position){_pos=position;}
+
+   const std::string & getElement() const { return _element;}
    
   int getAtomID()const{ return _index;}
    
    int getNuccharge() const{ return _nuccharge-_ecpcharge;}
-       
-   void setPartialcharge(double q){_partialcharge=q;}
-   const double & getPartialcharge() const { return _partialcharge;}
 
 private:
     
    int _index;
-   std::string _type;
-   tools::vec _pos;// Bohr
+   std::string _element;
+   Eigen::Vector3d _pos;// Bohr
    int _nuccharge;//nuc charge is set in aobasis fill and ecpfill
    int _ecpcharge;
-   double _partialcharge;
 
-   
- public: 
-   
-   void WriteToCpt(CptLoc parent){
-       CheckpointWriter w(parent);
 
+ public:
+
+   void WriteToCpt(const CheckpointWriter& w)const{
        w(_index, "index");
-       w(_type, "type");
+       w(_element, "element");
        w(_pos, "pos");
        w(_nuccharge, "nuccharge");
        w(_ecpcharge, "ecpcharge");
-       w(_partialcharge, "partialcharge");
    }
 
-   void ReadFromCpt(CptLoc parent){
-       CheckpointReader r(parent);
-
+   void ReadFromCpt(const CheckpointReader& r){
        r(_index, "index");
-       r(_type, "type");
+       r(_element, "element");
        r(_pos, "pos");
        r(_nuccharge, "nuccharge");
        r(_ecpcharge, "ecpcharge");
-       r(_partialcharge, "partialcharge");
    }
 };
     

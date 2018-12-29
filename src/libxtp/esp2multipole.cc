@@ -20,8 +20,9 @@
 
 #include <votca/xtp/esp2multipole.h>
 #include <boost/format.hpp>
-#include <votca/xtp/orbitals.h>
-#include <votca/xtp/qminterface.h>
+#include <votca/xtp/espfit.h>
+#include <votca/xtp/nbo.h>
+#include <votca/xtp/populationanalysis.h>
 
 namespace votca {
     namespace xtp {
@@ -59,15 +60,15 @@ namespace votca {
                      for (tools::Property* prop:prop_region) {
                          std::string indices=prop->get("indices").as<std::string>();
                          tools::Tokenizer tok(indices,"\n\t ,");
-                         Espfit::region reg;
+                         Espfit::ConstraintRegion reg;
                          tok.ConvertToVector<int>(reg.atomindices);
                          reg.charge=prop->get("charge").as<double>();
                          _regionconstraint.push_back(reg);
-                         XTP_LOG(xtp::logDEBUG, *_log) << "Fit constrained by SUM(";
+                         XTP_LOG(logDEBUG, *_log) << "Fit constrained by SUM(";
                          for(int i:reg.atomindices){
-                             XTP_LOG(xtp::logDEBUG, *_log)<<i<<" ";
+                             XTP_LOG(logDEBUG, *_log)<<i<<" ";
                          }
-                        XTP_LOG(xtp::logDEBUG, *_log)<<")="<<reg.charge<< flush;
+                        XTP_LOG(logDEBUG, *_log)<<")="<<reg.charge<< flush;
                      }
                  }
                  if (options.exists(key + ".constraints.pairs")) {
@@ -81,7 +82,7 @@ namespace votca {
                         pair.first=pairvec[0];
                         pair.second=pairvec[1];
                         _pairconstraint.push_back(pair);
-                        XTP_LOG(xtp::logDEBUG, *_log) << "Charge "<<pair.first<<" "<<pair.second<<" constrained to be equal."<<flush;
+                        XTP_LOG(logDEBUG, *_log) << "Charge "<<pair.first<<" "<<pair.second<<" constrained to be equal."<<flush;
                      }
                  }
             }
@@ -102,7 +103,7 @@ namespace votca {
 
         
 
-        void Esp2multipole::WritetoFile(std::string output_file) {
+        void Esp2multipole::WritetoFile(std::string output_file,const Orbitals& orbitals) {
 
             std::string data_format = boost::filesystem::extension(output_file);
             if (!(data_format == ".mps")) {
@@ -110,11 +111,20 @@ namespace votca {
             }
             std::string tag = "TOOL:" + Identify() + "_" + _state.ToString();
 
-            QMInterface Converter;
-            xtp::PolarSeg result = Converter.Convert(_Atomlist);
-
-            result.WriteMPS(output_file, tag);
+            orbitals.Multipoles().WriteMPS(output_file, tag);
             return;
+        }
+
+        void Esp2multipole::PrintDipoles(Orbitals& orbitals){
+          Eigen::Vector3d classical_dip = orbitals.Multipoles().CalcDipole();
+          
+          XTP_LOG(logDEBUG, *_log) << "El Dipole from fitted charges [e*bohr]:\n\t\t"
+                  << boost::format(" dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f")
+                  % classical_dip[0] % classical_dip[1] % classical_dip[2] % classical_dip.squaredNorm()<< flush;
+          Eigen::Vector3d qm_dip=orbitals.CalcElDipole(_state);
+          XTP_LOG(logDEBUG, *_log) << "El Dipole from exact qm density [e*bohr]:\n\t\t"
+                  << boost::format(" dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f")
+                  % qm_dip[0] % qm_dip[1] % qm_dip[2] % qm_dip.squaredNorm()<< flush;
         }
 
         void Esp2multipole::Extractingcharges(Orbitals & orbitals) {
@@ -123,22 +133,19 @@ namespace votca {
             if (_openmp_threads > 0) omp_set_num_threads(_openmp_threads);
             threads = omp_get_max_threads();
 #endif
-            XTP_LOG(xtp::logDEBUG, *_log) << "===== Running on " << threads << " threads ===== " << flush;
-
-            _Atomlist = orbitals.QMAtoms();
+            XTP_LOG(logDEBUG, *_log) << "===== Running on " << threads << " threads ===== " << flush;
             BasisSet bs;
             bs.LoadBasisSet(orbitals.getDFTbasis());
             AOBasis basis;
-            basis.AOBasisFill(bs, _Atomlist);
-            Eigen::MatrixXd DMAT=orbitals.DensityMatrixFull(_state);
+            basis.AOBasisFill(bs, orbitals.QMAtoms());   
 
             if (_use_mulliken) {
                 Mulliken mulliken;
-                mulliken.EvaluateMulliken(_Atomlist, DMAT, basis, _state.isTransition());
+                mulliken.CalcChargeperAtom(orbitals, basis, _state);
             }
             else if (_use_lowdin) {
                 Lowdin lowdin;
-                lowdin.EvaluateLowdin(_Atomlist, DMAT, basis, _state.isTransition());
+                lowdin.CalcChargeperAtom(orbitals, basis, _state);
             } else if (_use_CHELPG) {
                 Espfit esp = Espfit(_log);
                 if(_pairconstraint.size()>0){
@@ -152,9 +159,12 @@ namespace votca {
                     esp.setUseSVD(_conditionnumber);
                 }
                 if (_integrationmethod == "numeric") {
-                    esp.Fit2Density(_Atomlist, DMAT, basis, _gridsize);
-                } else if (_integrationmethod == "analytic") esp.Fit2Density_analytic(_Atomlist, DMAT, basis);
+                    esp.Fit2Density(orbitals, _state, basis, _gridsize);
+                } else if (_integrationmethod == "analytic") esp.Fit2Density_analytic(orbitals, _state, basis);
             } 
+
+            PrintDipoles(orbitals);
+            
         }
 
     }

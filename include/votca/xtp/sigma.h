@@ -29,7 +29,7 @@ namespace xtp {
 
 class Sigma {
  public:
-  Sigma(xtp::Logger *log){
+  Sigma(Logger *log){
 _log = log;
 _gwa_energies.resize(0);
   }
@@ -73,14 +73,12 @@ void FreeMatrices(){
      
   void C_diag(const TCMatrix_gwbse& Mmn, const PPM& ppm, const Eigen::VectorXd& qp_old);
   void C_offdiag(const TCMatrix_gwbse& Mmn, const PPM& ppm);
-  
-  inline double SumSymmetric(real_gwbse Mmn1xMmn2, double qpmin1, double qpmin2, const double gwa_energy);
-  inline double Stabilize(double denom);
 
+  inline void Stabilize(Eigen::ArrayXd& denom);
 
   void X_offdiag(const TCMatrix_gwbse& Mmn);   
   void X_diag(const TCMatrix_gwbse& Mmn);
-xtp::Logger *_log;
+Logger *_log;
   int _homo;   // HOMO index
   int _qpmin;
   int _qpmax;

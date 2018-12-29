@@ -37,26 +37,26 @@ namespace votca {
          * Callname: eqm
          */
 
-        class EQM : public xtp::ParallelXJobCalc< vector< xtp::Job*>, xtp::Job*, xtp::Job::JobResult > {
+        class EQM : public ParallelXJobCalc< std::vector< Job*>, Job*, Job::JobResult > {
         public:
-            void WriteLoggerToFile(const std::string& logfile, xtp::Logger& logger);
+            void WriteLoggerToFile(const std::string& logfile, Logger& logger);
             std::string Identify() {
                 return "eqm";
             }
-            void Initialize(Property *options);
-            xtp::Job::JobResult EvalJob(xtp::Topology *top, xtp::Job *job, xtp::QMThread *thread);
+            void Initialize(tools::Property *options);
+            Job::JobResult EvalJob(Topology *top, Job *job, QMThread *thread);
             
             void CleanUp() {;}
-            void WriteJobFile(xtp::Topology *top);
+            void WriteJobFile(Topology *top);
         private:
             
-           void SetJobToFailed(xtp::Job::JobResult& jres, xtp::Logger* pLog, const string& errormessage);
-            void ParseOptionsXML(Property *options);
+           void SetJobToFailed(Job::JobResult& jres, Logger* pLog, const std::string& errormessage);
+            void ParseOptionsXML(tools::Property *options);
 
             std::string _package;
-            Property _package_options;
-            Property _gwbse_options;
-            Property _esp_options;
+            tools::Property _package_options;
+            tools::Property _gwbse_options;
+            tools::Property _esp_options;
 
             // what to do
             bool _do_dft_input;

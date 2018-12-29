@@ -24,7 +24,6 @@
 #include <vector>
 #include <votca/tools/vec.h>
 #include <utility>
-
 #include <votca/xtp/segment.h>
 
 namespace votca { namespace xtp {
@@ -35,13 +34,9 @@ class QMPair : public std::pair< Segment*, Segment* >
 {
 public:
     
-    enum PairType 
-    { 
+    enum PairType{ 
         Hopping,
-        SuperExchange,
-        SuperExchangeAndHopping,
-        Excitoncl,
-        
+        Excitoncl  
     };
 
     QMPair() :  _R(0,0,0),
@@ -74,37 +69,32 @@ public:
    ~QMPair();
 
 
-   int       getId() { return _id; }
+   int       getId() const{ return _id; }
    void      setId(int id) { _id=id; }
-   Topology *getTopology() { return _top; }
+   Topology *getTopology() const{ return _top; }
    void      setTopology(Topology *top) { _top = top; }
-   votca::tools::vec      &R() { return _R; }
-   double    Dist() { return abs(_R); }
-   votca::tools::vec       getPos() { return 0.5*(first->getPos() + second->getPos()); }
+   const tools::vec      &R() const{ return _R; }
+   double    Dist() const{ return tools::abs(_R); }
+   tools::vec  getPos() const{ return 0.5*(first->getPos() + second->getPos()); }
 
    void     setIsPathCarrier(bool yesno, int carrier);
-   bool     isPathCarrier(int carrier);
+   bool     isPathCarrier(int carrier)const;
 
    void     setLambdaO(double lO, int carrier);
-   double   getLambdaO(int carrier);
+   double   getLambdaO(int carrier)const;
    
-   double   getReorg12(int state) { return first->getU_nC_nN(state) + second->getU_cN_cC(state); } // 1->2
-   double   getReorg21(int state) { return first->getU_cN_cC(state) + second->getU_nC_nN(state); } // 2->1
+   double   getReorg12(int state) const{ return first->getU_nC_nN(state) + second->getU_cN_cC(state); } // 1->2
+   double   getReorg21(int state) const{ return first->getU_cN_cC(state) + second->getU_nC_nN(state); } // 2->1
   
-   double   getReorg12_x(int state) { return first->getU_nX_nN(state) + second->getU_xN_xX(state); } // 1->2
-   double   getReorg21_x(int state) { return first->getU_xN_xX(state) + second->getU_nX_nN(state); } // 1->2
+   double   getReorg12_x(int state) const{ return first->getU_nX_nN(state) + second->getU_xN_xX(state); } // 1->2
+   double   getReorg21_x(int state) const{ return first->getU_xN_xX(state) + second->getU_nX_nN(state); } // 1->2
 
    void     setRate12(double rate, int state);
    void     setRate21(double rate, int state);
-   double   getRate12(int state);
-   double   getRate21(int state);
-   votca::tools::vec      getR();
-
-   //only used for compability reasons with izindo
-   void     setJs(const std::vector <double> Js, int state);
+   double   getRate12(int state)const;
+   double   getRate21(int state)const;
    
-   double   calcJeff2(int state);
-   double   getJeff2(int state) ;
+   double   getJeff2(int state) const;
    void     setJeff2(double Jeff2, int state);
   
 
@@ -113,17 +103,15 @@ public:
 
    Segment* Seg1PbCopy() { return first; }
    Segment* Seg2PbCopy();
-   Segment* Seg1() { return first; }
-   Segment* Seg2() { return second; }
+   Segment* Seg1() const{ return first; }
+   Segment* Seg2() const{ return second; }
 
    bool     HasGhost() { return _hasGhost; }
 
    // superexchange pairs have a list of bridging segments
    void     setType( PairType pair_type ) { _pair_type = pair_type; }
    void     setType( int pair_type ) { _pair_type = (PairType) pair_type; }
-   void     AddBridgingSegment( Segment* _segment ){ _bridging_segments.push_back(_segment); }
-   const std::vector<Segment*> &getBridgingSegments() const { return _bridging_segments; }
-   PairType &getType(){return _pair_type;}
+   const PairType &getType()const{return _pair_type;}
 
 protected:
 
@@ -162,7 +150,6 @@ protected:
     double          _Jeff2_t;
 
     PairType _pair_type;
-    std::vector<Segment*> _bridging_segments;
     
 };
 

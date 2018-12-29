@@ -37,7 +37,7 @@ void SqlApplication::Initialize(void) {
 
     namespace propt = boost::program_options;
 
-    AddProgramOptions() ("file,f", propt::value<string>(),
+    AddProgramOptions() ("file,f", propt::value<std::string>(),
         "  sqlight state file, *.sql");
     AddProgramOptions() ("first-frame,i", propt::value<int>()->default_value(1),
         "  start from this frame");
@@ -60,22 +60,22 @@ void SqlApplication::Run() {
 
     std::string name = ProgramName();
     if (VersionString() != "") name = name + ", version " + VersionString();
-    votca::xtp::HelpTextHeader(name);
+    HelpTextHeader(name);
     // EVALUATE OPTIONS
     int nThreads = OptionsMap()["nthreads"].as<int>();
     int nframes = OptionsMap()["nframes"].as<int>();
     int fframe = OptionsMap()["first-frame"].as<int>();
-    if (fframe-- == 0) throw runtime_error("ERROR: First frame is 0, counting "
+    if (fframe-- == 0) throw std::runtime_error("ERROR: First frame is 0, counting "
                                            "in VOTCA::XTP starts from 1.");
     int  save = OptionsMap()["save"].as<int>();
 
     // STATESAVER & PROGRESS OBSERVER
-    string statefile = OptionsMap()["file"].as<string>();
+    std::string statefile = OptionsMap()["file"].as<std::string>();
     StateSaverSQLite statsav;
     statsav.Open(_top, statefile);
     
     // INITIALIZE & RUN CALCULATORS
-    cout << "Initializing calculators " << endl;
+    std::cout << "Initializing calculators " << std::endl;
     BeginEvaluate(nThreads);
 
     int frameId = -1;
@@ -83,15 +83,15 @@ void SqlApplication::Run() {
     while (statsav.NextFrame() && framesDone < nframes) {
         frameId += 1;
         if (frameId < fframe) continue;
-        cout << "Evaluating frame " << _top.getDatabaseId() << endl;
+        std::cout << "Evaluating frame " << _top.getDatabaseId() << std::endl;
         EvaluateFrame();
         if (save == 1) { statsav.WriteFrame(); }
-        else { cout << "Changes have not been written to state file." << endl; }
+        else { std::cout << "Changes have not been written to state file." << std::endl; }
         framesDone += 1;
     }
     
     if (framesDone == 0)
-        cout << "Input requires first frame = " << fframe+1 << ", # frames = " 
+        std::cout << "Input requires first frame = " << fframe+1 << ", # frames = " 
              << nframes << " => No frames processed.";
     
     statsav.Close();
@@ -102,31 +102,31 @@ void SqlApplication::Run() {
 
 
 
-void SqlApplication::AddCalculator(xtp::QMCalculator* calculator) {
+void SqlApplication::AddCalculator(QMCalculator* calculator) {
     _calculators.push_back(calculator);
 }
 
 
 void SqlApplication::BeginEvaluate(int nThreads = 1) {
-    for (xtp::QMCalculator* calculator:_calculators) {
-        cout << "... " << calculator->Identify() << " ";
+    for (QMCalculator* calculator:_calculators) {
+        std::cout << "... " << calculator->Identify() << " ";
         calculator->setnThreads(nThreads);
         calculator->Initialize(&_options); 
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
 bool SqlApplication::EvaluateFrame() {
-     for (xtp::QMCalculator* calculator:_calculators) {
-        cout << "... " << calculator->Identify() << " " << flush;
+     for (QMCalculator* calculator:_calculators) {
+        std::cout << "... " << calculator->Identify() << " " << std::flush;
         calculator->EvaluateFrame(&_top);
-        cout << endl;
+        std::cout << std::endl;
     }
     return true;
 }
 
 void SqlApplication::EndEvaluate() {
-    for (xtp::QMCalculator* calculator:_calculators) {
+    for (QMCalculator* calculator:_calculators) {
         calculator->EndEvaluate(&_top);
     }
 }

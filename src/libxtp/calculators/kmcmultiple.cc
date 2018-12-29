@@ -16,6 +16,7 @@
  */
 
 #include "kmcmultiple.h"
+#include "votca/xtp/qmstate.h"
 #include <votca/xtp/gnode.h>
 #include <votca/tools/property.h>
 #include <votca/tools/constants.h>
@@ -53,7 +54,7 @@ void KMCMultiple::Initialize(tools::Property *options){
 	    cout << "WARNING in kmcmultiple: Unknown injection method. It will be set to random injection." << endl;
             _injectionmethod = "random";
         }
-         _field = options->ifExistsReturnElseReturnDefault<tools::vec>(key+".field",tools::vec(0,0,0));
+         _field = options->ifExistsReturnElseReturnDefault<Eigen::Vector3d>(key+".field",Eigen::Vector3d::Zero());
          double mtonm=1E9;
        _field /=mtonm ;//Converting from V/m to V/nm 
       
@@ -61,12 +62,9 @@ void KMCMultiple::Initialize(tools::Property *options){
         _timefile = options->ifExistsReturnElseReturnDefault<std::string>(key+".timefile","timedependence.csv");
 	
         std::string carriertype=options->ifExistsReturnElseReturnDefault<std::string>(key+".carriertype","e");
-        _carriertype=StringtoCarriertype(carriertype);
-     
-        
-        lengthdistribution = options->ifExistsReturnElseReturnDefault<double>(key+".jumplengthdist",0);
-        if(lengthdistribution>0){
-            dolengthdistributon=true;
+        _carriertype=QMStateType(carriertype);
+        if (!_carriertype.isKMCState()){
+            throw runtime_error("KMC cannot be run for state:"+_carriertype.ToLongString());
         }
 
         return;
@@ -74,7 +72,7 @@ void KMCMultiple::Initialize(tools::Property *options){
         
 
 
-void KMCMultiple::RunVSSM(xtp::Topology *top)
+void KMCMultiple::RunVSSM(Topology *top)
 {
 
     int realtime_start = time(NULL);
@@ -113,7 +111,7 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         throw runtime_error("ERROR in kmcmultiple: runtime was specified in steps (>100) and outputtime in seconds (not an integer). Please use the same units for both input parameters.");
     }
     
-    if(_numberofcharges > _nodes.size()){
+    if(_numberofcharges > int(_nodes.size())){
         throw runtime_error("ERROR in kmcmultiple: specified number of charges is greater than the number of nodes. This conflicts with single occupation.");
     }
 
@@ -127,7 +125,7 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
     
         traj << "'time[s]'\t";
         traj << "'steps'\t";
-        for(unsigned int i=0; i<_numberofcharges; i++){
+        for(int i=0; i<_numberofcharges; i++){
             traj << "'carrier" << i+1 << "_x'\t";    
             traj << "'carrier" << i+1 << "_y'\t";    
             traj << "'carrier" << i+1 << "_z";    
@@ -146,18 +144,18 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
     double absolute_field = tools::abs(_field);
 
     RandomlyCreateCharges();
-    vector<tools::vec> startposition(_numberofcharges,tools::vec(0.0));
-    for(unsigned int i=0; i<_numberofcharges; i++) {
-        startposition[i]=_carriers[i]->getCurrentPosition();
+    vector<Eigen::Vector3d> startposition(_numberofcharges,Eigen::Vector3d::Zero());
+    for(int i=0; i<_numberofcharges; i++) {
+        startposition[i]=_carriers[i].getCurrentPosition();
     }
     
     
     traj << 0 << "\t";
     traj << 0 << "\t";
-    for(unsigned int i=0; i<_numberofcharges; i++) {
-        traj << startposition[i].getX()  << "\t";
-        traj << startposition[i].getY() << "\t";
-        traj << startposition[i].getZ();
+    for(int i=0; i<_numberofcharges; i++) {
+        traj << startposition[i][0]  << "\t";
+        traj << startposition[i][1] << "\t";
+        traj << startposition[i][2];
         if (i<_numberofcharges-1) {
             traj << "\t";
         }
@@ -166,11 +164,10 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         }
     }
   
-    vector<int> forbiddennodes;
-    vector<int> forbiddendests;
+    vector<GNode*> forbiddennodes;
+    vector<GNode*> forbiddendests;
     
-    tools::matrix avgdiffusiontensor;
-    avgdiffusiontensor.ZeroMatrix();
+    Eigen::Matrix3d avgdiffusiontensor=Eigen::Matrix3d::Zero();
     
     unsigned long diffusionresolution=1000;
     double simtime = 0.0;
@@ -185,12 +182,10 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         }
         
         double cumulated_rate = 0;
-        for(unsigned int i=0; i<_numberofcharges; i++)
-        {
-            cumulated_rate += _carriers[i]->getCurrentEscapeRate();
+        for(const auto& carrier:_carriers){
+            cumulated_rate += carrier.getCurrentEscapeRate();
         }
-        if(cumulated_rate == 0)
-        {   // this should not happen: no possible jumps defined for a node
+        if(cumulated_rate == 0){   // this should not happen: no possible jumps defined for a node
             throw runtime_error("ERROR in kmcmultiple: Incorrect rates in the database file. All the escape rates for the current setting are 0.");
         }
         
@@ -198,14 +193,9 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         
         simtime += dt;
         step++;
-        if(tools::globals::verbose) {cout << "simtime += " << dt << endl << endl;}
-        
-        
-        
-        
-        for(unsigned int i=0; i<_numberofcharges; i++)
-        {
-            _carriers[i]->updateOccupationtime(dt);
+
+        for(auto& carrier:_carriers){
+            carrier.updateOccupationtime(dt);
         }
 
         
@@ -213,67 +203,42 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         bool level1step = true;
         while(level1step){
 
-            // determine which electron will escape
-            
+            // determine which electron will escape     
             GNode* newnode= NULL;
             Chargecarrier* affectedcarrier=ChooseAffectedCarrier(cumulated_rate); 
             
-            if(CheckForbidden(affectedcarrier->getCurrentNodeId(), forbiddennodes)) {continue;}
-            
-            // determine where it will jump to
+            if(CheckForbidden(affectedcarrier->getCurrentNode(), forbiddennodes)) {continue;}
             ResetForbiddenlist(forbiddendests);
             while(true){
             // LEVEL 2
-                if(tools::globals::verbose) {cout << "There are " <<affectedcarrier->getCurrentNode()->events.size() << " possible jumps for this charge:"; }
-              
-
-                GLink* event=ChooseHoppingDest(affectedcarrier->getCurrentNode());
-                newnode = _nodes[event->destination];
-                if(newnode==affectedcarrier->getCurrentNode()){
-                    cout<<event->dr<<endl;
-                }
+               
+                const GLink& event=ChooseHoppingDest(affectedcarrier->getCurrentNode());
+                newnode = event.destination;
 
                 if(newnode == NULL){
-                    if(tools::globals::verbose) {
-                        cout << endl << "Node " << affectedcarrier->getCurrentNodeId()+1  << " is SURROUNDED by forbidden destinations and zero rates. "
-                                "Adding it to the list of forbidden nodes. After that: selection of a new escape node." << endl; 
-                    }
-                    AddtoForbiddenlist(affectedcarrier->getCurrentNodeId(), forbiddennodes);
+                    AddtoForbiddenlist(affectedcarrier->getCurrentNode(), forbiddennodes);
                     break; // select new escape node (ends level 2 but without setting level1step to 1)
                 }
-                if(tools::globals::verbose) {cout << endl << "Selected jump: " << newnode->id+1 << endl; }
-                
+ 
                 // check after the event if this was allowed
-                if(CheckForbidden(newnode->id, forbiddendests)){
-                    if(tools::globals::verbose) {cout << "Node " << newnode->id+1  << " is FORBIDDEN. Now selection new hopping destination." << endl; }
+                if(CheckForbidden(*newnode, forbiddendests)){
                     continue;
                 }
 
                 // if the new segment is unoccupied: jump; if not: add to forbidden list and choose new hopping destination
                 if(newnode->occupied){
                     if(CheckSurrounded(affectedcarrier->getCurrentNode(), forbiddendests)){
-                        if(tools::globals::verbose) {
-                            cout << "Node " << affectedcarrier->getCurrentNodeId()+1  << " is SURROUNDED by forbidden destinations. "
-                                    "Adding it to the list of forbidden nodes. After that: selection of a new escape node." << endl; 
-                        }
-                        AddtoForbiddenlist(affectedcarrier->getCurrentNodeId(), forbiddennodes);
+                        AddtoForbiddenlist(affectedcarrier->getCurrentNode(), forbiddennodes);
                         break; // select new escape node (ends level 2 but without setting level1step to 1)
                     }
-                    if(tools::globals::verbose) {cout << "Selected segment: " << newnode->id+1 << " is already OCCUPIED. Added to forbidden list." << endl << endl;}
-                    AddtoForbiddenlist(newnode->id, forbiddendests);
-                    if(tools::globals::verbose) {cout << "Now choosing different hopping destination." << endl; }
+                    AddtoForbiddenlist(*newnode, forbiddendests);
                     continue; // select new destination
                 }
                 else{
-                    affectedcarrier->jumpfromCurrentNodetoNode(newnode);
-                    affectedcarrier->dr_travelled +=event->dr;
-                    AddtoJumplengthdistro(event,dt);
-                    level1step = false;
-                    if(tools::globals::verbose) {cout << "Charge has jumped to segment: " << newnode->id+1 << "." << endl;}
-                    
+                    affectedcarrier->jumpAccordingEvent(event);
+                    level1step = false;                   
                     break; // this ends LEVEL 2 , so that the time is updated and the next MC step started
                 }
-
                 if(tools::globals::verbose) {cout << "." << endl;}
             // END LEVEL 2
             }
@@ -283,8 +248,8 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
         //outputstuff
         
         if(step%diffusionresolution==0){     
-            for(unsigned int i=0; i<_numberofcharges; i++){
-                avgdiffusiontensor += (_carriers[i]->dr_travelled)|(_carriers[i]->dr_travelled);
+            for(const auto& carrier:_carriers){
+                avgdiffusiontensor += (carrier.get_dRtravelled())*(carrier.get_dRtravelled()).transpose();
             }
         }
         
@@ -292,15 +257,15 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
 
             if (absolute_field == 0) {
                 unsigned long diffusionsteps = step / diffusionresolution;
-                tools::matrix result = avgdiffusiontensor / (diffusionsteps * 2 * simtime * _numberofcharges);
+                Eigen::Matrix3d result = avgdiffusiontensor / (diffusionsteps * 2 * simtime * _numberofcharges);
                 cout << endl << "Step: " << step << " Diffusion tensor averaged over all carriers (nm^2/s):" << endl << result << endl;
             } else {
                 double average_mobility = 0;
                 cout << endl << "Mobilities (nm^2/Vs): " << endl;
-                for (unsigned int i = 0; i < _numberofcharges; i++) {
-                    tools::vec velocity = _carriers[i]->dr_travelled / simtime;
-                    cout << std::scientific << "    charge " << i + 1 << ": mu=" << (velocity * _field) / (absolute_field * absolute_field) << endl;
-                    average_mobility += (velocity * _field) / (absolute_field * absolute_field);
+                for (int i = 0; i < _numberofcharges; i++) {
+                    Eigen::Vector3d velocity= _carriers[i].get_dRtravelled() / simtime;
+                    cout << std::scientific << "    charge " << i + 1 << ": mu=" << velocity.dot(_field) / (absolute_field * absolute_field) << endl;
+                    average_mobility += velocity.dot(_field) / (absolute_field * absolute_field);
                 }
                 average_mobility /= _numberofcharges;
                 cout << std::scientific << "  Overall average mobility in field direction <mu>=" << average_mobility << " nm^2/Vs  " << endl;
@@ -317,10 +282,10 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
                 nexttrajoutput = simtime + _outputtime;
                 traj << simtime << "\t";
             traj << step << "\t";
-                for(unsigned int i=0; i<_numberofcharges; i++) {
-                    traj << startposition[i].getX() + _carriers[i]->dr_travelled.getX() << "\t";
-                    traj << startposition[i].getY() + _carriers[i]->dr_travelled.getY() << "\t";
-                    traj << startposition[i].getZ() + _carriers[i]->dr_travelled.getZ();
+                for(int i=0; i<_numberofcharges; i++) {
+                    traj << startposition[i][0] + _carriers[i].get_dRtravelled()[0] << "\t";
+                    traj << startposition[i][1] + _carriers[i].get_dRtravelled()[1] << "\t";
+                    traj << startposition[i][2] + _carriers[i].get_dRtravelled()[2];
                     if (i<_numberofcharges-1) {
                         traj << "\t";
                     }
@@ -332,19 +297,19 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
               
                 double currentenergy = 0;
                 double currentmobility = 0;
-                tools::vec dr_travelled_current = tools::vec (0,0,0);
+                Eigen::Vector3d dr_travelled_current = Eigen::Vector3d::Zero();
                 double dr_travelled_field=0.0;
-                tools::vec avgvelocity_current = tools::vec(0,0,0);
+                Eigen::Vector3d avgvelocity_current =Eigen::Vector3d::Zero();
                 if(absolute_field != 0){
-                    for(unsigned int i=0; i<_numberofcharges; i++){
-                        dr_travelled_current += _carriers[i]->dr_travelled;
-                        currentenergy += _carriers[i]->getCurrentEnergy();
+                    for(const auto& carrier:_carriers){
+                        dr_travelled_current += carrier.get_dRtravelled();
+                        currentenergy += carrier.getCurrentEnergy();
                     }
                     dr_travelled_current /= _numberofcharges;
                     currentenergy /= _numberofcharges;
                     avgvelocity_current = dr_travelled_current/simtime; 
-                    currentmobility = (avgvelocity_current*_field) /absolute_field/absolute_field;
-                    dr_travelled_field=(dr_travelled_current*_field)/absolute_field;
+                    currentmobility = avgvelocity_current.dot(_field) /(absolute_field*absolute_field);
+                    dr_travelled_field=dr_travelled_current.dot(_field)/absolute_field;
                 }
                 
                 tfile << simtime << "\t"<< step << "\t"<< currentenergy << "\t" << currentmobility << "\t" <<
@@ -352,22 +317,20 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
               
             }
         }
-      
     }//KMC 
     
     
     
-    if(checkifoutput)
-    {   
+    if(checkifoutput){   
         traj.close();
         tfile.close();
     }
 
     
-    vector< xtp::Segment* >& seg = top->Segments();
+    vector< Segment* >& seg = top->Segments();
     for (unsigned i = 0; i < seg.size(); i++) {
-            double occupationprobability=_nodes[i]->occupationtime / simtime;
-            seg[i]->setOcc(occupationprobability,_carriertype);
+            double occupationprobability=_nodes[i].occupationtime / simtime;
+            seg[i]->setOcc(occupationprobability,_carriertype.ToSegIndex());
         }
 
     cout << endl << "finished KMC simulation after " << step << " steps." << endl;
@@ -375,19 +338,19 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
     cout << "runtime: ";
     cout << endl << endl;
     
-    tools::vec avg_dr_travelled = tools::vec (0,0,0);
-    for(unsigned int i=0; i<_numberofcharges; i++){
-        cout << std::scientific << "    charge " << i+1 << ": " << _carriers[i]->dr_travelled/simtime << endl;
-        avg_dr_travelled += _carriers[i]->dr_travelled;
+    Eigen::Vector3d avg_dr_travelled = Eigen::Vector3d::Zero();
+    for(int i=0; i<_numberofcharges; i++){
+        cout << std::scientific << "    charge " << i+1 << ": " << _carriers[i].get_dRtravelled()/simtime << endl;
+        avg_dr_travelled += _carriers[i].get_dRtravelled();
     }
     avg_dr_travelled /= _numberofcharges;
     
-    tools::vec avgvelocity = avg_dr_travelled/simtime; 
+    Eigen::Vector3d avgvelocity = avg_dr_travelled/simtime;
     cout << std::scientific << "  Overall average velocity (nm/s): " << avgvelocity << endl;
 
     cout << endl << "Distances travelled (nm): " << endl;
-    for(unsigned int i=0; i<_numberofcharges; i++){
-        cout << std::scientific << "    charge " << i+1 << ": " << _carriers[i]->dr_travelled << endl;
+    for(int i=0; i<_numberofcharges; i++){
+        cout << std::scientific << "    charge " << i+1 << ": " << _carriers[i].get_dRtravelled() << endl;
     }
     
     // calculate mobilities
@@ -395,10 +358,10 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
     if (absolute_field != 0){
         double average_mobility = 0;
         cout << endl << "Mobilities (nm^2/Vs): " << endl;
-        for(unsigned int i=0; i<_numberofcharges; i++){
-            tools::vec velocity = _carriers[i]->dr_travelled/simtime;
-            cout << std::scientific << "    charge " << i+1 << ": mu=" << (velocity*_field)/(absolute_field*absolute_field) << endl;
-            average_mobility += (velocity*_field) /(absolute_field*absolute_field);
+        for(int i=0; i<_numberofcharges; i++){
+            Eigen::Vector3d velocity = _carriers[i].get_dRtravelled()/simtime;
+            cout << std::scientific << "    charge " << i+1 << ": mu=" << velocity.dot(_field)/(absolute_field*absolute_field) << endl;
+            average_mobility += velocity.dot(_field) /(absolute_field*absolute_field);
         }
         average_mobility /= _numberofcharges;
         cout << std::scientific << "  Overall average mobility in field direction <mu>=" << average_mobility << " nm^2/Vs  " << endl;
@@ -412,37 +375,32 @@ void KMCMultiple::RunVSSM(xtp::Topology *top)
     
   
 
-    tools::matrix::eigensystem_t diff_tensor_eigensystem;
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
+    es.computeDirect(avgdiffusiontensor);
+    
     cout<<endl<<"Eigenvalues: "<<endl<<endl;
-    avgdiffusiontensor.SolveEigensystem(diff_tensor_eigensystem);
-    for(int i=0; i<=2; i++)
-    {
-        cout<<"Eigenvalue: "<<diff_tensor_eigensystem.eigenvalues[i]<<endl<<"Eigenvector: ";
-               
-        cout<<diff_tensor_eigensystem.eigenvecs[i].x()<<"   ";
-        cout<<diff_tensor_eigensystem.eigenvecs[i].y()<<"   ";
-        cout<<diff_tensor_eigensystem.eigenvecs[i].z()<<endl<<endl;
+    for(int i=0; i<3; i++){
+        cout<<"Eigenvalue: "<<es.eigenvalues()(i)<<endl<<"Eigenvector: ";
+        cout<<es.eigenvectors().col(i)(0)<<"   ";
+        cout<<es.eigenvectors().col(i)(1)<<"   ";
+        cout<<es.eigenvectors().col(i)(2)<<endl<<endl;
     }
     
     // calculate average mobility from the Einstein relation
     if (absolute_field == 0){
         cout << "The following value is calculated using the Einstein relation and assuming an isotropic medium" << endl;
-       double avgD  = 1./3. * (diff_tensor_eigensystem.eigenvalues[0] + diff_tensor_eigensystem.eigenvalues[1] + diff_tensor_eigensystem.eigenvalues[2] );
+       double avgD  = 1./3. * es.eigenvalues().sum();
        double average_mobility = std::abs(avgD / tools::conv::kB / _temperature);
        cout << std::scientific << "  Overall average mobility <mu>=" << average_mobility << " nm^2/Vs "  << endl;
     }
-    
-  PrintJumplengthdistro();
-    
 
-    
     return;
 }
 
 
 
 
-bool KMCMultiple::EvaluateFrame(xtp::Topology *top){
+bool KMCMultiple::EvaluateFrame(Topology *top){
     std::cout << std::endl;      
     std::cout << "-----------------------------------" << std::endl;      
     std::cout << "      KMC FOR MULTIPLE CHARGES" << std::endl;

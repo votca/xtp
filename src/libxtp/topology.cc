@@ -24,7 +24,6 @@
 #include <votca/xtp/segmenttype.h>
 #include <votca/xtp/fragment.h>
 #include <votca/xtp/atom.h>
-#include <votca/xtp/apolarsite.h>
 
 #include <votca/tools/matrix.h>
 #include <votca/tools/vec.h>
@@ -119,14 +118,6 @@ namespace votca { namespace xtp {
     _atoms.push_back(atom);
     atom->setTopology(this);
     return atom;
-  }
-
-  APolarSite *Topology::AddAPolarSite(string siteName) {
-    int poleId = _apolarSites.size() + 1;
-    APolarSite *pole = new APolarSite(poleId, siteName);
-    _apolarSites.push_back(pole);
-    pole->setTopology(this);
-    return pole;
   }
 
   Molecule *Topology::AddMolecule(string molecule_name) {
@@ -269,9 +260,6 @@ namespace votca { namespace xtp {
           QMPair *qmpair = *pit;
           if (qmpair->HasGhost()) {
             count++;
-
-
-
             qmpair->Seg2PbCopy()->Rigidify();
           }
         }

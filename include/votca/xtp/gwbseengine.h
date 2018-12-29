@@ -20,11 +20,7 @@
 #ifndef VOTCA_XTP_GWBSEENGINE_H
 #define VOTCA_XTP_GWBSEENGINE_H
 
-#include <votca/xtp/segment.h>
-#include <votca/xtp/polarseg.h>
-#include <votca/xtp/topology.h>
-#include <votca/xtp/apolarsite.h>
-#include <boost/filesystem.hpp>
+#include <votca/tools/property.h>
 #include <votca/xtp/logger.h>
 
 namespace votca {
@@ -50,7 +46,7 @@ namespace votca {
             void Initialize(tools::Property &options, std::string archive_filename);
             void ExcitationEnergies(Orbitals& orbitals);
 
-            void setLog(xtp::Logger* pLog) {
+            void setLog(Logger* pLog) {
                 _pLog = pLog;
             }
             
@@ -58,7 +54,7 @@ namespace votca {
                 _qmpackage=qmpackage;
             }
 
-            std::string GetDFTLog() {
+            std::string GetDFTLog() const{
                 return _dftlog_file;
             };
 
@@ -78,7 +74,7 @@ namespace votca {
             
             QMPackage* _qmpackage;
 
-            xtp::Logger *_pLog;
+            Logger *_pLog;
 
             // task options
             bool _do_guess;
@@ -100,7 +96,7 @@ namespace votca {
             tools::Property _gwbse_options;
             tools::Property _summary;
 
-            void WriteLoggerToFile(xtp::Logger* pLog);
+            void WriteLoggerToFile(Logger* pLog);
         };
 
 

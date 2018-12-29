@@ -19,9 +19,8 @@
 #ifndef VOTCA_XTP_CHARGECARRIER_H
 #define	VOTCA_XTP_CHARGECARRIER_H
 
-#include <votca/tools/vec.h>
 #include <votca/xtp/gnode.h>
-
+#include <votca/xtp/glink.h>
 
 
 namespace votca { namespace xtp {
@@ -32,39 +31,51 @@ namespace votca { namespace xtp {
             class Chargecarrier
             {
                 public:
-                    Chargecarrier(): lifetime(0.0),steps(0) 
-                    {
-                        dr_travelled=tools::vec(0.0,0.0,0.0);
-                        node=NULL;
-                    }
-                    ~Chargecarrier(){};
+                    Chargecarrier(int id): _id(id),lifetime(0.0),steps(0),_dr_travelled(Eigen::Vector3d::Zero()),node(NULL){};
                     bool hasNode(){return (node!=NULL);}
                     void updateLifetime(double dt) { lifetime+=dt;}
-                    void updateOccupationtime(double dt) { node->occupationtime+=dt;}
+                    void updateOccupationtime(double dt){ node->occupationtime+=dt;}
                     void updateSteps(unsigned t) { steps+=t;}
-                    void resetCarrier() { lifetime=0;steps=0; dr_travelled=tools::vec(0.0,0.0,0.0);}
-                    const double& getLifetime(){return lifetime;}
-                    const unsigned& getSteps(){return steps;}
-                    const int& getCurrentNodeId(){return node->id;}
-                    double getCurrentEnergy(){return node->siteenergy;}
-                    tools::vec getCurrentPosition(){return node->position;}
-                    double getCurrentEscapeRate(){return node->escape_rate;}
-                    GNode * getCurrentNode(){return node;}
+                    void resetCarrier() { lifetime=0;steps=0; _dr_travelled=Eigen::Vector3d::Zero();}
+                    double getLifetime()const{return lifetime;}
+                    unsigned getSteps()const{return steps;}
+                    int getCurrentNodeId()const{return node->id;}
+                    double getCurrentEnergy()const{return node->siteenergy;}
+                    const Eigen::Vector3d& getCurrentPosition()const{return node->position;}
+                    double getCurrentEscapeRate()const{return node->escape_rate;}
+                    GNode& getCurrentNode()const{return *node;}
+
+                    void ReleaseNode(){
+                        node->occupied=false;
+                    }
+                    
                     void settoNote(GNode *newnode){node=newnode;
                         node->occupied=true;}
 
-                    void jumpfromCurrentNodetoNode(GNode *newnode){
-                        node->occupied=false;
-                        settoNote(newnode);
+                    void jumpAccordingEvent(const GLink& event){
+                        ReleaseNode();
+                        settoNote(event.destination);
+                        _dr_travelled+=event.dr;
                     }
-                    int id;
-                    
-                    tools::vec dr_travelled;
-                    
+
+                    const Eigen::Vector3d& get_dRtravelled() const {
+                        return _dr_travelled;
+                    }
+
+                    int getId() const {
+                        return _id;
+                    }
+                   void setId(int id) {
+                       _id=id;
+                    }
+   
                 private:
-                    GNode *node;
+                    int _id;
                     double lifetime;
-                    unsigned steps;
+                    unsigned steps; 
+                    Eigen::Vector3d _dr_travelled;
+                    GNode *node;
+                   
             };
      
 

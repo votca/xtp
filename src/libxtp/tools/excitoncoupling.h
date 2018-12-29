@@ -23,52 +23,46 @@
 
 #include <votca/xtp/qmtool.h>
 #include <votca/xtp/logger.h>
-#include <votca/xtp/xinteractor.h>
 
 #include <stdio.h>
 #include <votca/tools/constants.h>
-
+#include <votca/xtp/polarsegment.h>
 #include <votca/tools/constants.h>
 #include <votca/xtp/bsecoupling.h>
 
 #include <votca/xtp/qmpackagefactory.h>
 
 namespace votca { namespace xtp {
-    using namespace std;
     
-class ExcitonCoupling : public  xtp::QMTool
+class ExcitonCoupling : public  QMTool
 {
 public:
 
-    ExcitonCoupling() { };
-   ~ExcitonCoupling() { };
+    std::string Identify() { return "excitoncoupling"; }
 
-    string Identify() { return "excitoncoupling"; }
-
-    void   Initialize(Property *options);
+    void   Initialize(tools::Property *options);
     bool   Evaluate();
 
  
 
 private:
     
-    string      _orbA, _orbB, _orbAB;
+    std::string      _orbA, _orbB, _orbAB;
    // int         _trimA, _trimB;
     
-    Property    _coupling_options; 
+    tools::Property    _coupling_options; 
     
-    string      _output_file;
+    std::string      _output_file;
     bool        _classical;
     //bool        _doSinglets;
     //bool        _doTriplets;
-    string      _mpsA;
-    string      _mpsB;  
-    xtp::Logger      _log;
+    std::string      _mpsA;
+    std::string      _mpsB;  
+    Logger      _log;
 
 };
 
-void ExcitonCoupling::Initialize(Property* options) 
-{
+void ExcitonCoupling::Initialize(tools::Property* options){
    // _doSinglets=false;
    // _doTriplets=false;
    // update options with the VOTCASHARE defaults   
@@ -85,19 +79,19 @@ void ExcitonCoupling::Initialize(Property* options)
     
     if(!_classical){
         
-        string _coupling_xml=options->get(key + ".bsecoupling_options").as<string>();
+        std::string _coupling_xml=options->get(key + ".bsecoupling_options").as<std::string>();
         load_property_from_xml(_coupling_options, _coupling_xml.c_str());
         
-        _orbA  = options->get(key + ".orbitalsA").as<string> ();
-        _orbB  = options->get(key + ".orbitalsB").as<string> ();
-        _orbAB = options->get(key + ".orbitalsAB").as<string> ();
+        _orbA  = options->get(key + ".orbitalsA").as<std::string> ();
+        _orbB  = options->get(key + ".orbitalsB").as<std::string> ();
+        _orbAB = options->get(key + ".orbitalsAB").as<std::string> ();
 
     }
     else{
-        _mpsA= options->get(key + ".mpsA").as<string> ();
-        _mpsB= options->get(key + ".mpsB").as<string> ();
+        _mpsA= options->get(key + ".mpsA").as<std::string> ();
+        _mpsB= options->get(key + ".mpsB").as<std::string> ();
     }
-    _output_file = options->get(key + ".output").as<string> ();
+    _output_file = options->get(key + ".output").as<std::string> ();
 
     // get the path to the shared folders with xml files
     char *votca_share = getenv("VOTCASHARE");    
@@ -107,27 +101,27 @@ void ExcitonCoupling::Initialize(Property* options)
 
 bool ExcitonCoupling::Evaluate() {
    
-    _log.setReportLevel(  xtp::logDEBUG );
+    _log.setReportLevel(  logDEBUG );
     _log.setMultithreading( true );
     
-    _log.setPreface( xtp::logINFO,    "\n... ...");
-    _log.setPreface( xtp::logERROR,   "\n... ...");
-    _log.setPreface( xtp::logWARNING, "\n... ...");
-    _log.setPreface( xtp::logDEBUG,   "\n... ..."); 
-    Property summary;
-    Property& job_output = summary.add("output","");
+    _log.setPreface( logINFO,    "\n... ...");
+    _log.setPreface( logERROR,   "\n... ...");
+    _log.setPreface( logWARNING, "\n... ...");
+    _log.setPreface( logDEBUG,   "\n... ..."); 
+    tools::Property summary;
+    tools::Property& job_output = summary.add("output","");
     // get the corresponding object from the QMPackageFactory
     if(!_classical){
     Orbitals orbitalsA, orbitalsB, orbitalsAB;
     // load the QM data from serialized orbitals objects
 
-    XTP_LOG( xtp::logDEBUG, _log) << " Loading QM data for molecule A from " << _orbA << flush;
+    XTP_LOG( logDEBUG, _log) << " Loading QM data for molecule A from " << _orbA << flush;
     orbitalsA.ReadFromCpt(_orbA);
     
-    XTP_LOG( xtp::logDEBUG, _log) << " Loading QM data for molecule B from " << _orbB << flush;
+    XTP_LOG( logDEBUG, _log) << " Loading QM data for molecule B from " << _orbB << flush;
     orbitalsB.ReadFromCpt(_orbB);
 
-    XTP_LOG( xtp::logDEBUG, _log) << " Loading QM data for dimer AB from " << _orbAB << flush;
+    XTP_LOG( logDEBUG, _log) << " Loading QM data for dimer AB from " << _orbAB << flush;
     orbitalsAB.ReadFromCpt(_orbAB);
    
      BSECoupling bsecoupling; 
@@ -137,40 +131,27 @@ bool ExcitonCoupling::Evaluate() {
      bsecoupling.CalculateCouplings( orbitalsA,orbitalsB, orbitalsAB );   
      std::cout << _log;
 
-    Property& pair_summary = job_output.add("pair","");
-    Property& type_summary = pair_summary.add("type","");
+    tools::Property& pair_summary = job_output.add("pair","");
+    tools::Property& type_summary = pair_summary.add("type","");
     bsecoupling.Addoutput(type_summary,orbitalsA,  orbitalsB);
 
     }
     
     else if (_classical){
-        XTP_LOG( xtp::logDEBUG, _log) << "Calculating electronic coupling using classical transition charges." << _orbB << flush;
-        std::vector< xtp::APolarSite*> seg1= xtp::APS_FROM_MPS(_mpsA, 0);
-        std::vector< xtp::APolarSite*> seg2= xtp::APS_FROM_MPS(_mpsB, 0);
+        XTP_LOG( logDEBUG, _log) << "Calculating electronic coupling using classical transition charges." << _orbB << flush;
+        PolarSegment seg1=PolarSegment("A",0);
+        PolarSegment seg2=PolarSegment("B",1);
+        seg1.LoadFromMPS(_mpsA);
+        seg2.LoadFromMPS(_mpsB);
         
-        xtp::PolarSeg Seg1 = xtp::PolarSeg(1,seg1);
-        xtp::PolarSeg Seg2 = xtp::PolarSeg(2,seg2);
-        xtp::XInteractor actor;
-        actor.ResetEnergy();
-        vec s = vec(0,0,0);
-        double E = 0.0;
-        for (xtp::APolarSite* site1:Seg1) {
-          for (xtp::APolarSite* site2:Seg2) {            
-            actor.BiasIndu(*site1, *site2, s);
-            site1->Depolarize();
-            site2->Depolarize();
-            E += actor.E_f(*site1, *site2);             
-          }
-        }
+    double J=0;  
 
-    double J=E*conv::int2eV;  
-
-    Property &pair_summary = job_output.add("pair","");
+    tools::Property &pair_summary = job_output.add("pair","");
     pair_summary.setAttribute("idA", 1);
     pair_summary.setAttribute("idB", 2);
     pair_summary.setAttribute("typeA", _mpsA);
     pair_summary.setAttribute("typeB", _mpsB);
-    Property & coupling_summary =pair_summary.add("Coupling",""); 
+    tools::Property & coupling_summary =pair_summary.add("Coupling",""); 
     coupling_summary.setAttribute("jABstatic", J);
     }
     

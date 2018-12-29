@@ -20,8 +20,9 @@
 
 #include <votca/xtp/bse.h>
 #include <votca/tools/linalg.h>
-
+#include <votca/xtp/aomatrix.h>
 #include "votca/xtp/qmstate.h"
+#include "votca/xtp/vc2index.h"
 using boost::format;
 using std::flush;
 
@@ -32,10 +33,10 @@ namespace votca {
       MatrixXfd H = MatrixXfd::Zero(_bse_size,_bse_size);
       Add_Hd<real_gwbse>(H);
       Add_Hqp<real_gwbse>(H);
-      XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Setup TDA triplet hamiltonian " << flush;
-      XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
+      XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Setup TDA triplet hamiltonian " << flush;
+      XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
       tools::linalg_eigenvalues(H , _bse_triplet_energies, _bse_triplet_coefficients ,_bse_nmax );
       return;
     }
@@ -45,10 +46,10 @@ namespace votca {
       Add_Hd<real_gwbse>(H);
       Add_Hqp<real_gwbse>(H);
       Add_Hx<real_gwbse>(H,2.0);
-      XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Setup TDA singlet hamiltonian " << flush;
-      XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
+      XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Setup TDA singlet hamiltonian " << flush;
+      XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
       tools::linalg_eigenvalues(H, _bse_singlet_energies, _bse_singlet_coefficients , _bse_nmax );
       return;
     }
@@ -84,12 +85,12 @@ namespace votca {
  
         Add_Hx<double>(ApB,4.0);
         Add_Hd2<double>(ApB,1.0);
-        XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Setup singlet hamiltonian " << flush;
+        XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Setup singlet hamiltonian " << flush;
      
       // calculate Cholesky decomposition of A-B = LL^T. It throws an error if not positive definite
       //(A-B) is not needed any longer and can be overwritten
-      XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Trying Cholesky decomposition of KAA-KAB" << flush;
+      XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Trying Cholesky decomposition of KAA-KAB" << flush;
       Eigen::LLT< Eigen::Ref<Eigen::MatrixXd> > L(AmB);
       
        for (int i=0;i<AmB.rows();++i){
@@ -99,24 +100,24 @@ namespace votca {
         }
 
       if(L.info()!=0){
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() <<" Cholesky decomposition of KAA-KAB was unsucessful. Try a smaller basisset. This can indicate a triplet instability."<<flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() <<" Cholesky decomposition of KAA-KAB was unsucessful. Try a smaller basisset. This can indicate a triplet instability."<<flush;
         throw std::runtime_error("Cholesky decompostion failed");
       }else{
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() <<" Cholesky decomposition of KAA-KAB was successful"<<flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() <<" Cholesky decomposition of KAA-KAB was successful"<<flush;
       }
       Eigen::MatrixXd temp= ApB*AmB;
       ApB.noalias() =AmB.transpose()*temp;
       temp.resize(0,0);
-      XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Calculated H = L^T(A+B)L " << flush;
+      XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Calculated H = L^T(A+B)L " << flush;
       Eigen::VectorXd eigenvalues;
       Eigen::MatrixXd eigenvectors;     
-      XTP_LOG(xtp::logDEBUG, *_log)
-        << xtp::TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
+      XTP_LOG(logDEBUG, *_log)
+        << TimeStamp() << " Solving for first "<<_bse_nmax<<" eigenvectors"<< flush;
       bool success_diag=tools::linalg_eigenvalues(ApB, eigenvalues, eigenvectors ,_bse_nmax);
       if(!success_diag){
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Could not solve problem" << flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Could not solve problem" << flush;
       }else{
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Solved HR_l = eps_l^2 R_l " << flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Solved HR_l = eps_l^2 R_l " << flush;
       }
       ApB.resize(0,0);
       eigenvalues=eigenvalues.cwiseSqrt();
@@ -150,231 +151,118 @@ namespace votca {
 
       return;
     }
-
-   
-template <typename T>
-    void BSE::Add_Hqp(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H) {
+        
     
-    const Eigen::MatrixXd& Hqp=*_Hqp;
+        template <typename T>
+        void BSE::Add_Hqp(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H) {
+
+            vc2index vc = vc2index(0, 0, _bse_ctotal);
+
+            const Eigen::MatrixXd& Hqp = *_Hqp;
 #pragma omp parallel for
-      for (int v1 = 0; v1 < _bse_vtotal; v1++) {
-        for (int c1 = 0; c1 < _bse_ctotal; c1++) {
-          int index_vc = _bse_ctotal * v1 + c1;
-          // diagonal
-          H(index_vc, index_vc) += Hqp(c1 + _bse_vtotal, c1 + _bse_vtotal) -Hqp(v1, v1);
-          // v->c
-          for (int c2 = 0; c2 < _bse_ctotal; c2++) {
-            int index_vc2 = _bse_ctotal * v1 + c2;
-            if (c1 != c2) {
-              H(index_vc, index_vc2) += Hqp(c1 + _bse_vtotal, c2 + _bse_vtotal);
+            for (int v1 = 0; v1 < _bse_vtotal; v1++) {
+                for (int c1 = 0; c1 < _bse_ctotal; c1++) {
+                    int index_vc = vc.I(v1, c1);
+                    // v->c
+                    for (int c2 = 0; c2 < _bse_ctotal; c2++) {
+                        int index_vc2 = vc.I(v1, c2);
+                        H(index_vc2, index_vc) += Hqp(c2 + _bse_vtotal, c1 + _bse_vtotal);
+                    }
+                    // c-> v
+                    for (int v2 = 0; v2 < _bse_vtotal; v2++) {
+                        int index_vc2 = vc.I(v2, c1);
+                        H(index_vc2, index_vc) -= Hqp(v2, v1);
+                    }
+                }
             }
-          }
-          // c-> v
-          for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-            int index_vc2 = _bse_ctotal * v2 + c1;
-            if (v1 != v2) {
-              H(index_vc, index_vc2) -= Hqp(v1, v2);
+            return;
+        }
+
+        template <typename T>
+        void BSE::Add_Hd(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H) {
+            int auxsize = _Mmn->getAuxDimension();
+            vc2index vc = vc2index(0, 0, _bse_ctotal);
+            VectorXfd epsilon_inv = (1 - _ppm->getPpm_weight().array()).cast<real_gwbse>();
+#pragma omp parallel for
+            for (int v1 = 0; v1 < _bse_vtotal; v1++) {
+                const MatrixXfd Mmn1T = ((*_Mmn)[v1 + _bse_vmin ].block(_bse_vmin, 0, _bse_vtotal, auxsize) * epsilon_inv.asDiagonal()).transpose();
+                for (int c1 = 0; c1 < _bse_ctotal; c1++) {
+                    const MatrixXfd& Mmn2 = (*_Mmn)[c1 + _bse_cmin];
+                    const MatrixXfd Mmn2xMmn1T = Mmn2.block(_bse_cmin, 0, _bse_ctotal, auxsize)*Mmn1T;
+                    int i1 = vc.I(v1, c1);
+                    for (int v2 = 0; v2 < _bse_vtotal; v2++) {
+                        for (int c2 = 0; c2 < _bse_ctotal; c2++) {
+                            int i2 = vc.I(v2, c2);
+                            H(i2, i1) -= Mmn2xMmn1T(c2, v2);
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-      return;
-    }
 
-template <typename T>
-    void BSE::Add_Hd(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H) {
-      // gwbasis size
-      int auxsize = _Mmn->getAuxDimension();
-      int vxv_size=_bse_vtotal * _bse_vtotal;
-      int cxc_size=_bse_ctotal * _bse_ctotal;
-      
-      // messy procedure, first get two matrices for occ and empty subbparts
-      // store occs directly transposed
-      MatrixXfd storage_v = MatrixXfd::Zero(auxsize, vxv_size);
-#pragma omp parallel for
-      for (int v1 = 0; v1 < _bse_vtotal; v1++) {
-        const MatrixXfd& Mmn = (*_Mmn)[v1 + _bse_vmin ];
-        for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-          for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-            int index_vv = _bse_vtotal * v1 + v2;         
-              storage_v(i_gw,index_vv) = Mmn( v2 + _bse_vmin,i_gw);
+            return;
+        }
+
+        template <typename T>
+        void BSE::Add_Hd2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H, double factor) {
+            int auxsize = _Mmn->getAuxDimension();
+            vc2index vc = vc2index(0, 0, _bse_ctotal);
+            VectorXfd epsilon_inv = (1 - _ppm->getPpm_weight().array()).cast<real_gwbse>();
+#pragma omp parallel for       
+            for (int c1 = 0; c1 < _bse_ctotal; c1++) {
+                const MatrixXfd Mmn2T = ((*_Mmn)[c1 + _bse_cmin ].block(_bse_vmin, 0, _bse_vtotal, auxsize)* epsilon_inv.asDiagonal()).transpose();
+                for (int v1 = 0; v1 < _bse_vtotal; v1++) {
+                    const MatrixXfd& Mmn1 = (*_Mmn)[v1 + _bse_vmin];
+                    MatrixXfd Mmn1xMmn2T = Mmn1.block(_bse_cmin, 0, _bse_ctotal, auxsize)* Mmn2T;
+                    int i1 = vc.I(v1, c1);
+                    for (int v2 = 0; v2 < _bse_vtotal; v2++) {
+                        for (int c2 = 0; c2 < _bse_ctotal; c2++) {
+                            int i2 = vc.I(v2, c2);
+                            H(i2, i1) -= factor * Mmn1xMmn2T(c2, v2);
+                        }
+                    }
+                }
             }
+            return;
         }
-      }
+        
 
-      MatrixXfd storage_c = MatrixXfd::Zero(auxsize,cxc_size);
+        template <typename T>
+        void BSE::Add_Hx(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H, double factor) {
+            // gwbasis size
+            int auxsize = _Mmn->getAuxDimension();
+            vc2index vc = vc2index(0, 0, _bse_ctotal);
 #pragma omp parallel for
-      for (int c1 = 0; c1 < _bse_ctotal; c1++) {
-        const MatrixXfd& Mmn = (*_Mmn)[c1 + _bse_cmin];
-        for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-          for (int c2 = 0; c2 < _bse_ctotal; c2++) {
-            int index_cc = _bse_ctotal * c1 + c2;
-            storage_c(i_gw, index_cc) = Mmn( c2 + _bse_cmin,i_gw);
-          }
-        }
-      }
-
-      // store elements in a vtotal^2 x ctotal^2 matrix
-      MatrixXfd storage_prod = storage_v.transpose() *storage_c;
-
-      // now patch up _storage for screened interaction
-#pragma omp parallel for
-      for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-        if (_ppm->getPpm_weight()(i_gw) < 1.e-9) {
-          for (int v = 0; v < vxv_size; v++) {
-            storage_v(i_gw,v ) = 0;
-          }
-          for (int c = 0; c < cxc_size; c++) {
-            storage_c(i_gw, c) = 0;
-          }
-        } else {
-          double ppm_factor = sqrt(_ppm->getPpm_weight()(i_gw));
-          for (int v = 0; v < vxv_size; v++) {
-            storage_v(i_gw,v ) *= ppm_factor;
-          }
-          for (int c = 0; c < cxc_size; c++) {
-            storage_c(i_gw, c) *= ppm_factor;
-          }
-        }
-      }
-
-      // multiply and subtract from _storage_prod
-      storage_prod -= storage_v.transpose()*storage_c;
-      // free storage_v and storage_c
-      storage_c.resize(0, 0);
-      storage_v.resize(0, 0);
-      // finally resort into _eh_d
-      
-#pragma omp parallel for
-      for (int v1 = 0; v1 < _bse_vtotal; v1++) {
-        for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-          int index_vv = _bse_vtotal * v1 + v2;
-          for (int c1 = 0; c1 < _bse_ctotal; c1++) {
-            int index_vc1 = _bse_ctotal * v1 + c1;
-            for (int c2 = 0; c2 < _bse_ctotal; c2++) {
-              int index_vc2 = _bse_ctotal * v2 + c2;
-              int index_cc = _bse_ctotal * c1 + c2;
-              H(index_vc1, index_vc2) -= storage_prod(index_vv, index_cc);
+            for (int v1 = 0; v1 < _bse_vtotal; v1++) {
+                const MatrixXfd Mmn1 = factor * ((*_Mmn)[v1 + _bse_vmin].block(_bse_cmin, 0, _bse_ctotal, auxsize)).transpose();
+                for (int c1 = 0; c1 < _bse_ctotal; c1++) {
+                    int i1 = vc.I(v1, c1);
+                    for (int v2 = 0; v2 < _bse_vtotal; v2++) {
+                        const MatrixXfd& Mmn2 = (*_Mmn)[v2 + _bse_vmin];
+                        const VectorXfd Mmnx2 = Mmn2.block(_bse_cmin, 0, _bse_ctotal, auxsize) * Mmn1.col(c1);
+                        for (int c2 = 0; c2 < _bse_ctotal; c2++) {
+                            int i2 = vc.I(v2, c2);
+                            H(i2, i1) += Mmnx2(c2);
+                        }
+                    }
+                }
             }
-          }
+            return;
         }
-      }
-
-      return;
-    }
-template <typename T>
-    void BSE::Add_Hd2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H, double factor) {
-      // gwbasis size
-      int auxsize = _Mmn->getAuxDimension();
-      int bse_vxc_total=_bse_vtotal * _bse_ctotal;
-      // messy procedure, first get two matrices for occ and empty subbparts
-      // store occs directly transposed
-      MatrixXfd storage_cv = MatrixXfd::Zero(auxsize,bse_vxc_total);
-#pragma omp parallel for
-      for (int c1 = 0; c1 < _bse_ctotal; c1++) {
-        const MatrixXfd& Mmn = (*_Mmn)[c1 + _bse_cmin ];
-        for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-          for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-            int index_cv = _bse_vtotal * c1 + v2;
-            storage_cv(i_gw,index_cv ) = Mmn( v2 + _bse_vmin,i_gw);
-          }
-        }
-      }
-
-      MatrixXfd storage_vc = MatrixXfd::Zero(auxsize, bse_vxc_total);
-#pragma omp parallel for
-      for (int v1 = 0; v1 < _bse_vtotal; v1++) {
-        const MatrixXfd& Mmn = (*_Mmn)[v1 + _bse_vmin];
-        for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-          for (int c2 = 0; c2 < _bse_ctotal; c2++) {
-            int index_vc = _bse_ctotal * v1 + c2;
-            storage_vc(i_gw, index_vc) = Mmn(c2 + _bse_cmin,i_gw);
-          }
-        }
-      }
-
-      // store elements in a vtotal^2 x ctotal^2 matrix
-      MatrixXfd storage_prod = storage_cv.transpose()* storage_vc;
-
-      // now patch up _storage for screened interaction
-#pragma omp parallel for
-      for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-        if (_ppm->getPpm_weight()(i_gw) < 1.e-9) {
-          for (int v = 0; v < bse_vxc_total; v++) {
-            storage_vc(i_gw, v) = 0;
-          }
-          for (int c = 0; c < bse_vxc_total; c++) {
-            storage_cv(i_gw,c ) = 0;
-          }
-        } else {
-          double ppm_factor = sqrt(_ppm->getPpm_weight()(i_gw));
-          for (int v = 0; v < bse_vxc_total; v++) {
-            storage_vc(i_gw, v) *= ppm_factor;
-          }
-          for (int c = 0; c < bse_vxc_total; c++) {
-            storage_cv(i_gw,c ) *= ppm_factor;
-          }
-        }
-      }
-
-      // multiply and subtract from _storage_prod
-      storage_prod -= storage_cv.transpose() * storage_vc;
-      // free storage_v and storage_c
-      storage_cv.resize(0, 0);
-      storage_vc.resize(0, 0);
-  
-#pragma omp parallel for
-      for (int v1 = 0; v1 < _bse_vtotal; v1++) {
-        for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-          for (int c1 = 0; c1 < _bse_ctotal; c1++) {
-            int index_v1c1 = _bse_ctotal * v1 + c1;
-            int index_c1v2 = _bse_vtotal * c1 + v2;
-            for (int c2 = 0; c2 < _bse_ctotal; c2++) {
-              int index_v2c2 = _bse_ctotal * v2 + c2;
-              int index_v1c2 = _bse_ctotal * v1 + c2;
-              H(index_v1c1, index_v2c2) -= factor*storage_prod(index_c1v2, index_v1c2);
-            }
-          }
-        }
-      }
-      return;
-    }
-
-template <typename T>
-    void BSE::Add_Hx(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H, double factor) { 
-      // gwbasis size
-      int auxsize = _Mmn->getAuxDimension();
-      // get a different storage for 3-center integrals we need
-      Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> storage = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>::Zero(auxsize, _bse_size);
-      // occupied levels
-#pragma omp parallel for
-      for (int v = 0; v < _bse_vtotal; v++) {
-        const MatrixXfd& Mmn = (*_Mmn)[v + _bse_vmin];
-        // empty levels
-        for (int i_gw = 0; i_gw < auxsize; i_gw++) {
-          for (int c = 0; c < _bse_ctotal; c++) {
-            int index_vc = _bse_ctotal * v + c;
-            storage(i_gw, index_vc) = Mmn(c + _bse_cmin,i_gw);
-          }
-        }
-      }
-      // with this storage, _eh_x is obtained by matrix multiplication
-      H += factor*storage.transpose() * storage;
-      return;
-    }
 
     void BSE::printFragInfo(const Population& pop, int i){
-      XTP_LOG(xtp::logINFO, *_log) << format("           Fragment A -- hole: %1$5.1f%%  electron: %2$5.1f%%  dQ: %3$+5.2f  Qeff: %4$+5.2f")
+      XTP_LOG(logINFO, *_log) << format("           Fragment A -- hole: %1$5.1f%%  electron: %2$5.1f%%  dQ: %3$+5.2f  Qeff: %4$+5.2f")
               % (100.0 * pop.popH[i](0)) % (100.0 * pop.popE[i](0)) % (pop.Crgs[i](0)) % (pop.Crgs[i](0) + pop.popGs(0)) << flush;
-      XTP_LOG(xtp::logINFO, *_log) << format("           Fragment B -- hole: %1$5.1f%%  electron: %2$5.1f%%  dQ: %3$+5.2f  Qeff: %4$+5.2f")
+      XTP_LOG(logINFO, *_log) << format("           Fragment B -- hole: %1$5.1f%%  electron: %2$5.1f%%  dQ: %3$+5.2f  Qeff: %4$+5.2f")
               % (100.0 * pop.popH[i](1)) % (100.0 * pop.popE[i](1)) % (pop.Crgs[i](1)) % (pop.Crgs[i](1) + pop.popGs(1)) << flush;
       return;
     }
 
     void BSE::printWeights(int i_bse, double weight){
+        
+      vc2index vc=vc2index(_bse_vmin,_bse_cmin,_bse_ctotal);
       if (weight > _min_print_weight) {
-        XTP_LOG(xtp::logINFO, *_log) << format("           HOMO-%1$-3d -> LUMO+%2$-3d  : %3$3.1f%%")
-                % (_homo - _index2v[i_bse]) % (_index2c[i_bse] - _homo - 1) % (100.0 * weight) << flush;
+        XTP_LOG(logINFO, *_log) << format("           HOMO-%1$-3d -> LUMO+%2$-3d  : %3$3.1f%%")
+                % (_homo - vc.v(i_bse)) % (vc.c(i_bse) - _homo - 1) % (100.0 * weight) << flush;
       }
       return;
     }
@@ -384,14 +272,14 @@ template <typename T>
       Interaction act;
       Population pop;
       QMStateType singlet=QMStateType(QMStateType::Singlet);
-      std::vector< tools::vec > transition_dipoles=CalcCoupledTransition_Dipoles(dftbasis);
+      std::vector< Eigen::Vector3d > transition_dipoles=CalcCoupledTransition_Dipoles(dftbasis);
       _orbitals.TransitionDipoles()=transition_dipoles;
       std::vector<double> oscs = _orbitals.Oscillatorstrengths();
       
       if(tools::globals::verbose){
         act = Analyze_eh_interaction(singlet);
       }
-      if(dftbasis.getAOBasisFragA()>0){
+      if(dftbasis.getAOBasisFragA() > 0 && dftbasis.getAOBasisFragB()>0){
         pop=FragmentPopulations(singlet,dftbasis);
         _orbitals.setFragmentChargesSingEXC(pop.Crgs);
         _orbitals.setFragment_E_localisation_singlet(pop.popE);
@@ -400,21 +288,20 @@ template <typename T>
       }
       
       double hrt2ev = tools::conv::hrt2ev;
-      XTP_LOG(xtp::logINFO, *_log) << "  ====== singlet energies (eV) ====== "<< flush;
-      int maxoutput=(_bse_nmax>200) ? 200:_bse_nmax;
-      for (int i = 0; i < maxoutput; ++i) {     
-        const tools::vec& trdip = transition_dipoles[i];
+      XTP_LOG(logINFO, *_log) << "  ====== singlet energies (eV) ====== "<< flush;
+      for (int i = 0; i < _bse_nmax; ++i) {
+        const Eigen::Vector3d& trdip = transition_dipoles[i];
         double osc = oscs[i];
         if (tools::globals::verbose) {
-          XTP_LOG(xtp::logINFO, *_log) << format("  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> = %4$+1.4f <K_x> = %5$+1.4f <K_d> = %6$+1.4f")
+          XTP_LOG(logINFO, *_log) << format("  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> = %4$+1.4f <K_x> = %5$+1.4f <K_d> = %6$+1.4f")
                   % (i + 1) % (hrt2ev * _bse_singlet_energies(i)) % (1240.0 / (hrt2ev * _bse_singlet_energies(i)))
                   % (hrt2ev * act.qp_contrib(i)) % (hrt2ev * act.exchange_contrib(i)) % (hrt2ev * act.direct_contrib(i)) << flush;
         } else {
-          XTP_LOG(xtp::logINFO, *_log) << format("  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm")
+          XTP_LOG(logINFO, *_log) << format("  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm")
                   % (i + 1) % (hrt2ev * _bse_singlet_energies(i)) % (1240.0 / (hrt2ev * _bse_singlet_energies(i))) << flush;
         }
-        XTP_LOG(xtp::logINFO, *_log) << format("           TrDipole length gauge[e*bohr]  dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f f = %5$+1.4f")
-                % trdip.getX() % trdip.getY() % trdip.getZ() % (trdip * trdip) % osc << flush;
+        XTP_LOG(logINFO, *_log) << format("           TrDipole length gauge[e*bohr]  dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f f = %5$+1.4f")
+                % trdip[0] % trdip[1] % trdip[2] % (trdip.squaredNorm()) % osc << flush;
         for (int i_bse = 0; i_bse < _bse_size; ++i_bse) {
           // if contribution is larger than 0.2, print
           double weight = std::pow(_bse_singlet_coefficients(i_bse, i), 2);
@@ -428,7 +315,7 @@ template <typename T>
           printFragInfo(pop, i);
         }
 
-        XTP_LOG(xtp::logINFO, *_log) << flush;
+        XTP_LOG(logINFO, *_log) << flush;
       }
       return;
     }
@@ -451,15 +338,14 @@ template <typename T>
         _orbitals.setFragment_H_localisation_triplet(pop.popH);
         _orbitals.setFragmentChargesGS(pop.popGs);
       }
-      XTP_LOG(xtp::logINFO, *_log) << "  ====== triplet energies (eV) ====== " << flush;
-      int maxoutput=(_bse_nmax>200) ? 200:_bse_nmax;
-      for (int i = 0; i < maxoutput; ++i) {    
+      XTP_LOG(logINFO, *_log) << "  ====== triplet energies (eV) ====== " << flush;
+      for (int i = 0; i < _bse_nmax; ++i) {
         if (tools::globals::verbose) {
-          XTP_LOG(xtp::logINFO, *_log) << format("  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> = %4$+1.4f <K_d> = %5$+1.4f")
+          XTP_LOG(logINFO, *_log) << format("  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> = %4$+1.4f <K_d> = %5$+1.4f")
                   % (i + 1) % (tools::conv::hrt2ev * _bse_triplet_energies(i)) % (1240.0 / (tools::conv::hrt2ev * _bse_triplet_energies(i)))
                   % (tools::conv::hrt2ev * act.qp_contrib(i)) % (tools::conv::hrt2ev *act.direct_contrib(i)) << flush;
         } else {
-          XTP_LOG(xtp::logINFO, *_log) << format("  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm")
+          XTP_LOG(logINFO, *_log) << format("  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm")
                   % (i + 1) % (tools::conv::hrt2ev * _bse_triplet_energies(i)) % (1240.0 / (tools::conv::hrt2ev * _bse_triplet_energies(i))) << flush;
         }
         for (int i_bse = 0; i_bse < _bse_size; ++i_bse) {
@@ -471,7 +357,7 @@ template <typename T>
         if (dftbasis.getAOBasisFragA() > 0) {
           printFragInfo(pop, i);
         }
-        XTP_LOG(xtp::logINFO, *_log) << format("   ") << flush;
+        XTP_LOG(logINFO, *_log) << format("   ") << flush;
       }
       // storage to orbitals object
 
@@ -527,28 +413,28 @@ template <typename T>
       // Mulliken fragment population analysis
         AOOverlap dftoverlap;
         dftoverlap.Fill(dftbasis);
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Filled DFT Overlap matrix of dimension: " << dftoverlap.Matrix().rows() << flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Filled DFT Overlap matrix of dimension: " << dftoverlap.Matrix().rows() << flush;
         // ground state populations
-        Eigen::MatrixXd DMAT = _orbitals.DensityMatrixGroundState();
+        Eigen::MatrixXd dmatgs = _orbitals.DensityMatrixGroundState();
         Eigen::VectorXd nuccharges = _orbitals.FragmentNuclearCharges(dftbasis.getAOBasisFragA());
-        Eigen::VectorXd pops = _orbitals.LoewdinPopulation(DMAT, dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
+        Eigen::VectorXd pops = _orbitals.LoewdinPopulation(dmatgs, dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
         pop.popGs=nuccharges - pops;
         // population to electron charges and add nuclear charges         
         for (int i_state = 0; i_state < _bse_nmax; i_state++) {
           QMState state=QMState(type,i_state,false);
           // checking Density Matrices
-          std::vector< Eigen::MatrixXd > DMAT = _orbitals.DensityMatrixExcitedState(state);
+          std::vector< Eigen::MatrixXd > dmat_ex = _orbitals.DensityMatrixExcitedState(state);
           // hole part
-          Eigen::VectorXd popsH = _orbitals.LoewdinPopulation(DMAT[0], dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
+          Eigen::VectorXd popsH = _orbitals.LoewdinPopulation(dmat_ex[0], dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
           pop.popH.push_back(popsH);
           // electron part
-          Eigen::VectorXd popsE = _orbitals.LoewdinPopulation(DMAT[1], dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
+          Eigen::VectorXd popsE = _orbitals.LoewdinPopulation(dmat_ex[1], dftoverlap.Matrix(), dftbasis.getAOBasisFragA());
           pop.popE.push_back(popsE);
           // update effective charges
           Eigen::VectorXd diff = popsH - popsE;
           pop.Crgs.push_back(diff);
         }
-        XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Ran Excitation fragment population analysis " << flush;
+        XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Ran Excitation fragment population analysis " << flush;
      
       return pop;
     }
@@ -567,30 +453,43 @@ template <typename T>
       for (int i_comp = 0; i_comp < 3; i_comp++) {
         interlevel_dipoles.push_back(occ.transpose() * dft_dipole.Matrix()[i_comp] * empty);
       }
-      XTP_LOG(xtp::logDEBUG, *_log) << xtp::TimeStamp() << " Calculated free interlevel transition dipole moments " << flush;
+      XTP_LOG(logDEBUG, *_log) << TimeStamp() << " Calculated free interlevel transition dipole moments " << flush;
+      if(tools::globals::verbose){
+          XTP_LOG(logDEBUG, *_log)<< TimeStamp() << "Free interlevel dipoles v c strength[bohr*e] " << std::flush;
+          Eigen::MatrixXd result=(interlevel_dipoles[0].cwiseAbs2()+interlevel_dipoles[1].cwiseAbs2()+interlevel_dipoles[2].cwiseAbs2()).cwiseSqrt();
+      for (int v = 0; v < _bse_vtotal; v++) {
+          for (int c = 0; c < _bse_ctotal; c++) {
+             XTP_LOG(logDEBUG, *_log)<< "\t\t" << v << " " << c << " "
+                     <<result(v, c)<< std::flush;
+          }}      
+    }
+      
       return interlevel_dipoles;
     }
 
-    std::vector<tools::vec > BSE::CalcCoupledTransition_Dipoles(const AOBasis& dftbasis) {
+    std::vector<Eigen::Vector3d > BSE::CalcCoupledTransition_Dipoles(const AOBasis& dftbasis) {
     std::vector<Eigen::MatrixXd > interlevel_dipoles= CalcFreeTransition_Dipoles(dftbasis);
-    std::vector<tools::vec > dipols;
-      double sqrt2 = sqrt(2.0);
+    vc2index vc=vc2index(0,0,_bse_ctotal);
+    std::vector<Eigen::Vector3d > dipols;
+    const double sqrt2 = sqrt(2.0);
       for (int i_exc = 0; i_exc < _bse_nmax; i_exc++) {
-        tools::vec tdipole = tools::vec(0, 0, 0);
+        Eigen::Vector3d tdipole = Eigen::Vector3d::Zero();
         for (int c = 0; c < _bse_ctotal; c++) {
           for (int v = 0; v < _bse_vtotal; v++) {
-            int index_vc = _bse_ctotal * v + c;
-            double factor = sqrt2 * _bse_singlet_coefficients(index_vc, i_exc);
+            int index_vc = vc.I(v,c);
+            double factor = _bse_singlet_coefficients(index_vc, i_exc);
             if (_bse_singlet_coefficients_AR.rows()>0) {
-              factor += sqrt2 * _bse_singlet_coefficients_AR(index_vc, i_exc);
+              factor += _bse_singlet_coefficients_AR(index_vc, i_exc);
             }
-            // The Transition dipole is sqrt2 bigger because of the spin, the excited state is a linear combination of 2 slater determinants, where either alpha or beta spin electron is excited
-            tdipole.x() += factor * interlevel_dipoles[0](v, c);
-            tdipole.y() += factor * interlevel_dipoles[1](v, c);
-            tdipole.z() += factor * interlevel_dipoles[2](v, c);
+            for(int i=0;i<3;i++){
+                // The Transition dipole is sqrt2 bigger because of the spin, the excited state is a linear combination of 2 slater determinants, where either alpha or beta spin electron is excited
+            tdipole[i] += factor * interlevel_dipoles[i](v, c);
+            }
+
           }
         }
-        dipols.push_back(tdipole);     
+        
+        dipols.push_back(-sqrt2 *tdipole);     //- because electrons are negative
       }
       return dipols;
     }

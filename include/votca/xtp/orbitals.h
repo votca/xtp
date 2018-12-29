@@ -21,23 +21,17 @@
 #define VOTCA_XTP_ORBITALS_H
 
 #include <votca/xtp/eigen.h>
-
-#include <votca/xtp/qmatom.h>
-
 #include <votca/xtp/checkpoint.h>
 #include <votca/tools/globals.h>
 #include <votca/tools/property.h>
-#include <votca/tools/vec.h>
-
-#include <votca/xtp/logger.h>
 #include <boost/format.hpp>
 #include <votca/tools/constants.h>
+#include <votca/xtp/polarsegment.h>
+#include <votca/xtp/qmmolecule.h>
 #include <votca/xtp/qmstate.h>
-
 
 namespace votca {
     namespace xtp {
-       
 
         /**
          * \brief container for molecular orbitals
@@ -49,10 +43,7 @@ namespace votca {
         public:
 
             Orbitals();
-            ~Orbitals();
-
             
-             // functions for analyzing fragment charges via Mulliken populations
             static Eigen::VectorXd LoewdinPopulation(const Eigen::MatrixXd& densitymatrix, const Eigen::MatrixXd& overlapmatrix, int frag);
 
             bool hasBasisSetSize() const{
@@ -175,17 +166,28 @@ namespace votca {
             // determine (pseudo-)degeneracy of a DFT molecular orbital
             std::vector<int> CheckDegeneracy(int level, double energy_difference)const;
 
-            // access to QM atoms
-            bool hasQMAtoms() {
+            bool hasQMAtoms() const{
                 return ( _atoms.size() > 0) ? true : false;
             }
 
-            const std::vector< QMAtom* > &QMAtoms() const {
+            const QMMolecule &QMAtoms() const {
                 return _atoms;
             }
 
-            std::vector< QMAtom* > &QMAtoms() {
+            QMMolecule &QMAtoms() {
                 return _atoms;
+            }
+
+             bool hasMultipoles() const{
+                return ( _multipoles.size() > 0) ? true : false;
+            }
+
+            PolarSegment& Multipoles(){
+                return _multipoles;
+            }
+
+            const PolarSegment& Multipoles()const{
+                return _multipoles;
             }
 
             // access to classical self-energy in MM environment, new, tested
@@ -262,7 +264,6 @@ namespace votca {
                 return _auxbasis;
             }
 
-
             // access to list of indices used in GWA
 
             bool hasGWAindices() const{
@@ -308,18 +309,18 @@ namespace votca {
 
             // access to list of indices used in BSE
 
-            void setBSEtype(std::string bsetype){_bsetype=bsetype;}
-            const std::string& getBSEtype() const{return _bsetype;}
+            void setTDAApprox(bool usedTDA){_useTDA=usedTDA;}
+            bool getTDAApprox() const{return _useTDA;}
 
 
             bool hasBSEindices() const{
                 return ( _bse_cmax > 0) ? true : false;
             }
 
-            void setBSEindices(int vmin, int vmax, int cmin, int cmax, int nmax) {
+            void setBSEindices(int vmin, int cmax, int nmax){
                 _bse_vmin = vmin;
-                _bse_vmax = vmax;
-                _bse_cmin = cmin;
+                _bse_vmax = this->getHomo();
+                _bse_cmin = this->getLumo();
                 _bse_cmax = cmax;
                 _bse_nmax = nmax;
                 _bse_vtotal = _bse_vmax - _bse_vmin + 1;
@@ -476,15 +477,18 @@ namespace votca {
                 return (_transition_dipoles.size() > 0) ? true : false;
             }
 
-            const std::vector< tools::vec > &TransitionDipoles() const {
+            const std::vector< Eigen::Vector3d > &TransitionDipoles() const {
                 return _transition_dipoles;
             }
 
-            std::vector< tools::vec > &TransitionDipoles() {
+            std::vector< Eigen::Vector3d > &TransitionDipoles() {
                 return _transition_dipoles;
             }
 
             std::vector<double> Oscillatorstrengths()const;
+            
+            Eigen::Vector3d CalcElDipole(const QMState& state)const;
+            
         
             //Calculates full electron density for state or transition density, if you want to calculate only the density contribution of hole or electron use DensityMatrixExcitedState
             Eigen::MatrixXd DensityMatrixFull(const QMState& state)const;
@@ -565,31 +569,11 @@ namespace votca {
             const std::vector< Eigen::VectorXd >& getFragment_H_localisation_triplet()const{
                 return _popH_t;
             }
+            void OrderMOsbyEnergy();
 
             void PrepareDimerGuess(const Orbitals& orbitalsA,const Orbitals& orbitalsB);
             
             Eigen::VectorXd FragmentNuclearCharges(int frag)const;
-
-            // returns indeces of a re-sorted vector of energies from lowest to highest
-            std::vector<int> SortEnergies();
-
-            QMAtom* AddAtom(int AtomID,std::string type, tools::vec pos) {
-                QMAtom* pAtom = new QMAtom(AtomID,type, pos);
-                _atoms.push_back(pAtom);
-                return pAtom;
-            }
-
-            QMAtom* AddAtom(QMAtom atom) {
-                QMAtom* pAtom = new QMAtom(atom);
-                _atoms.push_back(pAtom);
-                return pAtom;
-            }
-            
-            void OrderMOsbyEnergy();
-
-            void WriteXYZ (const std::string& filename, std::string header = "GENERATED BY VOTCA::XTP")const;
-
-            void LoadFromXYZ(const std::string& filename);
 
             void WriteToCpt (const std::string& filename)const;
             
@@ -597,32 +581,30 @@ namespace votca {
             
         private:
 
-            struct Index2MO{
-                std::vector<int> I2v;
-                std::vector<int> I2c;
-            };
-            
-            
-            Index2MO BSEIndex2MOIndex()const;
+            // returns indeces of a re-sorted vector of energies from lowest to highest
+            std::vector<int> SortEnergies();
 
+            
 
             void WriteToCpt(CheckpointFile f)const;
-            void WriteToCpt(CptLoc parent)const;
-            
+            void WriteToCpt(CheckpointWriter w)const;
+
             void ReadFromCpt(CheckpointFile f);
-            void ReadFromCpt(CptLoc parent);
-            
-            
+            void ReadFromCpt(CheckpointReader parent);
+
+
             Eigen::MatrixXd TransitionDensityMatrix(const QMState& state)const;
             std::vector<Eigen::MatrixXd > DensityMatrixExcitedState_R(const QMState& state)const;
             std::vector<Eigen::MatrixXd >DensityMatrixExcitedState_AR(const QMState& state)const;
+            Eigen::MatrixXd CalcAuxMat_cc(const Eigen::VectorXd& coeffs)const;
+            Eigen::MatrixXd CalcAuxMat_vv(const Eigen::VectorXd& coeffs)const;
 
-            int _basis_set_size;
-            int _occupied_levels;
-            int _unoccupied_levels;
-            int _number_of_electrons;
-            std::string _ECP;
-            std::string _bsetype;
+            int _basis_set_size=0;
+            int _occupied_levels=0;
+            int _unoccupied_levels=0;
+            int _number_of_electrons=0;
+            std::string _ECP="";
+            bool _useTDA=false;
 
 
             Eigen::VectorXd _mo_energies;
@@ -631,29 +613,31 @@ namespace votca {
             Eigen::MatrixXd _overlap;
             Eigen::MatrixXd _vxc;
 
-            std::vector< QMAtom* > _atoms;
+            QMMolecule _atoms;
 
-            double _qm_energy;
-            double _self_energy;
+            PolarSegment _multipoles;
+
+            double _qm_energy=0;
+            double _self_energy=0;
 
             // new variables for GW-BSE storage
-            int _rpamin;
-            int _rpamax;
+            int _rpamin=0;
+            int _rpamax=0;
 
-             int _qpmin;
-             int _qpmax;
-             int _qptotal;
+             int _qpmin=0;
+             int _qpmax=0;
+             int _qptotal=0;
 
-             int _bse_vmin;
-             int _bse_vmax;
-             int _bse_cmin;
-             int _bse_cmax;
-             int _bse_size;
-             int _bse_vtotal;
-             int _bse_ctotal;
-            int _bse_nmax;
+             int _bse_vmin=0;
+             int _bse_vmax=0;
+             int _bse_cmin=0;
+             int _bse_cmax=0;
+             int _bse_size=0;
+             int _bse_vtotal=0;
+             int _bse_ctotal=0;
+            int _bse_nmax=0;
 
-            double _ScaHFX;
+            double _ScaHFX=0;
 
             std::string _dftbasis;
             std::string _auxbasis;
@@ -674,7 +658,7 @@ namespace votca {
             MatrixXfd _BSE_singlet_coefficients;
             MatrixXfd _BSE_singlet_coefficients_AR;
 
-            std::vector< tools::vec > _transition_dipoles;
+            std::vector< Eigen::Vector3d > _transition_dipoles;
             VectorXfd _BSE_triplet_energies;
             MatrixXfd _BSE_triplet_coefficients;
 

@@ -20,18 +20,12 @@
 #ifndef VOTCA_XTP_QMMINTERFACE_H
 #define	VOTCA_XTP_QMMINTERFACE_H
 
-#include <votca/tools/elements.h>
-
 namespace votca { 
   
   namespace xtp {
 
-    class QMAtom;
-    class APolarSite;
-    class PolarSeg;
     class Segment;
-    class PolarTop;
-    class Orbitals;
+    class QMMolecule;
 
 // ========================================================================== //
 // QM-MM INTERFACE CLASS - CONVERTS BETWEEN QMATOMS <> POLAR OBJECTS          //
@@ -40,23 +34,11 @@ namespace votca {
 class QMInterface
 {
 public:
-    
-    // CONVERSION QM -> MM
-    xtp::APolarSite *Convert(QMAtom *atm, int id = -1);
-    
-    xtp::PolarSeg Convert(std::vector<QMAtom*> &atms);
-    
-    std::vector<QMAtom *> Convert( std::vector<xtp::Segment* > segments);
-    
-    void GenerateQMAtomsFromPolarSegs(xtp::PolarTop *ptop, Orbitals &orb);
-    std::vector<std::shared_ptr<xtp::PolarSeg> > GenerateMultipoleList(xtp::PolarTop *ptop  );
-    void Orbitals2Segment(xtp::Segment& segment, const Orbitals& orbitals);
+
+    QMMolecule Convert( std::vector<Segment* > segments);
      
 private:
-    void addMMAtomtoOrb(xtp::APolarSite * aps,Orbitals &orb, bool with_polarisation);
-    // Allocates polarizabilities in A**3 to element types
-    tools::Elements _element;
-   
+
 };
 
 

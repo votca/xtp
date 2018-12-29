@@ -43,7 +43,7 @@ namespace CSG = votca::csg;
 namespace XTP = votca::xtp;
 namespace TOOLS = votca::tools;
 
-class XtpMap : public Application
+class XtpMap : public TOOLS::Application
 {
 
 public:
@@ -62,11 +62,11 @@ public:
 
 
 protected:
-    Property               _options;
+    TOOLS::Property               _options;
     CSG::Topology          _mdtopol;
     XTP::Topology          _qmtopol;
 
-    Md2QmEngine            _md2qm;
+    XTP::Md2QmEngine            _md2qm;
     XTP::StateSaverSQLite  _statsav;
     string                 _outdb;
 
@@ -76,7 +76,7 @@ namespace propt = boost::program_options;
 
 void XtpMap::Initialize() {
 
-    Application::Initialize();
+    TOOLS::Application::Initialize();
     
     CSG::TrajectoryWriter::RegisterPlugins();
     CSG::TrajectoryReader::RegisterPlugins();
@@ -137,7 +137,7 @@ void XtpMap::Run() {
   
     std::string name = ProgramName();
     if (VersionString() != "") name = name + ", version " + VersionString();
-    votca::xtp::HelpTextHeader(name);
+    XTP::HelpTextHeader(name);
 
    
     // ++++++++++++++++++++++++++++ //
@@ -277,7 +277,7 @@ void XtpMap::Save(string mode) {
 void XtpMap::ShowHelpText(std::ostream &out) {
     string name = ProgramName();
     if (VersionString() != "") name = name + ", version " + VersionString();
-    votca::xtp::HelpTextHeader(name);
+    XTP::HelpTextHeader(name);
     HelpText(out);
     //out << "\n\n" << OptionsDesc() << endl;
     out << "\n\n" << VisibleOptions() << endl;

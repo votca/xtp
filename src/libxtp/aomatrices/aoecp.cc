@@ -25,7 +25,7 @@ namespace votca { namespace xtp {
 
 
 
-    void AOECP::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix, const AOShell* shell_row, const AOShell* shell_col) {
+    void AOECP::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix, const AOShell& shell_row, const AOShell& shell_col) {
 
         /*
          *
@@ -39,41 +39,36 @@ namespace votca { namespace xtp {
          *
          */
     
-            int lmax_row = shell_row->getLmax();
+            int lmax_row = shell_row.getLmax();
             std::vector<double> contractions_row_full((lmax_row + 1)*(lmax_row + 1));
 
-            int lmax_col = shell_col->getLmax();
+            int lmax_col = shell_col.getLmax();
             std::vector<double> contractions_col_full((lmax_col + 1)*(lmax_col + 1));
 
 
 
-            const tools::vec& pos_row = shell_row->getPos();
-            const tools::vec& pos_col = shell_col->getPos();
-            const tools::vec diff = pos_row - pos_col;
+            const Eigen::Vector3d& pos_row = shell_row.getPos();
+            const Eigen::Vector3d& pos_col = shell_col.getPos();
+            const Eigen::Vector3d diff = pos_row - pos_col;
             // initialize some helper
-            double distsq = diff*diff;
+            double distsq = diff.squaredNorm();
 
+            for ( const auto& gaussian_row:shell_row){
 
-            // iterate over Gaussians in this shell_row
-            for (AOShell::GaussianIterator itr = shell_row->begin(); itr != shell_row->end(); ++itr) {
-                // iterate over Gaussians in this shell_col
-                // get decay constant
-                const double decay_row = itr->getDecay();
+                const double decay_row =gaussian_row.getDecay();
 
-                //if ( decay_row > 0.08 ) continue;
-
-                const std::vector<double>& _contractions_row = itr->getContraction();
+                const std::vector<double>& contractions_row = gaussian_row.getContraction();
                 // shitty magic
                 for (int L = 0; L <= lmax_row; L++) {
                     for (int M = L*L; M < (L + 1)*(L + 1); M++) {
-                        contractions_row_full[M] = _contractions_row[L];
+                        contractions_row_full[M] = contractions_row[L];
                     }
                 }
 
 
-                for (AOShell::GaussianIterator itc = shell_col->begin(); itc != shell_col->end(); ++itc) {
+                for (const auto& gaussian_col:shell_col) {
                     //get decay constant
-                    const double decay_col = itc->getDecay();
+                    const double decay_col = gaussian_col.getDecay();
                     const double fak  = 0.5 / (decay_row + decay_col);
                     const double fak2 = 2.0 * fak;
                 
@@ -86,10 +81,10 @@ namespace votca { namespace xtp {
                         continue;
                     }
 
-                    const std::vector<double>& _contractions_col = itc->getContraction();
+                    const std::vector<double>& contractions_col = gaussian_col.getContraction();
                     for (int L = 0; L <= lmax_col; L++) {
                         for (int M = L * L; M < (L + 1)*(L + 1); M++) {
-                            contractions_col_full[M] = _contractions_col[L];
+                            contractions_col_full[M] = contractions_col[L];
                         }
                     }
                     // for each atom and its pseudopotential, get a matrix
@@ -99,54 +94,52 @@ namespace votca { namespace xtp {
                     Eigen::Matrix<double,4,5> decaymatrix = Eigen::Matrix<double,4,5>::Zero();
                     Eigen::Matrix<double,4,5> coefmatrix  = Eigen::Matrix<double,4,5>::Zero();
 
-                    AOBasis::AOShellIterator final_iter = _ecp->end();
-                    --final_iter;
-                    tools::vec ecp_eval_pos = tools::vec(0.0);
+                    Eigen::Vector3d ecp_eval_pos = Eigen::Vector3d::Zero();
                     int lmax_ecp = 0;
-                    for (AOBasis::AOShellIterator ecpit = _ecp->begin(); ecpit != _ecp->end(); ++ecpit) {
+                    for (const AOShell& shell_ecp:*_ecp) {
 
-                        const AOShell* shell_ecp = *ecpit;
-                        const tools::vec& ecp_pos = shell_ecp->getPos();
+                        const Eigen::Vector3d& ecp_pos = shell_ecp.getPos();
 
-                        int this_atom = shell_ecp->getAtomIndex();
+                        int this_atom = shell_ecp.getAtomIndex();
 
-                        const int ecp_l = shell_ecp->getLmax(); // as ECP shells are never combined Lmax=Lmin=l
+                        const int ecp_l = shell_ecp.getLmax(); // as ECP shells are never combined Lmax=Lmin=l
 
                         // only do the non-local parts
-                        if (shell_ecp->isNonLocal()) {
-                            int _lmax_ecp_old = lmax_ecp;
-                            lmax_ecp = shell_ecp->getNumFunc() - 1;
+                        if (shell_ecp.isNonLocal()) {
+                            int lmax_ecp_old = lmax_ecp;
+                            lmax_ecp = shell_ecp.getNumFunc() - 1;
                             int i_fit = -1;
-                            for (AOShell::GaussianIterator itecp = shell_ecp->begin(); itecp != shell_ecp->end(); ++itecp) {
+                            for (const auto& gaussian_ecp:shell_ecp) {
                                 i_fit++;
 
                                 // get info for this angular momentum shell
-                                const int _power_ecp = itecp->getPower();
-                                const double _decay_ecp = itecp->getDecay();
-                                const double _contraction_ecp = itecp->getContraction()[0];
+                                const int power_ecp = gaussian_ecp.getPower();
+                                const double decay_ecp = gaussian_ecp.getDecay();
+                                const double contraction_ecp = gaussian_ecp.getContraction()[0];
 
                                 // collect atom ECP
                                 if (this_atom == atomidx) {
                                     ecp_eval_pos = ecp_pos;
-                                    powermatrix(i_fit, ecp_l ) = _power_ecp;
-                                    decaymatrix(i_fit, ecp_l ) = _decay_ecp;
-                                    coefmatrix(i_fit, ecp_l )  = _contraction_ecp;
+                                    powermatrix(i_fit, ecp_l ) = power_ecp;
+                                    decaymatrix(i_fit, ecp_l ) = decay_ecp;
+                                    coefmatrix(i_fit, ecp_l )  = contraction_ecp;
                                 }
                                 
-                                if ((this_atom != atomidx ) || ( ecpit == final_iter)) {
+                                if ((this_atom != atomidx ) || ( &shell_ecp == &(_ecp->back()))) {
                                     if (this_atom != atomidx) {
-                                       lmax_ecp = _lmax_ecp_old;
+                                       lmax_ecp = lmax_ecp_old;
                                     }
 
                                     // evaluate collected data, returns a (10x10) matrix of already normalized matrix elements
-                                    Eigen::MatrixXd VNL_ECP = calcVNLmatrix(lmax_ecp, ecp_eval_pos, *itr, *itc,  powermatrix ,decaymatrix, coefmatrix);
+                                    Eigen::MatrixXd VNL_ECP = calcVNLmatrix(lmax_ecp, ecp_eval_pos,gaussian_row, gaussian_col,  powermatrix ,decaymatrix, coefmatrix);
 
                                     // consider contractions
                                     // cut out block that is needed. sum
-                                    //                                   cout << "matrix.size1,2()   " << matrix.size1() << "    " << matrix.size2() << endl;
+
                                     for ( unsigned i = 0; i < matrix.rows(); i++ ) {
                                         for (unsigned j = 0; j < matrix.cols(); j++) {
-                                            matrix(i,j) += VNL_ECP(i+shell_row->getOffset(),j+shell_col->getOffset()) * contractions_row_full[i+shell_row->getOffset()]* contractions_col_full[j+shell_col->getOffset()];
+                                            matrix(i,j) += VNL_ECP(i+shell_row.getOffset(),
+                                                                   j+shell_col.getOffset()) * contractions_row_full[i+shell_row.getOffset()]* contractions_col_full[j+shell_col.getOffset()];
                                         }
                                     }
 
@@ -157,10 +150,9 @@ namespace votca { namespace xtp {
                                     coefmatrix  = Eigen::Matrix<double,4,5>::Zero();
                                     atomidx++;
                                     i_fit = 0;
-                                    //cout << "setting new matrix " << i_fit << " l " << _ecp_l << " alpha  " << _decay_ecp <<  " pref " << _contraction_ecp << endl;
-                                    powermatrix(i_fit, ecp_l ) = _power_ecp;
-                                    decaymatrix(i_fit, ecp_l ) = _decay_ecp;
-                                    coefmatrix(i_fit, ecp_l )  = _contraction_ecp;
+                                    powermatrix(i_fit, ecp_l ) = power_ecp;
+                                    decaymatrix(i_fit, ecp_l ) = decay_ecp;
+                                    coefmatrix(i_fit, ecp_l )  = contraction_ecp;
                                 } // evaluate if new atom is found
 
                             } // all Gaussians in ecp_shell
@@ -174,7 +166,7 @@ namespace votca { namespace xtp {
             return;
         }
 
-        Eigen::MatrixXd AOECP::calcVNLmatrix(int lmax_ecp, const tools::vec& posC, 
+        Eigen::MatrixXd AOECP::calcVNLmatrix(int lmax_ecp, const Eigen::Vector3d& posC,
                 const AOGaussianPrimitive& g_row, const AOGaussianPrimitive& g_col,
                 const  Eigen::Matrix<int,4,5>& power_ecp, const Eigen::Matrix<double,4,5>& gamma_ecp,
                 const Eigen::Matrix<double,4,5>& pref_ecp) {
@@ -201,19 +193,19 @@ namespace votca { namespace xtp {
 
             double alpha = g_row.getDecay();
             double beta = g_col.getDecay();
-            const tools::vec& posA = g_row.getShell()->getPos();
-            const tools::vec& posB = g_col.getShell()->getPos();
-            int lmax_row = g_row.getShell()->getLmax();
-            int lmax_col = g_col.getShell()->getLmax();
+            const Eigen::Vector3d& posA = g_row.getShell().getPos();
+            const Eigen::Vector3d& posB = g_col.getShell().getPos();
+            int lmax_row = g_row.getShell().getLmax();
+            int lmax_col = g_col.getShell().getLmax();
             int lmin = std::min({lmax_row, lmax_col, lmax_ecp});
             int lmax = std::max({lmax_row, lmax_col, lmax_ecp});
             int nsph_row = (lmax_row + 1) * (lmax_row + 1);
             int nsph_col = (lmax_col + 1) * (lmax_col + 1);
 
-            tools::vec AVS = posA - posC;
-            tools::vec BVS = posB - posC;
-            double AVS2 = AVS * AVS;
-            double BVS2 = BVS * BVS;     
+            Eigen::Vector3d AVS = posA - posC;
+            Eigen::Vector3d BVS = posB - posC;
+            double AVS2 = AVS.squaredNorm();
+            double BVS2 = BVS.squaredNorm();
 
             int INULL = 0;
             if (AVS2 > 0.01) INULL = 2;
@@ -799,8 +791,7 @@ namespace votca { namespace xtp {
 
 
                 default:
-                    std::cerr << "Wrong ECP summation mode";
-                    exit(1);
+                    throw std::runtime_error("AOECP::Wrong ECP summation mode");
             } // switch
 
 
@@ -810,13 +801,9 @@ namespace votca { namespace xtp {
 
             for (int i = 0; i < nsph_row; i++) {
                 for (int j = 0; j < nsph_col; j++) {
-
                     matrix(i,j) = matrix(i,j) * GAUSS * NormA(i) * NormB(j);
-
                 }
             }
-
-
             return matrix;
         }
 
@@ -883,7 +870,7 @@ namespace votca { namespace xtp {
             return Norms;
         }
 
-        void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const tools::vec& pos, tensor3d& BLC, tensor3d& C) {
+        void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos, tensor3d& BLC, tensor3d& C) {
 
            
             tensor3d::extent_gen extents;
@@ -918,9 +905,9 @@ namespace votca { namespace xtp {
                 }
             }
 
-            double BVS_X = pos.getX();
-            double BVS_Y = pos.getY(); 
-            double BVS_Z = pos.getZ();
+            double BVS_X = pos(0);
+            double BVS_Y = pos(1);
+            double BVS_Z = pos(2);
             double BVS_XX = BVS_X * BVS_X;
             double BVS_YY = BVS_Y * BVS_Y;
             double BVS_ZZ = BVS_Z * BVS_Z;

@@ -24,6 +24,7 @@
 #include <votca/xtp/ppm.h>
 #include <votca/xtp/threecenter.h>
 #include <votca/xtp/qmstate.h>
+#include <votca/xtp/logger.h>
 
 namespace votca {
 namespace xtp {
@@ -38,6 +39,9 @@ struct Interaction {
 };
 
 struct Population {
+
+public:
+    
     std::vector<Eigen::VectorXd> popH;
     std::vector<Eigen::VectorXd> popE;
     std::vector<Eigen::VectorXd> Crgs;
@@ -46,7 +50,7 @@ struct Population {
     
  public:
  
-  BSE(Orbitals& orbitals,xtp::Logger *log,double min_print_weight):
+  BSE(Orbitals& orbitals,Logger *log,double min_print_weight):
         _log(log),
         _orbitals(orbitals),
         _eh_s(orbitals.eh_s()),
@@ -74,13 +78,6 @@ struct Population {
                 _bse_vtotal = _bse_vmax - _bse_vmin + 1;
                 _bse_ctotal = _bse_cmax - _bse_cmin + 1;
                 _bse_size = _bse_vtotal * _bse_ctotal;
-                // indexing info BSE vector index to occupied/virtual orbital
-                for (int v = 0; v < _bse_vtotal; v++) {
-                    for (int c = 0; c < _bse_ctotal; c++) {
-                        _index2v.push_back(_bse_vmin + v);
-                        _index2c.push_back(_bse_cmin + c);
-                    }
-                }
                 return;
             }
 
@@ -112,7 +109,7 @@ struct Population {
  private:
  
       
-xtp::Logger *_log;
+Logger *_log;
   int  _homo;
   int  _bse_vmin;
   int  _bse_vmax;
@@ -153,9 +150,6 @@ xtp::Logger *_log;
    void Add_Hd(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H);
    template <typename T>
   void Add_Hd2(Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& H, double factor);
-  
-  std::vector<int> _index2v;
-  std::vector<int> _index2c;
 
  void printFragInfo(const Population& pop, int i);
  void printWeights(int i_bse, double weight);
@@ -167,7 +161,7 @@ xtp::Logger *_log;
 
   std::vector<Eigen::MatrixXd > CalcFreeTransition_Dipoles(const AOBasis& dftbasis);
 
-  std::vector<tools::vec > CalcCoupledTransition_Dipoles(const AOBasis& dftbasis);
+  std::vector<Eigen::Vector3d > CalcCoupledTransition_Dipoles(const AOBasis& dftbasis);
 };
 }
 }

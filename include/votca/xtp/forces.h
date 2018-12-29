@@ -36,13 +36,13 @@ namespace votca {
         class Forces {
         public:
 
-            Forces(GWBSEEngine& gwbse_engine,const Statefilter& filter, Orbitals& orbitals)
-            : _gwbse_engine(gwbse_engine),_filter(filter),_orbitals(orbitals), _remove_total_force(false){};
+            Forces(GWBSEEngine& gwbse_engine,const Statefilter& filter)
+            : _gwbse_engine(gwbse_engine),_filter(filter),_remove_total_force(false){};
 
             void Initialize(tools::Property &options);
-            void Calculate(double energy);
+            void Calculate(const Orbitals& orbitals);
 
-            void setLog(xtp::Logger* pLog) {
+            void setLog(Logger* pLog) {
                 _pLog = pLog;
             }
 
@@ -53,24 +53,19 @@ namespace votca {
 
         private:
             
-            Eigen::Vector3d NumForceForward(double energy, int atom_index);
-            Eigen::Vector3d NumForceCentral(double energy, int atom_index);
+            Eigen::Vector3d NumForceForward(Orbitals orbitals,int atom_index);
+            Eigen::Vector3d NumForceCentral(Orbitals orbitals,int atom_index);
             void RemoveTotalForce();
 
             double _displacement;
             std::string _force_method;
-            
-            bool _noisy_output;
-
-            unsigned _natoms;
 
             GWBSEEngine& _gwbse_engine;
             const Statefilter& _filter;
-            Orbitals& _orbitals;
             bool _remove_total_force;
 
             Eigen::MatrixX3d _forces;
-            xtp::Logger *_pLog;
+            Logger *_pLog;
         };
 
     }

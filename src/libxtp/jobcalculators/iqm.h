@@ -42,35 +42,35 @@ namespace votca { namespace xtp {
 * Callname: iqm
 */
 
-class IQM : public xtp::ParallelXJobCalc< vector<xtp::Job*>, xtp::Job*, xtp::Job::JobResult >
+class IQM : public ParallelXJobCalc< std::vector<Job*>, Job*, Job::JobResult >
 {
 public:
    
     void    Initialize(tools::Property *options ); 
-    string  Identify() { return "iqm"; }   
-    xtp::Job::JobResult EvalJob(xtp::Topology *top, xtp::Job *job, xtp::QMThread *Thread);  
-    void WriteJobFile(xtp::Topology *top);
-    void ReadJobFile( xtp::Topology *top );
+    std::string  Identify() { return "iqm"; }   
+    Job::JobResult EvalJob(Topology *top, Job *job, QMThread *Thread);  
+    void WriteJobFile(Topology *top);
+    void ReadJobFile( Topology *top );
 
 private:
     
     double GetBSECouplingFromProp(tools::Property& bseprop,const QMState& stateA,const QMState& stateB);
     double GetDFTCouplingFromProp(tools::Property& dftprop, int stateA, int stateB);
-    void SetJobToFailed(xtp::Job::JobResult& jres, xtp::Logger* pLog, const string& errormessage);
-    void WriteLoggerToFile(const string& logfile, xtp::Logger& logger);
-    void addLinkers(std::vector< xtp::Segment* > &segments, xtp::Topology *top);
+    void SetJobToFailed(Job::JobResult& jres, Logger* pLog, const std::string& errormessage);
+    void WriteLoggerToFile(const std::string& logfile, Logger& logger);
+    void addLinkers(std::vector< Segment* > &segments, Topology *top);
     bool isLinker(const std::string& name);
-    void WriteCoordinatesToOrbitalsPBC(xtp::QMPair& pair, Orbitals& orbitals);
-    void ParseOptionsXML( tools::Property &opt);    
-    std::map<std::string, QMState> FillParseMaps(const string& Mapstring);
+    void WriteCoordinatesToOrbitalsPBC(QMPair& pair, Orbitals& orbitals);
+    void ParseOptionsXML(tools::Property &opt);    
+    std::map<std::string, QMState> FillParseMaps(const std::string& Mapstring);
     
     QMState GetElementFromMap(const std::map<std::string, QMState>& elementmap,const std::string& elementname )const;
     
-    string              _package;
-    Property            _dftpackage_options; 
-    Property            _gwbse_options; 
-    Property            _bsecoupling_options; 
-    Property            _dftcoupling_options; 
+    std::string              _package;
+    tools::Property            _dftpackage_options; 
+    tools::Property            _gwbse_options; 
+    tools::Property            _bsecoupling_options; 
+    tools::Property            _dftcoupling_options; 
 
     // what to do
     bool                _do_dft_input;

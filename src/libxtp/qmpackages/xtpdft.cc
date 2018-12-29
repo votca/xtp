@@ -18,17 +18,12 @@
  */
 
 #include "xtpdft.h"
-#include <votca/xtp/segment.h>
-#include <votca/xtp/qminterface.h>
-
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <votca/tools/constants.h>
 #include <stdio.h>
 #include <iomanip>
-#include <sys/stat.h>
-#include <vector>
 
 
 
@@ -38,7 +33,7 @@ namespace votca {
 
         void XTPDFT::Initialize(tools::Property &options) {
             _xtpdft_options=options;
-            _log_file_name="system.orb";
+            _log_file_name="system_dft.orb";
             std::string key = "package";
             std::string packagename = _xtpdft_options.get(key + ".name").as<std::string> ();
 
@@ -64,10 +59,8 @@ namespace votca {
 
         }
 
-        /**
-         * Dummy for use of XTPDFT as QMPackage, needs no input file
-         */
-        bool XTPDFT::WriteInputFile(Orbitals& orbitals) {
+        bool XTPDFT::WriteInputFile(const Orbitals& orbitals){
+            _orbitals=orbitals;
             return true;
         }
 
@@ -75,25 +68,25 @@ namespace votca {
         /**
          * Run calls DFTENGINE
          */
-        bool XTPDFT::Run( Orbitals& orbitals ) {
-          DFTEngine xtpdft;
+        bool XTPDFT::Run() {
+          DFTEngine xtpdft=DFTEngine(_orbitals);
           xtpdft.Initialize(_xtpdft_options);
           xtpdft.setLogger(_pLog);
            
           if(_write_charges){
             xtpdft.setExternalcharges(_PolarSegments);
           }
-          xtpdft.Prepare( orbitals );
-          xtpdft.Evaluate( orbitals );
+          xtpdft.Prepare();
+          bool success=xtpdft.Evaluate();
           _basisset_name = xtpdft.getDFTBasisName();
-          orbitals.WriteToCpt(_log_file_name);
-          return true;
-
+          std::string file_name = _run_dir + "/" + _log_file_name;
+          _orbitals.WriteToCpt(file_name);
+          return success;
         }
 
     void XTPDFT::CleanUp() {
       if (_cleanup.size() != 0) {
-        XTP_LOG(xtp::logDEBUG, *_pLog) << "Removing " << _cleanup << " files" << flush;
+        XTP_LOG(logDEBUG, *_pLog) << "Removing " << _cleanup << " files" << flush;
         tools::Tokenizer tok_cleanup(_cleanup, ", ");
         std::vector <std::string> cleanup_info;
         tok_cleanup.ToVector(cleanup_info);
@@ -120,9 +113,11 @@ namespace votca {
          */
         bool XTPDFT::ParseLogFile(Orbitals & orbitals) {
           try{
-          orbitals.ReadFromCpt(_log_file_name);
+        std::string file_name = _run_dir + "/" + _log_file_name;
+          orbitals.ReadFromCpt(file_name);
+          XTP_LOG(logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.8f ") % orbitals.getQMEnergy()).str() << flush;
           }catch(std::runtime_error& error){
-            XTP_LOG(xtp::logDEBUG, *_pLog) << "Reading"<<_log_file_name<<" failed" << flush;
+            XTP_LOG(logDEBUG, *_pLog) << "Reading"<<_log_file_name<<" failed" << flush;
             return false;
           }
             return true;

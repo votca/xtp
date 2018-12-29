@@ -21,15 +21,11 @@
 #define VOTCA_XTP_ESP2MULTIPOLE_H
 
 #include <stdio.h>
-#include <votca/xtp/espfit.h>
-#include <votca/xtp/mulliken.h>
-#include <votca/xtp/lowdin.h>
-#include <votca/xtp/nbo.h>
 #include <votca/xtp/logger.h>
 #include <boost/filesystem.hpp>
 #include <votca/tools/property.h>
 #include <votca/xtp/orbitals.h>
-
+#include <votca/xtp/espfit.h>
 namespace votca { namespace xtp {
 
     
@@ -37,12 +33,11 @@ class Esp2multipole
 {
 public:
 
-    Esp2multipole (xtp::Logger* log) {
+    Esp2multipole (Logger* log) {
         _log=log; 
         _pairconstraint.resize(0);
         _regionconstraint.resize(0);
         }
-   ~Esp2multipole () {};
 
     std::string Identify() { return "esp2multipole"; }
 
@@ -50,10 +45,14 @@ public:
     
    
     void Extractingcharges( Orbitals& orbitals );
-    void WritetoFile(std::string output_file);
+ 
+
+    void WritetoFile(std::string output_file,const Orbitals& orbitals);
     std::string GetStateString()const{return _state.ToString();}
 
 private:
+    
+    void PrintDipoles(Orbitals& orbitals);
     
     QMState      _state;  
     int         _openmp_threads;
@@ -65,11 +64,10 @@ private:
     bool        _use_CHELPG;
     bool        _do_svd;
     double      _conditionnumber;
-    std::vector< QMAtom* > _Atomlist;
     
-    xtp::Logger*      _log;
+    Logger*      _log;
     std::vector< std::pair<int,int> > _pairconstraint; //  pairconstraint[i] is all the atomindices which have the same charge     
-    std::vector< Espfit::region > _regionconstraint; 
+    std::vector< Espfit::ConstraintRegion > _regionconstraint;
     
 
 };

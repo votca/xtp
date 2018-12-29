@@ -30,10 +30,7 @@
 
 namespace votca { namespace xtp {
 /**
-    \brief information about an element
- 
-    The Atom class stores atom id, name, type, mass, charge, residue number
-    
+    \brief provides interface to external GDMA code
 */
 class GDMA
 {
@@ -53,7 +50,7 @@ public:
    void SetRadius( double radius ) { _radius = radius;};
    void SetSwitch( double sw ) { _switch = sw; };
    
-   void setLog( xtp::Logger* pLog ) { _log = pLog; };
+   void setLog( Logger* pLog ) { _log = pLog; };
    std::vector< std::vector<double> > &GetMultipoles() { return _multipoles; };
    
    
@@ -71,7 +68,7 @@ private:
     double  _radius; 
     double  _switch; 
     std::string  _outFile; 
-    xtp::Logger* _log;
+    Logger* _log;
     
  
 };

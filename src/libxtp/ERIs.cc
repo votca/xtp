@@ -63,11 +63,12 @@ namespace votca {
           #pragma omp parallel for
           for (unsigned thread = 0; thread < nthreads; ++thread) {
             Symmetric_Matrix dmat_sym = Symmetric_Matrix(DMAT);
-            for (int _i = thread; _i < _threecenter.getSize(); _i += nthreads) {
-              const Symmetric_Matrix &threecenter = _threecenter.getDatamatrix(_i);
+            for (int i = thread; i < _threecenter.size(); i += nthreads) {
+              const Symmetric_Matrix &threecenter = _threecenter.getDatamatrix(i);
               // Trace over prod::DMAT,I(l)=componentwise product over 
-              double factor = threecenter.TraceofProd(dmat_sym);
-              threecenter.AddtoEigenMatrix(ERIS_thread[thread], factor);
+              const double factor = threecenter.TraceofProd(dmat_sym);
+              Eigen::SelfAdjointView<Eigen::MatrixXd,Eigen::Upper> m=ERIS_thread[thread].selfadjointView<Eigen::Upper>();
+              threecenter.AddtoEigenUpperMatrix(m, factor);
             }
           }
 
@@ -75,6 +76,7 @@ namespace votca {
           for (const auto& thread : ERIS_thread) {
             _ERIs += thread;
           }
+          _ERIs+=_ERIs.triangularView<Eigen::StrictlyUpper>().transpose();
 
           CalculateEnergy(DMAT);
           return;
@@ -97,9 +99,9 @@ namespace votca {
           #pragma omp parallel for
           for (int thread = 0; thread < nthreads; ++thread) {
             Eigen::MatrixXd D=DMAT;
-            for(int i=thread;i<_threecenter.getSize();i+= nthreads){
-              const Eigen::MatrixXd threecenter = _threecenter.getDatamatrix(i).FullMatrix();
-              EXX_thread[thread].noalias()+=threecenter*D*threecenter;
+            for(int i=thread;i<_threecenter.size();i+= nthreads){
+              const Eigen::MatrixXd threecenter = _threecenter.getDatamatrix(i).UpperMatrix();
+              EXX_thread[thread].noalias()+=threecenter.selfadjointView<Eigen::Upper>()*D*threecenter.selfadjointView<Eigen::Upper>();
             }
           }
           _EXXs = Eigen::MatrixXd::Zero(DMAT.rows(), DMAT.cols());
@@ -128,8 +130,8 @@ namespace votca {
           #pragma omp parallel for
           for (int thread = 0; thread < nthreads; ++thread) {
             Eigen::MatrixXd occ=occMos;
-            for(int i=thread;i<_threecenter.getSize();i+= nthreads){
-              const Eigen::MatrixXd TCxMOs_T = occ.transpose()*_threecenter.getDatamatrix(i).FullMatrix();
+            for(int i=thread;i<_threecenter.size();i+= nthreads){
+              const Eigen::MatrixXd TCxMOs_T = occ.transpose()*_threecenter.getDatamatrix(i).UpperMatrix().selfadjointView<Eigen::Upper>();
               EXX_thread[thread].noalias()+=TCxMOs_T.transpose()*TCxMOs_T;
             }
           }
@@ -143,37 +145,37 @@ namespace votca {
         }
 
         
-        void ERIs::CalculateERIs_4c_small_molecule(const Eigen::MatrixXd  &DMAT) {
+        void ERIs::CalculateERIs_4c_small_molecule(const Eigen::MatrixXd &DMAT) {
 
           _ERIs = Eigen::MatrixXd::Zero(DMAT.rows(), DMAT.cols());
           
-          const Eigen::VectorXd& _4c_vector = _fourcenter.get_4c_vector();
+          const Eigen::VectorXd& fourc_vector = _fourcenter.get_4c_vector();
 
           int dftBasisSize = DMAT.rows();
           int vectorSize = (dftBasisSize*(dftBasisSize+1))/2;
           #pragma omp parallel for
-          for (int _i = 0; _i < dftBasisSize; _i++) {
-            int sum_i = (_i*(_i+1))/2;
-            for (int _j = _i; _j < dftBasisSize; _j++) {
-              int _index_ij = dftBasisSize * _i - sum_i + _j;
-              int _index_ij_kl_a = vectorSize * _index_ij - (_index_ij*(_index_ij+1))/2;
-              for (int _k = 0; _k < dftBasisSize; _k++) {
-                int sum_k = (_k*(_k+1))/2;
-                for (int _l = _k; _l < dftBasisSize; _l++) {
-                  int _index_kl = dftBasisSize * _k - sum_k + _l;
+          for (int i = 0; i < dftBasisSize; i++) {
+            int sum_i = (i*(i+1))/2;
+            for (int j = i; j < dftBasisSize; j++) {
+              int index_ij = dftBasisSize * i - sum_i + j;
+              int index_ij_kl_a = vectorSize * index_ij - (index_ij*(index_ij+1))/2;
+              for (int k = 0; k < dftBasisSize; k++) {
+                int sum_k = (k*(k+1))/2;
+                for (int l = k; l < dftBasisSize; l++) {
+                  int index_kl = dftBasisSize * k - sum_k + l;
 
-                  unsigned _index_ij_kl = _index_ij_kl_a + _index_kl;
-                  if (_index_ij > _index_kl) _index_ij_kl = vectorSize * _index_kl - (_index_kl*(_index_kl+1))/2 + _index_ij;
+                  int index_ij_kl = index_ij_kl_a + index_kl;
+                  if (index_ij > index_kl) index_ij_kl = vectorSize * index_kl - (index_kl*(index_kl+1))/2 + index_ij;
 
-                  if (_l == _k) {
-                    _ERIs(_i, _j) += DMAT(_k, _l) * _4c_vector(_index_ij_kl);
+                  if (l == k) {
+                    _ERIs(i, j) += DMAT(k, l) * fourc_vector(index_ij_kl);
                   } else {
-                    _ERIs(_i, _j) += 2. * DMAT(_k, _l) * _4c_vector(_index_ij_kl);
+                    _ERIs(i, j) += 2. * DMAT(k, l) * fourc_vector(index_ij_kl);
                   }
 
                 }
               }
-              _ERIs(_j, _i) = _ERIs(_i, _j);
+              _ERIs(j, i) = _ERIs(i, j);
             }
           }
 
@@ -195,33 +197,33 @@ namespace votca {
             EXX_thread.push_back(thread);
           }
 
-          const Eigen::VectorXd& _4c_vector = _fourcenter.get_4c_vector();
+          const Eigen::VectorXd& fourc_vector = _fourcenter.get_4c_vector();
 
           int dftBasisSize = DMAT.rows();
           int vectorSize = (dftBasisSize*(dftBasisSize+1))/2;
           #pragma omp parallel for
           for (int thread = 0; thread < nthreads; ++thread) {
-            for (int _i = thread; _i < dftBasisSize; _i+= nthreads) {
-              int sum_i = (_i*(_i+1))/2;
-              for (int _j = _i; _j < dftBasisSize; _j++) {
-                int _index_ij = DMAT.cols() * _i - sum_i + _j;
-                int _index_ij_kl_a = vectorSize * _index_ij - (_index_ij*(_index_ij+1))/2;
-                for (int _k = 0; _k < dftBasisSize; _k++) {
-                  int sum_k = (_k*(_k+1))/2;
-                  for (int _l = _k; _l < dftBasisSize; _l++) {
-                    int _index_kl = DMAT.cols() * _k - sum_k + _l;
+            for (int i = thread; i < dftBasisSize; i+= nthreads) {
+              int sum_i = (i*(i+1))/2;
+              for (int j = i; j < dftBasisSize; j++) {
+                int index_ij = DMAT.cols() * i - sum_i + j;
+                int index_ij_kl_a = vectorSize * index_ij - (index_ij*(index_ij+1))/2;
+                for (int k = 0; k < dftBasisSize; k++) {
+                  int sum_k = (k*(k+1))/2;
+                  for (int l = k; l < dftBasisSize; l++) {
+                    int index_kl = DMAT.cols() * k - sum_k + l;
 
-                    int _index_ij_kl = _index_ij_kl_a + _index_kl;
-                    if (_index_ij > _index_kl) _index_ij_kl = vectorSize * _index_kl - (_index_kl*(_index_kl+1))/2 + _index_ij;
+                    int _index_ij_kl = index_ij_kl_a + index_kl;
+                    if (index_ij > index_kl) _index_ij_kl = vectorSize * index_kl - (index_kl*(index_kl+1))/2 + index_ij;
                     double factorij=1;
-                    if(_i==_j){factorij=0.5;}
+                    if(i==j){factorij=0.5;}
                     double factorkl=1;
-                    if(_l==_k){factorkl=0.5;}
+                    if(l==k){factorkl=0.5;}
                     double factor=factorij*factorkl;
-                    EXX_thread[thread](_i, _l) +=factor*DMAT(_j, _k) * _4c_vector(_index_ij_kl);
-                    EXX_thread[thread](_j, _l) +=factor*DMAT(_i, _k) * _4c_vector(_index_ij_kl);
-                    EXX_thread[thread](_i, _k) +=factor*DMAT(_j, _l) * _4c_vector(_index_ij_kl);
-                    EXX_thread[thread](_j, _k) +=factor*DMAT(_i, _l) * _4c_vector(_index_ij_kl);
+                    EXX_thread[thread](i, l) +=factor*DMAT(j, k) * fourc_vector(_index_ij_kl);
+                    EXX_thread[thread](j, l) +=factor*DMAT(i, k) * fourc_vector(_index_ij_kl);
+                    EXX_thread[thread](i, k) +=factor*DMAT(j, l) * fourc_vector(_index_ij_kl);
+                    EXX_thread[thread](j, k) +=factor*DMAT(i, l) * fourc_vector(_index_ij_kl);
                   }
                 }
               }
@@ -254,16 +256,16 @@ namespace votca {
             
             #pragma omp for
             for (int iShell_3 = 0; iShell_3 < numShells; iShell_3++) {
-              const AOShell& shell_3 = *dftbasis.getShell(iShell_3);
+              const AOShell& shell_3 = dftbasis.getShell(iShell_3);
               int numFunc_3 = shell_3.getNumFunc();
               for (int iShell_4 = iShell_3; iShell_4 < numShells; iShell_4++) {
-                const AOShell& shell_4 = *dftbasis.getShell(iShell_4);
+                const AOShell& shell_4 = dftbasis.getShell(iShell_4);
                 int numFunc_4 = shell_4.getNumFunc();    
                 for (int iShell_1 = iShell_3; iShell_1 < numShells; iShell_1++) {
-                  const AOShell& shell_1 = *dftbasis.getShell(iShell_1);
+                  const AOShell& shell_1 = dftbasis.getShell(iShell_1);
                   int numFunc_1 = shell_1.getNumFunc();
                   for (int iShell_2 = iShell_1; iShell_2 < numShells; iShell_2++) {
-                    const AOShell& shell_2 = *dftbasis.getShell(iShell_2);
+                    const AOShell& shell_2 = dftbasis.getShell(iShell_2);
                     int numFunc_2 = shell_2.getNumFunc();
 
                     // Pre-screening
@@ -281,7 +283,7 @@ namespace votca {
                         }
                       }
                     }
-                    bool nonzero=_fourcenter.FillFourCenterRepBlock(block, &shell_1, &shell_2, &shell_3, &shell_4);
+                    bool nonzero=_fourcenter.FillFourCenterRepBlock(block, shell_1, shell_2, shell_3, shell_4);
                     
                     // If there are only zeros, we don't need to put anything in the ERIs matrix
                     if (!nonzero)
@@ -408,10 +410,10 @@ namespace votca {
           _diagonals = Eigen::MatrixXd::Zero(dftBasisSize,dftBasisSize);
           
           for (int iShell_1 = 0; iShell_1 < numShells; iShell_1++) {
-            const AOShell& shell_1 = *dftbasis.getShell(iShell_1);
+            const AOShell& shell_1 = dftbasis.getShell(iShell_1);
             int numFunc_1 = shell_1.getNumFunc();
             for (int iShell_2 = iShell_1; iShell_2 < numShells; iShell_2++) {
-              const AOShell& shell_2 = *dftbasis.getShell(iShell_2);
+              const AOShell& shell_2 = dftbasis.getShell(iShell_2);
               int numFunc_2 = shell_2.getNumFunc();
               
               // Get the current 4c block
@@ -425,7 +427,7 @@ namespace votca {
                   }
                 }
               }
-              bool nonzero=_fourcenter.FillFourCenterRepBlock(block, &shell_1, &shell_2, &shell_1, &shell_2);
+              bool nonzero=_fourcenter.FillFourCenterRepBlock(block, shell_1, shell_2, shell_1, shell_2);
               
               if (!nonzero) {
                 continue;

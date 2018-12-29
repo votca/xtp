@@ -22,54 +22,54 @@
 #include <votca/xtp/topology.h>
 #include <locale>
 
+#include "votca/xtp/qmstate.h"
+
 using namespace std;
 
 namespace votca {
     namespace xtp {
-        
-        KMCCalculator::KMCCalculator(){};
 
-    void KMCCalculator::LoadGraph(xtp::Topology *top) {
+    void KMCCalculator::LoadGraph(Topology *top) {
 
-        std::vector< xtp::Segment* >& seg = top->Segments();
+        std::vector< Segment* >& segs = top->Segments();
         
-        if(seg.size()<1){
+        if(segs.size()<1){
           throw std::runtime_error("Your sql file contains no segments!");
         }
-        
-        for (unsigned i = 0; i < seg.size(); i++) {
-            GNode *newNode = new GNode();
-            newNode->ReadfromSegment(seg[i], _carriertype);
-            if (tools::wildcmp(_injection_name.c_str(), seg[i]->getName().c_str())) {
-                newNode->injectable = true;
+        _nodes.reserve(segs.size());
+        for (Segment* seg:segs) {
+            GNode newNode;
+            newNode.ReadfromSegment(*seg, _carriertype.ToSegIndex());
+            if (tools::wildcmp(_injection_name.c_str(), seg->getName().c_str())) {
+                newNode.injectable = true;
             } else {
-                newNode->injectable = false;
+                newNode.injectable = false;
             }
             _nodes.push_back(newNode);
         }
 
-        xtp::QMNBList &nblist = top->NBList();
+        QMNBList &nblist = top->NBList();
         if(nblist.size()<1){
           throw std::runtime_error("Your sql file contains no pairs!");    
         }
         
         
-        for (xtp::QMNBList::iterator it = nblist.begin(); it < nblist.end(); ++it) {
-            _nodes[(*it)->Seg1()->getId()-1]->AddEventfromQmPair(*it, _carriertype);
-            _nodes[(*it)->Seg2()->getId()-1]->AddEventfromQmPair(*it, _carriertype);
+        for (const QMPair* pair:nblist) {
+            _nodes[pair->Seg1()->getId()-1].AddEventfromQmPair(*pair, _carriertype.ToSegIndex(), _nodes);
+            _nodes[pair->Seg2()->getId()-1].AddEventfromQmPair(*pair, _carriertype.ToSegIndex(),_nodes);
         }
         
         unsigned events=0;
         unsigned max=std::numeric_limits<unsigned>::min();
         unsigned min=std::numeric_limits<unsigned>::max();
-        minlength=std::numeric_limits<double>::max();
+        double minlength=std::numeric_limits<double>::max();
         double maxlength=0;
         for(const auto& node:_nodes){
             
-            unsigned size=node->events.size();
-            for( const auto& event:node->events){
+            unsigned size=node.events.size();
+            for( const auto& event:node.events){
                 if(event.decayevent){continue;}
-                double dist=abs(event.dr);
+                double dist=event.dr.norm();
                 if(dist>maxlength){
                     maxlength=dist;
                 } else if(dist<minlength){
@@ -79,7 +79,7 @@ namespace votca {
             
             events+=size;
             if(size==0){
-                cout<<"Node "<<node->id<<" has 0 jumps"<<endl;
+                cout<<"Node "<<node.id<<" has 0 jumps"<<endl;
             }
             else if(size<min){
                 min=size;
@@ -91,7 +91,7 @@ namespace votca {
         double avg=double(events)/double(_nodes.size());
         double deviation=0.0;
         for(const auto& node:_nodes){
-            double size=node->events.size();
+            double size=node.events.size();
             deviation+=(size-avg)*(size-avg);
         }
         deviation=std::sqrt(deviation/double(_nodes.size()));
@@ -99,53 +99,44 @@ namespace votca {
         cout<<"Nblist has "<<nblist.size()<<" pairs. Nodes contain "<<events<<" jump events"<<endl;
         cout<<"with avg="<<avg<<" std="<<deviation<<" max="<<max<<" min="<<min<<endl;
         cout<<"Minimum jumpdistance ="<<minlength<<" nm Maximum distance ="<<maxlength<<" nm"<<endl;
-        cout<<"Grouping into "<<lengthdistribution<<" boxes"<<endl;
-        lengthresolution=(1.00001*maxlength-minlength)/double(lengthdistribution);
-        cout<<"Resolution is "<<lengthresolution<<" nm"<<endl;   
-       
-        _jumplengthdistro=std::vector<long unsigned>(lengthdistribution,0);
-        _jumplengthdistro_weighted=std::vector<double>(lengthdistribution,0);
 
-       
         cout << "spatial density: " << _numberofcharges / top->BoxVolume() << " nm^-3" << endl;
 
-        for (unsigned int i = 0; i < _nodes.size(); i++) {
-            _nodes[i]->InitEscapeRate();
+        for (auto& node:_nodes) {
+            node.InitEscapeRate();
+            node.MakeHuffTree();
         }
-            
         return;
     }
     
 
-        void KMCCalculator::ResetForbiddenlist(std::vector<int> &forbiddenid) {
-            forbiddenid.clear();
+        void KMCCalculator::ResetForbiddenlist(std::vector<GNode *> &forbiddenlist) const{
+            forbiddenlist.clear();
             return;
         }
 
-        void KMCCalculator::AddtoForbiddenlist(int id, std::vector<int> &forbiddenid) {
-            forbiddenid.push_back(id);
+        void KMCCalculator::AddtoForbiddenlist(GNode& node, std::vector<GNode *> &forbiddenlist) const{
+            forbiddenlist.push_back(&node);
             return;
         }
 
-        bool KMCCalculator::CheckForbidden(int id,const std::vector<int> &forbiddenlist) {
-            // cout << "forbidden list has " << forbiddenlist.size() << " entries" << endl;
+        bool KMCCalculator::CheckForbidden(const GNode& node,const std::vector<GNode *> &forbiddenlist) const{
             bool forbidden = false;
-            for (unsigned int i = 0; i < forbiddenlist.size(); i++) {
-                if (id == forbiddenlist[i]) {
+            for (const GNode* fnode:forbiddenlist) {
+                if (&node==fnode) {
                     forbidden = true;
-                    //cout << "ID " << id << " has been found as element " << i << " (" << forbiddenlist[i]<< ") in the forbidden list." << endl;
                     break;
                 }
             }
             return forbidden;
         }
 
-        bool KMCCalculator::CheckSurrounded(GNode* node,const std::vector<int> & forbiddendests) {
+        bool KMCCalculator::CheckSurrounded(const GNode& node,const std::vector<GNode *> & forbiddendests) const{
             bool surrounded = true;
-            for (unsigned  i = 0; i < node->events.size(); i++) {
+            for (const auto& event:node.events) {
                 bool thisevent_possible = true;
-                for (unsigned int j = 0; j < forbiddendests.size(); j++) {
-                    if (node->events[i].destination == forbiddendests[j]) {
+                for (const GNode* fnode:forbiddendests) {
+                    if (event.destination == fnode) {
                         thisevent_possible = false;
                         break;
                     }
@@ -157,100 +148,32 @@ namespace votca {
             }
             return surrounded;
         }
-
-        
-        
-        
-        std::string KMCCalculator::CarrierInttoLongString(int carriertype){
-            std::string name="";
-            if (carriertype==-1){
-                name="electron";
-            }
-            else if(carriertype==1){
-                name="hole";
-            }
-            else if(carriertype==2){
-                name="singlet";
-            }
-            else if(carriertype==3){
-                name="triplet";
-            }
-            else{
-                throw runtime_error((boost::format("Carriertype %i not known") % carriertype).str());
-            }
-            return name;
-        }
-        
-        std::string KMCCalculator::CarrierInttoShortString(int carriertype){
-            std::string name="";
-            if (carriertype==-1){
-                name="e";
-            }
-            else if(carriertype==1){
-                name="h";
-            }
-            else if(carriertype==2){
-                name="s";
-            }
-            else if(carriertype==3){
-                name="t";
-            }
-            else{
-                throw runtime_error((boost::format("Carriertype %i not known") % carriertype).str());
-            }
-            return name;
-        }
-        
-         int KMCCalculator::StringtoCarriertype(std::string name){
-             char firstcharacter=std::tolower(name.at(0), std::locale());
-             int carriertype=0;
-            if (firstcharacter=='e'){
-                carriertype=-1;
-            }
-            else if(firstcharacter=='h'){
-                carriertype=1;
-            }
-            else if(firstcharacter=='s'){
-                carriertype=2;
-            }
-            else if(firstcharacter=='t'){
-                carriertype=3;
-            }
-            else{
-                throw runtime_error((boost::format("Carriername %s not known") % name).str());
-            }
-            return carriertype;
-        }
-         
          
          void KMCCalculator::RandomlyCreateCharges(){
-         
-        
+                
         cout << "looking for injectable nodes..." << endl;
-        for (unsigned int i = 0; i < _numberofcharges; i++) {
-            Chargecarrier *newCharge = new Chargecarrier;
-            newCharge->id = i;
+        for (int i = 0; i < _numberofcharges; i++) {
+            Chargecarrier newCharge(i);
             RandomlyAssignCarriertoSite(newCharge);
             
-            cout << "starting position for charge " << i + 1 << ": segment " << newCharge->getCurrentNodeId()+1 << endl;
+            cout << "starting position for charge " << i + 1 << ": segment " << newCharge.getCurrentNodeId()+1 << endl;
             _carriers.push_back(newCharge);
         }
         return;
          }
          
-         void KMCCalculator::RandomlyAssignCarriertoSite(Chargecarrier* Charge){
+         void KMCCalculator::RandomlyAssignCarriertoSite(Chargecarrier& Charge){
             int nodeId_guess=-1;
             do{
             nodeId_guess=_RandomVariable.rand_uniform_int(_nodes.size());   
             }
-            while (_nodes[nodeId_guess]->occupied || _nodes[nodeId_guess]->injectable==false ); // maybe already occupied? or maybe not injectable?
-            if (Charge->hasNode()){
-                Charge->jumpfromCurrentNodetoNode(_nodes[nodeId_guess]);
+            while (_nodes[nodeId_guess].occupied || _nodes[nodeId_guess].injectable==false ); // maybe already occupied? or maybe not injectable?
+            if (Charge.hasNode()){
+                Charge.ReleaseNode();
             }
-            else{
-            Charge->settoNote(_nodes[nodeId_guess]);
-            }
-             return;
+            Charge.settoNote(&_nodes[nodeId_guess]);
+          
+            return;
          }
         
         void KMCCalculator::InitialRates() {
@@ -258,62 +181,57 @@ namespace votca {
             cout << endl << "Calculating initial Marcus rates." << endl;
             cout << "    Temperature T = " << _temperature << " K." << endl;
            
-            cout << "    carriertype: " << CarrierInttoLongString(_carriertype) << endl;
+            cout << "    carriertype: " << _carriertype.ToLongString() << endl;
             unsigned numberofsites = _nodes.size();
             cout << "    Rates for " << numberofsites << " sites are computed." << endl;
             double charge=0.0;
-            if (_carriertype == -1)
-            {
+            if (_carriertype == QMStateType::Electron){
                 charge = -1.0;
-            }
-            else if (_carriertype == 1)
-            {
+            }else if (_carriertype == QMStateType::Hole){
                 charge = 1.0;
             }
-            cout<<"electric field ="<<_field<<" V/nm"<<endl;
+            cout<<"electric field[V/nm] ="<<_field[0]<<" "<<_field[1]<<" "<<_field[2]<<endl;
             
             double maxreldiff = 0;
             double maxrate=0;
             double minrate=std::numeric_limits<double>::max();
             int totalnumberofrates = 0;
-            for (unsigned int i = 0; i < numberofsites; i++) {
-                unsigned numberofneighbours = _nodes[i]->events.size();
-                for (unsigned int j = 0; j < numberofneighbours; j++) {
-                    if(_nodes[i]->events[j].decayevent){
+            for (auto& node:_nodes) {
+                for (auto& event:node.events) {
+                    if(event.decayevent){
                         //if event is a decay event there is no point in calculating its rate, because it already has that from the reading in.
                         continue;
                     }
 
-                    double destindex = _nodes[i]->events[j].destination;
-                    double reorg = _nodes[i]->reorg_intorig + _nodes[destindex]->reorg_intdest + _nodes[i]->events[j].reorg_out;
+                    double reorg = node.reorg_intorig + event.destination->reorg_intdest + event.reorg_out;
                      if(std::abs(reorg)<1e-12){
                         throw std::runtime_error("Reorganisation energy for a pair is extremly close to zero,\n"
                                 " you probably forgot to import reorganisation energies into your sql file.");
                     }
                     double dG_Field =0.0;
                     if(charge!=0.0){
-                        dG_Field=charge * (_nodes[i]->events[j].dr*_field);
+                        dG_Field=charge * event.dr.dot(_field);
                     }
-                    double dG_Site = _nodes[destindex]->siteenergy - _nodes[i]->siteenergy;
+                    double dG_Site = event.destination->siteenergy - node.siteenergy;
                     double dG=dG_Site-dG_Field;
-                    double J2 = _nodes[i]->events[j].Jeff2;
+                    double J2 = event.Jeff2;
 
                     double rate = 2 * tools::conv::Pi / tools::conv::hbar * J2 / sqrt(4 * tools::conv::Pi * reorg * tools::conv::kB * _temperature) 
                     * exp(-(dG + reorg)*(dG + reorg) / (4 * reorg * tools::conv::kB * _temperature));
 
                     // calculate relative difference compared to values in the table
-                    double reldiff = (_nodes[i]->events[j].rate - rate) / _nodes[i]->events[j].rate;
+                    double reldiff = (event.rate - rate) / event.rate;
                     if (reldiff > maxreldiff) {
                         maxreldiff = reldiff;
                     }
-                    reldiff = (_nodes[i]->events[j].rate - rate) / rate;
+                    reldiff = (event.rate - rate) / rate;
                     if (reldiff > maxreldiff) {
                         maxreldiff = reldiff;
                     }
 
                     // set rates to calculated values
-                    _nodes[i]->events[j].rate = rate;
-                    _nodes[i]->events[j].initialrate = rate;
+                    event.rate = rate;
+                    event.initialrate = rate;
                     
                     if(rate>maxrate){
                         maxrate=rate;
@@ -321,17 +239,15 @@ namespace votca {
                     else if(rate<minrate){
                         minrate=rate;
                     }
-
                     totalnumberofrates++;
                 }
-
-                // Initialise escape rates
-                for (unsigned int i = 0; i < _nodes.size(); i++) {
-                    _nodes[i]->InitEscapeRate();
+            }
+             // Initialise escape rates
+                for (auto& node:_nodes) {
+                    node.InitEscapeRate();
+                    node.MakeHuffTree();
                 }
 
-            }
-            
             cout << "    " << totalnumberofrates << " rates have been calculated." << endl;
             cout<< " Largest rate="<<maxrate<<" 1/s  Smallest rate="<<minrate<<" 1/s"<<endl;
             if (maxreldiff < 0.01) {
@@ -358,75 +274,27 @@ namespace votca {
         }
         
         
-        GLink* KMCCalculator::ChooseHoppingDest(GNode* node){
+        const GLink& KMCCalculator::ChooseHoppingDest(const GNode& node){
             double u = 1 - _RandomVariable.rand_uniform();
-            
-            for (unsigned int j = 0; j < node->events.size(); j++) {
-                u -= node->events[j].rate / node->getEscapeRate();
-                if (u <= 0 || j==node->events.size()-1) {    
-                    return &(node->events[j]);
-                }
-            }
-            throw runtime_error("Choose Hopping Destination, somehow no event was found");
-            return NULL;
+            return *(node.findHoppingDestination(u));
         }
         
         Chargecarrier* KMCCalculator::ChooseAffectedCarrier(double cumulated_rate){
             if(_carriers.size()==1){
-                return _carriers[0];
+                return &_carriers[0];
             }
             Chargecarrier* carrier=NULL;
             double u = 1 - _RandomVariable.rand_uniform();
-            for (unsigned int i = 0; i < _numberofcharges; i++) {
-                u -= _carriers[i]->getCurrentEscapeRate() / cumulated_rate;
-
+            for (int i = 0; i < _numberofcharges; i++) {
+                u -= _carriers[i].getCurrentEscapeRate() / cumulated_rate;
                 if (u <= 0 || i==_numberofcharges-1) {
-
-                    carrier = _carriers[i];
+                    carrier = &_carriers[i];
                     break;}  
-
             }
             return carrier;
         }
         
-        void KMCCalculator::AddtoJumplengthdistro(const GLink* event,double dt){
-            if(dolengthdistributon){
-            double dist=abs(event->dr)-minlength;
-            int index=int(dist/lengthresolution);
-           
-            _jumplengthdistro[index]++;
-            _jumplengthdistro_weighted[index]+=dt;
-           
-            
-            }
-            return; 
-        }
-        
-        void KMCCalculator::PrintJumplengthdistro(){
-            if(dolengthdistributon){
-            long unsigned noofjumps=0;
-            
-            double weightedintegral=0;
-            for(unsigned i=0;i<_jumplengthdistro.size();++i){
-                noofjumps+=_jumplengthdistro[i];   
-                weightedintegral+=_jumplengthdistro_weighted[i];
-            }
-            double noofjumps_double=double(noofjumps);
-            cout<<"Total number of jumps: "<<noofjumps<<endl;
-            cout<<" distance[nm] |   # of jumps   | # of jumps [%] | .w. by dist [nm] | w. by timestep [%]"<<endl;
-            cout<<"------------------------------------------------------------------------------------"<<endl;
-            for(unsigned i=0;i<_jumplengthdistro.size();++i){
-                double dist=lengthresolution*(i+0.5)+minlength;
-                double percent=_jumplengthdistro[i]/noofjumps_double;
-                double rtimespercent=percent*dist;
-                cout<<(boost::format("    %4.3f    | %15d |    %04.2f    |     %4.3e     |     %04.2f")
-                            % (dist) % (_jumplengthdistro[i]) % (percent*100) %(rtimespercent) % (_jumplengthdistro_weighted[i]/weightedintegral*100)).str()<<endl;                
-            }
-            cout<<"------------------------------------------------------------------------------------"<<endl;
-           
-            }
-            return;
-        }
+   
  
         
     }

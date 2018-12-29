@@ -37,12 +37,14 @@ namespace votca {
                 double MaxForce;
                 double RMSStep;
                 double MaxStep;
+                int maxforceindex=0;
+                int maxstepindex=0;
             };
 
             Energy_costfunction(GWBSEEngine& gwbse_engine, Statefilter& filter,
                     Orbitals& orbitals, Forces& force_engine)
             : _gwbse_engine(gwbse_engine), _filter(filter),
-            _orbitals(orbitals), _force_engine(force_engine),_iteration(0) {
+            _orbitals(orbitals), _force_engine(force_engine) {
             };
 
             double EvaluateCost(const Eigen::VectorXd& parameters);
@@ -59,10 +61,6 @@ namespace votca {
             void ForcesReport()const {
                 return _force_engine.Report();
             }
-
-            const conv_paras& getConvValues()const {
-                return _convval;
-            }
             
             const conv_paras& getConvParas()const {
                 return _convpara;
@@ -72,14 +70,14 @@ namespace votca {
                 _convpara = convergence;
             }
             
-            void setLog(xtp::Logger* pLog) {
+            void setLog(Logger* pLog) {
                 _pLog = pLog;
             }
 
             
-            void Report();
-            static void Vector2QMAtoms(const Eigen::VectorXd& pos, std::vector<QMAtom*>& atoms);
-            static Eigen::VectorXd QMAtoms2Vector(std::vector<QMAtom*>& atoms);
+            void Report(const conv_paras& val);
+            static void Vector2QMAtoms(const Eigen::VectorXd& pos, QMMolecule& atoms);
+            static Eigen::VectorXd QMAtoms2Vector(QMMolecule& atoms);
             static Eigen::VectorXd Write3XMatrixToVector(const Eigen::MatrixX3d& matrix);
 
         private:
@@ -89,13 +87,13 @@ namespace votca {
             Statefilter& _filter;
             Orbitals& _orbitals;
             Forces& _force_engine;
-            int _iteration;
+            int _iteration=0;
             double _energy;
             
             conv_paras _convpara;
-            conv_paras _convval;
+
             
-            xtp::Logger *_pLog;
+            Logger *_pLog;
 
             
             

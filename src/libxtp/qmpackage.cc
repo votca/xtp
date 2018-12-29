@@ -17,11 +17,8 @@
  *
  */
 
-// Overload of uBLAS prod function with MKL/GSL implementations
 #include "votca/xtp/qmpackage.h"
-#include "votca/xtp/aomatrix.h"
-#include <votca/xtp/molecule.h>
-#include <votca/xtp/atom.h>
+
 #include <boost/algorithm/string.hpp>
 
 namespace votca {
@@ -46,21 +43,21 @@ namespace votca {
 
             if (orbitals.hasAOOverlap()) {
                 dftbasis.ReorderMatrix(orbitals.AOOverlap(), getPackageName(), "xtp");
-                XTP_LOG(xtp::logDEBUG, *_pLog) << "Reordered Overlap matrix" << flush;
+                XTP_LOG(logDEBUG, *_pLog) << "Reordered Overlap matrix" << flush;
             }
             if (orbitals.hasAOVxc()) {
                 dftbasis.ReorderMatrix(orbitals.AOVxc(), getPackageName(), "xtp");
-                XTP_LOG(xtp::logDEBUG, *_pLog) << "Reordered VXC matrix" << flush;
+                XTP_LOG(logDEBUG, *_pLog) << "Reordered VXC matrix" << flush;
             }
             if (orbitals.hasMOCoefficients()) {
                 dftbasis.ReorderMOs(orbitals.MOCoefficients(), getPackageName(), "xtp");
-                XTP_LOG(xtp::logDEBUG, *_pLog) << "Reordered MOs" << flush;
+                XTP_LOG(logDEBUG, *_pLog) << "Reordered MOs" << flush;
             }
 
             return;
         }
 
-        void QMPackage::ReorderMOsBack(Orbitals& orbitals) {
+        Eigen::MatrixXd QMPackage::ReorderMOsBack(const Orbitals& orbitals) const{
             BasisSet dftbasisset;
             dftbasisset.LoadBasisSet(_basisset_name);
             if (!orbitals.hasQMAtoms()) {
@@ -68,59 +65,44 @@ namespace votca {
             }
             AOBasis dftbasis;
             dftbasis.AOBasisFill(dftbasisset, orbitals.QMAtoms());
-            dftbasis.ReorderMOs(orbitals.MOCoefficients(), "xtp", getPackageName());
-            return;
+            Eigen::MatrixXd result=orbitals.MOCoefficients();
+            dftbasis.ReorderMOs(result, "xtp", getPackageName());
+            return result;
         }
 
-        std::vector<std::vector<double> > QMPackage::SplitMultipoles(xtp::APolarSite* aps) {
+        std::vector<QMPackage::MinimalMMCharge > QMPackage::SplitMultipoles(const PolarSite& aps) {
 
-            std::vector< std::vector<double> > multipoles_split;
-
-            const tools::vec pos = aps->getPos() * tools::conv::nm2ang;
-            tools::vec tot_dpl = tools::vec(0.0);
-            if (_with_polarization) {
-                tot_dpl += aps->getU1();
-            }
-            if (aps->getRank() > 0) {
-                tot_dpl += aps->getQ1();
-            }
+            std::vector< QMPackage::MinimalMMCharge > multipoles_split;
             // Calculate virtual charge positions
-            double a = _dpl_spacing; // this is in nm
-            double mag_d = abs(tot_dpl); // this is in e * nm
-            if (mag_d > 1e-9) {
-                tools::vec dir_d = tot_dpl.normalize();
-                tools::vec A = pos + 0.5 * a * dir_d * tools::conv::nm2ang; // converted to AA
-                tools::vec B = pos - 0.5 * a * dir_d * tools::conv::nm2ang;
-                double qA = mag_d / a;
-                double qB = -qA;
-                multipoles_split.push_back({A.getX(), A.getY(), A.getZ(), qA});
-                multipoles_split.push_back({B.getX(), B.getY(), B.getZ(), qB});
-            }
+            double a = _dpl_spacing; // this is in a0
+            double mag_d = aps.getDipole().norm();// this is in e * a0
+            const Eigen::Vector3d dir_d = aps.getDipole().normalized();
+            const Eigen::Vector3d A = aps.getPos() + 0.5 * a * dir_d;
+            const Eigen::Vector3d B = aps.getPos() - 0.5 * a * dir_d;
+            double qA = mag_d / a;
+            double qB = -qA;
+            multipoles_split.push_back(MinimalMMCharge(A, qA));
+            multipoles_split.push_back(MinimalMMCharge(B, qB));
 
-            if (aps->getRank() > 1) {
-                tools::matrix components = aps->getQ2cartesian();
-                tools::matrix::eigensystem_t system;
-                components.SolveEigensystem(system);
+
+            if (aps.getRank() > 1) {
+                const Eigen::Matrix3d components = aps.CalculateCartesianMultipole();
+                Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
+                es.computeDirect(components);
                 double a = 2 * _dpl_spacing;
-                for (unsigned i = 0; i < 3; i++) {
-
-                    double q = system.eigenvalues[i] / (a * a);
-                    if (std::abs(q) < 1e-9) {
-                        continue;
-                    }
-                    tools::vec vec1 = pos + 0.5 * a * system.eigenvecs[i] * tools::conv::nm2ang;
-                    tools::vec vec2 = pos - 0.5 * a * system.eigenvecs[i] * tools::conv::nm2ang;
-
-                    multipoles_split.push_back({vec1.getX(), vec1.getY(), vec1.getZ(), q});
-                    multipoles_split.push_back({vec2.getX(), vec2.getY(), vec2.getZ(), q});
-
+                for (int i = 0; i < 3; i++) {
+                    double q = es.eigenvalues()[i] / (a * a);
+                    const Eigen::Vector3d vec1 = aps.getPos() + 0.5 * a * es.eigenvectors().col(i);
+                    const Eigen::Vector3d vec2 = aps.getPos() - 0.5 * a * es.eigenvectors().col(i);
+                    multipoles_split.push_back(MinimalMMCharge(vec1, q));
+                    multipoles_split.push_back(MinimalMMCharge(vec2, q));
                 }
             }
             return multipoles_split;
         }
         
-      void QMPackage::setMultipoleBackground(std::vector<std::shared_ptr<xtp::PolarSeg> > PolarSegments) {
-        if(PolarSegments.size()==0){
+      void QMPackage::setMultipoleBackground(const std::shared_ptr<MMRegion>& PolarSegments ) {
+        if(PolarSegments->size()==0){
           std::cout<<"WARNING::The Multipole Background has no entries!"<<std::endl;
           return;
         }
@@ -138,29 +120,7 @@ namespace votca {
           boost::algorithm::split(row, line, boost::is_any_of(separators), boost::algorithm::token_compress_on);
           return row;
         }
-      
-      
-std::vector<std::string> QMPackage::FindUniqueElements(const std::vector<QMAtom*> atoms){
-        std::vector<std::string> result;
-        for (QMAtom* atom:atoms) {
-        bool exists = false;
-        if (result.size() == 0) {
-          exists = false;
-        } else {
-          for (const std::string& type:result){
-            if (atom->getType() == type) {
-              exists = true;
-              break;
-            }
-          }
-        }
-        if (!exists) {
-          result.push_back(atom->getType());
-        }
-      }
-        return result;
-      }
-      
+
 
     }
 }
