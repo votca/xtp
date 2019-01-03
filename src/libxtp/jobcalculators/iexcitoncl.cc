@@ -28,6 +28,7 @@
 #include <votca/ctp/logger.h>
 #include <votca/ctp/xinteractor.h>
 
+using namespace std;
 using namespace boost::filesystem;
 using namespace votca::tools;
 
