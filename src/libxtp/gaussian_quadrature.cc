@@ -388,7 +388,7 @@ namespace votca {
         
         //Now, we add the already computed residual expressions, and we have
         //our result
-        return SigmaGQ;//+SigmaRes(rpa);
+        return SigmaGQ+SigmaRes(rpa);
         
         }
         
@@ -451,18 +451,6 @@ namespace votca {
         
         }
     
-            //This function checks the answer using the alternative method, 
-    //using a sextuple for loop
-//    Eigen::VectorXd GaussianQuadrature::CheckFunctionSigmaResDiag(RPA& rpa){
-//       Eigen::VectorXd result=Eigen::VectorXd::Zero(noqplevels);
-//        
-//        Eigen::VectorXd CooTfFreqs = CooTfFreq();
-//        
-//
-//                
- //       return (-2)*result;
-//    }
-
 
     }
   

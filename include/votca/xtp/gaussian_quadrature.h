@@ -45,13 +45,6 @@ namespace votca {
             //This function only returns the diagonal of aforementioned matrix
             //Sigma in vector form
             Eigen::VectorXcd SigmaDiag(RPA& rpa);
-            Eigen::VectorXd SigmaResDiag(RPA& rpa);
-            
-            //This function checks the answer using the alternative method, 
-            //using a sextuple for loop
-            Eigen::VectorXd CheckFunctionSigmaResDiag(RPA& rpa);
-            
-            
             
             //This function returns the chosen order (default=12)
             int Order()const{return _order;}
@@ -73,13 +66,11 @@ namespace votca {
             Eigen::MatrixXd SumDielInvMinId(RPA& rpa);
             
             //This function returns the residual contribution matrix
-            //Eigen::MatrixXd SigmaRes(RPA& rpa);
             Eigen::MatrixXd SigmaRes(RPA& rpa);
             
             //This function returns the diagonal of aforementioned matrix 
             //SigmaRes in vector form
-            //Eigen::VectorXd SigmaResDiag(RPA& rpa);
-            
+            Eigen::VectorXd SigmaResDiag(RPA& rpa);
             
             //Here, we pick the value of int Order() (default=12)            
             int _order=12;
