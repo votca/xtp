@@ -51,6 +51,11 @@ namespace votca {
         public:
 
             Orbitals();
+
+            Orbitals(const Orbitals& orbital);
+
+            Orbitals& operator=(const Orbitals& orbital);
+
             ~Orbitals();
 
             
@@ -79,38 +84,35 @@ namespace votca {
             // access to DFT number of levels, new, tested
 
             bool hasNumberOfLevels() const{
-                return ( (_occupied_levels > 0) && (_unoccupied_levels > 0) ? true : false);
+                return ( (_occupied_levels > 0) ? true : false);
             }
-
-            int getNumberOfLevels() const{
-                return ( _occupied_levels + _unoccupied_levels);
-            }
-            void setNumberOfLevels(int occupied_levels, int unoccupied_levels);
+            
+            void setNumberOfOccupiedLevels(int occupied_levels);
 
             // access to DFT number of electrons, new, tested
 
-            bool hasNumberOfElectrons() const{
-                return ( _number_of_electrons > 0) ? true : false;
+            bool hasNumberOfAlphaElectrons() const{
+                return ( _number_alpha_electrons > 0) ? true : false;
             }
 
-            int getNumberOfElectrons() const{
-                return _number_of_electrons;
+            int getNumberOfAlphaElectrons() const{
+                return _number_alpha_electrons;
             };
 
-            void setNumberOfElectrons(int electrons) {
-                _number_of_electrons = electrons;
+            void setNumberOfAlphaElectrons(int electrons) {
+                _number_alpha_electrons = electrons;
             }
 
 
-            bool hasECP()const{
+            bool hasECPName()const{
                 return ( _ECP !="") ? true : false;
             }
 
-            const std::string& getECP() const{
+            const std::string& getECPName() const{
                 return _ECP;
             };
 
-            void setECP(const std::string& ECP) {
+            void setECPName(const std::string& ECP) {
                 _ECP = ECP;
             };
 
@@ -218,15 +220,15 @@ namespace votca {
 
             // access to DFT basis set name
 
-            bool hasDFTbasis() const{
+            bool hasDFTbasisName() const{
                 return ( !_dftbasis.empty()) ? true : false;
             }
 
-            void setDFTbasis(const std::string basis) {
+            void setDFTbasisName(const std::string basis) {
                 _dftbasis = basis;
             }
 
-            const std::string& getDFTbasis() const {
+            const std::string& getDFTbasisName() const {
                 return _dftbasis;
             }
 
@@ -252,15 +254,15 @@ namespace votca {
 
             // access to auxiliary basis set name
 
-            bool hasAuxbasis() const{
+            bool hasAuxbasisName() const{
                 return ( !_auxbasis.empty()) ? true : false;
             }
 
-            void setAuxbasis(std::string basis) {
+            void setAuxbasisName(std::string basis) {
                 _auxbasis = basis;
             }
 
-            const std::string& getAuxbasis() const {
+            const std::string& getAuxbasisName() const {
                 return _auxbasis;
             }
 
@@ -271,10 +273,9 @@ namespace votca {
                 return ( _qpmax > 0) ? true : false;
             }
 
-            void setGWAindices(int qpmin, int qpmax) {
+            void setGWindices(int qpmin, int qpmax) {
                 _qpmin = qpmin;
                 _qpmax = qpmax;
-                _qptotal = _qpmax - _qpmin + 1;
             }
 
             int getGWAmin() const {
@@ -283,10 +284,6 @@ namespace votca {
 
             int getGWAmax() const {
                 return _qpmax;
-            }
-
-            int getGWAtot() const {
-                return (_qpmax - _qpmin + 1);
             }
 
             // access to list of indices used in RPA
@@ -318,12 +315,11 @@ namespace votca {
                 return ( _bse_cmax > 0) ? true : false;
             }
 
-            void setBSEindices(int vmin, int cmax, int nmax){
+            void setBSEindices(int vmin, int cmax){
                 _bse_vmin = vmin;
-                _bse_vmax = this->getHomo();
-                _bse_cmin = this->getLumo();
+                _bse_vmax = getHomo();
+                _bse_cmin = getLumo();
                 _bse_cmax = cmax;
-                _bse_nmax = nmax;
                 _bse_vtotal = _bse_vmax - _bse_vmin + 1;
                 _bse_ctotal = _bse_cmax - _bse_cmin + 1;
                 _bse_size = _bse_vtotal * _bse_ctotal;
@@ -391,9 +387,6 @@ namespace votca {
             }
 
             // access to eh interaction
-
-
-
             bool hasEHinteraction_triplet() const{
                 return ( _eh_t.cols() > 0) ? true : false;
             }
@@ -603,14 +596,9 @@ namespace votca {
             
         private:
 
-            struct Index2MO{
-                std::vector<int> I2v;
-                std::vector<int> I2c;
-            };
-            
-            
-            Index2MO BSEIndex2MOIndex()const;
 
+
+            void copy(const Orbitals& orbital);
 
             void WriteToCpt(CheckpointFile f)const;
             void WriteToCpt(CheckpointWriter w)const;
@@ -622,11 +610,13 @@ namespace votca {
             Eigen::MatrixXd TransitionDensityMatrix(const QMState& state)const;
             std::vector<Eigen::MatrixXd > DensityMatrixExcitedState_R(const QMState& state)const;
             std::vector<Eigen::MatrixXd >DensityMatrixExcitedState_AR(const QMState& state)const;
+            Eigen::MatrixXd CalcAuxMat_cc(const Eigen::VectorXd& coeffs)const;
+            Eigen::MatrixXd CalcAuxMat_vv(const Eigen::VectorXd& coeffs)const;
+
 
             int _basis_set_size;
             int _occupied_levels;
-            int _unoccupied_levels;
-            int _number_of_electrons;
+            int _number_alpha_electrons;
             std::string _ECP;
             bool _useTDA;
 
@@ -648,7 +638,6 @@ namespace votca {
 
              int _qpmin;
              int _qpmax;
-             int _qptotal;
 
              int _bse_vmin;
              int _bse_vmax;
@@ -657,7 +646,6 @@ namespace votca {
              int _bse_size;
              int _bse_vtotal;
              int _bse_ctotal;
-            int _bse_nmax;
 
             double _ScaHFX;
 

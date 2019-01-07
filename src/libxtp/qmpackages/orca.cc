@@ -341,7 +341,7 @@ namespace votca {
         /**
          * Runs the Orca job.
          */
-        bool Orca::Run( Orbitals& orbitals ) {
+        bool Orca::Run() {
 
             CTP_LOG(ctp::logDEBUG, *_pLog) << "Running Orca job" << flush;
 
@@ -416,12 +416,11 @@ namespace votca {
         }
 
         bool Orca::ParseLogFile(Orbitals& orbitals) {
-            const double conv_Hrt_eV = tools::conv::hrt2ev;
             bool found_success=false;
             orbitals.setQMpackage("orca");
-            orbitals.setDFTbasis(_basisset_name);
+            orbitals.setDFTbasisName(_basisset_name);
             if (_write_pseudopotentials) {
-                orbitals.setECP(_ecp_name);
+                orbitals.setECPName(_ecp_name);
             } 
             CTP_LOG(ctp::logDEBUG, *_pLog) << "Parsing " << _log_file_name << flush;
             std::string log_file_name_full = _run_dir + "/" + _log_file_name;
@@ -488,8 +487,8 @@ namespace votca {
                     boost::algorithm::split(results, line, boost::is_any_of(" "), boost::algorithm::token_compress_on);
                     std::string energy = results[3];
                     boost::trim(energy);
-                    orbitals.setQMEnergy(conv_Hrt_eV * boost::lexical_cast<double>(energy));
-                    CTP_LOG(ctp::logDEBUG, *_pLog) << (boost::format("QM energy[eV]: %4.6f ") % orbitals.getQMEnergy()).str() << flush;
+                    orbitals.setQMEnergy(boost::lexical_cast<double>(energy));
+                    CTP_LOG(ctp::logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.8f ") % orbitals.getQMEnergy()).str() << flush;
                 }
 
                 std::string::size_type HFX_pos = line.find("Fraction HF Exchange ScalHFX");
@@ -595,8 +594,8 @@ namespace votca {
             // copying information to the orbitals object
        
             orbitals.setBasisSetSize(levels);
-            orbitals.setNumberOfElectrons(number_of_electrons);
-            orbitals.setNumberOfLevels(occupied_levels, unoccupied_levels);
+            orbitals.setNumberOfAlphaElectrons(number_of_electrons);
+            orbitals.setNumberOfOccupiedLevels(occupied_levels);
             orbitals.setSelfEnergy(0.0);
 
             // copying energies to a vector
@@ -645,7 +644,7 @@ namespace votca {
             if (!CheckLogFile()) return false;
             std::vector<double> coefficients;
             int basis_size = orbitals.getBasisSetSize();
-            int levels = orbitals.getNumberOfLevels();
+            int levels = orbitals.getBasisSetSize();
             if (basis_size == 0 || levels == 0) {
                 throw runtime_error("Basis size not set, calculator does not parse log file first");
             }

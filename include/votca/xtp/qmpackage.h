@@ -42,8 +42,7 @@ namespace votca {
 
             static std::vector<std::string> FindUniqueElements(const std::vector<QMAtom*> atoms);
    
-            virtual ~QMPackage() {
-            };
+            virtual ~QMPackage() {};
 
             virtual std::string getPackageName() = 0;
 
@@ -53,7 +52,7 @@ namespace votca {
             /// writes a coordinate file WITHOUT taking into account PBCs
             virtual bool WriteInputFile(Orbitals& orbitals) = 0;
 
-            virtual bool Run(Orbitals& orbitals) = 0;
+            virtual bool Run() = 0;
 
             virtual bool ParseLogFile(Orbitals& orbitals) = 0;
 

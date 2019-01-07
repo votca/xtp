@@ -175,7 +175,7 @@ namespace votca {
           // write occupations as double in three columns
           // occupied levels
           int column = 1;
-          for (int i = 0; i < orbitals.getNumberOfElectrons(); i++) {
+          for (int i = 0; i < orbitals.getNumberOfAlphaElectrons(); i++) {
             orb_file << FortranFormat(2.0);
             if (column == ncolumns) {
               orb_file << endl;
@@ -184,7 +184,7 @@ namespace votca {
             column++;
           }
           // unoccupied levels
-          for (int i = orbitals.getNumberOfElectrons(); i < size_of_basis; i++) {
+          for (int i = orbitals.getNumberOfAlphaElectrons(); i < size_of_basis; i++) {
             orb_file << FortranFormat(0.0);
             if (column == ncolumns) {
               orb_file << endl;
@@ -352,7 +352,7 @@ namespace votca {
         /**
          * Runs the NWChem job.
          */
-        bool NWChem::Run( Orbitals& orbitals ) {
+        bool NWChem::Run() {
 
             CTP_LOG(ctp::logDEBUG, *_pLog) << "Running NWChem job" << flush;
 
@@ -545,8 +545,8 @@ namespace votca {
 
             // copying information to the orbitals object
             orbitals.setBasisSetSize(basis_size);
-            orbitals.setNumberOfElectrons(number_of_electrons);
-            orbitals.setNumberOfLevels(occupied_levels, unoccupied_levels);
+            orbitals.setNumberOfAlphaElectrons(number_of_electrons);
+            orbitals.setNumberOfOccupiedLevels(occupied_levels);
             // copying energies to a matrix
             orbitals.MOEnergies().resize(levels);
             //_level = 1;
@@ -643,8 +643,6 @@ namespace votca {
          */
         bool NWChem::ParseLogFile(Orbitals& orbitals) {
 
-            double conv_Hrt_eV = tools::conv::hrt2ev;
-
             std::string line;
             std::vector<std::string> results;
 
@@ -664,9 +662,9 @@ namespace votca {
 
             // save qmpackage name
             orbitals.setQMpackage("nwchem");
-            orbitals.setDFTbasis(_basisset_name);
+            orbitals.setDFTbasisName(_basisset_name);
             if (_write_pseudopotentials) {
-                orbitals.setECP(_ecp_name);
+                orbitals.setECPName(_ecp_name);
             } 
             // set _found_optimization to true if this is a run without optimization
             if (!_is_optimization) {
@@ -699,8 +697,8 @@ namespace votca {
                     boost::algorithm::split(results, line, boost::is_any_of("="), boost::algorithm::token_compress_on);
                     std::string energy = results.back();
                     boost::trim(energy);
-                    orbitals.setQMEnergy(conv_Hrt_eV * boost::lexical_cast<double>(energy));
-                    CTP_LOG(ctp::logDEBUG, *_pLog) << (boost::format("QM energy[eV]: %4.6f ") % orbitals.getQMEnergy()).str() << flush;
+                    orbitals.setQMEnergy(boost::lexical_cast<double>(energy));
+                    CTP_LOG(ctp::logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.8f ") % orbitals.getQMEnergy()).str() << flush;
                     has_qm_energy = true;
                 }
 
@@ -884,7 +882,7 @@ namespace votca {
                     std::vector<std::string> energy;
                     boost::algorithm::split(block, line, boost::is_any_of("="), boost::algorithm::token_compress_on);
                     boost::algorithm::split(energy, block[1], boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-                    orbitals.setSelfEnergy(conv_Hrt_eV * boost::lexical_cast<double> (energy[1]));
+                    orbitals.setSelfEnergy(boost::lexical_cast<double> (energy[1]));
                     CTP_LOG(ctp::logDEBUG, *_pLog) << "Self energy " << orbitals.getSelfEnergy() << flush;
                 }
 

@@ -1,4 +1,4 @@
-/* 
+/*
  *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
@@ -17,32 +17,40 @@
  *
  */
 
-#ifndef _VOTCA_XTP_ADIIS__H
-#define _VOTCA_XTP_ADIIS__H
+#ifndef _VOTCA_XTP_VC2INDEX_H
+#define _VOTCA_XTP_VC2INDEX_H
 
 
+namespace votca {
+namespace xtp {
+/**
+* \brief This class transforms a pair of indices v,c into a compound index I, via I=ctotal*v+c
+* the fast dimension is c. If you have a choice iterate over c and v not over I. 
+*
+*
+*/
+class vc2index {
 
-#include <votca/xtp/eigen.h> 
-#include <vector>
-#include <memory>
-namespace votca { namespace xtp {
-
-
- 
- class ADIIS{
 public:
-  
-    Eigen::VectorXd CalcCoeff(const std::vector< std::unique_ptr<Eigen::MatrixXd> >& dmathist,const std::vector< std::unique_ptr<Eigen::MatrixXd> >& mathist);
-    
-   
-    bool Info(){return success;}
- private:
-     
-     bool success=true;
-  
- };
-    
-}}
 
-#endif	
+    vc2index(int vmin, int cmin, int ctotal):_vmin(vmin),_cmin(cmin),_ctotal(ctotal){};
 
+    inline int I(int v,int c)const{return _ctotal*(v-_vmin)+c-_cmin;}
+
+    inline int v(int index)const{return index/_ctotal+_vmin;}
+
+    inline int c(int index)const{return index%_ctotal+_cmin;}
+
+
+private:
+
+
+int _vmin;
+int _cmin;
+int _ctotal;
+    
+};
+}
+}
+
+#endif /* _VOTCA_XTP_VC2INDEX_H */
