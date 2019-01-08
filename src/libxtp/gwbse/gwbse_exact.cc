@@ -435,7 +435,7 @@ namespace votca {
                     << std::flush;
             */
             
-            // ****** Set-up Hamiltonian
+            // ****** Set-up Hamiltonian ******
             
             Eigen::MatrixXd Hqp_spectral = sigma_spectral.SetupFullQPHamiltonian(vxc);
             
@@ -443,6 +443,26 @@ namespace votca {
                     << ctp::TimeStamp()
                     << " Hqp:\n"
                     << Hqp_spectral
+                    << std::flush;
+            
+            // ****** Compute Energies ******
+
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Hqp);
+            const Eigen::VectorXd& qp_diag_energies = es.eigenvalues();
+
+            if (es.info() == Eigen::ComputationInfo::Success) {
+
+                CTP_LOG(ctp::logDEBUG, *_pLog)
+                        << ctp::TimeStamp()
+                        << " Diagonalized QP Hamiltonian  "
+                        << std::flush;
+
+            }
+
+            CTP_LOG(ctp::logDEBUG, *_pLog)
+                    << ctp::TimeStamp()
+                    << " qp_diag_energies:\n"
+                    << qp_diag_energies
                     << std::flush;
 
             CTP_LOG(ctp::logDEBUG, *_pLog) << std::flush;
