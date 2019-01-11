@@ -30,21 +30,26 @@
 
 namespace votca {
     namespace xtp {
+    
+        class TCMatrix_gwbse;
+        class RPA;
        
         class GaussianQuadrature {
         
         public:
             
             //Default constructor
-            GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn);
+            GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn, int qptotal);
             
             //This function returns the whole self-energy expectation matrix
             //for given Kohn-Sham energies and M coefficients (hence "RPA")
-            Eigen::MatrixXd SigmaGQ(RPA& rpa);
+            Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
+                const RPA& rpa)const;
             
             //This function only returns the diagonal of aforementioned matrix
             //Sigma in vector form
-            Eigen::VectorXcd SigmaGQDiag(RPA& rpa);
+            Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
+                const RPA& rpa)const;
             
             //This function returns the chosen order (default=12)
             int Order()const{return _order;}
@@ -54,33 +59,26 @@ namespace votca {
             //This function returns the coordinate transformation applied to the
             //quadrature points. These vector entries will serve as frequencies
             //for the dielectric matrix inverses; hence the name
-            Eigen::VectorXd CooTfFreq();
+            Eigen::VectorXd CooTfFreq()const;
             
             //This function calculates the inverse of the microscopic dielectric
             //matrix for given complex frequency and Kohn-Sham energies
-            vector<Eigen::MatrixXd> CalcDielInvVector(RPA& rpa);
+            std::vector<Eigen::MatrixXd> CalcDielInvVector(const RPA& rpa)const;
             
             //This function returns the B matrix, which contains the sum of
             //the dielectric matrices evaluated at the translated frequency vector 
             //entries from aforementioned vector CooTfFreq
-            Eigen::MatrixXd SumDielInvMinId(RPA& rpa);
+            Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
             
             //Here, we pick the value of int Order() (default=12)            
             int _order=12;
             
-            //Here, we load in the constant vector containing the Kohn-Sham
-            //energies, which appears in the constructor. The number of KS wave
-            //functions, J, which is the length of that vector, is also defined
-            //here
-            const Eigen::VectorXd& _qpenergies;
-            int noqplevels = _qpenergies.size();
-            
-            //Here, we load in the M coefficients, which are stored in a matrix
-            //array (tensor), which appear in the constructor
-            const TCMatrix_gwbse& _Mmn;
-            
             //Here, the vectors containing the quadrature evaluation points, 
             //resp. the quadrature weights, are stored
+            
+            const Eigen::VectorXd& _energies;
+            int _qptotal;
+            const TCMatrix_gwbse& _Mmn;
             Eigen::VectorXd _quadpoints;            
             Eigen::VectorXd _quadweights;
                 

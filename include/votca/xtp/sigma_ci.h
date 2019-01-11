@@ -23,6 +23,9 @@
 #include <votca/xtp/sigma_base.h>
 #include <votca/ctp/logger.h>
 
+#include <votca/xtp/rpa.h>
+#include <votca/xtp/gaussian_quadrature.h>
+
 namespace votca {
     namespace xtp {
    
@@ -31,57 +34,31 @@ namespace votca {
 
         class Sigma_CI : public Sigma_base {
             
+            
             public:
             
+            Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa ):Sigma_base(Mmn,rpa),_gq(rpa.getRPAInputEnergies(),Mmn,_qptotal){};
+          
+            //Sets up the screening parametrisation: empty for the while
+            void PrepareScreening();
             
-            Sigma_CI(TCMatrix_gwbse& Mmn):Sigma_base(Mmn){};
-  
-            //Sets up the screening parametrisation
-            void PrepareScreening(const RPA& rpa);
-            
-            //This function returns the whole self-energy expectation matrix
-            //for given Kohn-Sham energies and M coefficients (hence "RPA")
+            //This function returns the diagonal of the self-energy correlation
+            //expectation matrix for given frequencies, RPA (Kohn-Sham) energies
+            //and a calculate Gaussian Quadrature contribution matrix
             Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&
-            frequencies, const Eigen::VectorXd& RPAEnergies, RPA& rpa,
-            GaussianQuadrature& gq)const;
-            //Calculates Sigma_c offdiag elements
+            frequencies)const;
+            //This function returns the whole of the aforementioned matrix
             Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&
-            frequencies, const Eigen::VectorXd& RPAEnergies, RPA& rpa,
-            GaussianQuadrature& gq)const;
+            frequencies)const;
             
-            //This function returns the chosen order (default=12)
-            int Order()const{return _order;}
             
-        
             private:
                 
-                
-                
-            
-            //This function returns the coordinate transformation applied to the
-            //quadrature points. These vector entries will serve as frequencies
-            //for the dielectric matrix inverses; hence the name
-            //Eigen::VectorXd CooTfFreq();
-            
-            //This function calculates the inverse of the microscopic dielectric
-            //matrix for given complex frequency and Kohn-Sham energies
-            //Eigen::MatrixXd CalcDielInv(double frequencyReal,
-            //                double frequencyImag, RPA& rpa);
+                GaussianQuadrature _gq;
             
             
-            //Here, we load in the constant vector containing the Kohn-Sham
-            //energies, which appears in the constructor. The number of KS wave
-            //functions, J, which is the length of that vector, is also defined
-            //here
-            const Eigen::VectorXd& _qpenergies;
-            int noqplevels = _qpenergies.size();
             
-            //Here, we load in the M coefficients, which are stored in a matrix
-            //array (tensor), which appear in the constructor
-            const TCMatrix_gwbse& _Mmn;
-            
-            
-                                    };
+            };
     
             }
     

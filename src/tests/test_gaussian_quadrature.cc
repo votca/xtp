@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full){
   
   Orbitals orb;
   orb.setBasisSetSize(17);
-  orb.setNumberOfLevels(4,13);
+  orb.setNumberOfOccupiedLevels(4);
 
 AOKinetic kinetic;
 kinetic.Fill(aobasis);
@@ -115,12 +115,13 @@ Mmn.Initialize(aobasis.AOBasisSize(),0,16,0,16);
 Mmn.Fill(aobasis,aobasis,es.eigenvectors());
 
 
-  RPA rpa;
+  RPA rpa(Mmn);
+  rpa.setRPAInputEnergies(es.eigenvalues());
   rpa.configure(4,0,17-1);
   
-  GaussianQuadrature gq=GaussianQuadrature(es.eigenvalues(),Mmn);
-  Eigen::MatrixXcd result = gq.Sigma(rpa);
-  Eigen::VectorXcd result2 = gq.SigmaDiag(rpa);
+  GaussianQuadrature gq=GaussianQuadrature(es.eigenvalues(),Mmn,17);
+  Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(),rpa);
+  Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(),rpa);
   
   std::cout<<result<<std::endl;
   std::cout<<std::endl;

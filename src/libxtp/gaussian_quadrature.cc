@@ -24,15 +24,14 @@
 #include <complex>
 #include <cmath>
 #include <votca/xtp/threecenter.h>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 namespace votca {
   namespace xtp {
       
-    //Default constructor  
+    //Constructor  
     
-    GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& qpenergies,
-        const TCMatrix_gwbse& Mmn):_qpenergies(qpenergies),_Mmn(Mmn){
+    GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& energies,
+        const TCMatrix_gwbse& Mmn, int qptotal):_energies(energies),_Mmn(Mmn),_qptotal(qptotal){
     
         //we first initialise the Gaussian quadrature weights and evaluation
         //points
@@ -59,7 +58,7 @@ namespace votca {
     //quadrature points. These vector entries will serve as frequencies
     //for the dielectric matrix inverses; hence the name    
 
-    Eigen::VectorXd GaussianQuadrature::CooTfFreq() {
+    Eigen::VectorXd GaussianQuadrature::CooTfFreq() const{
     
         //We make temporarily arrays to enable scalar addition and component
         //-wise operations like multiplication and division, and taking the
@@ -75,9 +74,9 @@ namespace votca {
     //This function calculates the inverses of the microscopic dielectric
     //matrix we need, stored in a vector
     
-    Eigen::VectorXd<Eigen::MatrixXd> GaussianQuadrature::CalcDielInvVector(RPA& rpa){
+    std::vector<Eigen::MatrixXd> GaussianQuadrature::CalcDielInvVector(const RPA& rpa)const{
     
-        Eigen::VectorXd<Eigen::MatrixXd> result;
+        std::vector<Eigen::MatrixXd> result;
         
         //We load in the vector containing the frequencies for which we want
         //the dielectric matrix inverses
@@ -86,7 +85,7 @@ namespace votca {
         
         for ( int i = 0 ; i < _order ; i++ ) {
         
-            result(i) = rpa.calculate_epsilon_i(CooTfFreqs(i)).inverse();
+            result.push_back(rpa.calculate_epsilon_i(CooTfFreqs(i)).inverse());
             
             }
         
@@ -98,18 +97,18 @@ namespace votca {
     //the dielectric matrices evaluated at the translated frequency vector 
     //entries from aforementioned vector CooTfFreq
     
-    Eigen::MatrixXd GaussianQuadrature::SumDielInvMinId(RPA& rpa){
+    Eigen::MatrixXd GaussianQuadrature::SumDielInvMinId(const RPA& rpa)const{
     
         //First, we intialise the result, which is a sum, at zero
-        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(noqplevels,noqplevels);
+        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
 
         //We load in the vector containing the dielectric matrix inverses
-        vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(RPA& rpa);
+        std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
         
         //Now, using a for loop, we get the sum of all those matrices
             for (int k = 0 ; k < _order ; ++k){
             
-                result += DielInvVector(k);
+                result += DielInvVector[k];
             
                 }
     
@@ -123,11 +122,12 @@ namespace votca {
     //This function returns the whole quadrature contribution matrix as part of
     //the correlation part of the self-energy
 
-    Eigen::MatrixXd GaussianQuadrature::SigmaGQ(RPA& rpa) {
+    Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd&
+        frequencies, const RPA& rpa)const{
         
         //We first initialise the quadrature contribution matrix, which appears
         //in the result and is a sum, at zero
-        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(noqplevels,noqplevels);
+        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
 
         //Now, we will set up the adapted frequency tensor in the following
         //for loop, as an array of matrices. We split this tensor in a real and 
@@ -135,23 +135,23 @@ namespace votca {
         //SumDielInvMinId to this end
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
         
-            for (int k = 0; k < noqplevels; ++k) {
+            for (int k = 0; k < _qptotal; ++k) {
                 
                 //Now, we fill the k'th matrix in the array in the following for 
                 //loops, where we will use the vector of frequencies from the
                 //function CooTfFreq. Also, we initialise the real and imag part
                 Eigen::VectorXd CooTfFreqs = CooTfFreq();
                 Eigen::MatrixXd ResFreqs =
-                    Eigen::MatrixXd::Zero(_order, noqplevels);
+                    Eigen::MatrixXd::Zero(_order, _qptotal);
                 
-                    for (int m = 0; m < noqplevels; ++m) {
+                    for (int m = 0; m < _qptotal; ++m) {
                         
                         for (int j = 0; j < _order; ++j) {
                             
                             //We move to an array to have a constant component-
                             //wise subtraction, and then return to vector form
                             Eigen::VectorXd DeltaE = 
-                                _qpenergies.array() - _qpenergies(k);
+                                frequencies.array() - _energies(k);
                             
                             //component-wise squaring for the denominator
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
@@ -199,17 +199,18 @@ namespace votca {
     //This function only returns the diagonal of aforementioned matrix
     //SigmaGQ in vector form. All happens analogously
     
-    Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(RPA& rpa) {
+    Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(const Eigen::VectorXd&
+        frequencies, const RPA& rpa)const{
             
         Eigen::VectorXd result =
-            Eigen::VectorXd::Zero(noqplevels);
+            Eigen::VectorXd::Zero(_qptotal);
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
 
-            for (int k = 0; k < noqplevels; ++k) {
+            for (int k = 0; k < _qptotal; ++k) {
                 
                 Eigen::MatrixXd ResFreqs =
-                    Eigen::MatrixXd::Zero(_order, noqplevels);
+                    Eigen::MatrixXd::Zero(_order, _qptotal);
                 
                     #if (GWBSE_DOUBLE)
                         const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
@@ -219,12 +220,12 @@ namespace votca {
 
                 Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
                 
-                    for (int m = 0; m < noqplevels; ++m) {
+                    for (int m = 0; m < _qptotal; ++m) {
                         
                         for (int j = 0; j < _order; ++j) {
                             
                             Eigen::VectorXd DeltaE =
-                                _qpenergies.array() - _qpenergies(k);
+                                frequencies.array() - _energies(k);
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
                             Eigen::VectorXd CooTfFreqsSq =
                                 CooTfFreqs.cwiseAbs2();
@@ -238,7 +239,7 @@ namespace votca {
                 //There is a similar, double contribution, since m = n on the
                 //diagonal: this will be evened out by the factor 2 at the end
                 result += 
-                    ((_quadweights.transpose() * ResFreqsReal).asDiagonal() * 
+                    ((_quadweights.transpose() * ResFreqs).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose())).diagonal();
                 
                 }
