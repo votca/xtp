@@ -30,12 +30,15 @@ namespace votca {
    void GW::configure(const options& opt){
      _opt=opt;
      _qptotal=_opt.qpmax-_opt.qpmin+1;
+     _rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
      if(_opt.sigma_integration=="ppm"){
-         _sigma=std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn));
+         _sigma=std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn,_rpa));
      }
      _sigma->configure(_opt.homo,_opt.qpmin,_opt.qpmax);
      _Sigma_x=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
      _Sigma_c=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
+
+
   }
 
 double GW::CalcHomoLumoShift()const{
@@ -45,11 +48,11 @@ double GW::CalcHomoLumoShift()const{
 }
 
 Eigen::VectorXd GW::CalcDiagonalEnergies()const{
-return (1-_opt.ScaHFX)*_Sigma_x.diagonal()+_Sigma_c.diagonal()-_vxc.diagonal()+_dft_energies.segment(_opt.qpmin,_qptotal);
+return _Sigma_x.diagonal()+_Sigma_c.diagonal()-_vxc.diagonal()+_dft_energies.segment(_opt.qpmin,_qptotal);
 }
 
 Eigen::MatrixXd GW::getHQP()const{
-    return (1-_opt.ScaHFX)*_Sigma_x+_Sigma_c-_vxc+ Eigen::MatrixXd( _dft_energies.segment(_opt.qpmin,_qptotal).asDiagonal());
+    return _Sigma_x+_Sigma_c-_vxc+ Eigen::MatrixXd(_dft_energies.segment(_opt.qpmin,_qptotal).asDiagonal());
 }
 
 Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> GW::DiagonalizeQPHamiltonian()const{
@@ -124,6 +127,8 @@ Eigen::MatrixXd GW::getGWAResults()const{
 }
 
   Eigen::VectorXd GW::ScissorShift_DFTlevel(const Eigen::VectorXd& dft_energies)const{
+       CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                                 << " Scissor shifting DFT energies by: "<< _opt.shift<<" Hrt"<< std::flush;
       Eigen::VectorXd RPAenergies=dft_energies;
       RPAenergies.segment(_opt.homo+1,dft_energies.size()-_opt.homo-1).array()+=_opt.shift;
       return RPAenergies;
@@ -142,10 +147,10 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2, double 
     return energies_converged;
 }
 
-Eigen::VectorXd GW::CalculateExcitationFreq(const Eigen::VectorXd& rpa_energies, Eigen::VectorXd frequencies){
+Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies){
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
 
-        _Sigma_c.diagonal()= _sigma->CalcCorrelationDiag(frequencies, rpa_energies);
+        _Sigma_c.diagonal()= _sigma->CalcCorrelationDiag(frequencies);
         _gwa_energies = CalcDiagonalEnergies();
 
         if(tools::globals::verbose){
@@ -154,7 +159,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(const Eigen::VectorXd& rpa_energies,
         if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
             CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " Converged after " <<i_freq + 1 << " G iterations." << std::flush;
             break;
-        } else if (i_freq == _opt.g_sc_max_iterations - 1) {
+        } else if (i_freq == _opt.g_sc_max_iterations - 1 &&  _opt.g_sc_max_iterations>1) {
             CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " G-self-consistency cycle not converged after "
                     << _opt.g_sc_max_iterations << " iterations." << std::flush;
             break;
@@ -168,16 +173,16 @@ Eigen::VectorXd GW::CalculateExcitationFreq(const Eigen::VectorXd& rpa_energies,
 }
 
 void GW::CalculateGWPerturbation() {
-    Eigen::VectorXd rpa_energies = ScissorShift_DFTlevel(_dft_energies);
-    _Sigma_x = _sigma->CalcExchange();
+
+    _Sigma_x = (1-_opt.ScaHFX)*_sigma->CalcExchange();
          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                                  << " Calculated Hartree exchange contribution  " << std::flush;
-    Eigen::VectorXd rpa_energies_old = rpa_energies;
 
-    Eigen::VectorXd frequencies = _dft_energies.segment(_opt.qpmin, _qptotal);
+    Eigen::VectorXd rpa_energies = ScissorShift_DFTlevel(_dft_energies);
+    _rpa.setRPAInputEnergies(rpa_energies);
+    Eigen::VectorXd frequencies = rpa_energies.segment(_opt.qpmin, _qptotal);
 
-    RPA rpa(rpa_energies, _Mmn);
-    rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
+   
      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                                  << " Prepared RPA  " << std::flush;
     for (int i_gw=0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
@@ -186,20 +191,20 @@ void GW::CalculateGWPerturbation() {
              _Mmn.Rebuild();
              CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() <<" Rebuilding 3c integrals" << std::flush;
          }
-        _sigma->PrepareScreening(rpa);
+        _sigma->PrepareScreening();
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                                    << " Calculated screening via RPA  " << std::flush;
-        frequencies=CalculateExcitationFreq(rpa_energies, frequencies);
+        frequencies=CalculateExcitationFreq(frequencies);
         CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated diagonal part of Sigma  " << std::flush;
-        Eigen::VectorXd rpa_energies_old=rpa_energies;
-        rpa_energies=rpa.CalculateRPAEnergies(_dft_energies,frequencies,_opt.qpmin,_opt.homo);
+        Eigen::VectorXd rpa_energies_old=_rpa.getRPAInputEnergies();
+        _rpa.UpdateRPAInputEnergies(_dft_energies,frequencies,_opt.qpmin);
         
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() <<" GW_Iteration:" <<i_gw << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
-        if(Converged(rpa_energies, rpa_energies_old, _opt.gw_sc_limit)){
+        if(Converged(_rpa.getRPAInputEnergies(), rpa_energies_old, _opt.gw_sc_limit)){
              CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " Converged after " <<i_gw + 1 << " GW iterations." << std::flush;
                 break;
-        } else if (i_gw == _opt.gw_sc_max_iterations - 1) {
+        } else if (i_gw == _opt.gw_sc_max_iterations - 1 &&  _opt.gw_sc_max_iterations>1) {
                 CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " WARNING! GW-self-consistency cycle not converged after "
                         << _opt.gw_sc_max_iterations << " iterations." << std::flush;
              CTP_LOG(ctp::logDEBUG, _log)<< ctp::TimeStamp()
@@ -215,9 +220,9 @@ void GW::CalculateGWPerturbation() {
 }
 
    void GW::CalculateHQP(){
-       Eigen::VectorXd rpa_energies=RPA::CalculateRPAEnergies(_dft_energies,_gwa_energies,_opt.qpmin,_opt.homo);
+       _rpa.UpdateRPAInputEnergies(_dft_energies,_gwa_energies,_opt.qpmin);
        Eigen::VectorXd diag_backup=_Sigma_c.diagonal();
-       _Sigma_c=_sigma->CalcCorrelationOffDiag(_gwa_energies,rpa_energies);
+       _Sigma_c=_sigma->CalcCorrelationOffDiag(_gwa_energies);
        _Sigma_c.diagonal()=diag_backup;
        
    }
