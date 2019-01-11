@@ -60,7 +60,7 @@ namespace votca {
                     
                     double sigma_x = 0.0;
 
-                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+                    for (int i_aux = 0; i_aux < Mmn.auxsize(); ++i_aux) {
 
                         // Loop over all occupied bands used in screening
                         for (int i_occ = 0; i_occ <= _qp_homo; i_occ++) {

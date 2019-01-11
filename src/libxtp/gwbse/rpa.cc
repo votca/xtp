@@ -17,12 +17,9 @@
  *
  */
 
-
-
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/aomatrix.h>
 #include "votca/xtp/threecenter.h"
-
 
 namespace votca {
   namespace xtp {
@@ -81,5 +78,108 @@ namespace votca {
  template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency)const;
  template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency)const;
 
+        rpa_eigensolution RPA::calculate_eigenvalues() {
+
+            Eigen::VectorXd AmB = calculate_spectral_AmB();
+            Eigen::MatrixXd ApB = calculate_spectral_ApB();
+            
+            Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
+            
+            return diag_C(AmB, C);
+        }
+        
+        Eigen::VectorXd RPA::calculate_spectral_AmB() {
+            const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
+            Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
+            
+            // TODO: Symmetries
+            
+            for (int i = 0; i < rpasize; i++) {
+                AmB(i) = _energies(_vc2index.c(i)) - _energies(_vc2index.v(i));
+            } // Composite index i
+            
+            return AmB;
+        }
+        
+        Eigen::MatrixXd RPA::calculate_spectral_ApB() {
+            const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
+            const int auxsize = _Mmn.auxsize(); // size of gwbasis
+            Eigen::MatrixXd ApB = Eigen::VectorXd::Zero(rpasize, rpasize);
+            
+            // TODO: Symmetries
+            
+            for (int i = 0; i < rpasize; i++) {
+                ApB(i, i) = _energies(_vc2index.c(i)) - _energies(_vc2index.v(i));
+            } // Composite index i
+
+            for (int i_1 = 0; i_1 < rpasize; i_1++) {
+
+                int v_1 = _vc2index.v(i_1);
+                int c_1 = _vc2index.c(i_1);
+                
+                for (int i_2 = 0; i_2 < rpasize; i_2++) {
+                    
+                    int v_2 = _vc2index.v(i_2);
+                    int c_2 = _vc2index.c(i_2);
+                    
+                    double fourcenter = 0.0;
+                    
+                    for (int i_aux = 0; i_aux < auxsize; ++i_aux) {
+                        
+                        VectorXfd tc_vc_1 = _Mmn[v_1].col(i_aux);
+                        VectorXfd tc_vc_2 = _Mmn[v_2].col(i_aux);
+                        
+                        fourcenter += tc_vc_1(c_1) * tc_vc_2(c_2);
+                        
+                    } // Auxiliary basis function
+
+                    ApB(i_1, i_2) -= 2 * fourcenter; // Fill (A + B)
+                    
+                } // Composite index i_2
+            } // Composite index i_1
+            
+            return ApB;
+        }
+        
+        Eigen::MatrixXd RPA::calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) {
+            
+            return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
+        }
+        
+        rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) {
+            const int size = _Mmn.auxsize(); // size of gwbasis
+            
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
+
+            Eigen::VectorXd omega = es.eigenvalues().cwiseSqrt();
+            Eigen::MatrixXd Z = es.eigenvectors();
+
+            Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
+            Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
+            Eigen::VectorXd Omega_sqrt = omega.cwiseSqrt();
+            
+            Eigen::MatrixXd XpY = Eigen::MatrixXd(size, size);
+
+            for (int s = 0; s < size; s++) {
+
+                Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
+                Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
+
+                XpY.col(s) = 0.50 * (
+                        (lhs + rhs).cwiseProduct(Z.col(s)) + // X
+                        (lhs - rhs).cwiseProduct(Z.col(s))); // Y
+
+            }
+
+            // TODO: More efficient way to solve eq. 36 without sqrt is
+            // described in section 6.2.
+            
+            rpa_eigensolution sol;
+            sol._Omega = omega;
+            sol._XpY = XpY;
+
+            return sol;
+
+        }
 
   }}

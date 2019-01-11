@@ -65,7 +65,7 @@ namespace votca {
                     
                     double fourcenter = 0.0;
                     
-                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); ++i_aux) {
+                    for (int i_aux = 0; i_aux < Mmn.auxsize(); ++i_aux) {
                         
                         VectorXfd tc_vc_1 = Mmn[v_1].col(i_aux);
                         VectorXfd tc_vc_2 = Mmn[v_2].col(i_aux);
@@ -131,7 +131,7 @@ namespace votca {
 
                 for (int n = 0; n < _qp_size; n++) {
 
-                    for (int i_aux = 0; i_aux < Mmn.getAuxDimension(); i_aux++) {
+                    for (int i_aux = 0; i_aux < Mmn.auxsize(); i_aux++) {
 
                         // Get three-center column for index (m, n)
                         VectorXfd tc_mn = Mmn[m].col(i_aux);

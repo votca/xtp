@@ -19,9 +19,11 @@
 
 #ifndef _VOTCA_XTP_RPA_H
 #define _VOTCA_XTP_RPA_H
+
 #include <votca/xtp/eigen.h>
 #include <vector>
-
+#include <votca/xtp/vc2index.h>
+#include <votca/xtp/rpa_eigensolution.h>
 
 namespace votca
 {
@@ -34,12 +36,13 @@ class RPA
 public:
 
     RPA(const Eigen::VectorXd& energies, const TCMatrix_gwbse& Mmn):
-        _energies(energies),_Mmn(Mmn){};
+        _energies(energies),_Mmn(Mmn),_vc2index(0, 0, 0){}; // TODO: Pass vmin, cmin, ctotal as input?
 
     void configure(int homo, int rpamin, int rpamax){
         _homo = homo;
         _rpamin = rpamin;
         _rpamax = rpamax;
+        _vc2index = vc2index(rpamin, homo + 1, rpamax - (homo + 1));
     }
 
     Eigen::MatrixXd calculate_epsilon_i(double frequency)const{
@@ -49,6 +52,8 @@ public:
     Eigen::MatrixXd calculate_epsilon_r(double frequency)const{
         return calculate_epsilon<false>(frequency);
     }
+    
+    rpa_eigensolution calculate_eigenvalues();
 
     //calculates full RPA vector of energies from gwa and dftenergies and qpmin
     //RPA energies have three parts, lower than qpmin: dftenergies,between qpmin and qpmax:gwa_energies,above:dftenergies+homo-lumo shift
@@ -65,6 +70,13 @@ private:
 
     template< bool imag>
     Eigen::MatrixXd calculate_epsilon(double frequency)const;
+    
+    vc2index _vc2index;
+    
+    Eigen::VectorXd calculate_spectral_AmB();
+    Eigen::MatrixXd calculate_spectral_ApB();
+    Eigen::MatrixXd calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB);
+    rpa_eigensolution diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C);
 
 };
 }
