@@ -72,22 +72,25 @@ namespace votca {
 
         }
 
-    //This function calculates the inverse of the microscopic dielectric
-    //matrix for given complex frequency and Kohn-Sham energies
+    //This function calculates the inverses of the microscopic dielectric
+    //matrix we need, stored in a vector
     
-    Eigen::MatrixXd GaussianQuadrature::CalcDielInv(double freqReal,
-            double freqImag, RPA& rpa){
+    Eigen::VectorXd<Eigen::MatrixXd> GaussianQuadrature::CalcDielInvVector(RPA& rpa){
     
-        //First, using commands from rpa.h, we set up the dielectric matrix
-        //itself
-        Eigen::VectorXd real = Eigen::VectorXd::Ones(1) * freqReal;
-        Eigen::VectorXd imag = Eigen::VectorXd::Ones(1) * freqImag;
-        rpa.setScreening(real,imag);
-        rpa.calculate_epsilon(_qpenergies,_Mmn);
-        const Eigen::MatrixXd& DielMx = rpa.GetEpsilon_i()[0];
-    
-        //Now, we just take the inverse of this matrix
-        return DielMx.inverse();
+        Eigen::VectorXd<Eigen::MatrixXd> result;
+        
+        //We load in the vector containing the frequencies for which we want
+        //the dielectric matrix inverses
+        Eigen::VectorXd CooTfFreqs = CooTfFreq();
+
+        
+        for ( int i = 0 ; i < _order ; i++ ) {
+        
+            result(i) = rpa.calculate_epsilon_i(CooTfFreqs(i)).inverse();
+            
+            }
+        
+        return result;
     
         }
 
@@ -99,15 +102,14 @@ namespace votca {
     
         //First, we intialise the result, which is a sum, at zero
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(noqplevels,noqplevels);
-    
-        //We load in the vector containing the frequencies for which we want
-        //the dielectric matrix inverses
-        Eigen::VectorXd CooTfFreqs = CooTfFreq();
-    
+
+        //We load in the vector containing the dielectric matrix inverses
+        vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(RPA& rpa);
+        
         //Now, using a for loop, we get the sum of all those matrices
             for (int k = 0 ; k < _order ; ++k){
             
-                result += CalcDielInv(0,CooTfFreqs(k),rpa);
+                result += DielInvVector(k);
             
                 }
     
@@ -118,200 +120,14 @@ namespace votca {
     
     }
     
-    //This function returns the residual contribution matrix
+    //This function returns the whole quadrature contribution matrix as part of
+    //the correlation part of the self-energy
 
-    Eigen::MatrixXd GaussianQuadrature::SigmaRes(RPA& rpa){
-    
-        //First, we initialise the result, which is a sum, at zero
-        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(noqplevels,noqplevels);
-    
-        //Then, using a triple for loop, we fill the matrix. We use symmetry,
-        //so the second index runs up and including the first index, in order to
-        //get the diagonal too.
-            for (int k = 0 ; k < noqplevels ; ++k){
-                
-                //making sure the M tensor is double-valued
-                    #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[k];
-                    #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();       
-                    #endif
-                
-                if (_qpenergies(k) > 0){
-            
-                    for (int m = k + 2 ; m < noqplevels ; ++m){
-                            
-                        //evaluating the dielectric matrix inverse at the right
-                        //(real) frequency value
-                        Eigen::MatrixXd DielInvMinId =
-                            CalcDielInv(_qpenergies(k) - _qpenergies(m),0,rpa);
-                        
-                        //now, we subtract the identity
-                        int nobasisfcs = DielInvMinId.size();        
-                        DielInvMinId -=
-                            Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
-                    
-                        //now, we compute the matrix multiplication, which is 
-                        //the contribution for this part of the loop
-                        Eigen::MatrixXd ResPart = 
-                            MMx*DielInvMinId*MMx.transpose();
-                            
-                        for (int n = 0 ; n < m + 1 ; ++n){
-                        
-                            //the resulting matrix entry is the sum of all these
-                            result(m,n) += ResPart(m,n);
-                    
-                            }
-                        
-                        }
-                        
-                    for (int n = k + 2 ; n < noqplevels ; ++n){
-                
-                        Eigen::MatrixXd DielInvMinId =
-                            CalcDielInv(_qpenergies(k) - _qpenergies(n),0,rpa);
-                        int nobasisfcs = DielInvMinId.size();        
-                        DielInvMinId -= 
-                            Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
-                        Eigen::MatrixXd ResPart = 
-                            MMx * DielInvMinId * MMx.transpose();
-                        
-                            for (int m = n + 1 ; m < noqplevels ; ++m){
-                        
-                            //the resulting matrix entry is the sum of all these
-                            result(m,n) += ResPart(m,n);
-                    
-                            }
-                        
-                        }
-                    
-                    }   else { if (_qpenergies(k) < 0){
-                        
-                                for (int m = 0 ; m < k + 1 ; ++m){
-                                      
-                                    Eigen::MatrixXd DielInvMinId =
-                                        CalcDielInv(_qpenergies(k)
-                                        - _qpenergies(m),0,rpa);
-                                    int nobasisfcs=DielInvMinId.size();        
-                                    DielInvMinId -=
-                                        Eigen::MatrixXd::Identity(nobasisfcs,
-                                        nobasisfcs);
-                                    Eigen::MatrixXd ResPart =
-                                        MMx * DielInvMinId * MMx.transpose();
-                                    
-                                        for (int n = 0 ; n < m + 1 ; ++n){
-                        
-                                            //the resulting matrix entry is the 
-                                            //sum of all these
-                                            result(m,n) += ResPart(m,n);
-                    
-                                            }
-                        
-                                    }
-                                
-                                for (int n = 0 ; n < k + 1 ; ++n){
-                                
-                                    Eigen::MatrixXd DielInvMinId = 
-                                        CalcDielInv(_qpenergies(k)
-                                        - _qpenergies(n),0,rpa);
-                                    int nobasisfcs = DielInvMinId.size();        
-                                    DielInvMinId -= 
-                                        Eigen::MatrixXd::Identity(nobasisfcs,
-                                        nobasisfcs);
-                                    Eigen::MatrixXd ResPart =
-                                        MMx * DielInvMinId * MMx.transpose();
-                            
-                                        for (int m = n + 1 ; m < noqplevels ; ++n){
-                        
-                                            //the resulting matrix entry is
-                                            //the sum of all these
-                                            result(m,n) += ResPart(m,n);    
-                                            
-                                            }
-                                
-                                    }
-                                
-                                }
-                            
-                            }
-                    
-                }
-                
-        //Now, we just add the transpose matrix, to get the full, symmetric,
-        //matrix
-        result+=result.transpose();
-        //There is a factor (-1) to be put in front, and we obtain the result
-        return (-1)*result;
-    
-        }
-    
-    //This function returns the diagonal of aforementioned matrix SigmaRes
-    //in vector form
-    
-    Eigen::VectorXd GaussianQuadrature::SigmaResDiag(RPA& rpa){
-        
-        //First, we initialise the result, which is a sum, at zero
-        Eigen::VectorXd result=Eigen::VectorXd::Zero(noqplevels,noqplevels);
-            
-            //Now, everything is the same, but now we only have one sum to split
-            //since m = n on the diagonal
-            for (int k = 0 ; k < noqplevels ; ++k){
-                
-                    #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[k];
-                    #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();       
-                    #endif
-                
-                if (_qpenergies(k) > 0){
-                    
-                        for (int m = k + 2 ; m < noqplevels ; ++m){
-                
-                            Eigen::MatrixXd DielInvMinId = 
-                                CalcDielInv(_qpenergies(k) - _qpenergies(m),0,rpa);
-                            int nobasisfcs = DielInvMinId.size();        
-                            DielInvMinId -= 
-                                Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
-                            Eigen::MatrixXd ResPart = 
-                                MMx * DielInvMinId * MMx.transpose();
-                            result(m) += ResPart(m,m);
-                        
-                            }
-            
-                    }
-                
-                else { if (_qpenergies(k) < 0){
-                    
-                        for (int m = 0 ; m < k+1 ; ++m){
-                           
-                            Eigen::MatrixXd DielInvMinId = 
-                                CalcDielInv(_qpenergies(k) - _qpenergies(m),0,rpa);
-                            int nobasisfcs = DielInvMinId.size();        
-                            DielInvMinId -= 
-                                Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
-                            Eigen::MatrixXd ResPart = 
-                                MMx * DielInvMinId * MMx.transpose();
-                            result(m) += ResPart(m,m);
-                
-                            }
-                
-                        }
-        
-                    }
-                }
-        
-        //Because m = n on the diagonal, we also get a double factor in front
-        return (-2)*result;
-        
-        }
-        
-    //This function returns the whole self-energy expectation matrix
-    //for given Kohn-Sham energies and M coefficients (hence "RPA")
-
-    Eigen::MatrixXcd GaussianQuadrature::Sigma(RPA& rpa) {
+    Eigen::MatrixXd GaussianQuadrature::SigmaGQ(RPA& rpa) {
         
         //We first initialise the quadrature contribution matrix, which appears
         //in the result and is a sum, at zero
-        Eigen::MatrixXcd SigmaGQ = Eigen::MatrixXcd::Zero(noqplevels,noqplevels);
+        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(noqplevels,noqplevels);
 
         //Now, we will set up the adapted frequency tensor in the following
         //for loop, as an array of matrices. We split this tensor in a real and 
@@ -325,9 +141,7 @@ namespace votca {
                 //loops, where we will use the vector of frequencies from the
                 //function CooTfFreq. Also, we initialise the real and imag part
                 Eigen::VectorXd CooTfFreqs = CooTfFreq();
-                Eigen::MatrixXd ResFreqsReal =
-                    Eigen::MatrixXd::Zero(_order, noqplevels);
-                Eigen::MatrixXd ResFreqsImag = 
+                Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, noqplevels);
                 
                     for (int m = 0; m < noqplevels; ++m) {
@@ -349,10 +163,8 @@ namespace votca {
                             // now, we cannot do a component-wise thing, since
                             //we deal with different dimensions for j and m in 
                             //the matrix
-                            ResFreqsReal(j, m) =
+                            ResFreqs(j, m) =
                                 CooTfFreqs(j) / (DeltaESq(m) + CooTfFreqsSq(j));
-                            ResFreqsImag(j, m) = 
-                                DeltaE(m) / (DeltaESq(m) + CooTfFreqsSq(j));
                             
                             }
                         
@@ -371,42 +183,32 @@ namespace votca {
                                 
                 //Now, we can add the resulting matrices to the quadrature
                 //contribution matrix, which happens in parts
-                SigmaGQ.real() +=
-                    (_quadweights.transpose() * ResFreqsReal).asDiagonal() * 
+                result +=
+                    (_quadweights.transpose() * ResFreqs).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose());
-                SigmaGQ.real() +=
+                result +=
                     (MMxXSumInvMinId * MMx.transpose()) * 
-                    (_quadweights.transpose() * ResFreqsReal).asDiagonal();
-                SigmaGQ.imag() += 
-                    (_quadweights.transpose() * ResFreqsImag).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose());
-                SigmaGQ.imag() +=
-                    (MMxXSumInvMinId * MMx.transpose()) * 
-                    (_quadweights.transpose() * ResFreqsImag).asDiagonal();
+                    (_quadweights.transpose() * ResFreqs).asDiagonal();
                 
                 }
         
-        //Now, we add the already computed residual expressions, and we have
-        //our result
-        return SigmaGQ+SigmaRes(rpa);
+        return result;
         
         }
         
     //This function only returns the diagonal of aforementioned matrix
-    //Sigma in vector form. All happens analogously
+    //SigmaGQ in vector form. All happens analogously
     
-    Eigen::VectorXcd GaussianQuadrature::SigmaDiag(RPA& rpa) {
+    Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(RPA& rpa) {
             
-        Eigen::VectorXcd SigmaGQDiag =
-            Eigen::VectorXcd::Zero(noqplevels);
+        Eigen::VectorXd result =
+            Eigen::VectorXd::Zero(noqplevels);
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
 
             for (int k = 0; k < noqplevels; ++k) {
                 
-                Eigen::MatrixXd ResFreqsReal =
-                    Eigen::MatrixXd::Zero(_order, noqplevels);
-                Eigen::MatrixXd ResFreqsImag = 
+                Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, noqplevels);
                 
                     #if (GWBSE_DOUBLE)
@@ -426,10 +228,8 @@ namespace votca {
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
                             Eigen::VectorXd CooTfFreqsSq =
                                 CooTfFreqs.cwiseAbs2();
-                            ResFreqsReal(j, m) = 
+                            ResFreqs(j, m) = 
                                 CooTfFreqs(j) / (DeltaESq(m) + CooTfFreqsSq(j));
-                            ResFreqsImag(j, m) = 
-                                DeltaE(m) / (DeltaESq(m) + CooTfFreqsSq(j));
                             
                             }
                         
@@ -437,17 +237,14 @@ namespace votca {
                 
                 //There is a similar, double contribution, since m = n on the
                 //diagonal: this will be evened out by the factor 2 at the end
-                SigmaGQDiag.real() += 
+                result += 
                     ((_quadweights.transpose() * ResFreqsReal).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose())).diagonal();
-                SigmaGQDiag.imag() += 
-                    ((_quadweights.transpose() * ResFreqsImag).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose())).diagonal();
                 
                 }
         
         //we get a factor two now, since m = n on the diagonal
-        return 2*SigmaGQDiag+SigmaResDiag(rpa);
+        return 2*result;
         
         }
     

@@ -127,7 +127,7 @@
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
       <itemPath>../../include/votca/xtp/segmenttype.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_base.h</itemPath>
-      <itemPath>../../include/votca/xtp/sigma_residual.h</itemPath>
+      <itemPath>../../include/votca/xtp/sigma_ci.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_ppm.h</itemPath>
       <itemPath>../../include/votca/xtp/sphere_lebedev_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/sqlapplication.h</itemPath>
@@ -216,8 +216,8 @@
         <itemPath>../../src/libxtp/gwbse/ppm.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/rpa.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_base.cc</itemPath>
+        <itemPath>../../src/libxtp/gwbse/sigma_ci.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_ppm.cc</itemPath>
-        <itemPath>../../src/libxtp/gwbse/sigma_residual.cc</itemPath>
       </logicalFolder>
       <logicalFolder name="f6" displayName="NumInt" projectFiles="true">
         <itemPath>../../src/libxtp/gridbox.cc</itemPath>
@@ -3190,12 +3190,9 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/sigma_ppm.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+      <item path="../../include/votca/xtp/sigma_ci.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/sigma_residual.h"
+      <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3665,12 +3662,9 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
-            ex="false"
-            tool="1"
-            flavor2="0">
+      <item path="../../src/libxtp/gwbse/sigma_ci.cc" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="../../src/libxtp/gwbse/sigma_residual.cc"
+      <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -4216,12 +4210,9 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/sigma_ppm.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+      <item path="../../include/votca/xtp/sigma_ci.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/sigma_residual.h"
+      <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4691,12 +4682,9 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
-            ex="false"
-            tool="1"
-            flavor2="0">
+      <item path="../../src/libxtp/gwbse/sigma_ci.cc" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="../../src/libxtp/gwbse/sigma_residual.cc"
+      <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
             ex="false"
             tool="1"
             flavor2="0">

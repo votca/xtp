@@ -52,4 +52,4 @@ Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies, const
 }
 }
 
-#endif /* _VOTCA_XTP_SIGMA_H */
+#endif /* _VOTCA_XTP_SIGMA_PPM_H */

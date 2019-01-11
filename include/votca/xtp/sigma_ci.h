@@ -1,4 +1,4 @@
-/* 
+/*
  *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
@@ -17,56 +17,57 @@
  *
  */
 
-#ifndef __XTP_GAUSSIAN_QUADRATURE__H
-#define __XTP_GAUSSIAN_QUADRATURE__H
-
+#ifndef _VOTCA_XTP_SIGMA_CI_H
+#define _VOTCA_XTP_SIGMA_CI_H
 #include <votca/xtp/eigen.h>
-#include <iostream>
-#include <votca/xtp/rpa.h>
-
-//Computes the self-energy expectation matrix for given Kohn-Sham energies and
-//M coefficients, using a Gaussian quadrature and expressions for the residuals
-//arising from complex contour integration
+#include <votca/xtp/sigma_base.h>
+#include <votca/ctp/logger.h>
 
 namespace votca {
     namespace xtp {
-       
-        class GaussianQuadrature {
-        
-        public:
+   
+        class TCMatrix_gwbse;
+        class RPA;
+
+        class Sigma_CI : public Sigma_base {
             
-            //Default constructor
-            GaussianQuadrature(const Eigen::VectorXd& qpenergies,const TCMatrix_gwbse& Mmn);
+            public:
+            
+            
+            Sigma_CI(TCMatrix_gwbse& Mmn):Sigma_base(Mmn){};
+  
+            //Sets up the screening parametrisation
+            void PrepareScreening(const RPA& rpa);
             
             //This function returns the whole self-energy expectation matrix
             //for given Kohn-Sham energies and M coefficients (hence "RPA")
-            Eigen::MatrixXd SigmaGQ(RPA& rpa);
-            
-            //This function only returns the diagonal of aforementioned matrix
-            //Sigma in vector form
-            Eigen::VectorXcd SigmaGQDiag(RPA& rpa);
+            Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&
+            frequencies, const Eigen::VectorXd& RPAEnergies, RPA& rpa,
+            GaussianQuadrature& gq)const;
+            //Calculates Sigma_c offdiag elements
+            Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&
+            frequencies, const Eigen::VectorXd& RPAEnergies, RPA& rpa,
+            GaussianQuadrature& gq)const;
             
             //This function returns the chosen order (default=12)
             int Order()const{return _order;}
+            
         
-        private:
+            private:
+                
+                
+                
             
             //This function returns the coordinate transformation applied to the
             //quadrature points. These vector entries will serve as frequencies
             //for the dielectric matrix inverses; hence the name
-            Eigen::VectorXd CooTfFreq();
+            //Eigen::VectorXd CooTfFreq();
             
             //This function calculates the inverse of the microscopic dielectric
             //matrix for given complex frequency and Kohn-Sham energies
-            vector<Eigen::MatrixXd> CalcDielInvVector(RPA& rpa);
+            //Eigen::MatrixXd CalcDielInv(double frequencyReal,
+            //                double frequencyImag, RPA& rpa);
             
-            //This function returns the B matrix, which contains the sum of
-            //the dielectric matrices evaluated at the translated frequency vector 
-            //entries from aforementioned vector CooTfFreq
-            Eigen::MatrixXd SumDielInvMinId(RPA& rpa);
-            
-            //Here, we pick the value of int Order() (default=12)            
-            int _order=12;
             
             //Here, we load in the constant vector containing the Kohn-Sham
             //energies, which appears in the constructor. The number of KS wave
@@ -79,12 +80,11 @@ namespace votca {
             //array (tensor), which appear in the constructor
             const TCMatrix_gwbse& _Mmn;
             
-            //Here, the vectors containing the quadrature evaluation points, 
-            //resp. the quadrature weights, are stored
-            Eigen::VectorXd _quadpoints;            
-            Eigen::VectorXd _quadweights;
-                
-            };
+            
+                                    };
+    
+            }
+    
         }
-    }
-#endif /* GAUSSIAN_QUADRATURE_H */
+
+#endif /* _VOTCA_XTP_SIGMA_RESIDUAL_H */
