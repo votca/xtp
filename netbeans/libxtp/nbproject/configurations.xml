@@ -124,7 +124,6 @@
       <itemPath>../../include/votca/xtp/radial_euler_maclaurin_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/rpa.h</itemPath>
       <itemPath>../../include/votca/xtp/rpa_eigensolution.h</itemPath>
-      <itemPath>../../include/votca/xtp/rpa_spectral.h</itemPath>
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
       <itemPath>../../include/votca/xtp/segmenttype.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_base.h</itemPath>
@@ -216,7 +215,6 @@
         <itemPath>../../src/libxtp/gwbse/gwbseengine.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/ppm.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/rpa.cc</itemPath>
-        <itemPath>../../src/libxtp/gwbse/rpa_spectral.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_base.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_ppm.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_spectral.cc</itemPath>
@@ -3177,11 +3175,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/rpa_spectral.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../include/votca/xtp/segment.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segmenttype.h"
@@ -3658,11 +3651,6 @@
       <item path="../../src/libxtp/gwbse/ppm.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="../../src/libxtp/gwbse/rpa_spectral.cc"
-            ex="false"
-            tool="1"
-            flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_base.cc"
             ex="false"
@@ -4198,11 +4186,6 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/rpa_spectral.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="../../include/votca/xtp/segment.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segmenttype.h"
@@ -4679,11 +4662,6 @@
       <item path="../../src/libxtp/gwbse/ppm.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="../../src/libxtp/gwbse/rpa_spectral.cc"
-            ex="false"
-            tool="1"
-            flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_base.cc"
             ex="false"

@@ -22,131 +22,44 @@
 
 #include <complex>
 #include <cmath>
-#include <votca/xtp/eigen.h>
-#include <votca/xtp/rpa_spectral.h>
+#include <votca/xtp/sigma_base.h>
+#include <votca/xtp/vc2index.h>
+#include <votca/xtp/rpa_eigensolution.h>
 
 namespace votca {
 namespace xtp {
 
 class TCMatrix_gwbse;
+class RPA;
 
-class Sigma_Spectral {
-    
-private:
-    
-    // BSE Options
-    int _bse_size; // Total number of BSE energy levels
-
-    // QP Options
-    int _qp_homo; // Index of homo energy level
-    int _qp_min; // Minimal energy level index
-    int _qp_size; // Total number of QP energy levels <= _bse_size
-    
-    // Internal Options
-    bool _Hedin; // Heddin's Static Approximation
-
-    // Convergence criteria for g iteration (Hartree)
-    double _g_sc_limit;
-    int _g_sc_max_iterations;
-
-    // Energies
-    Eigen::VectorXd _gwa_energies;
-
-    // Sigma matrix
-    Eigen::MatrixXd _Sigma_x; // Exchange part of sigma
-    Eigen::MatrixXcd _Sigma_c; // Correlation part of sigma
-
-    void compute_sigma_x(const TCMatrix_gwbse& Mmn, double scaHFX);
-    void compute_sigma_c(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
-    
-    // Compute sigma_c (eq. 47, 48)
-    void clear_sigma_c();
-    void fill_sigma_c_diag(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
-    void fill_sigma_c_offdiag(const TCMatrix_gwbse& Mmn, const RPA_Spectral& rpa);
-    std::complex<double> Equation47(int m, int n, double w, Eigen::MatrixXd& res, double omega);
-    double Equation48(int m, int n, Eigen::MatrixXd& res, double omega);
+class Sigma_Spectral : public Sigma_base {
     
 public:
-
-    Sigma_Spectral() {
-        _gwa_energies.resize(0);
-    }
-
-    void configure_bse(int homo, int vmin, int cmax) {
-
-        // TODO: Which of these values should we keep as member?
-        int bse_homo = homo;
-        int bse_vmin = vmin;
-        int bse_vmax = homo;
-        int bse_cmin = homo + 1;
-        int bse_cmax = cmax;
-        int bse_vtotal = bse_vmax - bse_vmin + 1;
-        int bse_ctotal = bse_cmax - bse_cmin + 1;
-        _bse_size = bse_vtotal * bse_ctotal;
-
-        return;
-
-    }
-
-    void configure_qp(int homo, int min, int max) {
-
-        // TODO: Which of these values should we keep as member?
-        _qp_homo = homo;
-        _qp_min = min;
-        int qp_max = max;
-        _qp_size = qp_max - _qp_min + 1;
-        
-        return;
-        
-    }
     
-    bool getHedin() {
-        return _Hedin;
-    }
+    Sigma_Spectral(TCMatrix_gwbse& Mmn)
+        : Sigma_base(Mmn), _vc2index(0, 0, 0) {};
+
+    // Sets up the screening parametrisation
+    void PrepareScreening(const RPA& rpa);
+    // Calculates Sigma_c diag elements
+    Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies, const Eigen::VectorXd& RPAEnergies)const;
+    // Calculates Sigma_c offdiag elements
+    Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies, const Eigen::VectorXd& RPAEnergies)const;
+
+private:
     
-    void setHedin(bool value) {
-        _Hedin = value;
-    }
-
-    void configure_g_iter(int g_sc_max_iterations, double g_sc_limit) {
-        
-        _g_sc_limit = g_sc_limit;
-        _g_sc_max_iterations = g_sc_max_iterations;
-        
-        if (_g_sc_max_iterations < 1) {
-            _g_sc_max_iterations = 1;
-        }
-        
-        return;
-        
-    }
+    // Internal Options
+    bool _HedinApprox; // Hedin's Static Approximation
     
-    const Eigen::VectorXd& get_GWAEnergies() const {
-        return _gwa_energies;
-    }
+    vc2index _vc2index;
     
-    void set_GWAEnergies(Eigen::VectorXd& gwa_energies) {
-        _gwa_energies = gwa_energies; // Creates a copy
-    }
+    // Eigenvalues, eigenvectors from RPA
+    rpa_eigensolution _EigenSol;
 
-    const Eigen::MatrixXd& get_sigma_x() const {
-        return _Sigma_x;
-    }
-    
-    const Eigen::MatrixXcd& get_sigma_c() const {
-        return _Sigma_c;
-    }
-
-    void compute_sigma(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX);
-    Eigen::MatrixXd SetupFullQPHamiltonian(Eigen::MatrixXd& vxc);
-    //void refine_energies(TCMatrix_gwbse& Mmn, RPA_Spectral& rpa, double scaHFX, const Eigen::VectorXd& dft_energies, const Eigen::MatrixXd& vxc);
-
-    void FreeMatrices() {
-        
-        // TODO
-
-        return;
-    }
+    // Used to compute correlation part of sigma (eq. 47, 48)
+    Eigen::MatrixXd CalcResidues(int s) const;
+    double Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const;
+    double Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const;
     
 };
 }

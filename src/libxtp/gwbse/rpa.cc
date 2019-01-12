@@ -78,7 +78,7 @@ namespace votca {
  template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency)const;
  template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency)const;
 
-        rpa_eigensolution RPA::calculate_eigenvalues() {
+        rpa_eigensolution RPA::calculate_eigenvalues() const {
 
             Eigen::VectorXd AmB = calculate_spectral_AmB();
             Eigen::MatrixXd ApB = calculate_spectral_ApB();
@@ -88,7 +88,7 @@ namespace votca {
             return diag_C(AmB, C);
         }
         
-        Eigen::VectorXd RPA::calculate_spectral_AmB() {
+        Eigen::VectorXd RPA::calculate_spectral_AmB() const {
             const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
             Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
             
@@ -101,9 +101,9 @@ namespace votca {
             return AmB;
         }
         
-        Eigen::MatrixXd RPA::calculate_spectral_ApB() {
+        Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
             const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
-            const int auxsize = _Mmn.auxsize(); // size of gwbasis
+            const int auxsize = _Mmn.auxsize(); // Size of gwbasis
             Eigen::MatrixXd ApB = Eigen::VectorXd::Zero(rpasize, rpasize);
             
             // TODO: Symmetries
@@ -141,12 +141,12 @@ namespace votca {
             return ApB;
         }
         
-        Eigen::MatrixXd RPA::calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) {
+        Eigen::MatrixXd RPA::calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) const {
             
             return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
         }
         
-        rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) {
+        rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const {
             const int size = _Mmn.auxsize(); // size of gwbasis
             
             Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);

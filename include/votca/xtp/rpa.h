@@ -53,7 +53,7 @@ public:
         return calculate_epsilon<false>(frequency);
     }
     
-    rpa_eigensolution calculate_eigenvalues();
+    rpa_eigensolution calculate_eigenvalues() const;
 
     //calculates full RPA vector of energies from gwa and dftenergies and qpmin
     //RPA energies have three parts, lower than qpmin: dftenergies,between qpmin and qpmax:gwa_energies,above:dftenergies+homo-lumo shift
@@ -73,10 +73,10 @@ private:
     
     vc2index _vc2index;
     
-    Eigen::VectorXd calculate_spectral_AmB();
-    Eigen::MatrixXd calculate_spectral_ApB();
-    Eigen::MatrixXd calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB);
-    rpa_eigensolution diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C);
+    Eigen::VectorXd calculate_spectral_AmB() const;
+    Eigen::MatrixXd calculate_spectral_ApB() const;
+    Eigen::MatrixXd calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) const;
+    rpa_eigensolution diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const;
 
 };
 }
