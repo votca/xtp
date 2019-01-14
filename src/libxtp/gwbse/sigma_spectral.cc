@@ -24,16 +24,17 @@
 namespace votca {
   namespace xtp {
 
-    void Sigma_Spectral::PrepareScreening(const RPA& rpa) {
+    void Sigma_Spectral::PrepareScreening() {
 
       _HedinApprox = false;
       _vc2index = vc2index(_qpmin, _homo + 1, _qpmax - (_homo + 1));
-      _EigenSol = rpa.calculate_eigenvalues();
+      _EigenSol = _rpa.calculate_eigenvalues();
       return;
     }
 
-    Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(const Eigen::VectorXd& frequencies, const Eigen::VectorXd& RPAEnergies) const {
+    Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
       Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+      const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
 
       if (_HedinApprox) {
@@ -71,8 +72,9 @@ namespace votca {
       return result;
     }
 
-    Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies, const Eigen::VectorXd& RPAEnergies) const {
+    Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies) const {
       Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+      const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
       
       if (_HedinApprox) {
