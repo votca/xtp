@@ -36,8 +36,8 @@ class Sigma_Spectral : public Sigma_base {
     
 public:
     
-    Sigma_Spectral(TCMatrix_gwbse& Mmn)
-        : Sigma_base(Mmn), _vc2index(0, 0, 0) {};
+    Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa)
+        : Sigma_base(Mmn, rpa), _vc2index(0, 0, 0) {};
 
     // Sets up the screening parametrisation
     void PrepareScreening(const RPA& rpa);
