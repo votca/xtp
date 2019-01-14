@@ -22,6 +22,7 @@
 #include <votca/xtp/gw.h>
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_ppm.h"
+#include <votca/xtp/sigma_spectral.h>
 
 
 namespace votca {
@@ -30,8 +31,10 @@ namespace votca {
    void GW::configure(const options& opt){
      _opt=opt;
      _qptotal=_opt.qpmax-_opt.qpmin+1;
-     if(_opt.sigma_integration=="ppm"){
-         _sigma=std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn));
+     if (_opt.sigma_integration=="ppm") {
+       _sigma=std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn));
+     } else if (_opt.sigma_integration=="exact") {
+       _sigma=std::unique_ptr<Sigma_base>(new Sigma_Spectral(_Mmn));
      }
      _sigma->configure(_opt.homo,_opt.qpmin,_opt.qpmax);
      _Sigma_x=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
