@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -23,13 +23,17 @@
 #include <votca/xtp/eigen.h>
 #include <vector>
 #include <votca/xtp/vc2index.h>
-#include <votca/xtp/rpa_eigensolution.h>
 
 namespace votca
 {
 namespace xtp
 {
 class TCMatrix_gwbse;
+
+struct rpa_eigensolution {
+    Eigen::VectorXd _Omega; // Eigenvalues
+    Eigen::MatrixXd _XpY; // Eigenvector components (X + Y)
+};
 
 class RPA
 {

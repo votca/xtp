@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -29,6 +29,7 @@ namespace votca {
       _HedinApprox = false;
       _vc2index = vc2index(_qpmin, _homo + 1, _qpmax - (_homo + 1));
       _EigenSol = _rpa.calculate_eigenvalues();
+      std::cout << _EigenSol._Omega << std::endl;
       return;
     }
 
@@ -73,7 +74,7 @@ namespace votca {
     }
 
     Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies) const {
-      Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+      Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
       
@@ -116,7 +117,7 @@ namespace votca {
               // TODO: Take frequency or energy?
               double w_m = RPAEnergies(m); // Frequency/energy
               double w_n = RPAEnergies(n); // Frequency/energy
-              
+
               double result_m = Equation47(m, n, RPAEnergies, w_m, omega, residues);
               double result_n = Equation47(m, n, RPAEnergies, w_n, omega, residues);
 

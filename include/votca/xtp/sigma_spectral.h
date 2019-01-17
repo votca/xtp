@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -24,7 +24,7 @@
 #include <cmath>
 #include <votca/xtp/sigma_base.h>
 #include <votca/xtp/vc2index.h>
-#include <votca/xtp/rpa_eigensolution.h>
+#include <votca/xtp/rpa.h>
 
 namespace votca {
 namespace xtp {
@@ -56,11 +56,14 @@ private:
     // Eigenvalues, eigenvectors from RPA
     rpa_eigensolution _EigenSol;
 
-    // Used to compute correlation part of sigma (eq. 47, 48)
+    // Used to compute correlation part of sigma (eq. 47, 48)(*)
     Eigen::MatrixXd CalcResidues(int s) const;
     double Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const;
     double Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const;
     
+    // (*) Bruneval, F. et al. molgw 1: Many-body perturbation theory software
+    // for atoms, molecules, and clusters. Computer Physics Communications 208,
+    // 149–161 (2016).
 };
 }
 }
