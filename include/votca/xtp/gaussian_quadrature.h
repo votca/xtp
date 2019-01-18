@@ -39,7 +39,11 @@ namespace votca {
         public:
             
             //Default constructor
-            GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn, int qptotal);
+            GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn);
+            
+            void configure(int qptotal){
+                _qptotal=qptotal;
+            }
             
             //This function returns the whole self-energy expectation matrix
             //for given Kohn-Sham energies and M coefficients (hence "RPA")
@@ -53,22 +57,26 @@ namespace votca {
             
             //This function returns the chosen order (default=12)
             int Order()const{return _order;}
-        
-        private:
             
-            //This function returns the coordinate transformation applied to the
+                        //This function returns the coordinate transformation applied to the
             //quadrature points. These vector entries will serve as frequencies
             //for the dielectric matrix inverses; hence the name
             Eigen::VectorXd CooTfFreq()const;
             
-            //This function calculates the inverse of the microscopic dielectric
+                    //This function calculates the inverse of the microscopic dielectric
             //matrix for given complex frequency and Kohn-Sham energies
             std::vector<Eigen::MatrixXd> CalcDielInvVector(const RPA& rpa)const;
             
-            //This function returns the B matrix, which contains the sum of
+                        //This function returns the B matrix, which contains the sum of
             //the dielectric matrices evaluated at the translated frequency vector 
             //entries from aforementioned vector CooTfFreq
             Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
+        
+        private:
+            
+
+            
+
             
             //Here, we pick the value of int Order() (default=12)            
             int _order=12;

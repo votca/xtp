@@ -31,8 +31,7 @@ namespace votca {
     //Constructor  
     
     GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& energies,
-        const TCMatrix_gwbse& Mmn, int qptotal):_energies(energies),_Mmn(Mmn),_qptotal(qptotal){
-    
+        const TCMatrix_gwbse& Mmn):_energies(energies),_Mmn(Mmn){
         //we first initialise the Gaussian quadrature weights and evaluation
         //points
         _quadpoints = Eigen::VectorXd::Zero(_order);
@@ -98,23 +97,18 @@ namespace votca {
     //entries from aforementioned vector CooTfFreq
     
     Eigen::MatrixXd GaussianQuadrature::SumDielInvMinId(const RPA& rpa)const{
-    
         //First, we intialise the result, which is a sum, at zero
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
-
         //We load in the vector containing the dielectric matrix inverses
         std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
-        
         //Now, using a for loop, we get the sum of all those matrices
+        int _order = 12;
             for (int k = 0 ; k < _order ; ++k){
-            
                 result += DielInvVector[k];
-            
                 }
-    
         //Lastly, we subtract the identity, yielding the B matrix
-        int nobasisfcs = result.size();
-        result -= Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
+        result -= Eigen::MatrixXd::Identity(_qptotal,_qptotal);
+        
         return result;
     
     }
@@ -124,7 +118,6 @@ namespace votca {
 
     Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd&
         frequencies, const RPA& rpa)const{
-        
         //We first initialise the quadrature contribution matrix, which appears
         //in the result and is a sum, at zero
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
@@ -200,13 +193,13 @@ namespace votca {
     //SigmaGQ in vector form. All happens analogously
     
     Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(const Eigen::VectorXd&
-        frequencies, const RPA& rpa)const{
-            
-        Eigen::VectorXd result =
-            Eigen::VectorXd::Zero(_qptotal);
+        frequencies, const RPA& rpa)const{    
+        
+        Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
 
+        
             for (int k = 0; k < _qptotal; ++k) {
                 
                 Eigen::MatrixXd ResFreqs =
@@ -246,7 +239,6 @@ namespace votca {
         
         //we get a factor two now, since m = n on the diagonal
         return 2*result;
-        
         }
     
 

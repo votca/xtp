@@ -63,6 +63,12 @@ namespace votca {
             if (imag){
                 denom=4*deltaE/(deltaE.square()+freq2);
             }else{
+                if(((deltaE-frequency).cwiseAbs()<1e-9).any()){
+                    std::cout<<"-"<<deltaE-frequency<<std::endl;
+                }
+                if(((deltaE+frequency).cwiseAbs()<1e-9).any()){
+                    std::cout<<"+"<<deltaE+frequency<<std::endl;
+                }
                 denom=2.0*((deltaE-frequency).inverse()+(deltaE+frequency).inverse());
             }
             auto temp=Mmn_RPA.transpose() *denom.asDiagonal();

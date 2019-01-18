@@ -37,7 +37,7 @@ namespace votca {
             
             public:
             
-            Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa ):Sigma_base(Mmn,rpa),_gq(rpa.getRPAInputEnergies(),Mmn,_qptotal){};
+            Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa ):Sigma_base(Mmn,rpa),_gq(rpa.getRPAInputEnergies(),Mmn){};
           
             //Sets up the screening parametrisation: empty for the while
             void PrepareScreening();
