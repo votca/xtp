@@ -29,7 +29,8 @@ namespace votca {
       _HedinApprox = false;
       _vc2index = vc2index(_qpmin, _homo + 1, _qpmax - (_homo + 1));
       _EigenSol = _rpa.calculate_eigenvalues();
-      std::cout << _EigenSol._Omega << std::endl;
+      std::cout << "Energies:" << std::endl << _rpa.getRPAInputEnergies() << std::endl;
+      std::cout << "Eigenvalues:" << std::endl << _EigenSol._Omega << std::endl;
       return;
     }
 

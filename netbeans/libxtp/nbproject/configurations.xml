@@ -281,6 +281,7 @@
       <itemPath>../../src/tests/test_qmnblist.cc</itemPath>
       <itemPath>../../src/tests/test_qmpair.cc</itemPath>
       <itemPath>../../src/tests/test_rpa.cc</itemPath>
+      <itemPath>../../src/tests/test_rpa_eigenvalues.cc</itemPath>
       <itemPath>../../src/tests/test_segment.cc</itemPath>
       <itemPath>../../src/tests/test_segmenttype.cc</itemPath>
       <itemPath>../../src/tests/test_sigma_ppm.cc</itemPath>
@@ -3915,6 +3916,11 @@
       </item>
       <item path="../../src/tests/test_rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/tests/test_rpa_eigenvalues.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_segment.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_segmenttype.cc"
@@ -4920,6 +4926,11 @@
       <item path="../../src/tests/test_qmpair.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_rpa.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/tests/test_rpa_eigenvalues.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="../../src/tests/test_segment.cc" ex="false" tool="1" flavor2="0">
       </item>
