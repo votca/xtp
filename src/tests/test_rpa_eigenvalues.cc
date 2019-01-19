@@ -124,7 +124,8 @@ BOOST_AUTO_TEST_CASE(rpa_eigenvalues) {
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, eigenvectors);
 
-  RPA rpa(Mmn);
+  votca::ctp::Logger log;
+  RPA rpa(log, Mmn);
   rpa.setRPAInputEnergies(eigenvals);
   rpa.configure(4, 0, 16);
 

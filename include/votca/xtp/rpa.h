@@ -23,6 +23,7 @@
 #include <votca/xtp/eigen.h>
 #include <vector>
 #include <votca/xtp/vc2index.h>
+#include <votca/ctp/logger.h>
 
 namespace votca
 {
@@ -39,7 +40,8 @@ class RPA
 {
 public:
 
-    RPA(const TCMatrix_gwbse& Mmn):_Mmn(Mmn),_vc2index(0, 0, 0){}; // TODO: Pass vmin, cmin, ctotal as input?
+    RPA(ctp::Logger &log,const TCMatrix_gwbse& Mmn):
+        _log(log),_Mmn(Mmn),_vc2index(){}; // TODO: Wouldn't it be nicer if there was a static variable in ctp::Logger for THE logger?
 
     void configure(int homo, int rpamin, int rpamax){
         _homo = homo;
@@ -71,6 +73,8 @@ public:
     void UpdateRPAInputEnergies(const Eigen::VectorXd& dftenergies,const Eigen::VectorXd& gwaenergies,int qpmin);
 
 private:
+    
+    ctp::Logger &_log;
 
     int _homo; // HOMO index
     int _rpamin;
@@ -85,6 +89,10 @@ private:
     
     vc2index _vc2index;
     
+    // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
+    // atoms, molecules, and clusters. Computer Physics Communications 208,
+    // 149–161 (2016).
+    // Eqs. 36-41
     Eigen::VectorXd calculate_spectral_AmB() const;
     Eigen::MatrixXd calculate_spectral_ApB() const;
     Eigen::MatrixXd calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) const;

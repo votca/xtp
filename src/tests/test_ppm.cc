@@ -111,7 +111,8 @@ TCMatrix_gwbse Mmn;
 Mmn.Initialize(aobasis.AOBasisSize(),0,16,0,16);
 Mmn.Fill(aobasis,aobasis,es.eigenvectors());
 
-RPA rpa=RPA(Mmn);
+votca::ctp::Logger log;
+RPA rpa=RPA(log,Mmn);
 rpa.setRPAInputEnergies(es.eigenvalues());
 rpa.configure(4,0,16);
 
