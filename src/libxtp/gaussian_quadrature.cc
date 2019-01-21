@@ -19,6 +19,7 @@
 
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/eigen.h>
+#include <votca/xtp/rpa.h>
 #include <iostream>
 #include <vector>
 #include <complex>
@@ -52,6 +53,20 @@ namespace votca {
             0.04717533638651180;
     
         }
+    
+    //This function returns the adapted Gaussian quadrature weights
+    
+    Eigen::VectorXd GaussianQuadrature::AdaptedWeights() const{
+    
+        //We make temporarily arrays to enable scalar addition and component
+        //-wise operations like multiplication and division, and taking the
+        //squares
+        Eigen::ArrayXd one_min_quadpoints_sqd = 1-(_quadpoints.array()).square();
+            
+        //Now, we eventually return to vector form
+        return (_quadweights.array() * (one_min_quadpoints_sqd.inverse())).matrix();
+
+        }
 
     //This function returns the coordinate transformation applied to the
     //quadrature points. These vector entries will serve as frequencies
@@ -62,11 +77,11 @@ namespace votca {
         //We make temporarily arrays to enable scalar addition and component
         //-wise operations like multiplication and division, and taking the
         //standard logarithm
-        Eigen::ArrayXd Freq_p1 = _quadpoints.array() + 1;
-        Eigen::ArrayXd Inv_Freq_m1 = (1 - _quadpoints.array()).inverse();
+        Eigen::ArrayXd quadpoints_p1 = _quadpoints.array() + 1;
+        Eigen::ArrayXd Inv_quadpoints_m1 = (1 - _quadpoints.array()).inverse();
     
         //Now, we eventually return to vector form
-        return (Freq_p1 * Inv_Freq_m1).log().matrix();
+        return (quadpoints_p1 * Inv_quadpoints_m1).log().matrix();
 
         }
 
@@ -127,13 +142,15 @@ namespace votca {
         //an imaginary part, and we will use the help matrix B from the function
         //SumDielInvMinId to this end
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
+        Eigen::VectorXd AdapWeights = AdaptedWeights();
+        Eigen::VectorXd CooTfFreqs = CooTfFreq();
         
-            for (int k = 0; k < _qptotal; ++k) {
+            for (int k = 0; k < _homo; ++k) {
                 
                 //Now, we fill the k'th matrix in the array in the following for 
                 //loops, where we will use the vector of frequencies from the
-                //function CooTfFreq. Also, we initialise the real and imag part
-                Eigen::VectorXd CooTfFreqs = CooTfFreq();
+                //function CooTfFreq, and the adapted GQ weights
+
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, _qptotal);
                 
@@ -150,14 +167,17 @@ namespace votca {
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
                             
                             //idem
-                            Eigen::VectorXd CooTfFreqsSq = 
-                                CooTfFreqs.cwiseAbs2();
+                            Eigen::VectorXd CooTfFreqsPlusEta = 
+                                CooTfFreqs.array()+_eta;
+                            
+                            Eigen::VectorXd CooTfFreqsPlusEtaSq = 
+                                CooTfFreqsPlusEta.cwiseAbs2();
                             
                             // now, we cannot do a component-wise thing, since
                             //we deal with different dimensions for j and m in 
                             //the matrix
                             ResFreqs(j, m) =
-                                CooTfFreqs(j) / (DeltaESq(m) + CooTfFreqsSq(j));
+                                CooTfFreqsPlusEta(j) / (DeltaESq(m) + CooTfFreqsPlusEtaSq(j));
                             
                             }
                         
@@ -177,11 +197,70 @@ namespace votca {
                 //Now, we can add the resulting matrices to the quadrature
                 //contribution matrix, which happens in parts
                 result +=
-                    (_quadweights.transpose() * ResFreqs).asDiagonal() * 
+                    (AdapWeights.transpose() * ResFreqs).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose());
                 result +=
                     (MMxXSumInvMinId * MMx.transpose()) * 
-                    (_quadweights.transpose() * ResFreqs).asDiagonal();
+                    (AdapWeights.transpose() * ResFreqs).asDiagonal();
+                
+                }
+        
+                    for (int k = _homo; k < _qptotal; ++k) {
+                
+                //Now, we fill the k'th matrix in the array in the following for 
+                //loops, where we will use the vector of frequencies from the
+                //function CooTfFreq. Also, we initialise the real and imag part
+                Eigen::MatrixXd ResFreqs =
+                    Eigen::MatrixXd::Zero(_order, _qptotal);
+                
+                    for (int m = 0; m < _qptotal; ++m) {
+                        
+                        for (int j = 0; j < _order; ++j) {
+                            
+                            //We move to an array to have a constant component-
+                            //wise subtraction, and then return to vector form
+                            Eigen::VectorXd DeltaE = 
+                                frequencies.array() - _energies(k);
+                            
+                            //component-wise squaring for the denominator
+                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
+                            
+                            //idem
+                            Eigen::VectorXd CooTfFreqsMinusEta = 
+                                CooTfFreqs.array()-_eta;
+                            
+                            Eigen::VectorXd CooTfFreqsMinusEtaSq = 
+                                CooTfFreqsMinusEta.cwiseAbs2();
+                            
+                            // now, we cannot do a component-wise thing, since
+                            //we deal with different dimensions for j and m in 
+                            //the matrix
+                            ResFreqs(j, m) =
+                                CooTfFreqsMinusEta(j) / (DeltaESq(m) + CooTfFreqsMinusEtaSq(j));
+                            
+                            }
+                        
+                        }
+                
+                //We make sure the M tensor is double-valued
+                    #if (GWBSE_DOUBLE)
+                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                    #else
+                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
+                    #endif
+                
+                //We now pre-compute one matrix product, in order to have only 
+                //one additional product before we take the diagonal
+                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
+                                
+                //Now, we can add the resulting matrices to the quadrature
+                //contribution matrix, which happens in parts
+                result +=
+                    (AdapWeights.transpose() * ResFreqs).asDiagonal() * 
+                    (MMxXSumInvMinId * MMx.transpose());
+                result +=
+                    (MMxXSumInvMinId * MMx.transpose()) * 
+                    (AdapWeights.transpose() * ResFreqs).asDiagonal();
                 
                 }
         
@@ -197,10 +276,11 @@ namespace votca {
         
         Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
+        Eigen::VectorXd AdapWeights = AdaptedWeights();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
 
         
-            for (int k = 0; k < _qptotal; ++k) {
+            for (int k = 0; k < _homo; ++k) {
                 
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, _qptotal);
@@ -220,10 +300,13 @@ namespace votca {
                             Eigen::VectorXd DeltaE =
                                 frequencies.array() - _energies(k);
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                            Eigen::VectorXd CooTfFreqsSq =
-                                CooTfFreqs.cwiseAbs2();
+                            Eigen::VectorXd CooTfFreqsPlusEta = 
+                                CooTfFreqs.array() + _eta;
+                            Eigen::VectorXd CooTfFreqsPlusEtaSq = 
+                                CooTfFreqsPlusEta.cwiseAbs2();
+                            
                             ResFreqs(j, m) = 
-                                CooTfFreqs(j) / (DeltaESq(m) + CooTfFreqsSq(j));
+                                CooTfFreqsPlusEta(j) / (DeltaESq(m) + CooTfFreqsPlusEtaSq(j));
                             
                             }
                         
@@ -232,7 +315,47 @@ namespace votca {
                 //There is a similar, double contribution, since m = n on the
                 //diagonal: this will be evened out by the factor 2 at the end
                 result += 
-                    ((_quadweights.transpose() * ResFreqs).asDiagonal() * 
+                    ((AdapWeights.transpose() * ResFreqs).asDiagonal() * 
+                    (MMxXSumInvMinId * MMx.transpose())).diagonal();
+                
+                }
+        
+                    for (int k = _homo; k < _qptotal; ++k) {
+                
+                Eigen::MatrixXd ResFreqs =
+                    Eigen::MatrixXd::Zero(_order, _qptotal);
+                
+                    #if (GWBSE_DOUBLE)
+                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                    #else
+                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
+                    #endif
+
+                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
+                
+                    for (int m = 0; m < _qptotal; ++m) {
+                        
+                        for (int j = 0; j < _order; ++j) {
+                            
+                            Eigen::VectorXd DeltaE =
+                                frequencies.array() - _energies(k);
+                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
+                            Eigen::VectorXd CooTfFreqsMinusEta = 
+                                CooTfFreqs.array() - _eta;
+                            Eigen::VectorXd CooTfFreqsMinusEtaSq = 
+                                CooTfFreqsMinusEta.cwiseAbs2();
+                            
+                            ResFreqs(j, m) = 
+                                CooTfFreqsMinusEta(j) / (DeltaESq(m) + CooTfFreqsMinusEtaSq(j));
+                            
+                            }
+                        
+                        }
+                
+                //There is a similar, double contribution, since m = n on the
+                //diagonal: this will be evened out by the factor 2 at the end
+                result += 
+                    ((AdapWeights.transpose() * ResFreqs).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose())).diagonal();
                 
                 }

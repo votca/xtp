@@ -69,7 +69,7 @@ namespace votca {
                 sum+=deltEf/(deltEf.square()+eta2);
                 denom=2*sum;
                 }
-            }
+            
             auto temp=Mmn_RPA.transpose() *denom.asDiagonal();
             Eigen::MatrixXd tempresult = temp* Mmn_RPA;
 

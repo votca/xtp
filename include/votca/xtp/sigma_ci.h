@@ -55,6 +55,8 @@ namespace votca {
             private:
                 
                 GaussianQuadrature _gq;
+                
+                double _eta;
             
             
             
