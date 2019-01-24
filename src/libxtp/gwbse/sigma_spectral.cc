@@ -171,10 +171,10 @@ namespace votca {
       // TODO: Use Eigen for summations
       for (int v = 0; v <= _homo; v++) {
         s1 += residues(m, v) * residues(n, v);
-      } // Occupied energy levels v
+      } // Occupied MOs v
       for (int k = 0; k < _qpmax; k++) {
         s2 += residues(m, k) * residues(n, k);
-      } // All energy levels m
+      } // All MOs k
 
       return (2 * s1 - s2) / omega;
     }
