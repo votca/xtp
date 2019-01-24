@@ -132,6 +132,7 @@ namespace votca {
     // TODO: Name, input args
     double Sigma_Spectral::Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const {
       const double eta = 1e-6;
+      
       double s1_Real = 0.0;
       double s1_Imag = 0.0;
       double s2_Real = 0.0;
@@ -139,40 +140,31 @@ namespace votca {
 
       // Eq. 47, part 1
       for (int v = 0; v <= _homo; v++) {
-
         double A = residues(m, v) * residues(n, v);
         double B = w - energies(v) + omega;
         double C_Real = A * B / (B * B + eta * eta);
         double C_Imag = A * eta / (B * B + eta * eta);
-
         s1_Real += C_Real;
         s1_Imag += C_Imag;
-
-      } // Occupied energy levels v
+      } // Occupied MO v
 
       // Eq. 47, part 2
       for (int c = _homo + 1; c < _qpmax; c++) {
-
         double A = residues(m, c) * residues(n, c);
         double B = w - energies(c) - omega;
         double C_Real = A * B / (B * B + eta * eta);
         double C_Imag = A * eta / (B * B + eta * eta);
-
         s2_Real += C_Real;
         s2_Imag += C_Imag;
+      } // Occupied MO c
 
-      } // Occupied energy levels c
-
-      // Complex result
-      //std::complex<double> result(s1_Real + s2_Real, s1_Imag + s2_Imag);
-      //return result;
-
-      // Real result
+      // TODO: Return complex result
       return s1_Real + s2_Real;
     }
 
     // TODO: Name, input args
     double Sigma_Spectral::Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const {
+      
       double s1 = 0.0;
       double s2 = 0.0;
 
@@ -184,7 +176,7 @@ namespace votca {
         s2 += residues(m, k) * residues(n, k);
       } // All energy levels m
 
-      return (2 * s1 - s2) / omega; // Eq. 48
+      return (2 * s1 - s2) / omega;
     }
 
   }

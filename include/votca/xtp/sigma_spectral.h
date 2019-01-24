@@ -20,8 +20,6 @@
 #ifndef _VOTCA_XTP_SIGMA_SPECTRAL_H
 #define _VOTCA_XTP_SIGMA_SPECTRAL_H
 
-#include <complex>
-#include <cmath>
 #include <votca/xtp/sigma_base.h>
 #include <votca/xtp/rpa.h>
 
@@ -37,6 +35,13 @@ public:
     
     Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa)
         : Sigma_base(Mmn, rpa) {};
+    
+    bool get_HedinApprox() {
+      return _HedinApprox;
+    }
+    void set_HedinApprox(bool value) {
+      _HedinApprox=value;
+    }
 
     // Sets up the screening parametrisation
     void PrepareScreening();

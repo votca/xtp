@@ -178,7 +178,6 @@ namespace votca {
       sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
 
       // TODO: Pre-compute this, or compute on the fly in the loop?
-      Eigen::MatrixXd Z = es.eigenvectors();
       Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
       Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
       Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
@@ -187,7 +186,7 @@ namespace votca {
       for (int s = 0; s < rpasize; s++) {
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
-        Eigen::VectorXd z = Z.col(s);
+        Eigen::VectorXd z = es.eigenvectors().col(s);
         sol._XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
       }
 
