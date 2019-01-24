@@ -22,7 +22,6 @@
 
 #include <votca/xtp/eigen.h>
 #include <vector>
-#include <votca/xtp/vc2index.h>
 #include <votca/ctp/logger.h>
 
 namespace votca
@@ -41,13 +40,12 @@ class RPA
 public:
 
     RPA(ctp::Logger &log,const TCMatrix_gwbse& Mmn):
-        _log(log),_Mmn(Mmn),_vc2index(){}; // TODO: Wouldn't it be nicer if there was a static variable in ctp::Logger for THE logger?
+        _log(log),_Mmn(Mmn){}; // TODO: Wouldn't it be nicer if there was a static variable in ctp::Logger for THE logger?
 
     void configure(int homo, int rpamin, int rpamax){
         _homo = homo;
         _rpamin = rpamin;
         _rpamax = rpamax;
-        _vc2index = vc2index(rpamin, homo + 1, rpamax - (homo + 1));
     }
 
     
@@ -86,9 +84,7 @@ private:
 
     template< bool imag>
     Eigen::MatrixXd calculate_epsilon(double frequency)const;
-    
-    vc2index _vc2index;
-    
+
     // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
     // atoms, molecules, and clusters. Computer Physics Communications 208,
     // 149–161 (2016).

@@ -23,7 +23,6 @@
 #include <complex>
 #include <cmath>
 #include <votca/xtp/sigma_base.h>
-#include <votca/xtp/vc2index.h>
 #include <votca/xtp/rpa.h>
 
 namespace votca {
@@ -37,7 +36,7 @@ class Sigma_Spectral : public Sigma_base {
 public:
     
     Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa)
-        : Sigma_base(Mmn, rpa), _vc2index() {};
+        : Sigma_base(Mmn, rpa) {};
 
     // Sets up the screening parametrisation
     void PrepareScreening();
@@ -48,22 +47,16 @@ public:
 
 private:
     
-    // Internal Options
     bool _HedinApprox; // Hedin's Static Approximation
-    
-    vc2index _vc2index;
-    
-    // Eigenvalues, eigenvectors from RPA
-    rpa_eigensolution _EigenSol;
+    rpa_eigensolution _EigenSol; // Eigenvalues, eigenvectors from RPA
 
-    // Used to compute correlation part of sigma (eq. 47, 48)(*)
+    // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
+    // atoms, molecules, and clusters. Computer Physics Communications 208,
+    // 149–161 (2016).
+    // Eq. 45, 47, 48
     Eigen::MatrixXd CalcResidues(int s) const;
     double Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const;
     double Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const;
-    
-    // (*) Bruneval, F. et al. molgw 1: Many-body perturbation theory software
-    // for atoms, molecules, and clusters. Computer Physics Communications 208,
-    // 149–161 (2016).
 };
 }
 }

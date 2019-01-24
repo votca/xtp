@@ -25,12 +25,8 @@ namespace votca {
   namespace xtp {
 
     void Sigma_Spectral::PrepareScreening() {
-
       _HedinApprox = false;
-      _vc2index = vc2index(_qpmin, _homo + 1, _qpmax - (_homo + 1));
       _EigenSol = _rpa.calculate_eigenvalues();
-      std::cout << "Energies:" << std::endl << _rpa.getRPAInputEnergies() << std::endl;
-      std::cout << "Eigenvalues:" << std::endl << _EigenSol._Omega << std::endl;
       return;
     }
 
@@ -40,37 +36,27 @@ namespace votca {
       const int numeigenvalues = _EigenSol._Omega.size();
 
       if (_HedinApprox) {
-
+        
         for (int s = 0; s < numeigenvalues; s++) {
-
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
-
           for (int m = 0; m < _qptotal; m++) {
-
             result(m) += Equation48(m, m, omega, residues);
-
           } // Energy level m
         } // Eigenvalues/poles s
 
       } else {
 
         for (int s = 0; s < numeigenvalues; s++) {
-
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
-
           for (int m = 0; m < _qptotal; m++) {
-
-            // TODO: Take frequency or energy?
-            double w = RPAEnergies(m); // Frequency/energy
-            result(m) += Equation47(m, m, RPAEnergies, w, omega, residues);
-
+            result(m) += Equation47(m, m, RPAEnergies, RPAEnergies(m), omega, residues); // TODO: Pass frequency or energy?
           } // Energy level m
         } // Eigenvalues/poles s
 
       }
-
+      
       return result;
     }
 
@@ -82,20 +68,13 @@ namespace votca {
       if (_HedinApprox) {
 
         for (int s = 0; s < numeigenvalues; s++) {
-
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
-
           for (int m = 0; m < _qptotal; m++) {
-
-            for (int n = 0; n < _qptotal; n++) {
-
-              if (m == n) {
-                continue; // Skip diagonal
-              }
-
-              result(m, n) += Equation48(m, n, omega, residues);
-
+            for (int n = m + 1; n < _qptotal; n++) {
+              double res = Equation48(m, n, omega, residues);
+              result(m, n) += res;
+              result(n, m) += res;
             } // Energy level n
           } // Energy level m
         } // Eigenvalues/poles s
@@ -103,28 +82,16 @@ namespace votca {
       } else {
 
         for (int s = 0; s < numeigenvalues; s++) {
-
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
-
           for (int m = 0; m < _qptotal; m++) {
-
-            for (int n = 0; n < _qptotal; n++) {
-
-              if (m == n) {
-                continue; // Skip diagonal
-              }
-
-              // TODO: Take frequency or energy?
-              double w_m = RPAEnergies(m); // Frequency/energy
-              double w_n = RPAEnergies(n); // Frequency/energy
-
-              double result_m = Equation47(m, n, RPAEnergies, w_m, omega, residues);
-              double result_n = Equation47(m, n, RPAEnergies, w_n, omega, residues);
-
+            for (int n = m + 1; n < _qptotal; n++) {
+              double result_m = Equation47(m, n, RPAEnergies, RPAEnergies(m), omega, residues); // TODO: Pass frequency or energy?
+              double result_n = Equation47(m, n, RPAEnergies, RPAEnergies(n), omega, residues);
               // (m|S(w)|n) = 0.5 * (m|S(e_m)|n) + 0.5 * (m|S(e_n)|n)
-              result(m, n) += 0.5 * (result_m + result_n);
-
+              double res = 0.5 * (result_m + result_n);
+              result(m, n) += res;
+              result(n, m) += res;
             } // Energy level n
           } // Energy level m
         } // Eigenvalues/poles s
@@ -137,29 +104,23 @@ namespace votca {
     Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
       Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       Eigen::VectorXd xpy = _EigenSol._XpY.col(s);
-      const int bsesize = (_homo - _qpmin + 1) * (_qpmax - (_homo + 1) + 1);
+      const int lumo = _homo + 1;
+      const int n_occup = lumo - _qpmin;
+      const int n_unocc = _qpmax - _homo;
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
 
       for (int m = 0; m < _qptotal; m++) {
         for (int n = 0; n < _qptotal; n++) {
-          for (int i_aux = 0; i_aux < auxsize; i_aux++) {
-
-            // Get three-center column for index (m, n)
-            VectorXfd tc_mn = _Mmn[m].col(i_aux);
-
-            for (int i = 0; i < bsesize; i++) {
-
-              int v = _vc2index.v(i);
-              int c = _vc2index.c(i);
-
-              // Get three-center column for index (v, c)
-              VectorXfd tc_vc = _Mmn[v].col(i_aux);
-
-              // Fill residues vector
-              residues(m, n) += tc_mn(n) * tc_vc(c) * xpy(i); // Eq. 45
-
-            } // Composite index i
-          } // Auxiliary basis function
+          for (int v = _qpmin; v <= _homo; v++) {
+            for (int c = lumo; c <= _qpmax; c++) {
+              int i = (v - _qpmin) * n_unocc + c - lumo; // Composite index i
+              double fc = 0.0;
+              for (int i_aux = 0; i_aux < auxsize; i_aux++) {
+                fc += _Mmn[m].col(i_aux)[n] * _Mmn[v].col(i_aux)[c];
+              } // Auxiliary basis function
+              residues(m, n) += fc * xpy(i); // Eq. 45
+            } // Unoccupied MO c
+          } // Occupied MO v
         } // Energy level n
       } // Energy level m
 

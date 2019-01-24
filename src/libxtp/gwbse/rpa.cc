@@ -80,57 +80,66 @@ namespace votca {
  template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency)const;
 
     rpa_eigensolution RPA::calculate_eigenvalues() const {
-
       Eigen::VectorXd AmB = calculate_spectral_AmB();
       Eigen::MatrixXd ApB = calculate_spectral_ApB();
-      Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
+      Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);      
       return diag_C(AmB, C);
     }
-
+    
     Eigen::VectorXd RPA::calculate_spectral_AmB() const {
-      const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
+      const int lumo = _homo + 1;
+      const int n_occup = lumo - _rpamin;
+      const int n_unocc = _rpamax - _homo;
+      const int rpasize = n_occup * n_unocc;
       Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
 
-      for (int i = 0; i < rpasize; i++) {
-        AmB(i) = _energies(_vc2index.c(i)) - _energies(_vc2index.v(i));
-      } // Composite index i
-
+      for (int v = _rpamin; v <= _homo; v++ ) {
+        for (int c = lumo; c <= _rpamax; c++ ) {
+          AmB((v - _rpamin) * n_unocc + c - lumo) = _energies(c) - _energies(v);
+        } // Unoccupied MO c
+      } // Occupied MO v
+      
       return AmB;
     }
-
+    
     Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
-      const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
+      const int lumo = _homo + 1;
+      const int n_occup = lumo - _rpamin;
+      const int n_unocc = _rpamax - _homo;
+      const int rpasize = n_occup * n_unocc;
       const int auxsize = _Mmn.auxsize();
       Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
 
-      for (int i = 0; i < rpasize; i++) {
-        ApB(i, i) = _energies(_vc2index.c(i)) - _energies(_vc2index.v(i));
-      } // Composite index i
+      // TODO: Copy result from (A - B)?
+      for (int v = _rpamin; v <= _homo; v++ ) {
+        for (int c = lumo; c <= _rpamax; c++ ) {
+          int i = (v - _rpamin) * n_unocc + c - lumo; // Composite index i
+          ApB(i, i) = _energies(c) - _energies(v);
+        } // Unoccupied MO c
+      } // Occupied MO v
 
-      // TODO: Here, we are computing a four-center integral over Mmn using the RI approx.
-      // Wouldn't it be nicer if Mmn has a method that did this?
-      for (int i_1 = 0; i_1 < rpasize; i_1++) {
-        int v_1 = _vc2index.v(i_1);
-        int c_1 = _vc2index.c(i_1);
-
-        for (int i_2 = i_1; i_2 < rpasize; i_2++) {
-          int v_2 = _vc2index.v(i_2);
-          int c_2 = _vc2index.c(i_2);
-
-          double fc = 0.0;
-          for (int i_aux = 0; i_aux < auxsize; i_aux++) {
-            fc += _Mmn[v_1].col(i_aux)[c_1] * _Mmn[v_2].col(i_aux)[c_2];
-          } // Auxiliary basis function
-
-          ApB(i_1, i_2) -= 2 * fc;
-          
-          if (i_2 > i_1) {
-            ApB(i_2, i_1) -= 2 * fc; // Symmetry
-          }
-
-        } // Composite index i_2
-      } // Composite index i_1
-
+      for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
+        for (int c1 = lumo; c1 <= _rpamax; c1++ ) {
+          int i1 = (v1 - _rpamin) * n_unocc + c1 - lumo; // Composite index i1
+          for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
+            for (int c2 = lumo; c2 <= _rpamax; c2++ ) {
+              int i2 = (v2 - _rpamin) * n_unocc + c2 - lumo; // Composite index i2
+              if (i2 < i1) {
+                continue; // Symmetry
+              }
+              double fc = 0.0;
+              for (int i_aux = 0; i_aux < auxsize; i_aux++) {
+                fc += _Mmn[v1].col(i_aux)[c1] * _Mmn[v2].col(i_aux)[c2];
+              } // Auxiliary basis function
+              ApB(i1, i2) -= 2 * fc;
+              if (i2 > i1) {
+                ApB(i2, i1) -= 2 * fc; // Symmetry
+              }
+            } // Unoccupied MO c2
+          } // Occupied MO v2
+        } // Unoccupied MO c1
+      } // Occupied MO v1
+      
       return ApB;
     }
 
@@ -140,22 +149,21 @@ namespace votca {
 
     // TODO: More efficient way to diagonalize C described in section 6.2
     rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const {
-      const int rpasize = (_homo - _rpamin + 1) * (_rpamax - (_homo + 1) + 1);
+      const int lumo = _homo + 1;
+      const int n_occup = lumo - _rpamin;
+      const int n_unocc = _rpamax - _homo;
+      const int rpasize = n_occup * n_unocc;
 
       CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-              << " Solving for RPA eigrnvalues. " << flush;
+              << " Solving for RPA eigenvalues. " << flush;
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
-      
-      // TODO: For methane, I get a very small negative eigenvalue. Why?!
+
       Eigen::VectorXd eigenvalues = es.eigenvalues();
       
       double minCoeff = eigenvalues.minCoeff();
-      if (minCoeff < -1e-8) {
+      if (minCoeff <= 0) {
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Warning! Detected negative eigenvalue(s): " << minCoeff << ". " << flush;
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Setting all negative eigenvalues to zero. " << flush;
-        eigenvalues = eigenvalues.cwiseMax(0.0);
+                << " Warning! Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
       }
 
       Eigen::VectorXd omega = eigenvalues.cwiseAbs().cwiseSqrt();
@@ -167,21 +175,17 @@ namespace votca {
       Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
       Eigen::VectorXd Omega_sqrt = omega.cwiseSqrt();
 
+      // TODO: Is this possible without for-loop?
       for (int s = 0; s < rpasize; s++) {
-        
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
         Eigen::VectorXd z = Z.col(s);
-
-        XpY.col(s) = 0.50 * (
-                (lhs + rhs).cwiseProduct(z) + // X
-                (lhs - rhs).cwiseProduct(z)); // Y
+        XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
       }
 
       rpa_eigensolution sol;
       sol._Omega = omega;
       sol._XpY = XpY;
-
       return sol;
     }
 
