@@ -20,6 +20,7 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/aomatrix.h>
 #include "votca/xtp/threecenter.h"
+#include "votca/xtp/vc2index.h"
 
 using std::flush;
 
@@ -91,11 +92,13 @@ namespace votca {
       const int n_occup = lumo - _rpamin;
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
+      vc2index vc = vc2index(_rpamin, lumo, n_unocc);
       Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
 
       for (int v = _rpamin; v <= _homo; v++ ) {
         for (int c = lumo; c <= _rpamax; c++ ) {
-          AmB((v - _rpamin) * n_unocc + c - lumo) = _energies(c) - _energies(v);
+          int i = vc.I(v, c); // Composite index i
+          AmB(i) = _energies(c) - _energies(v);
         } // Unoccupied MO c
       } // Occupied MO v
       
@@ -108,22 +111,23 @@ namespace votca {
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
       const int auxsize = _Mmn.auxsize();
+      vc2index vc = vc2index(_rpamin, lumo, n_unocc);
       Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
 
       // TODO: Copy result from (A - B)?
       for (int v = _rpamin; v <= _homo; v++ ) {
         for (int c = lumo; c <= _rpamax; c++ ) {
-          int i = (v - _rpamin) * n_unocc + c - lumo; // Composite index i
+          int i = vc.I(v, c); // Composite index i
           ApB(i, i) = _energies(c) - _energies(v);
         } // Unoccupied MO c
       } // Occupied MO v
 
       for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
         for (int c1 = lumo; c1 <= _rpamax; c1++ ) {
-          int i1 = (v1 - _rpamin) * n_unocc + c1 - lumo; // Composite index i1
+          int i1 = vc.I(v1, c1); // Composite index i1
           for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
             for (int c2 = lumo; c2 <= _rpamax; c2++ ) {
-              int i2 = (v2 - _rpamin) * n_unocc + c2 - lumo; // Composite index i2
+              int i2 = vc.I(v2, c2); // Composite index i2
               if (i2 < i1) {
                 continue; // Symmetry
               }
@@ -156,36 +160,37 @@ namespace votca {
 
       CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
               << " Solving for RPA eigenvalues. " << flush;
+      
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
-
       Eigen::VectorXd eigenvalues = es.eigenvalues();
       
+      // TODO: Non-positive eigenvalues should not be possible.
+      // We can remove this warning.
       double minCoeff = eigenvalues.minCoeff();
       if (minCoeff <= 0) {
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " Warning! Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
       }
 
-      Eigen::VectorXd omega = eigenvalues.cwiseAbs().cwiseSqrt();
-      Eigen::MatrixXd XpY = Eigen::MatrixXd(rpasize, rpasize);
+      // TODO: Store copies or store references?
+      rpa_eigensolution sol;
+      sol._Omega = eigenvalues.cwiseAbs().cwiseSqrt();
+      sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
 
       // TODO: Pre-compute this, or compute on the fly in the loop?
       Eigen::MatrixXd Z = es.eigenvectors();
       Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
       Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
-      Eigen::VectorXd Omega_sqrt = omega.cwiseSqrt();
+      Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
 
       // TODO: Is this possible without for-loop?
       for (int s = 0; s < rpasize; s++) {
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
         Eigen::VectorXd z = Z.col(s);
-        XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
+        sol._XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
       }
 
-      rpa_eigensolution sol;
-      sol._Omega = omega;
-      sol._XpY = XpY;
       return sol;
     }
 

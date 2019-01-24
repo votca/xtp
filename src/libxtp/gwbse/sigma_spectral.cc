@@ -20,6 +20,7 @@
 #include <votca/xtp/sigma_spectral.h>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/threecenter.h>
+#include "votca/xtp/vc2index.h"
 
 namespace votca {
   namespace xtp {
@@ -31,9 +32,9 @@ namespace votca {
     }
 
     Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
-      Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
       const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
+      Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
       if (_HedinApprox) {
         
@@ -61,9 +62,9 @@ namespace votca {
     }
 
     Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies) const {
-      Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
+      Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       
       if (_HedinApprox) {
 
@@ -102,18 +103,19 @@ namespace votca {
     }
 
     Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
-      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-      Eigen::VectorXd xpy = _EigenSol._XpY.col(s);
       const int lumo = _homo + 1;
       const int n_occup = lumo - _qpmin;
       const int n_unocc = _qpmax - _homo;
+      vc2index vc = vc2index(_qpmin, lumo, n_unocc);
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
+      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+      Eigen::VectorXd xpy = _EigenSol._XpY.col(s);
 
       for (int m = 0; m < _qptotal; m++) {
         for (int n = 0; n < _qptotal; n++) {
           for (int v = _qpmin; v <= _homo; v++) {
             for (int c = lumo; c <= _qpmax; c++) {
-              int i = (v - _qpmin) * n_unocc + c - lumo; // Composite index i
+              int i = vc.I(v, c); // Composite index i
               double fc = 0.0;
               for (int i_aux = 0; i_aux < auxsize; i_aux++) {
                 fc += _Mmn[m].col(i_aux)[n] * _Mmn[v].col(i_aux)[c];
@@ -127,6 +129,7 @@ namespace votca {
       return residues;
     }
 
+    // TODO: Name, input args
     double Sigma_Spectral::Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const {
       const double eta = 1e-6;
       double s1_Real = 0.0;
@@ -168,6 +171,7 @@ namespace votca {
       return s1_Real + s2_Real;
     }
 
+    // TODO: Name, input args
     double Sigma_Spectral::Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const {
       double s1 = 0.0;
       double s2 = 0.0;

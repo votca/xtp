@@ -33,7 +33,6 @@ class vc2index {
 
 public:
 
-    vc2index() : vc2index(0, 0, 0) {}
     vc2index(int vmin, int cmin, int ctotal):_vmin(vmin),_cmin(cmin),_ctotal(ctotal){};
 
     inline int I(int v,int c)const{return _ctotal*(v-_vmin)+c-_cmin;}
