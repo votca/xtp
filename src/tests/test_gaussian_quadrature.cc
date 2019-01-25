@@ -120,20 +120,11 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   rpa.configure(4,0,17-1);
   
   GaussianQuadrature gq=GaussianQuadrature(es.eigenvalues(),Mmn);
-  gq.configure(17);
+  gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(),rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(),rpa);
   
-  
-  
-  
-  //std::cout<<result<<std::endl;
-  //std::cout<<std::endl;
-  std::cout<<"frequencies"<<std::endl;
-  std::cout<<std::endl;
-  std::cout<<es.eigenvalues()<<std::endl;
-  std::cout<<std::endl;
-  std::cout<<"GQDiag"<<std::endl;
+  std::cout<<"GQTotal"<<std::endl;
   std::cout<<std::endl;
   std::cout<<result<<std::endl;
    std::cout<<std::endl; 

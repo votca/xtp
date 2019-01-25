@@ -132,15 +132,16 @@ rpa.setRPAInputEnergies(mo_energy);
   sigma.configure(4,0,16);
 
  sigma.PrepareScreening();
- std::cout<<"frequencies"<<std::endl;
- std::cout<<std::endl;
- std::cout<<mo_energy<<std::endl;
- std::cout<<std::endl;
+
  Eigen::VectorXd c_diag= sigma.CalcCorrelationDiag(mo_energy);
- /*
+ 
  Eigen::MatrixXd c_off= sigma.CalcCorrelationOffDiag(mo_energy);
+ std::cout << "Sigma C" << std::endl;
+ 
+ cout<<c_off<<endl;
  
  c_off.diagonal()=c_diag;
+ 
 Eigen::MatrixXd c_ref=Eigen::MatrixXd::Zero(17,17);
 c_ref<<0.120676,2.58689e-07,-2.52037e-07,3.99968e-08,0.0405292,-1.25428e-07,5.37756e-08,2.99233e-08,-8.10766e-08,-5.95507e-08,-1.4014e-07,-0.0233041,-3.41069e-07,-2.17655e-07,-2.87835e-08,-0.0147014,-0.00144565,
 2.58689e-07,0.0628008,-1.2626e-07,3.62623e-08,-2.5785e-08,-7.87579e-05,-1.00701e-06,-7.48821e-07,-6.18615e-05,-0.000213051,0.00750794,-1.27887e-07,0.0193896,-0.000201918,-0.000330184,3.4198e-07,-1.1817e-09,
@@ -162,6 +163,7 @@ c_ref<<0.120676,2.58689e-07,-2.52037e-07,3.99968e-08,0.0405292,-1.25428e-07,5.37
 
 
 bool check_c_diag=c_diag.isApprox(c_ref.diagonal(),1e-5);
+
 if(!check_c_diag){
     cout<<"Sigma C"<<endl;
     cout<<c_diag<<endl;
@@ -170,14 +172,14 @@ if(!check_c_diag){
 }
 BOOST_CHECK_EQUAL(check_c_diag, true);
 bool check_c=c_ref.isApprox(c_off,1e-5);
-if(!check_c){
-    cout<<"Sigma C"<<endl;
-    cout<<c_off<<endl;
-    cout<<"Sigma C ref"<<endl;
-    cout<<c_ref<<endl;
+//if(!check_c){
+    //cout<<"Sigma C"<<endl;
+    //cout<<c_off<<endl;
+    //cout<<"Sigma C ref"<<endl;
+    //cout<<c_ref<<endl;
+//}
+//BOOST_CHECK_EQUAL(check_c, true);
+
 }
-BOOST_CHECK_EQUAL(check_c, true);
-*/
-}
-        
+       
 BOOST_AUTO_TEST_SUITE_END()

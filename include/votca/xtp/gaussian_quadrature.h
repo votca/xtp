@@ -41,8 +41,10 @@ namespace votca {
             //Default constructor
             GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn);
             
-            void configure(int qptotal){
-                _qptotal=qptotal;
+            void configure(int qptotal, int qpmin, int homo){
+                _qptotal = qptotal;
+                _qpmin = qpmin;
+                _homo = homo;
             }
             
             //This function returns the whole self-energy expectation matrix
@@ -58,7 +60,6 @@ namespace votca {
             //This function returns the chosen order (default=12)
             int Order()const{return _order;}
             
-        
         private:
             
             //This function returns the adapted Gaussian quadrature weights
@@ -78,24 +79,23 @@ namespace votca {
             //entries from aforementioned vector CooTfFreq
             Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
             
-
-            
-
-            
             //Here, we pick the value of int Order() (default=12)            
             int _order=12;
             
             //Here, the vectors containing the quadrature evaluation points, 
-            //resp. the quadrature weights, are stored
+            //resp. the quadrature weights, are stored, together with the 
+            //important indices qptotal, HOMO, and qpmin. Eta is used as small
+            //imaginary perturbation, which is also defined in rpa.cc/.h. The
+            //Mmn tensors are from GWBSE
             
             const Eigen::VectorXd& _energies;
             int _qptotal;
             int _homo;
+            int _qpmin;
             double _eta;
             const TCMatrix_gwbse& _Mmn;
             Eigen::VectorXd _quadpoints;            
             Eigen::VectorXd _quadweights;
-                
             };
         }
     }

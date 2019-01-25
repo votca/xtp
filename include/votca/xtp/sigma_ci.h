@@ -28,12 +28,11 @@
 
 namespace votca {
     namespace xtp {
-   
+        
         class TCMatrix_gwbse;
         class RPA;
-
+        
         class Sigma_CI : public Sigma_base {
-            
             
             public:
             
@@ -51,14 +50,14 @@ namespace votca {
             Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&
             frequencies)const;
             
-            
             private:
-                
-                GaussianQuadrature _gq;
-                
-                double _eta;
             
+            //We add the Gaussian Quadrature contribution to the one from the
+            //contour integral, together making the full contribution to Sigma
+            GaussianQuadrature _gq;
             
+            //Here we use again an imaginary perturbation called eta
+            double _eta;
             
             };
     
