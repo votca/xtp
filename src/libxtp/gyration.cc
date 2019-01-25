@@ -21,7 +21,7 @@
 #include <boost/format.hpp>
 #include <votca/tools/elements.h>
 
-
+using namespace std;
 using namespace votca::tools;
 
 namespace votca { namespace xtp {
@@ -52,7 +52,7 @@ void Density2Gyration::Initialize( tools::Property& options) {
      const QMMolecule& Atomlist = orbitals.QMAtoms();
       Eigen::MatrixXd DMAT_tot;
       BasisSet bs;
-      bs.LoadBasisSet(orbitals.getDFTbasis());
+      bs.LoadBasisSet(orbitals.getDFTbasisName());
       AOBasis basis;
       basis.AOBasisFill(bs, Atomlist);
       AnalyzeGeometry(Atomlist);
