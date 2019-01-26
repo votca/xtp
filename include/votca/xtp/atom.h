@@ -22,11 +22,12 @@
 #ifndef VOTCA_XTP_ATOM_H
 #define VOTCA_XTP_ATOM_H
 
+#include <votca/tools/matrix.h>
+#include <votca/tools/vec.h>
+
 #include <exception>
 #include <map>
 #include <string>
-#include <votca/tools/matrix.h>
-#include <votca/tools/vec.h>
 
 namespace votca {
 namespace xtp {
