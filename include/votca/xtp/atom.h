@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -16,17 +16,17 @@
  * limitations under the License.
  *
  */
-/// For earlier commit history see ctp commit 77795ea591b29e664153f9404c8655ba28dc14e9
+/// For earlier commit history see ctp commit
+/// 77795ea591b29e664153f9404c8655ba28dc14e9
 
 #ifndef VOTCA_XTP_ATOM_H
 #define VOTCA_XTP_ATOM_H
 
-#include <string>
-#include <map>
-#include <votca/tools/vec.h>
-#include <votca/tools/matrix.h>
 #include <exception>
 #include <map>
+#include <string>
+#include <votca/tools/matrix.h>
+#include <votca/tools/vec.h>
 
 namespace votca {
 namespace xtp {
@@ -66,8 +66,8 @@ class Atom {
   Atom(Atom *stencil)
       : _id(stencil->getId()),
         _name(stencil->getName() + "_ghost"),
-        _top(NULL),
-        _mol(NULL),
+        _top(nullptr),
+        _mol(nullptr),
         _resnr(stencil->getResnr()),
         _resname(stencil->getResname()),
         _weight(stencil->getWeight()),
@@ -78,7 +78,7 @@ class Atom {
         _qmPos(stencil->getQMPos()),
         _element(stencil->getElement()) {}
 
-  Atom() {};
+  Atom(){};
   ~Atom() { _Q.clear(); }
 
   const int &getId() const { return _id; }
@@ -102,9 +102,7 @@ class Atom {
   inline void setQMPart(const int &qmid, tools::vec qmPos);
   inline void setQMPos(const tools::vec &qmPos) { _qmPos = qmPos; }
   inline void setElement(const std::string &element) { _element = element; }
-  inline void TranslateBy(const tools::vec &shift) {
-    _pos = _pos + shift;
-  }
+  inline void TranslateBy(const tools::vec &shift) { _pos = _pos + shift; }
 
   inline const int &getResnr() { return _resnr; }
   inline const std::string &getResname() { return _resname; }
@@ -196,7 +194,7 @@ inline void Atom::setQMPart(const int &qmid, tools::vec qmPos) {
     _qmId = -1;
   }
 }
-}
-}
+}  // namespace xtp
+}  // namespace votca
 
-#endif // VOTCA_XTP_ATOM_H 
+#endif  // VOTCA_XTP_ATOM_H
