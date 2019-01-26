@@ -13,27 +13,29 @@
  * limitations under the License.
  *
  */
+
+// IWYU pragma: no_include <boost/preprocessor/arithmetic/dec.hpp>
+// IWYU pragma: no_include <boost/preprocessor/comparison/not_equal.hpp>
+// IWYU pragma: no_include <boost/preprocessor/control/expr_iif.hpp>
+// IWYU pragma: no_include <boost/preprocessor/control/iif.hpp>
+// IWYU pragma: no_include <boost/preprocessor/detail/auto_rec.hpp>
+// IWYU pragma: no_include <boost/preprocessor/logical/bool.hpp>
+// IWYU pragma: no_include <boost/preprocessor/logical/compl.hpp>
+// IWYU pragma: no_include <boost/preprocessor/repetition/detail/for.hpp>
+// IWYU pragma: no_include <boost/preprocessor/repetition/for.hpp>
+// IWYU pragma: no_include <boost/preprocessor/seq/elem.hpp>
+// IWYU pragma: no_include <boost/preprocessor/seq/size.hpp>
+// IWYU pragma: no_include <boost/preprocessor/tuple/elem.hpp>
+// IWYU pragma: no_include <boost/preprocessor/variadic/elem.hpp>
+// IWYU pragma: no_include <boost/test/tools/old/interface.hpp>
+// IWYU pragma: no_include <boost/test/unit_test_suite.hpp>
+// IWYU pragma: no_include <boost/test/utils/basic_cstring/basic_cstring.hpp>
+// IWYU pragma: no_include <boost/test/utils/basic_cstring/basic_cstring_fwd.hpp>
+
 #define BOOST_TEST_MAIN
 
 #define BOOST_TEST_MODULE atom_test
-// IWYU pragma: no_include <boost/preprocessor/arithmetic/dec.hpp>
-#include <boost/preprocessor/comparison/not_equal.hpp>
-#include <boost/preprocessor/control/expr_iif.hpp>
-#include <boost/preprocessor/control/iif.hpp>
-#include <boost/preprocessor/detail/auto_rec.hpp>
-#include <boost/preprocessor/logical/bool.hpp>
-#include <boost/preprocessor/logical/compl.hpp>
-#include <boost/preprocessor/repetition/detail/for.hpp>
-#include <boost/preprocessor/repetition/for.hpp>
-#include <boost/preprocessor/seq/elem.hpp>
-#include <boost/preprocessor/seq/size.hpp>
-#include <boost/preprocessor/tuple/elem.hpp>
-#include <boost/preprocessor/variadic/elem.hpp>
-#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/unit_test_suite.hpp>
-#include <boost/test/utils/basic_cstring/basic_cstring.hpp>
-#include <boost/test/utils/basic_cstring/basic_cstring_fwd.hpp>
 #include <votca/xtp/atom.h>
 
 using namespace votca::tools;
