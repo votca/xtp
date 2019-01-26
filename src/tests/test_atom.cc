@@ -16,7 +16,8 @@
 #define BOOST_TEST_MAIN
 
 #define BOOST_TEST_MODULE atom_test
-#include <boost/test/unit_test.hpp>  // IWYU pragma: export
+
+#include <boost/test/unit_test.hpp>  // IWYU pragma: no_include
 #include <votca/xtp/atom.h>
 
 using namespace votca::tools;
