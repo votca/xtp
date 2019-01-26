@@ -130,4 +130,12 @@ BOOST_AUTO_TEST_CASE(setters_test) {
     BOOST_CHECK_EQUAL(atom.getFragment(), nullptr);
   }
 }
+
+BOOST_AUTO_TEST_CASE() {
+  Atom atom(1, "Ne");
+
+  vec position(1.0, 2.0, 3.0);
+  atom.setPos(position);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
