@@ -19,7 +19,7 @@ stages:
     - j="$(grep -c processor /proc/cpuinfo 2>/dev/null)" || j=0; ((j++))
     - git checkout -B current_commit
     - cd $HOME
-    - git clone --depth=1 --recursive https://github.com/votca/votca
+    - git clone --recursive https://github.com/votca/votca
     - pushd votca
     - if [[ ${CI_COMMIT_REF_NAME} = stable* ]]; then
         git checkout -b stable origin/stable && git submodule update --recursive --init;
