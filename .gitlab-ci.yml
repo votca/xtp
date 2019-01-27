@@ -21,6 +21,9 @@ stages:
     - cd $HOME
     - git clone --depth=1 --recursive https://github.com/votca/votca
     - pushd votca
+    - if [[ ${CI_COMMIT_REF_NAME} = stable* ]]; then
+        git checkout stable && git submodule update --recursive --init;
+      fi
     - git -C ${CI_PROJECT_NAME} fetch ${CI_PROJECT_DIR} current_commit
     - git -C ${CI_PROJECT_NAME} checkout -f ${CI_COMMIT_SHA}
     - mkdir -p build
