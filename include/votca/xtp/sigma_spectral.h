@@ -60,8 +60,10 @@ private:
     // 149–161 (2016).
     // Eq. 45, 47, 48
     Eigen::MatrixXd CalcResidues(int s) const;
-    double Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const;
-    double Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const;
+    // Note: rm_x_rn = residues[m, :] .* residues[n, :]
+    // TODO: Method names, input too vague?
+    double Equation47(const Eigen::VectorXd& rm_x_rn, double omega, double w) const;
+    double Equation48(const Eigen::VectorXd& rm_x_rn, double omega) const;
 };
 }
 }

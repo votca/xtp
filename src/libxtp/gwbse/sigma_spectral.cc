@@ -42,7 +42,8 @@ namespace votca {
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
-            result(m) += Equation48(m, m, omega, residues);
+            Eigen::VectorXd rm_x_rm = residues.row(m).cwiseProduct(residues.row(m));
+            result(m) += Equation48(rm_x_rm, omega);
           } // Energy level m
         } // Eigenvalues/poles s
 
@@ -52,7 +53,8 @@ namespace votca {
           double omega = _EigenSol._Omega(s);
           Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
-            result(m) += Equation47(m, m, RPAEnergies, RPAEnergies(m), omega, residues); // TODO: Pass frequency or energy?
+            Eigen::VectorXd rm_x_rm = residues.row(m).cwiseProduct(residues.row(m));
+            result(m) += Equation47(rm_x_rm, omega, RPAEnergies(m)); // TODO: Pass frequency or energy?
           } // Energy level m
         } // Eigenvalues/poles s
 
@@ -62,7 +64,7 @@ namespace votca {
     }
 
     Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies) const {
-      const Eigen::VectorXd& RPAEnergies = _rpa.getRPAInputEnergies();
+      const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
       const int numeigenvalues = _EigenSol._Omega.size();
       Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       
@@ -73,7 +75,8 @@ namespace votca {
           Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
-              double res = Equation48(m, n, omega, residues);
+              Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
+              double res = Equation48(rm_x_rn, omega);
               result(m, n) += res;
               result(n, m) += res;
             } // Energy level n
@@ -87,8 +90,9 @@ namespace votca {
           Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
-              double result_m = Equation47(m, n, RPAEnergies, RPAEnergies(m), omega, residues); // TODO: Pass frequency or energy?
-              double result_n = Equation47(m, n, RPAEnergies, RPAEnergies(n), omega, residues);
+              Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
+              double result_m = Equation47(rm_x_rn, omega, energies(m)); // TODO: Pass frequency or energy?
+              double result_n = Equation47(rm_x_rn, omega, energies(n));
               // (m|S(w)|n) = 0.5 * (m|S(e_m)|n) + 0.5 * (m|S(e_n)|n)
               double res = 0.5 * (result_m + result_n);
               result(m, n) += res;
@@ -130,7 +134,8 @@ namespace votca {
     }
 
     // TODO: Name, input args
-    double Sigma_Spectral::Equation47(int m, int n, const Eigen::VectorXd& energies, double w, double omega, Eigen::MatrixXd& residues) const {
+    double Sigma_Spectral::Equation47(const Eigen::VectorXd& rm_x_rn, double omega, double w) const {
+      const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
       const double eta = 1e-6;
       
       double s1_Real = 0.0;
@@ -140,7 +145,7 @@ namespace votca {
 
       // Eq. 47, part 1
       for (int v = 0; v <= _homo; v++) {
-        double A = residues(m, v) * residues(n, v);
+        double A = rm_x_rn[v];
         double B = w - energies(v) + omega;
         double C_Real = A * B / (B * B + eta * eta);
         double C_Imag = A * eta / (B * B + eta * eta);
@@ -150,7 +155,7 @@ namespace votca {
 
       // Eq. 47, part 2
       for (int c = _homo + 1; c < _qpmax; c++) {
-        double A = residues(m, c) * residues(n, c);
+        double A = rm_x_rn[c];
         double B = w - energies(c) - omega;
         double C_Real = A * B / (B * B + eta * eta);
         double C_Imag = A * eta / (B * B + eta * eta);
@@ -163,17 +168,17 @@ namespace votca {
     }
 
     // TODO: Name, input args
-    double Sigma_Spectral::Equation48(int m, int n, double omega, Eigen::MatrixXd& residues) const {
+    double Sigma_Spectral::Equation48(const Eigen::VectorXd& rm_x_rn, double omega) const {
       
       double s1 = 0.0;
       double s2 = 0.0;
 
       // TODO: Use Eigen for summations
       for (int v = 0; v <= _homo; v++) {
-        s1 += residues(m, v) * residues(n, v);
+        s1 += rm_x_rn[v];
       } // Occupied MOs v
       for (int k = 0; k < _qpmax; k++) {
-        s2 += residues(m, k) * residues(n, k);
+        s2 += rm_x_rn[k];
       } // All MOs k
 
       return (2 * s1 - s2) / omega;
