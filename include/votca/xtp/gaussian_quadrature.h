@@ -79,6 +79,8 @@ namespace votca {
             //entries from aforementioned vector CooTfFreq
             Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
             
+
+            
             //Here, we pick the value of int Order() (default=12)            
             int _order=12;
             

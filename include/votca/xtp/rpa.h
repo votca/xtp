@@ -40,6 +40,10 @@ public:
         _rpamin = rpamin;
         _rpamax = rpamax;
     }
+    
+    const double getEta() const{
+        return _eta;
+    }
 
     
 

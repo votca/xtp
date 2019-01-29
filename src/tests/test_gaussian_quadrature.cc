@@ -90,17 +90,17 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full){
   basisfile << "</basis>" << endl;
   basisfile.close();
   
-  Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+
   BasisSet basis;
   basis.LoadBasisSet("3-21G.xml");
-  
-  AOBasis aobasis;
+    AOBasis aobasis;
+Orbitals orbitals;
+  orbitals.LoadFromXYZ("molecule.xyz");
+
   aobasis.AOBasisFill(basis,orbitals.QMAtoms());
-  
-  Orbitals orb;
-  orb.setBasisSetSize(17);
-  orb.setNumberOfOccupiedLevels(4);
+
+  orbitals.setBasisSetSize(17);
+  orbitals.setNumberOfOccupiedLevels(4);
 
 AOKinetic kinetic;
 kinetic.Fill(aobasis);

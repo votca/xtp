@@ -117,6 +117,7 @@ namespace votca {
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
         Eigen::VectorXd AdapWeights = AdaptedWeights();
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
+        const double eta = rpa.getEta();
         //To obtain the part from the occupied states, where the energies are
         //negative, we take the indices that correspond to the DFT/RPA energies
         //being negative (where the indices are between 1 and HOMO): this 
@@ -127,22 +128,20 @@ namespace votca {
                 //function CooTfFreq, and the adapted GQ weights
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, _qptotal);
-                    for (int m = 0; m < _qptotal; ++m) {
+                //We move to an array to have a constant component-
+                //wise subtraction, and then return to vector form
+                Eigen::VectorXd DeltaE = frequencies.array() - _energies(k);
+                //component-wise squaring for the denominator
+                Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
+                //idem. Here, the imaginary perturbation is positive
+                
+                Eigen::VectorXd CooTfFreqsPlusEta = CooTfFreqs.array()+eta;
+                Eigen::VectorXd CooTfFreqsPlusEtaSq = CooTfFreqsPlusEta.cwiseAbs2();
+                // now, we cannot do a component-wise operation, since
+                //we deal with different dimensions for j and m in 
+                //the matrix. So, we fill the matrix entry via a for loop
+                for (int m = 0; m < _qptotal; ++m) {
                         for (int j = 0; j < _order; ++j) {
-                            //We move to an array to have a constant component-
-                            //wise subtraction, and then return to vector form
-                            Eigen::VectorXd DeltaE = 
-                                frequencies.array() - _energies(k);
-                            //component-wise squaring for the denominator
-                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                            //idem. Here, the imaginary perturbation is postive
-                            Eigen::VectorXd CooTfFreqsPlusEta = 
-                                CooTfFreqs.array()+_eta;
-                            Eigen::VectorXd CooTfFreqsPlusEtaSq = 
-                                CooTfFreqsPlusEta.cwiseAbs2();
-                            // now, we cannot do a component-wise operation, since
-                            //we deal with different dimensions for j and m in 
-                            //the matrix
                             ResFreqs(j, m) =
                                 CooTfFreqsPlusEta(j) / (DeltaESq(m) + CooTfFreqsPlusEtaSq(j));
                             }
@@ -165,29 +164,27 @@ namespace votca {
                     (MMxXSumInvMinId * MMx.transpose()) * 
                     (AdapWeights.transpose() * ResFreqs).asDiagonal();
                 }
+        
         //Now, the same holds for the indices for the unoccupied states
                     for (int k = _homo - _qpmin; k < _qptotal; ++k) {
                 //Now, we fill the k'th matrix in the array in the following for 
                 //loops, where we will use the vector of frequencies from the
-                //function CooTfFreq. Also, we initialise the real and imag part
+                //function CooTfFreq.
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, _qptotal);
+                //We move to an array to have a constant component-
+                //wise subtraction, and then return to vector form
+                Eigen::VectorXd DeltaE = frequencies.array() - _energies(k);
+                //component-wise squaring for the denominator
+                Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
+                //idem. Here, the imaginary perturbation is negative
+                Eigen::VectorXd CooTfFreqsMinusEta = CooTfFreqs.array()-eta;
+                Eigen::VectorXd CooTfFreqsMinusEtaSq = CooTfFreqsMinusEta.cwiseAbs2();
+                // now, we cannot do a component-wise operation, since
+                //we deal with different dimensions for j and m in 
+                //the matrix. So, we move to a for loop for filling in the matrix entry
                     for (int m = 0; m < _qptotal; ++m) {
                         for (int j = 0; j < _order; ++j) {
-                            //We move to an array to have a constant component-
-                            //wise subtraction, and then return to vector form
-                            Eigen::VectorXd DeltaE = 
-                                frequencies.array() - _energies(k);
-                            //component-wise squaring for the denominator
-                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                            //idem. Here, the imaginary perturbation is negative
-                            Eigen::VectorXd CooTfFreqsMinusEta = 
-                                CooTfFreqs.array()-_eta;
-                            Eigen::VectorXd CooTfFreqsMinusEtaSq = 
-                                CooTfFreqsMinusEta.cwiseAbs2();
-                            // now, we cannot do a component-wise operation, since
-                            //we deal with different dimensions for j and m in 
-                            //the matrix
                             ResFreqs(j, m) =
                                 CooTfFreqsMinusEta(j) / (DeltaESq(m) + CooTfFreqsMinusEtaSq(j));
                             }
@@ -221,7 +218,8 @@ namespace votca {
         Eigen::VectorXd CooTfFreqs = CooTfFreq();
         Eigen::VectorXd AdapWeights = AdaptedWeights();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
-            for (int k = 0; k < _homo - _qpmin; ++k) {
+        const double eta = rpa.getEta();
+        for (int k = 0; k < _homo - _qpmin; ++k) {
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_order, _qptotal);
                     #if (GWBSE_DOUBLE)
@@ -236,7 +234,7 @@ namespace votca {
                                 frequencies.array() - _energies(k);
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
                             Eigen::VectorXd CooTfFreqsPlusEta = 
-                                CooTfFreqs.array() + _eta;
+                                CooTfFreqs.array() + eta;
                             Eigen::VectorXd CooTfFreqsPlusEtaSq = 
                                 CooTfFreqsPlusEta.cwiseAbs2();
                             ResFreqs(j, m) = 
@@ -264,7 +262,7 @@ namespace votca {
                                 frequencies.array() - _energies(k);
                             Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
                             Eigen::VectorXd CooTfFreqsMinusEta = 
-                                CooTfFreqs.array() - _eta;
+                                CooTfFreqs.array() - eta;
                             Eigen::VectorXd CooTfFreqsMinusEtaSq = 
                                 CooTfFreqsMinusEta.cwiseAbs2();
                             ResFreqs(j, m) = 

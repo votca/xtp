@@ -94,7 +94,6 @@ namespace votca {
                 }
             }
         }
-
         //Now, we deal with the unoccupied states in a fully similar way
         for (int k = _homo; k < DFTsize; k++) {
             #if (GWBSE_DOUBLE)
@@ -136,7 +135,7 @@ namespace votca {
             }
         }
         //Now, we add a minus, and the Gaussian quadrature contribution
-        return (-1)*result + _gq.SigmaGQ(frequencies, _rpa);
+        return _gq.SigmaGQ(frequencies, _rpa)-result ;
     }
     
     //This function returns the diagonal of aforementioned matrix SigmaRes
@@ -178,11 +177,9 @@ namespace votca {
                         for (int m = 0 ; m < _qptotal ; ++m){
                             
                             if ( frequencies(m) > energies(k) ){
-                
                             Eigen::MatrixXd DielInvMinId = 
                                 _rpa.calculate_epsilon_r(energies(k) -
                                     frequencies(m)).inverse();
-        
                             int nobasisfcs = DielInvMinId.rows();
                             DielInvMinId -= 
                                 Eigen::MatrixXd::Identity(nobasisfcs,nobasisfcs);
@@ -192,8 +189,11 @@ namespace votca {
                             }
                         }
                     }
-            
-                 
+        std::cout << "GQ contribution" << std::endl;
+        std::cout << _gq.SigmaGQDiag(frequencies,_rpa) << std::endl;
+        std::cout << "residual contribution" << std::endl;
+        std::cout << (-2)*result << std::endl;
+        
         //Because m = n on the diagonal, we also get a doubling factor in front
         return (-2)*result+_gq.SigmaGQDiag(frequencies,_rpa);
         }
