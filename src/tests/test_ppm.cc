@@ -113,8 +113,8 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
 
 votca::ctp::Logger log;
 RPA rpa=RPA(log,Mmn);
-rpa.setRPAInputEnergies(es.eigenvalues());
 rpa.configure(4,0,16);
+rpa.setRPAInputEnergies(es.eigenvalues());
 
 PPM ppm;
 ppm.PPM_construct_parameters(rpa);
