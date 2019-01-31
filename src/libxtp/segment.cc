@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -16,17 +16,15 @@
  * limitations under the License.
  *
  */
-/// For earlier commit history see ctp commit 77795ea591b29e664153f9404c8655ba28dc14e9
+/// For earlier commit history see ctp commit
+/// 77795ea591b29e664153f9404c8655ba28dc14e9
 
-#include <vector>
-#include <string>
-
-#include <votca/xtp/polarsite.h>
+#include <stddef.h>
 #include <votca/xtp/atom.h>
 #include <votca/xtp/fragment.h>
+#include <votca/xtp/polarsite.h>
 #include <votca/xtp/segment.h>
 #include <votca/xtp/segmenttype.h>
-#include <votca/tools/vec.h>
 
 using namespace std;
 using namespace votca::tools;
@@ -115,7 +113,7 @@ void Segment::setHasState(bool yesno, int state) {
   }
 }
 
-bool Segment::hasState(int state) const{
+bool Segment::hasState(int state) const {
   bool result;
   if (state == -1) {
     result = _has_e;
@@ -146,7 +144,7 @@ void Segment::setOcc(double occ, int e_h_s_t) {
   }
 }
 
-double Segment::getOcc(int e_h_s_t) const{
+double Segment::getOcc(int e_h_s_t) const {
   double result;
   if (e_h_s_t == -1) {
     result = _occ_e;
@@ -157,8 +155,8 @@ double Segment::getOcc(int e_h_s_t) const{
   } else if (e_h_s_t == +3) {
     result = _occ_t;
   } else {
-    throw runtime_error(
-        " ERROR CODE whe__00s11o__");  // blabla what do I do here?
+    throw runtime_error(" ERROR CODE whe__00s11o__");  // blabla what do I do
+                                                       // here?
   }
   return result;
 }
@@ -203,8 +201,8 @@ void Segment::setU_xX_nN(double dU, int state) {
   } else if (state == +3) {
     _U_xX_nN_t = dU;
   } else {
-    throw runtime_error(
-        " ERROR CODE whe__00u11d__");  // blabla?? What do I do here?
+    throw runtime_error(" ERROR CODE whe__00u11d__");  // blabla?? What do I do
+                                                       // here?
   }
 }
 
@@ -215,8 +213,8 @@ void Segment::setU_nX_nN(double dU, int state) {
   } else if (state == +3) {
     _U_nX_nN_t = dU;
   } else {
-    throw runtime_error(
-        " ERROR CODE whe__00u11d__");  // blabla?? What do I do here?
+    throw runtime_error(" ERROR CODE whe__00u11d__");  // blabla?? What do I do
+                                                       // here?
   }
 }
 
@@ -227,42 +225,42 @@ void Segment::setU_xN_xX(double dU, int state) {
   } else if (state == +3) {
     _U_xN_xX_t = dU;
   } else {
-    throw runtime_error(
-        " ERROR CODE whe__00u11d__");  // blabla?? What do I do here?
+    throw runtime_error(" ERROR CODE whe__00u11d__");  // blabla?? What do I do
+                                                       // here?
   }
 }
 
-double Segment::getU_xX_nN(int state) const{
+double Segment::getU_xX_nN(int state) const {
 
   return (state == +3) ? _U_xX_nN_t : _U_xX_nN_s;
 }
 
-double Segment::getU_nX_nN(int state) const{
+double Segment::getU_nX_nN(int state) const {
 
   return (state == +3) ? _U_nX_nN_t : _U_nX_nN_s;
 }
 
-double Segment::getU_xN_xX(int state) const{
+double Segment::getU_xN_xX(int state) const {
 
   return (state == +3) ? _U_xN_xX_t : _U_xN_xX_s;
 }
 
-double Segment::getU_cC_nN(int state) const{
+double Segment::getU_cC_nN(int state) const {
 
   return (state == -1) ? _U_cC_nN_e : _U_cC_nN_h;
 }
 
-double Segment::getU_nC_nN(int state) const{
+double Segment::getU_nC_nN(int state) const {
 
   return (state == -1) ? _U_nC_nN_e : _U_nC_nN_h;
 }
 
-double Segment::getU_cN_cC(int state) const{
+double Segment::getU_cN_cC(int state) const {
 
   return (state == -1) ? _U_cN_cC_e : _U_cN_cC_h;
 }
 
-double Segment::getSiteEnergy(int state) const{
+double Segment::getSiteEnergy(int state) const {
 
   double result;
   if (state == -1) {
@@ -274,8 +272,8 @@ double Segment::getSiteEnergy(int state) const{
   } else if (state == +3) {
     result = getEMpoles(state) + _U_xX_nN_t;
   } else {
-    throw runtime_error(
-        " ERROR CODE whe__00s11o__");  // blabla what do I do here?
+    throw runtime_error(" ERROR CODE whe__00s11o__");  // blabla what do I do
+                                                       // here?
   }
   return result;
 }
@@ -287,7 +285,7 @@ void Segment::setEMpoles(int state, double energy) {
   _eMpoles[state + 1] = energy;
 }
 
-double Segment::getEMpoles(int state) const{
+double Segment::getEMpoles(int state) const {
   return _eMpoles[state + 1] - _eMpoles[1];
 }
 
@@ -306,8 +304,8 @@ void Segment::calcPos() {
   double totWeight = 0.0;
 
   for (unsigned int i = 0; i < _atoms.size(); i++) {
-    pos += _atoms[i]->getPos() * _atoms[i]->getWeight();
-    totWeight += _atoms[i]->getWeight();
+    pos += _atoms[i]->getPos() * _atoms[i]->getMass();
+    totWeight += _atoms[i]->getMass();
   }
 
   _CoM = pos / totWeight;
@@ -358,5 +356,5 @@ void Segment::Rigidify() {
   }
 }
 
-}
-}
+}  // namespace xtp
+}  // namespace votca

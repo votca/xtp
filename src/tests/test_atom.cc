@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(getters_test) {
     BOOST_CHECK_EQUAL(atom2.getName(), molecular_dynamics_atom_name);
     BOOST_CHECK_EQUAL(atom2.getResnr(), residue_number);
     BOOST_CHECK_EQUAL(atom2.getResname(), residue_name);
-    BOOST_CHECK_EQUAL(atom2.getWeight(), weight);
+    BOOST_CHECK_EQUAL(atom2.getMass(), weight);
     BOOST_CHECK_EQUAL(atom2.getElement(), element);
     BOOST_CHECK_EQUAL(atom2.getQMId(), quantum_chemistry_id);
     BOOST_CHECK_EQUAL(atom2.getQMPos(), quantum_chemistry_position);
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(setters_test) {
     Atom atom;
     atom.setResnr(residue_number);
     atom.setResname(residue_name);
-    atom.setWeight(weight);
+    atom.setMass(weight);
     atom.setQMPart(quantum_chemistry_id, quantum_chemistry_position);
     atom.setElement(element);
     atom.setPos(position);
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(setters_test) {
 
     BOOST_CHECK_EQUAL(atom.getResnr(), residue_number);
     BOOST_CHECK_EQUAL(atom.getResname(), residue_name);
-    BOOST_CHECK_EQUAL(atom.getWeight(), weight);
+    BOOST_CHECK_EQUAL(atom.getMass(), weight);
     BOOST_CHECK_EQUAL(atom.getElement(), element);
     BOOST_CHECK_EQUAL(atom.getQMId(), quantum_chemistry_id);
     BOOST_CHECK_EQUAL(atom.getQMPos(), quantum_chemistry_position);
