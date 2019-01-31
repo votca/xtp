@@ -27,6 +27,7 @@
 #define real_gwbse float
 #endif
 
+#define _GLIBCXX_DEBUG
 
 namespace votca {
     namespace xtp {

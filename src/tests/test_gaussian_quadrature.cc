@@ -123,7 +123,7 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(),rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(),rpa);
-  
+  /*
   std::cout<<"GQTotal"<<std::endl;
   std::cout<<std::endl;
   std::cout<<result<<std::endl;
@@ -131,7 +131,7 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   std::cout<<"GQDiag"<<std::endl;
   std::cout<<std::endl;
   std::cout<<result2<<std::endl;
-  
+  */
 }
         
 BOOST_AUTO_TEST_SUITE_END()

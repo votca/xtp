@@ -24,10 +24,8 @@
 #include <iostream>
 #include <votca/xtp/rpa.h>
 
-//Computes the self-energy expectation matrix for given Kohn-Sham energies and
-//M coefficients, using a Gaussian quadrature and expressions for the residuals
-//arising from complex contour integration
-
+//Computes the contribution from the Gauss-Hermite quadrature to the 
+//self-energy expectation matrix for given RPA and frequencies
 namespace votca {
     namespace xtp {
     
@@ -38,7 +36,6 @@ namespace votca {
         
         public:
             
-            //Default constructor
             GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn);
             
             void configure(int qptotal, int qpmin, int homo){
@@ -47,48 +44,27 @@ namespace votca {
                 _homo = homo;
             }
             
-            //This function returns the whole self-energy expectation matrix
-            //for given Kohn-Sham energies and M coefficients (hence "RPA")
             Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
                 const RPA& rpa)const;
             
-            //This function only returns the diagonal of aforementioned matrix
-            //Sigma in vector form
             Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
                 const RPA& rpa)const;
             
-            //This function returns the chosen order (default=12)
             int Order()const{return _order;}
-            
+
         private:
             
-            //This function returns the adapted Gaussian quadrature weights
+            
             Eigen::VectorXd AdaptedWeights() const ;
             
-            //This function returns the coordinate transformation applied to the
-            //quadrature points. These vector entries will serve as frequencies
-            //for the dielectric matrix inverses; hence the name
-            Eigen::VectorXd CooTfFreq()const;
-            
-            //This function calculates the inverse of the microscopic dielectric
-            //matrix for given complex frequency and Kohn-Sham energies
+            //This function calculates and stores inverses of the microscopic dielectric
+            //matrix in a matrix vector
             std::vector<Eigen::MatrixXd> CalcDielInvVector(const RPA& rpa)const;
             
-            //This function returns the B matrix, which contains the sum of
-            //the dielectric matrices evaluated at the translated frequency vector 
-            //entries from aforementioned vector CooTfFreq
+            //This function returns the sum of the matrix vector minus the identity
             Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
-            
 
-            
-            //Here, we pick the value of int Order() (default=12)            
             int _order=12;
-            
-            //Here, the vectors containing the quadrature evaluation points, 
-            //resp. the quadrature weights, are stored, together with the 
-            //important indices qptotal, HOMO, and qpmin. Eta is used as small
-            //imaginary perturbation, which is also defined in rpa.cc/.h. The
-            //Mmn tensors are from GWBSE
             
             const Eigen::VectorXd& _energies;
             int _qptotal;

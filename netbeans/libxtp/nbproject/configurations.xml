@@ -90,6 +90,7 @@
       <itemPath>../../include/votca/xtp/forces.h</itemPath>
       <itemPath>../../include/votca/xtp/fourcenter.h</itemPath>
       <itemPath>../../include/votca/xtp/fragment.h</itemPath>
+      <itemPath>../../include/votca/xtp/gauss-hermite_quadrature_constants.h</itemPath>
       <itemPath>../../include/votca/xtp/gaussian_quadrature.h</itemPath>
       <itemPath>../../include/votca/xtp/gdma.h</itemPath>
       <itemPath>../../include/votca/xtp/geometry_optimization.h</itemPath>
@@ -237,6 +238,7 @@
       <itemPath>../../src/libxtp/dftcoupling.cc</itemPath>
       <itemPath>../../src/libxtp/esp2multipole.cc</itemPath>
       <itemPath>../../src/libxtp/espfit.cc</itemPath>
+      <itemPath>../../src/libxtp/gauss_hermite_quadrature_constants.cc</itemPath>
       <itemPath>../../src/libxtp/gaussian_quadrature.cc</itemPath>
       <itemPath>../../src/libxtp/gdma.cc</itemPath>
       <itemPath>../../src/libxtp/grid.cc</itemPath>
@@ -3071,6 +3073,11 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gauss-hermite_quadrature_constants.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gaussian_quadrature.h"
             ex="false"
             tool="3"
@@ -3625,6 +3632,11 @@
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gauss_hermite_quadrature_constants.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/gaussian_quadrature.cc"
             ex="false"
             tool="1"
@@ -4092,6 +4104,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/gauss-hermite_quadrature_constants.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gaussian_quadrature.h"
             ex="false"
@@ -4646,6 +4663,11 @@
       <item path="../../src/libxtp/fourcenter.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gauss_hermite_quadrature_constants.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="../../src/libxtp/gaussian_quadrature.cc"
             ex="false"

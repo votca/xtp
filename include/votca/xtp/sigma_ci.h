@@ -26,6 +26,8 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/gaussian_quadrature.h>
 
+//This computes the whole expectation matrix for the correlational part of the
+//self-energy: so, both the residual and the Gauss-Hermite quadrature contribution
 namespace votca {
     namespace xtp {
         
@@ -38,25 +40,16 @@ namespace votca {
             
             Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa ):Sigma_base(Mmn,rpa),_gq(rpa.getRPAInputEnergies(),Mmn){};
           
-            //Sets up the screening parametrisation: empty for the while
             void PrepareScreening();
             
-            //This function returns the diagonal of the self-energy correlation
-            //expectation matrix for given frequencies, RPA (Kohn-Sham) energies
-            //and a calculate Gaussian Quadrature contribution matrix
-            Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&
-            frequencies)const;
-            //This function returns the whole of the aforementioned matrix
-            Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&
-            frequencies)const;
+            Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&frequencies)const;
+            
+            Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&frequencies)const;
             
             private:
             
-            //We add the Gaussian Quadrature contribution to the one from the
-            //contour integral, together making the full contribution to Sigma
             GaussianQuadrature _gq;
             
-            //Here we use again an imaginary perturbation called eta
             double _eta;
             
             };
@@ -65,4 +58,4 @@ namespace votca {
     
         }
 
-#endif /* _VOTCA_XTP_SIGMA_RESIDUAL_H */
+#endif /* _VOTCA_XTP_SIGMA_CI_H */

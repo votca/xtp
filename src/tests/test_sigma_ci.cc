@@ -136,9 +136,10 @@ rpa.setRPAInputEnergies(mo_energy);
  Eigen::VectorXd c_diag= sigma.CalcCorrelationDiag(mo_energy);
  
  Eigen::MatrixXd c_off= sigma.CalcCorrelationOffDiag(mo_energy);
+ /*
  std::cout << "Sigma C" << std::endl;
  std::cout<<c_off<<std::endl;
- 
+ */
  c_off.diagonal()=c_diag;
  
 Eigen::MatrixXd c_ref=Eigen::MatrixXd::Zero(17,17);

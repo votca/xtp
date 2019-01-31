@@ -667,6 +667,7 @@ Eigen::MatrixXd Orbitals::CalcAuxMat_cc(const Eigen::VectorXd& coeffs)const{
                     Tokenizer toker(line, " \t");
                     toker.ToVector(split);
                     if(split.size()<4){continue;}
+                    std::cout<<split.size()<<std::endl;
                     // Interesting information written here: e.g. 'C 0.000 0.000 0.000'
                     string element = split[0];
                     double x = boost::lexical_cast<double>(split[1]);
