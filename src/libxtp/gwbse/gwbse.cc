@@ -229,6 +229,9 @@ void GWBSE::Initialize(tools::Property& options) {
     }
     CTP_LOG(ctp::logDEBUG, *_pLog) << " Running GW as: " << mode << flush;
     _gwopt.ScaHFX=_orbitals.getScaHFX();
+    
+    _gwopt.sigma_integration=options.ifExistsReturnElseReturnDefault<std::string>
+(key + ".sigma_integrator", _gwopt.sigma_integration);
 
     _gwopt.shift = options.ifExistsReturnElseReturnDefault<double>(key + ".shift", _gwopt.shift);
     _gwopt.g_sc_limit = options.ifExistsReturnElseReturnDefault<double>(

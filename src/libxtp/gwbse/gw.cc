@@ -34,6 +34,9 @@ namespace votca {
      if(_opt.sigma_integration=="ppm"){
          _sigma=std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn,_rpa));
      }
+     else if(_opt.sigma_integration=="ci"){
+         _sigma=std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn,_rpa));
+     }
      _sigma->configure(_opt.homo,_opt.qpmin,_opt.qpmax);
      _Sigma_x=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
      _Sigma_c=Eigen::MatrixXd::Zero(_qptotal,_qptotal);

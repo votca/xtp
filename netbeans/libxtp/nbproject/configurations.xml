@@ -90,7 +90,7 @@
       <itemPath>../../include/votca/xtp/forces.h</itemPath>
       <itemPath>../../include/votca/xtp/fourcenter.h</itemPath>
       <itemPath>../../include/votca/xtp/fragment.h</itemPath>
-      <itemPath>../../include/votca/xtp/gauss-hermite_quadrature_constants.h</itemPath>
+      <itemPath>../../include/votca/xtp/gauss_hermite_quadrature_constants.h</itemPath>
       <itemPath>../../include/votca/xtp/gaussian_quadrature.h</itemPath>
       <itemPath>../../include/votca/xtp/gdma.h</itemPath>
       <itemPath>../../include/votca/xtp/geometry_optimization.h</itemPath>
@@ -3073,7 +3073,7 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/gauss-hermite_quadrature_constants.h"
+      <item path="../../include/votca/xtp/gauss_hermite_quadrature_constants.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4105,7 +4105,7 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="../../include/votca/xtp/gauss-hermite_quadrature_constants.h"
+      <item path="../../include/votca/xtp/gauss_hermite_quadrature_constants.h"
             ex="false"
             tool="3"
             flavor2="0">
