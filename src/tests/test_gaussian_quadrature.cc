@@ -120,10 +120,19 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   rpa.configure(4,0,17-1);
   
   GaussianQuadrature gq=GaussianQuadrature(es.eigenvalues(),Mmn);
-  gq.configure(17,0,4);
+  GaussianQuadrature::options opt;
+  
+  opt.homo=4;
+  opt.qptotal=17;
+  opt.qpmin=0;
+  opt.order=12;
+  opt.rpamin=0;
+  
+  gq.configure(opt);
+  //gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(),rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(),rpa);
-  /*
+  
   std::cout<<"GQTotal"<<std::endl;
   std::cout<<std::endl;
   std::cout<<result<<std::endl;
@@ -131,7 +140,7 @@ Mmn.Fill(aobasis,aobasis,es.eigenvectors());
   std::cout<<"GQDiag"<<std::endl;
   std::cout<<std::endl;
   std::cout<<result2<<std::endl;
-  */
+  
 }
         
 BOOST_AUTO_TEST_SUITE_END()

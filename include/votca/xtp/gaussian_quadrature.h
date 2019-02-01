@@ -35,14 +35,18 @@ namespace votca {
         class GaussianQuadrature {
         
         public:
+           
+            struct options{
+                int order=12;
+                int qptotal;
+                int qpmin;
+                int homo;
+                int rpamin;
+            };
             
             GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn);
             
-            void configure(int qptotal, int qpmin, int homo){
-                _qptotal = qptotal;
-                _qpmin = qpmin;
-                _homo = homo;
-            }
+            void configure(options opt);
             
             Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
                 const RPA& rpa)const;
@@ -50,11 +54,10 @@ namespace votca {
             Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
                 const RPA& rpa)const;
             
-            int Order()const{return _order;}
-
+            
         private:
             
-            
+            options _opt;
             Eigen::VectorXd AdaptedWeights() const ;
             
             //This function calculates and stores inverses of the microscopic dielectric
@@ -63,14 +66,9 @@ namespace votca {
             
             //This function returns the sum of the matrix vector minus the identity
             Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
-
-            int _order=12;
             
             const Eigen::VectorXd& _energies;
-            int _qptotal;
-            int _homo;
-            int _qpmin;
-            double _eta;
+            
             const TCMatrix_gwbse& _Mmn;
             Eigen::VectorXd _quadpoints;            
             Eigen::VectorXd _quadweights;

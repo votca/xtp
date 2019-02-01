@@ -129,13 +129,22 @@ rpa.configure(4,0,16);
 rpa.setRPAInputEnergies(mo_energy);
 
   Sigma_CI sigma=Sigma_CI(Mmn,rpa);
-  sigma.configure(4,0,16);
+  
+  Sigma_CI::options opt;
+  opt.homo=4;
+  opt.qpmax=16;
+  opt.qpmin=0;
+  opt.order=12;
+  opt.rpamin=0;
+  sigma.configure(opt);
+  //sigma.configure(4,0,16);
 
  sigma.PrepareScreening();
 
- Eigen::VectorXd c_diag= sigma.CalcCorrelationDiag(mo_energy);
- 
  Eigen::MatrixXd c_off= sigma.CalcCorrelationOffDiag(mo_energy);
+ 
+ Eigen::VectorXd c_diag= sigma.CalcCorrelationDiag(mo_energy);
+  
  /*
  std::cout << "Sigma C" << std::endl;
  std::cout<<c_off<<std::endl;

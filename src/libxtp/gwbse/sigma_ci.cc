@@ -32,7 +32,13 @@ namespace votca {
   namespace xtp {
     
     void Sigma_CI::PrepareScreening(){
-         _gq.configure(_qptotal,_qpmin,_homo);
+        GaussianQuadrature::options opt;
+        opt.homo =_opt.homo;
+        opt.order = _opt.order;
+        opt.qptotal = _qptotal;
+        opt.qpmin = _opt.qpmin;
+        opt.rpamin = _opt.rpamin;
+         _gq.configure(opt);
         }
 
     Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(const Eigen::VectorXd&
@@ -41,7 +47,7 @@ namespace votca {
         int DFTsize = energies.size();
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
         //occupied states
-        for (int k = 0; k < _homo; ++k) {
+        for (int k = 0; k < _opt.homo - _opt.rpamin; ++k) {
             //making sure the M tensor is double-valued
             #if (GWBSE_DOUBLE)
             const Eigen::MatrixXd& MMatrix = _Mmn[k];
@@ -76,7 +82,7 @@ namespace votca {
             }
         }
         //unoccupied states
-        for (int k = _homo; k < DFTsize; k++) {
+        for (int k = _opt.homo - _opt.rpamin; k < DFTsize; k++) {
             #if (GWBSE_DOUBLE)
             const Eigen::MatrixXd& MMatrix = _Mmn[k];
             #else
@@ -116,7 +122,7 @@ namespace votca {
         const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
         int DFTsize=energies.size();
         Eigen::VectorXd result=Eigen::VectorXd::Zero(_qptotal);
-        for ( int k = 0 ; k < _homo ; ++k ){
+        for ( int k = 0 ; k < _opt.homo - _opt.rpamin ; ++k ){
             #if (GWBSE_DOUBLE)
             const Eigen::MatrixXd& MMatrix = _Mmn[k];
             #else
@@ -133,7 +139,7 @@ namespace votca {
                 }
             }
         }
-        for ( int k = _homo ; k < DFTsize ; ++k ){
+        for ( int k = _opt.homo - _opt.rpamin ; k < DFTsize ; ++k ){
             #if (GWBSE_DOUBLE)
             const Eigen::MatrixXd& MMatrix = _Mmn[k];
             #else

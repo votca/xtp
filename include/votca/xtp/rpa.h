@@ -57,8 +57,8 @@ public:
 
     const Eigen::VectorXd& getRPAInputEnergies()const {return _energies;}
 
-    void setRPAInputEnergies(const Eigen::VectorXd& energies){
-        _energies=energies;
+    void setRPAInputEnergies(const Eigen::VectorXd& rpaenergies){
+        _energies=rpaenergies;
     }
     
     //calculates full RPA vector of energies from gwa and dftenergies and qpmin
@@ -67,7 +67,7 @@ public:
 
 private:
 
-    int _homo; // HOMO index
+    int _homo; // HOMO index with respect to dft energies
     int _rpamin;
     int _rpamax;
     const double _eta=0.0001;
