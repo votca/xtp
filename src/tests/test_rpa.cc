@@ -154,13 +154,8 @@ TCMatrix_gwbse Mmn;
 Mmn.Initialize(aobasis.AOBasisSize(),0,16,0,16);
 Mmn.Fill(aobasis,aobasis,eigenvectors);
 
-<<<<<<< HEAD
   votca::ctp::Logger log;
   RPA rpa(log,Mmn);
-  rpa.setRPAInputEnergies(eigenvals);
-=======
-  RPA rpa(Mmn);
->>>>>>> master
   rpa.configure(4,0,16);
   rpa.setRPAInputEnergies(eigenvals);
   Eigen::MatrixXd e_i=rpa.calculate_epsilon_i(0.5);

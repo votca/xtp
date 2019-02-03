@@ -129,7 +129,12 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   rpa.setRPAInputEnergies(mo_energy);
 
   Sigma_Spectral sigma = Sigma_Spectral(Mmn, rpa);
-  sigma.configure(4, 0, 16);
+  Sigma_Spectral::options opt;
+  opt.homo=4;
+  opt.qpmin=0;
+  opt.qpmax=16;
+  opt.rpamin=0;
+  sigma.configure(opt);
 
   Eigen::MatrixXd x = sigma.CalcExchange();
 

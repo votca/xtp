@@ -107,18 +107,18 @@ namespace votca {
     }
 
     Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
-      const int lumo = _homo + 1;
-      const int n_occup = lumo - _qpmin;
-      const int n_unocc = _qpmax - _homo;
-      vc2index vc = vc2index(_qpmin, lumo, n_unocc);
+      const int lumo = _opt.homo + 1;
+      const int n_occup = lumo - _opt.qpmin;
+      const int n_unocc = _opt.qpmax - _opt.homo;
+      vc2index vc = vc2index(_opt.qpmin, lumo, n_unocc);
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       Eigen::VectorXd xpy = _EigenSol._XpY.col(s);
 
       for (int m = 0; m < _qptotal; m++) {
         for (int n = 0; n < _qptotal; n++) {
-          for (int v = _qpmin; v <= _homo; v++) {
-            for (int c = lumo; c <= _qpmax; c++) {
+          for (int v = _opt.qpmin; v <= _opt.homo; v++) {
+            for (int c = lumo; c <= _opt.qpmax; c++) {
               int i = vc.I(v, c); // Composite index i
               double fc = 0.0;
               for (int i_aux = 0; i_aux < auxsize; i_aux++) {
@@ -144,7 +144,7 @@ namespace votca {
       double s2_Imag = 0.0;
 
       // Eq. 47, part 1
-      for (int v = 0; v <= _homo; v++) {
+      for (int v = 0; v <= _opt.homo; v++) {
         double A = rm_x_rn[v];
         double B = w - energies(v) + omega;
         double C_Real = A * B / (B * B + eta * eta);
@@ -154,7 +154,7 @@ namespace votca {
       } // Occupied MO v
 
       // Eq. 47, part 2
-      for (int c = _homo + 1; c < _qpmax; c++) {
+      for (int c = _opt.homo + 1; c < _opt.qpmax; c++) {
         double A = rm_x_rn[c];
         double B = w - energies(c) - omega;
         double C_Real = A * B / (B * B + eta * eta);
@@ -174,10 +174,10 @@ namespace votca {
       double s2 = 0.0;
 
       // TODO: Use Eigen for summations
-      for (int v = 0; v <= _homo; v++) {
+      for (int v = 0; v <= _opt.homo; v++) {
         s1 += rm_x_rn[v];
       } // Occupied MOs v
-      for (int k = 0; k < _qpmax; k++) {
+      for (int k = 0; k < _opt.qpmax; k++) {
         s2 += rm_x_rn[k];
       } // All MOs k
 
