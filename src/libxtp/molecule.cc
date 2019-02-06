@@ -35,14 +35,7 @@ Molecule::~Molecule() {
 
   _segments.clear();
   _fragments.clear();
-  _atoms.clear();
 }
-
-/// Returns ID of the molecule
-const int &Molecule::getId() { return _id; }
-
-/// Returns the name of the molecule
-const string &Molecule::getName() { return _name; }
 
 void Molecule::AddSegment(Segment *segment) {
   _segments.push_back(segment);
@@ -53,29 +46,5 @@ void Molecule::AddFragment(Fragment *fragment) {
   _fragments.push_back(fragment);
   fragment->setMolecule(this);
 }
-
-void Molecule::AddAtom(Atom *atom) {
-  _atoms.push_back(atom);
-  atom->setMoleculeId(getId());
-}
-
-/// Returns a pointer to the atom
-Atom *Molecule::getAtom(const int &id) {
-  throw runtime_error(string("Not implemented"));
-}
-
-/// Returns atom type
-const string &Molecule::getAtomType(const int &id) {
-  throw runtime_error(string("Not implemented"));
-}
-
-/// Returns atom position
-const vec Molecule::getAtomPosition(const int &id) {
-  throw runtime_error(string("Not implemented"));
-}
-
-/// Returns number of atoms in the molecule
-int Molecule::NumberOfAtoms() { return _atoms.size(); }
-
 }  // namespace xtp
 }  // namespace votca

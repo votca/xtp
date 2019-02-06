@@ -207,8 +207,8 @@ void PDB2Map::setTopologies() {
 void PDB2Map::adaptQM2MD() {
 
   // check if atom number is the same in QM and MD
-  int numMDatoms = _MDtop.getMolecule(1)->NumberOfAtoms();
-  int numQMatoms = _QMtop.getMolecule(1)->NumberOfAtoms();
+  size_t numMDatoms = _MDtop.getMolecule(1)->AtomCount();
+  size_t numQMatoms = _QMtop.getMolecule(1)->AtomCount();
 
   _QM2MDcompatible = (numMDatoms == numQMatoms) ? true : false;
 

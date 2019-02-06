@@ -61,8 +61,7 @@ BOOST_AUTO_TEST_CASE(add_atom_test) {
 
   Molecule mol(2, "molecule");
   mol.AddAtom(atm);
-  vector<Atom *> v_atoms = mol.Atoms();
-  BOOST_CHECK_EQUAL(v_atoms.size(), 1);
+  BOOST_CHECK_EQUAL(mol.AtomCount(), 1);
   delete atm;
 }
 
