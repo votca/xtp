@@ -35,45 +35,48 @@ namespace votca {
 namespace xtp {
 
 class Topology;
-class Molecule;
 class Segment;
 class Fragment;
 
 /**
-    \brief information about an atom
-
-    The Atom class stores atom id, name, type, mass, charge, residue number
-
-*/
+ * @brief Atom class stores info relevant to the structure from Molecual
+ * Dynamics
+ *
+ * The atom class is a child of base bead
+ */
 class Atom : public CSG::BaseBead {
  public:
-  Atom(Molecule *owner, std::string residue_name, int resnr,
+  Atom(int molecule_id, std::string residue_name, int resnr,
        std::string md_atom_name, int md_atom_id, bool hasQMPart, int qm_atom_id,
        tools::vec qmPos, std::string element, double mass)
-      : _mol(owner),
-        _resnr(resnr),
+      : _resnr(resnr),
         _resname(residue_name),
         _hasQM(hasQMPart),
         _qmId(qm_atom_id),
         _qmPos(qmPos),
         _element(element) {
 
+    molecule_id_.setId(molecule_id);
     setMass(mass);
     HasPos(false);
     setId(md_atom_id);
     setName(md_atom_name);
   }
 
+  /**
+   * @brief Atom constructor basic
+   *
+   * @param[in] atom_id
+   * @param[in] atom_name
+   */
   Atom(int atom_id, std::string atom_name) : _hasQM(false), _qmId(-1) {
 
     setId(atom_id);
     setName(atom_name);
   }
 
-  // TODO This should be replaced from a constructor to an overloaded = operator
   Atom(Atom *stencil)
       : _top(nullptr),
-        _mol(nullptr),
         _resnr(stencil->getResnr()),
         _resname(stencil->getResname()),
         _hasQM(stencil->HasQMPart()),
@@ -91,18 +94,13 @@ class Atom : public CSG::BaseBead {
   Atom(){};
   ~Atom() { _Q.clear(); }
 
-  // const int &getId() const { return _id; }
-  // const std::string &getName() const { return _name; }
-  // const std::string &getType() const { return _type; }
   const int &getResnr() const { return _resnr; }
 
   inline void setTopology(Topology *container) { _top = container; }
-  // inline void setMolecule(Molecule *container) { _mol = container; }
   inline void setSegment(Segment *container) { _seg = container; }
   inline void setFragment(Fragment *container) { _frag = container; }
 
   Topology *getTopology() { return _top; }
-  Molecule *getMolecule() { return _mol; }
   Segment *getSegment() { return _seg; }
   Fragment *getFragment() { return _frag; }
 
@@ -111,7 +109,6 @@ class Atom : public CSG::BaseBead {
   inline void setWeight(const double &weight) {
     throw std::runtime_error(
         "ERROR atom setWeight is now depricated use setMass.");
-    //_weight = weight;
   }
   inline void setQMPart(const int &qmid, tools::vec qmPos);
   inline void setQMPos(const tools::vec &qmPos) { _qmPos = qmPos; }
@@ -124,7 +121,6 @@ class Atom : public CSG::BaseBead {
   inline const std::string &getResname() { return _resname; }
   inline const double &getWeight() {
     throw std::runtime_error("getWeight is now depricated use getMass.");
-    //    return _weight;
   }
   inline const int &getQMId() { return _qmId; }
   inline const tools::vec &getQMPos() { return _qmPos; }
@@ -138,47 +134,15 @@ class Atom : public CSG::BaseBead {
   inline void setPTensor(tools::matrix &ptensor) { _ptensor = ptensor; }
   const tools::matrix &getPTensor() { return _ptensor; }
 
-  /**
-   * get the position of the atom
-   * \return atom position
-   */
-  //  const tools::vec &getPos() const;
-  /**
-   * set the position of the atom
-   * \param r atom position
-   */
-  // void setPos(const tools::vec &r);
-  /**
-   * direct access (read/write) to the position of the atom
-   * \return reference to position
-   */
-  //  tools::vec &Pos() { return bead_position_; }
-  /** does this configuration store positions? */
-  //  bool HasPos() { return bead_position_set_; }
-  /** dose the bead store a position */
-  //  void HasPos(bool b);
-
   bool HasQMPart() { return _hasQM; }
-  /**
-   * molecule the bead belongs to
-   * \return Molecule object
-   */
 
  protected:
-  // int _id;
-  // std::string _name;
-
   Topology *_top;
-  Molecule *_mol;
   Segment *_seg;
   Fragment *_frag;
 
-  std::string _type;
   int _resnr;
   std::string _resname;
-  //  double _weight;
-  //  tools::vec bead_position_;
-  // bool bead_position_set_;
 
   bool _hasQM;
   int _qmId;
@@ -190,18 +154,6 @@ class Atom : public CSG::BaseBead {
   std::map<int, double>::iterator _q;
   tools::matrix _ptensor;
 };
-
-/*inline void Atom::setPos(const tools::vec &r) {
-  bead_position_set_ = true;
-  bead_position_ = r;
-}*/
-
-/*inline const tools::vec &Atom::getPos() const {
-  if (!bead_position_set_) throw std::runtime_error("Position has not yet been
-set"); return bead_position_;
-}*/
-
-// inline void Atom::HasPos(bool b) { bead_position_set_ = b; }
 
 inline void Atom::setQMPart(const int &qmid, tools::vec qmPos) {
   if (qmid > -1) {

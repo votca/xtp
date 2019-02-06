@@ -413,7 +413,7 @@ void StateSaverSQLite::WriteAtoms(bool update) {
     stmt->Bind(3, atm->getId());
     stmt->Bind(4, atm->getName());
     stmt->Bind(5, atm->getName());
-    stmt->Bind(6, atm->getMolecule()->getId());
+    stmt->Bind(6, atm->getMoleculeId());
     stmt->Bind(7, atm->getSegment()->getId());
     stmt->Bind(8, atm->getFragment()->getId());
     stmt->Bind(9, atm->getResnr());
@@ -831,11 +831,11 @@ void StateSaverSQLite::ReadAtoms(int topId) {
 
     atm->setFragment(_qmtop->getFragment(fragid));
     atm->setSegment(_qmtop->getSegment(segid));
-    atm->setMolecule(_qmtop->getMolecule(molid));
+    atm->setMoleculeId(_qmtop->getMolecule(molid)->getId());
 
     atm->getFragment()->AddAtom(atm);
     atm->getSegment()->AddAtom(atm);
-    atm->getMolecule()->AddAtom(atm);
+    _qmtop->getMolecule(molid)->AddAtom(atm);
 
     atm->setResnr(resnr);
     atm->setResname(resname);

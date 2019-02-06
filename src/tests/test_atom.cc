@@ -27,8 +27,7 @@ BOOST_AUTO_TEST_SUITE(atom_test)
 
 BOOST_AUTO_TEST_CASE(constructors_test) {
   Atom atom1(1, "C");
-
-  Molecule* molecule_ptr = nullptr;
+  int molecule_id = 1;
   string residue_name = "residue_1";
   int residue_number = 11;
   string molecular_dynamics_atom_name = "Carbon";
@@ -38,7 +37,7 @@ BOOST_AUTO_TEST_CASE(constructors_test) {
   vec quantum_chemistry_position(4.0, 5.0, 6.0);
   string element = "C";
   double weight = 12.01;
-  Atom atom2(molecule_ptr, residue_name, residue_number,
+  Atom atom2(molecule_id, residue_name, residue_number,
              molecular_dynamics_atom_name, molecular_dynamics_atom_id,
              has_quantum_chemistry_part, quantum_chemistry_id,
              quantum_chemistry_position, element, weight);
@@ -51,7 +50,7 @@ BOOST_AUTO_TEST_CASE(getters_test) {
     BOOST_CHECK_EQUAL(atom1.getName(), "H");
   }
   {
-    Molecule* molecule_ptr = nullptr;
+    int molecule_id = 1;
     string residue_name = "residue_1";
     int residue_number = 11;
     string molecular_dynamics_atom_name = "Carbon";
@@ -62,7 +61,7 @@ BOOST_AUTO_TEST_CASE(getters_test) {
     string element = "C";
     double weight = 12.01;
 
-    Atom atom2(molecule_ptr, residue_name, residue_number,
+    Atom atom2(molecule_id, residue_name, residue_number,
                molecular_dynamics_atom_name, molecular_dynamics_atom_id,
                has_quantum_chemistry_part, quantum_chemistry_id,
                quantum_chemistry_position, element, weight);
@@ -83,6 +82,7 @@ BOOST_AUTO_TEST_CASE(setters_test) {
   {
     string residue_name = "residue_1";
     int residue_number = 11;
+    int molecule_id = 0;
     int quantum_chemistry_id = 3;
     vec quantum_chemistry_position(4.0, 5.0, 6.0);
     string element = "C";
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(setters_test) {
     atom.HasPos(has_position);
 
     atom.setTopology(nullptr);
-    atom.setMolecule(nullptr);
+    atom.setMoleculeId(molecule_id);
     atom.setSegment(nullptr);
     atom.setFragment(nullptr);
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(setters_test) {
     BOOST_CHECK(atom.HasQMPart());
 
     BOOST_CHECK_EQUAL(atom.getTopology(), nullptr);
-    BOOST_CHECK_EQUAL(atom.getMolecule(), nullptr);
+    BOOST_CHECK_EQUAL(atom.getMoleculeId(), molecule_id);
     BOOST_CHECK_EQUAL(atom.getSegment(), nullptr);
     BOOST_CHECK_EQUAL(atom.getFragment(), nullptr);
   }

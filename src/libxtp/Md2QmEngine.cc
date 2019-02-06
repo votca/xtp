@@ -244,9 +244,9 @@ void Md2QmEngine::Initialize(const std::string &xmlfile) {
           }
 
           // Create atom
-          Atom *atom = AddAtomType(molecule, residue_name, residue_number,
-                                   md_atom_name, md_atom_id++, hasQMPart,
-                                   qm_atom_id, qmPos, element, weight);
+          Atom *atom = AddAtomType(
+              molecule->getId(), residue_name, residue_number, md_atom_name,
+              md_atom_id++, hasQMPart, qm_atom_id, qmPos, element, weight);
 
           try {
             this->_map_mol_resNr_atm_atmType.at(molMdName)
@@ -414,14 +414,14 @@ Molecule *Md2QmEngine::ExportMolecule(Molecule *refMol, Topology *qmtop) {
   return newMol;
 }
 
-Atom *Md2QmEngine::AddAtomType(Molecule *owner, std::string residue_name,
+Atom *Md2QmEngine::AddAtomType(int molecule_id, std::string residue_name,
                                int residue_number, std::string md_atom_name,
                                int md_atom_id, bool hasQMPart, int qm_atom_id,
                                tools::vec qmPos, std::string element,
                                double weight) {
   Atom *atom =
-      new Atom(owner, residue_name, residue_number, md_atom_name, md_atom_id,
-               hasQMPart, qm_atom_id, qmPos, element, weight);
+      new Atom(molecule_id, residue_name, residue_number, md_atom_name,
+               md_atom_id, hasQMPart, qm_atom_id, qmPos, element, weight);
   _atom_types.push_back(atom);
   return atom;
 }
