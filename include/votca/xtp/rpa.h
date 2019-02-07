@@ -41,7 +41,7 @@ public:
         _rpamax = rpamax;
     }
     
-    const double getEta() const{
+    const double& getEta() const{
         return _eta;
     }
 

@@ -60,12 +60,12 @@ namespace votca {
 
     //This function returns the sum of the matrix vector minus the identity
     Eigen::MatrixXd GaussianQuadrature::SumDielInvMinId(const RPA& rpa)const{
-        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal,_opt.qptotal);
+        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_Mmn.auxsize(),_Mmn.auxsize());
         std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
             for (int k = 0 ; k < _opt.order ; ++k){
                 result += DielInvVector[k];
                 }
-        result -= Eigen::MatrixXd::Identity(_opt.qptotal,_opt.qptotal);
+        result -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
         return result;
     }
     
@@ -148,7 +148,7 @@ namespace votca {
         Eigen::VectorXd AdapWeights = AdaptedWeights();
         Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
         const double eta = rpa.getEta();
-        for (int k = 0; k < _opt.homo - _opt.qpmin + _opt.rpamin; ++k) {
+        for (int k = 0; k < _opt.homo - _opt.qpmin + _opt.rpamin +1; ++k) {
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
                     #if (GWBSE_DOUBLE)
@@ -175,7 +175,7 @@ namespace votca {
                     ((AdapWeights.transpose() * ResFreqs).asDiagonal() * 
                     (MMxXSumInvMinId * MMx.transpose())).diagonal();
                 }
-                    for (int k = _opt.homo - _opt.qpmin + _opt.rpamin; k < _opt.qptotal; ++k) {
+                    for (int k = _opt.homo - _opt.qpmin + _opt.rpamin +1; k < _opt.qptotal; ++k) {
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
                     #if (GWBSE_DOUBLE)
