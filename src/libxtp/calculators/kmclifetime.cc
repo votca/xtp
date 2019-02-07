@@ -121,7 +121,7 @@ namespace votca {
 
         for (tools::Property* prop:jobProps) {
             int site_id =prop->getAttribute<int>("id")-1;
-            double lifetime=boost::lexical_cast<double>(prop->value());
+            double lifetime=stod(prop->value());
             bool check=false;
             for (auto& node:_nodes){
                 if (node.id==site_id && !(node.hasdecay)){

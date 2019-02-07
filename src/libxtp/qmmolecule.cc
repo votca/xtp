@@ -74,9 +74,9 @@ namespace votca { namespace xtp {
                     if(split.size()<4){continue;}
                     // Interesting information written here: e.g. 'C 0.000 0.000 0.000'
                     string element = split[0];
-                    double x = boost::lexical_cast<double>(split[1]);
-                    double y = boost::lexical_cast<double>(split[2]);
-                    double z = boost::lexical_cast<double>(split[3]);
+                    double x = stod(split[1]);
+                    double y = stod(split[2]);
+                    double z = stod(split[3]);
                     Eigen::Vector3d pos = {x, y, z};
                     _atomlist.push_back(QMAtom(atomCount, element, pos * tools::conv::ang2bohr));
                     atomCount++;

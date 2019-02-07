@@ -86,9 +86,9 @@ void PolarSegment::LoadFromMPS(const std::string& filename){
             string name = split[0];
             Eigen::Vector3d pos;
             int id=_atomlist.size();
-            pos[0] = boost::lexical_cast<double>(split[1]);
-            pos[1] = boost::lexical_cast<double>(split[2]);
-            pos[2] = boost::lexical_cast<double>(split[3]);
+            pos[0] = stod(split[1]);
+            pos[1] = stod(split[2]);
+            pos[2] = stod(split[3]);
             int rank = boost::lexical_cast<int>(split[5]);
             numberofmultipoles=(rank+1)*(rank+1);
             multipoles=Eigen::VectorXd::Zero(numberofmultipoles);
@@ -103,17 +103,17 @@ void PolarSegment::LoadFromMPS(const std::string& filename){
             double      pyy, pyz;
             double           pzz;
             if (split.size() == 7) {
-                pxx = boost::lexical_cast<double>(split[1]);
-                pxy = boost::lexical_cast<double>(split[2]);
-                pxz = boost::lexical_cast<double>(split[3]);
-                pyy = boost::lexical_cast<double>(split[4]);
-                pyz = boost::lexical_cast<double>(split[5]);
-                pzz = boost::lexical_cast<double>(split[6]);
+                pxx = stod(split[1]);
+                pxy = stod(split[2]);
+                pxz = stod(split[3]);
+                pyy = stod(split[4]);
+                pyz = stod(split[5]);
+                pzz = stod(split[6]);
                 p1<<pxx,pxy,pxz,
                     pxy,pyy,pyz,
                     pxz,pyz,pzz;
             }else if (split.size() == 2) {
-                pxx = boost::lexical_cast<double>(split[1]);
+                pxx = stod(split[1]);
                 p1=pxx*Eigen::Matrix3d::Identity();;
             }
             else {
@@ -128,7 +128,7 @@ void PolarSegment::LoadFromMPS(const std::string& filename){
         else {
             // stay in bohr
             for (unsigned i = 0; i < split.size(); i++) {
-                double qXYZ = boost::lexical_cast<double>(split[i]);
+                double qXYZ = stod(split[i]);
                 if(multipoles.size()<readinmultipoles){
                     throw std::runtime_error("ReadMpsFile: File"+filename+"is not properly formatted");
                 }

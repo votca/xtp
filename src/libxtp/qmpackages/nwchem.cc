@@ -681,7 +681,7 @@ namespace votca {
           boost::algorithm::split(results, line, boost::is_any_of("="), boost::algorithm::token_compress_on);
           std::string energy = results.back();
           boost::trim(energy);
-                    orbitals.setQMEnergy(boost::lexical_cast<double>(energy));
+                    orbitals.setQMEnergy(stod(energy));
                     XTP_LOG(logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.6f ") % orbitals.getQMEnergy()).str() << flush;
           has_qm_energy = true;
         }
@@ -742,9 +742,9 @@ namespace votca {
           while (nfields == 6) {
             int atom_id = boost::lexical_cast< int >(row.at(0))-1;
             std::string atom_type = row.at(1);
-            double x = boost::lexical_cast<double>(row.at(3));
-            double y = boost::lexical_cast<double>(row.at(4));
-            double z = boost::lexical_cast<double>(row.at(5));
+            double x = stod(row.at(3));
+            double y = stod(row.at(4));
+            double z = stod(row.at(5));
             Eigen::Vector3d pos(x,y,z);
             pos*=tools::conv::ang2bohr;
             if (has_QMAtoms == false) {
@@ -792,8 +792,8 @@ namespace votca {
                 std::vector<int>::iterator j_iter = j_indeces.begin();
                 for (std::string& coefficient: row) {
                   int j_index = *j_iter;
-                  vxc(i_index - 1, j_index - 1) = boost::lexical_cast<double>(coefficient);
-                  vxc(j_index - 1, i_index - 1) = boost::lexical_cast<double>(coefficient);
+                  vxc(i_index - 1, j_index - 1) = stod(coefficient);
+                  vxc(j_index - 1, i_index - 1) = stod(coefficient);
                   j_iter++;
                 }
               }
@@ -809,7 +809,7 @@ namespace votca {
         if (HFX_pos != std::string::npos) {
 
           boost::algorithm::split(results, line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-          double ScaHFX = boost::lexical_cast<double>(results.back());
+          double ScaHFX = stod(results.back());
           orbitals.setScaHFX(ScaHFX);
           XTP_LOG(logDEBUG, *_pLog) << "DFT with " << ScaHFX << " of HF exchange!" << flush;
         }
@@ -846,8 +846,8 @@ namespace votca {
               std::vector<int>::iterator j_iter = j_indeces.begin();
               for (std::string& coefficient: row) {
                 int j_index = *j_iter;
-                orbitals.AOOverlap()(i_index - 1, j_index - 1) = boost::lexical_cast<double>(coefficient);
-                orbitals.AOOverlap()(j_index - 1, i_index - 1) = boost::lexical_cast<double>(coefficient);
+                orbitals.AOOverlap()(i_index - 1, j_index - 1) = stod(coefficient);
+                orbitals.AOOverlap()(j_index - 1, i_index - 1) = stod(coefficient);
                 j_iter++;
               }
             }
@@ -867,7 +867,7 @@ namespace votca {
           std::vector<std::string> energy;
           boost::algorithm::split(block, line, boost::is_any_of("="), boost::algorithm::token_compress_on);
           boost::algorithm::split(energy, block[1], boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-                    orbitals.setSelfEnergy(boost::lexical_cast<double> (energy[1]));
+                    orbitals.setSelfEnergy(stod (energy[1]));
           XTP_LOG(logDEBUG, *_pLog) << "Self energy " << orbitals.getSelfEnergy() << flush;
         }
 

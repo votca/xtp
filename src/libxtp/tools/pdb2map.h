@@ -383,9 +383,9 @@ void PDB2Map::readPDB(){
             
             try
             {
-            _xd = boost::lexical_cast<double>(_x);
-            _yd = boost::lexical_cast<double>(_y);
-            _zd = boost::lexical_cast<double>(_z);
+            _xd = stod(_x);
+            _yd = stod(_y);
+            _zd = stod(_z);
             _resNumInt = boost::lexical_cast<int>(_resNum);
             }
             catch(boost::bad_lexical_cast &)
@@ -538,9 +538,9 @@ void PDB2Map::readGRO(){
                 _resNumInt = boost::lexical_cast<int>(_resNum);
 		//_atNumInt  = boost::lexical_cast<int>(_atNum);
 
-                _xd = boost::lexical_cast<double>(_x);
-                _yd = boost::lexical_cast<double>(_y);
-                _zd = boost::lexical_cast<double>(_z);
+                _xd = stod(_x);
+                _yd = stod(_y);
+                _zd = stod(_z);
             }
             catch (boost::bad_lexical_cast &)
             {
@@ -654,7 +654,7 @@ void PDB2Map::readXYZ(){
         // first line, number of atoms in XYZ
         std::getline(_file, _line,'\n');
         ba::trim(_line);
-        //int numXYZatoms = boost::lexical_cast<double>(_line);
+        //int numXYZatoms = stod(_line);
     }
     catch(boost::bad_lexical_cast &)
     {
@@ -684,9 +684,9 @@ void PDB2Map::readXYZ(){
         // try transform xyz coords to double
         double _xd(0),_yd(0),_zd(0);
         try{
-            _xd = boost::lexical_cast<double>(_x);
-            _yd = boost::lexical_cast<double>(_y);
-            _zd = boost::lexical_cast<double>(_z);
+            _xd = stod(_x);
+            _yd = stod(_y);
+            _zd = stod(_z);
         }
         catch(boost::bad_lexical_cast &)
         {

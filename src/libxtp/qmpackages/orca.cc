@@ -464,9 +464,9 @@ namespace votca {
                     int atom_id = 0;
                     while (nfields == 4) {
                         std::string atom_type = row.at(0);
-                        double x = boost::lexical_cast<double>(row.at(1));
-                        double y = boost::lexical_cast<double>(row.at(2));
-                        double z = boost::lexical_cast<double>(row.at(3));
+                        double x = stod(row.at(1));
+                        double y = stod(row.at(2));
+                        double z = stod(row.at(3));
                         row=GetLineAndSplit(input_file, "\t ");
                         nfields = row.size();
                         Eigen::Vector3d pos(x,y,z);
@@ -487,14 +487,14 @@ namespace votca {
                     boost::algorithm::split(results, line, boost::is_any_of(" "), boost::algorithm::token_compress_on);
                     std::string energy = results[3];
                     boost::trim(energy);
-                    orbitals.setQMEnergy(boost::lexical_cast<double>(energy));
+                    orbitals.setQMEnergy(stod(energy));
                     XTP_LOG(logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.6f ") % orbitals.getQMEnergy()).str() << flush;
                 }
 
                 std::string::size_type HFX_pos = line.find("Fraction HF Exchange ScalHFX");
                 if (HFX_pos != std::string::npos) {
                     boost::algorithm::split(results, line, boost::is_any_of(" "), boost::algorithm::token_compress_on);
-                    double ScaHFX = boost::lexical_cast<double>(results.back());
+                    double ScaHFX = stod(results.back());
                     orbitals.setScaHFX(ScaHFX);
                     XTP_LOG(logDEBUG, *_pLog) << "DFT with " << ScaHFX << " of HF exchange!" << flush;
                 }
@@ -529,7 +529,7 @@ namespace votca {
                         }
                         std::string oc = results[1];
                         boost::trim(oc);
-                        double occ = boost::lexical_cast<double>(oc);
+                        double occ = stod(oc);
                         // We only count alpha electrons, each orbital must be empty or doubly occupied
                         if (occ == 2 || occ == 1) {
                             number_of_electrons++;
@@ -547,7 +547,7 @@ namespace votca {
                         }
                         std::string e = results[2];
                         boost::trim(e);
-                        energies [i] = boost::lexical_cast<double>(e);
+                        energies [i] = stod(e);
                     }
                 }
                 /*

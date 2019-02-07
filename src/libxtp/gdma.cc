@@ -144,7 +144,7 @@ namespace votca {
                         boost::trim(line);
                         boost::algorithm::split(results, line, boost::is_any_of("\t "),
                                 boost::algorithm::token_compress_on);
-                        double Q00 = boost::lexical_cast<double>(results.back());
+                        double Q00 = stod(results.back());
                         Qs.push_back(Q00);
                     }
 
@@ -157,9 +157,9 @@ namespace votca {
                         boost::trim(line);
                         boost::algorithm::split(results, line, boost::is_any_of("\t "),
                                 boost::algorithm::token_compress_on);
-                        double Q10 = boost::lexical_cast<double>(results[5]);
-                        double Q11c = boost::lexical_cast<double>(results[8]);
-                        double Q11s = boost::lexical_cast<double>(results.back());
+                        double Q10 = stod(results[5]);
+                        double Q11c = stod(results[8]);
+                        double Q11s = stod(results.back());
                         Qs.push_back(Q10);
                         Qs.push_back(Q11c);
                         Qs.push_back(Q11s);
@@ -173,15 +173,15 @@ namespace votca {
                         boost::trim(line);
                         boost::algorithm::split(results, line, boost::is_any_of("\t "),
                                 boost::algorithm::token_compress_on);
-                        double Q20 = boost::lexical_cast<double>(results[5]);
-                        double Q21c = boost::lexical_cast<double>(results[8]);
-                        double Q21s = boost::lexical_cast<double>(results.back());
+                        double Q20 = stod(results[5]);
+                        double Q21c = stod(results[8]);
+                        double Q21s = stod(results.back());
                         getline(gdma_output, line);
                         boost::trim(line);
                         boost::algorithm::split(results, line, boost::is_any_of("\t "),
                                 boost::algorithm::token_compress_on);
-                        double Q22c = boost::lexical_cast<double>(results[2]);
-                        double Q22s = boost::lexical_cast<double>(results[5]);
+                        double Q22c = stod(results[2]);
+                        double Q22s = stod(results[5]);
                         
                         Qs.push_back(Q20);
                         Qs.push_back(Q21c);

@@ -49,7 +49,7 @@ namespace votca {
           } else {
             throw std::runtime_error("statefiler: Fragment label not known, either A or B");
           }
-          _loc_threshold = boost::lexical_cast<double>(strings_vec[1]);
+          _loc_threshold = stod(strings_vec[1]);
         }
 
         if (options.exists("charge_transfer")) {

@@ -631,7 +631,7 @@ namespace votca {
                             boost::algorithm::token_compress_on);
                     level = boost::lexical_cast<int>(results.front());
                     boost::replace_first(results.back(), "D", "e");
-                    energies[ level ] = boost::lexical_cast<double>(results.back());
+                    energies[ level ] = stod(results.back());
                     levels++;
 
                 } else {
@@ -641,7 +641,7 @@ namespace votca {
                         coefficient.assign(line, 0, 15);
                         boost::trim(coefficient);
                         boost::replace_first(coefficient, "D", "e");
-                        double coef = boost::lexical_cast<double>(coefficient);
+                        double coef = stod(coefficient);
                         coefficients[ level ].push_back(coef);
                         line.erase(0, 15);
                     }
@@ -810,7 +810,7 @@ namespace votca {
                 std::string::size_type HFX_pos = line.find("ScaHFX=");
                 if (HFX_pos != std::string::npos) {
                     boost::algorithm::split(results, line, boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-                    double ScaHFX = boost::lexical_cast<double>(results.back());
+                    double ScaHFX = stod(results.back());
                     orbitals.setScaHFX(ScaHFX);
                     vxc_found = true;
                     XTP_LOG(logDEBUG, *_pLog) << "DFT with " << ScaHFX << " of HF exchange!" << flush;
@@ -924,9 +924,9 @@ namespace votca {
                         std::string atom_type = atom.front();
                         std::vector<std::string>::iterator it_atom;
                         it_atom = atom.end();
-                        double z = boost::lexical_cast<double>(*(--it_atom));
-                        double y = boost::lexical_cast<double>(*(--it_atom));
-                        double x = boost::lexical_cast<double>(*(--it_atom));
+                        double z = stod(*(--it_atom));
+                        double y = stod(*(--it_atom));
+                        double x = stod(*(--it_atom));
                         Eigen::Vector3d pos(x,y,z);
                         pos*=tools::conv::ang2bohr;
                         if (has_atoms == false) {
@@ -950,7 +950,7 @@ namespace votca {
                         properties[property[0]] = property[1];
                     }
                     if (properties.count("HF") > 0) {
-                        double energy_hartree = boost::lexical_cast<double>(properties["HF"]);
+                        double energy_hartree = stod(properties["HF"]);
                         orbitals.setQMEnergy(energy_hartree);
                         XTP_LOG(logDEBUG, *_pLog) << (boost::format("QM energy[Hrt]: %4.6f ") % orbitals.getQMEnergy()).str() << flush;
                     } else {
@@ -968,7 +968,7 @@ namespace votca {
                     std::vector<std::string> energy;
                     boost::algorithm::split(block, line, boost::is_any_of("="), boost::algorithm::token_compress_on);
                     boost::algorithm::split(energy, block[1], boost::is_any_of("\t "), boost::algorithm::token_compress_on);
-                    orbitals.setSelfEnergy(boost::lexical_cast<double> (energy[1]));
+                    orbitals.setSelfEnergy(stod (energy[1]));
                     XTP_LOG(logDEBUG, *_pLog) << "Self energy " << orbitals.getSelfEnergy() << flush;
 
                 }
@@ -1003,8 +1003,8 @@ namespace votca {
                             for (std::string& coefficient: row) {
                                 boost::replace_first(coefficient, "D", "e");
                                 int j_index = *j_iter;
-                                overlap(i_index - 1, j_index - 1) = boost::lexical_cast<double>(coefficient);
-                                overlap(j_index - 1, i_index - 1) = boost::lexical_cast<double>(coefficient);
+                                overlap(i_index - 1, j_index - 1) = stod(coefficient);
+                                overlap(j_index - 1, i_index - 1) = stod(coefficient);
                                 j_iter++;
                             }
                         }
@@ -1064,8 +1064,8 @@ namespace votca {
 
                         int i_index = boost::lexical_cast<int>(row[0]);
                         int j_index = boost::lexical_cast<int>(row[1]);
-                        vxc(i_index - 1, j_index - 1) = boost::lexical_cast<double>(row[2]);
-                        vxc(j_index - 1, i_index - 1) = boost::lexical_cast<double>(row[2]);
+                        vxc(i_index - 1, j_index - 1) = stod(row[2]);
+                        vxc(j_index - 1, i_index - 1) = stod(row[2]);
                     }
 
                     XTP_LOG(logDEBUG, *_pLog) << "Done parsing" << flush;
