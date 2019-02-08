@@ -58,8 +58,7 @@ namespace votca {
                 if (frequencies(m) < energies(k)) {
                     //We do not store dielectric inverses now, since we do not 
                     //need all of them
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                        energies(k)- frequencies(m)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(m)-energies(k)).inverse();
                     DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
                     Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                     for (int n = 0; n < _qptotal; ++n) {
@@ -69,8 +68,7 @@ namespace votca {
             }
             for (int n = 0; n < _qptotal; ++n) {
                 if (frequencies(n) < energies(k)) {
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                        energies(k) - frequencies(n)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(n)-energies(k)).inverse();
                     DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
                     Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                     for (int m = 0; m < _qptotal; ++m) {
@@ -88,8 +86,7 @@ namespace votca {
             #endif
             for (int m = 0; m < _qptotal; ++m) {
                 if (frequencies(m) > energies(k)) {
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                        energies(k) - frequencies(m)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(m)-energies(k)).inverse();
                     DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
                     Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                         for (int n = 0; n < _qptotal; ++n) {
@@ -99,8 +96,7 @@ namespace votca {
             }
             for (int n = 0; n < _qptotal; ++n) {
                 if (frequencies(n) > energies(k)) {
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                        energies(k) - frequencies(n)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(n)-energies(k)).inverse();
                     DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
                     Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                     for (int m = 0; m < _qptotal; ++m) {
@@ -117,15 +113,15 @@ namespace votca {
     frequencies)const{
         const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
         int DFTsize=energies.size();
-        std::cout << "DFTsize" << std::endl;
-        std::cout << DFTsize << std::endl;
-        std::cout << "qptotal" << std::endl;
-        std::cout << _qptotal << std::endl;
-        std::cout << "no of occupied levels"<< std::endl;
-        std::cout << _opt.homo - _opt.rpamin << std::endl;
         Eigen::VectorXd result=Eigen::VectorXd::Zero(_qptotal);
         Eigen::VectorXd resultunocc=Eigen::VectorXd::Zero(_qptotal);
         Eigen::VectorXd resultocc=Eigen::VectorXd::Zero(_qptotal);
+        /*AOOverlap auxoverlap;
+        const AOBasis _auxbasis = *(_Mmn.get_auxbasis());
+        auxoverlap.Fill(_auxbasis);
+        */
+        
+        //std::cout << "OL " << auxoverlap.Matrix() << std::endl;
         
         // loop over occupied levels
         for ( int k = 0 ; k < _opt.homo - _opt.rpamin + 1 ; ++k ){
@@ -136,9 +132,9 @@ namespace votca {
             #endif
             for (int m = 0 ; m < _qptotal ; ++m){
                 if ( frequencies(m) < energies(k) ){
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                        energies(k) - frequencies(m)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(m)-energies(k)).inverse();
                     DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
+                    //DielInvMinId -= auxoverlap.Matrix();
                     Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                     resultocc(m) += ResPart(m,m);
                     result(m) += ResPart(m,m);
@@ -154,9 +150,9 @@ namespace votca {
             #endif
             for (int m = 0 ; m < _qptotal ; ++m){
                 if ( frequencies(m) > energies(k) ){
-                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(
-                            energies(k) - frequencies(m)).inverse();
+                    Eigen::MatrixXd DielInvMinId = _rpa.calculate_epsilon_r(frequencies(m)-energies(k)).inverse();
                             DielInvMinId -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
+                            //DielInvMinId -= auxoverlap.Matrix();
                             Eigen::MatrixXd ResPart = MMx * DielInvMinId * MMx.transpose();
                             resultunocc(m) += ResPart(m,m);
                             result(m) += ResPart(m,m);
@@ -170,7 +166,7 @@ namespace votca {
         
         for (int m = 0 ; m < _qptotal ; ++m ){
             
-            std::cout << " [m,GQ,CI,occ,unocc,tot] " << m << "  " << resultGQ(m) << "  " << -2*result(m) << "  "  << -2*resultocc(m) << "  "  << -2*resultunocc(m) << "  " << resultGQ(m)-2*result(m) << std::endl;
+            std::cout << " [m,GQ,CI,occ,unocc,tot] " << std::endl << m << "  " << resultGQ(m) << "  " << -2*result(m) << "  "  << -2*resultocc(m) << "  "  << -2*resultunocc(m) << "  " << resultGQ(m)-2*result(m) << std::endl;
         }
         
         exit(0);
