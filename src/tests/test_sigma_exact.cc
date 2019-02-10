@@ -129,6 +129,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   rpa.setRPAInputEnergies(mo_energy);
 
   Sigma_Spectral sigma = Sigma_Spectral(Mmn, rpa);
+  
   Sigma_Spectral::options opt;
   opt.homo=4;
   opt.qpmin=0;
