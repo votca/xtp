@@ -28,7 +28,7 @@ namespace votca {
     void Sigma_Spectral::PrepareScreening() {
       _HedinApprox = false;
       _EigenSol = _rpa.calculate_eigenvalues();
-      tools::globals::verbose  =true; // TEST
+      tools::globals::verbose = false; // TEST
       return;
     }
 

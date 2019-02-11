@@ -175,7 +175,12 @@ namespace votca {
       double minCoeff = eigenvalues.minCoeff();
       if (minCoeff <= 0) {
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Warning! Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
+                << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " AmB: " << std::endl << AmB << ". " << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " C: " << std::endl << C << ". " << flush;
+        exit(0);
       }
 
       // TODO: Store copies or store references?
