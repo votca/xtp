@@ -176,10 +176,12 @@ namespace votca {
       if (minCoeff <= 0) {
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
+        /*
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " AmB: " << std::endl << AmB << ". " << flush;
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " C: " << std::endl << C << ". " << flush;
+        */
         exit(0);
       }
 
