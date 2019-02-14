@@ -171,18 +171,21 @@ namespace votca {
       Eigen::VectorXd eigenvalues = es.eigenvalues();
       
       // TODO: Non-positive eigenvalues should not be possible.
-      // We can remove this warning.
       double minCoeff = eigenvalues.minCoeff();
-      if (minCoeff <= 0) {
+      if (minCoeff <= 0.0) {
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
-        /*
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " AmB: " << std::endl << AmB << ". " << flush;
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " C: " << std::endl << C << ". " << flush;
-        */
-        exit(0);
+        if ((AmB.array() <= 0.0).any()) {
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " (A - B) is not positive definite. " << minCoeff << ". " << flush;
+        }
+        if (tools::globals::verbose) {
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                  << " Eigenvalues: " << std::endl << eigenvalues << ". " << flush;
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                  << " (A - B): " << std::endl << AmB << ". " << flush;
+        }
+        exit(0); // TODO: Throw error
       }
 
       // TODO: Store copies or store references?
