@@ -90,8 +90,11 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
     rpa_eigensolution RPA::calculate_eigenvalues() const {
       Eigen::VectorXd AmB = calculate_spectral_AmB();
+      CheckPositiveDefiniteness(Eigen::MatrixXd(AmB.asDiagonal()), "(A - B)", false);
       Eigen::MatrixXd ApB = calculate_spectral_ApB();
-      Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);      
+      CheckPositiveDefiniteness(ApB, "(A + B)", false);
+      Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
+      CheckPositiveDefiniteness(C, "C", true);
       return diag_C(AmB, C);
     }
     
@@ -168,27 +171,9 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
       CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
               << " Solving for RPA eigenvalues. " << flush;
-      
+
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
       Eigen::VectorXd eigenvalues = es.eigenvalues();
-      
-      // TODO: Non-positive eigenvalues should not be possible.
-      double minCoeff = eigenvalues.minCoeff();
-      if (minCoeff <= 0.0) {
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
-        if ((AmB.array() <= 0.0).any()) {
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " (A - B) is not positive definite. " << minCoeff << ". " << flush;
-        }
-        if (tools::globals::verbose) {
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                  << " Eigenvalues: " << std::endl << eigenvalues << ". " << flush;
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                  << " (A - B): " << std::endl << AmB << ". " << flush;
-        }
-        exit(0); // TODO: Throw error
-      }
 
       // TODO: Store copies or store references?
       rpa_eigensolution sol;
@@ -209,6 +194,31 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       }
 
       return sol;
+    }
+    
+    void RPA::CheckPositiveDefiniteness(Eigen::MatrixXd mat, std::string name, bool error) const {
+      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(mat);
+      Eigen::VectorXd D = es.eigenvalues();
+      Eigen::MatrixXd V = es.eigenvectors();
+      
+      Eigen::Index idx;
+      double minCoeff = D.minCoeff(&idx);
+      if (minCoeff <= 0.0) {
+        CTP_LOG(ctp::logDEBUG, _log) << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " " << name << ": " << std::endl << mat << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " Eigenvalue: " << minCoeff << " " << flush;
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << " Eigenvector: " << std::endl << V.col(idx).transpose() << flush;
+        if (error) {
+          throw std::runtime_error(name + " is not positive definite.");
+        }
+      }
+      
+      return;
     }
 
 }  // namespace xtp
