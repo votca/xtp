@@ -169,9 +169,6 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
 
-      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-              << " Solving for RPA eigenvalues. " << flush;
-
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
       Eigen::VectorXd eigenvalues = es.eigenvalues();
 
@@ -206,15 +203,23 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       if (minCoeff <= 0.0) {
         CTP_LOG(ctp::logDEBUG, _log) << flush;
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Error: Detected non-positive eigenvalue(s): " << minCoeff << ". " << flush;
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " " << name << ": " << std::endl << mat << flush;
+                << " Detected non-positive eigenvalue(s) " << flush;
+        if (tools::globals::verbose) {
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                  << " Eigenvalues: " << std::endl << D.transpose() << flush;
+        }
         CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                 << " Eigenvalue: " << minCoeff << " " << flush;
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Eigenvector: " << std::endl << V.col(idx).transpose() << flush;
+        if (tools::globals::verbose) {
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                  << " Eigenvector: " << std::endl << V.col(idx).transpose() << flush;
+        }
         if (error) {
-          throw std::runtime_error(name + " is not positive definite.");
+          throw std::runtime_error(
+                  name + " is not positive definite.");
+        } else {
+          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                  << " Warning: " << name << " is not positive definite " << flush;
         }
       }
       
