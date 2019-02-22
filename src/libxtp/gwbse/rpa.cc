@@ -132,7 +132,21 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
           ApB(i, i) = _energies(c) - _energies(v);
         } // Unoccupied MO c
       } // Occupied MO v
+      
+      for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
+        int i1 = vc.I(v1, lumo); // Composite index i1
+        for (int v2 = v1; v2 <= _homo; v2++ ) {
+          int i2 = vc.I(v2, lumo); // Composite index i2
+          Eigen::MatrixXd fc = _Mmn[v1].block(lumo, 0, n_unocc, auxsize)
+                  * _Mmn[v2].block(lumo, 0, n_unocc, auxsize).transpose();
+          ApB.block(i1, i2, n_unocc, n_unocc) -= 2 * fc;
+          if (v2 > v1) {
+            ApB.block(i2, i1, n_unocc, n_unocc) -= 2 * fc; // Symmetry
+          }
+        } // Occupied MO v2
+      } // Occupied MO v1
 
+      /*
       for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
         for (int c1 = lumo; c1 <= _rpamax; c1++ ) {
           int i1 = vc.I(v1, c1); // Composite index i1
@@ -154,6 +168,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
           } // Occupied MO v2
         } // Unoccupied MO c1
       } // Occupied MO v1
+      */
       
       return ApB;
     }
@@ -214,12 +229,11 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
           CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
                   << " Eigenvector: " << std::endl << V.col(idx).transpose() << flush;
         }
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+                << (error ? " Error: " : " Warning: ") << name << " is not positive definite " << flush;
         if (error) {
           throw std::runtime_error(
                   name + " is not positive definite.");
-        } else {
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                  << " Warning: " << name << " is not positive definite " << flush;
         }
       }
       
