@@ -133,42 +133,15 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
         } // Unoccupied MO c
       } // Occupied MO v
       
-      for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
-        int i1 = vc.I(v1, lumo); // Composite index i1
-        for (int v2 = v1; v2 <= _homo; v2++ ) {
-          int i2 = vc.I(v2, lumo); // Composite index i2
-          Eigen::MatrixXd fc = _Mmn[v1].block(lumo, 0, n_unocc, auxsize)
-                  * _Mmn[v2].block(lumo, 0, n_unocc, auxsize).transpose();
-          ApB.block(i1, i2, n_unocc, n_unocc) -= 2 * fc;
-          if (v2 > v1) {
-            ApB.block(i2, i1, n_unocc, n_unocc) -= 2 * fc; // Symmetry
-          }
-        } // Occupied MO v2
-      } // Occupied MO v1
-
-      /*
-      for (int v1 = _rpamin; v1 <= _homo; v1++ ) {
-        for (int c1 = lumo; c1 <= _rpamax; c1++ ) {
-          int i1 = vc.I(v1, c1); // Composite index i1
-          for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
-            for (int c2 = lumo; c2 <= _rpamax; c2++ ) {
-              int i2 = vc.I(v2, c2); // Composite index i2
-              if (i2 < i1) {
-                continue; // Symmetry
-              }
-              double fc = 0.0;
-              for (int i_aux = 0; i_aux < auxsize; i_aux++) {
-                fc += _Mmn[v1].col(i_aux)[c1] * _Mmn[v2].col(i_aux)[c2];
-              } // Auxiliary basis function
-              ApB(i1, i2) -= 2 * fc;
-              if (i2 > i1) {
-                ApB(i2, i1) -= 2 * fc; // Symmetry
-              }
-            } // Unoccupied MO c2
-          } // Occupied MO v2
-        } // Unoccupied MO c1
-      } // Occupied MO v1
-      */
+      for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
+        int i2 = vc.I(v2, lumo); // Composite index i2
+        const Eigen::MatrixXd temp = _Mmn[v2 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize).transpose();
+        for (int v1 = v2; v1 <= _homo; v1++ ) {
+          int i1 = vc.I(v1, lumo); // Composite index i1
+          ApB.block(i2, i1, n_unocc, n_unocc) -= // Fill lower triangular block
+                  2 * _Mmn[v1 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize) * temp;
+        } // Occupied MO v1
+      } // Occupied MO v2
       
       return ApB;
     }
@@ -184,6 +157,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
 
+      // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
       Eigen::VectorXd eigenvalues = es.eigenvalues();
 
