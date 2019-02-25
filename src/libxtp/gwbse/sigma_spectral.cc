@@ -114,30 +114,26 @@ namespace votca {
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       Eigen::VectorXd xpy = _EigenSol._XpY.col(s);
-
-      for (int m = 0; m < _qptotal; m++) {
-        for (int n = 0; n < _qptotal; n++) {
-          for (int v = _opt.qpmin; v <= _opt.homo; v++) {
-            for (int c = lumo; c <= _opt.qpmax; c++) {
-              int i = vc.I(v, c); // Composite index i
-              double fc = 0.0;
-              for (int i_aux = 0; i_aux < auxsize; i_aux++) {
-                fc += _Mmn[m].col(i_aux)[n] * _Mmn[v].col(i_aux)[c];
-              } // Auxiliary basis function
-              residues(m, n) += fc * xpy(i); // Eq. 45
-            } // Unoccupied MO c
-          } // Occupied MO v
-        } // Energy level n
-      } // Energy level m
+      
+      // TODO: Loop over m first, if we want to paralellize
+      for (int v = _opt.qpmin; v <= _opt.homo; v++) {
+        const Eigen::MatrixXd temp = _Mmn[v - _opt.qpmin].block(lumo - _opt.qpmin, 0, n_unocc, auxsize).transpose();
+        const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, lumo), n_unocc);
+        for (int m = 0; m < _qptotal; m++) {
+          const Eigen::MatrixXd fc = _Mmn[m].block(0, 0, _qptotal, auxsize) * temp; // Sum over aux. basis functions chi
+          residues.row(m) += (fc * xpyv).transpose(); // Sum over unoccupied MOs c
+        } // MO m
+      } // Occupied MO v
 
       return residues;
     }
 
-    // TODO: Name, input args
+    // TODO: Name
     double Sigma_Spectral::Equation47(const Eigen::VectorXd& rm_x_rn, double omega, double w) const {
-      const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
       const double eta = 1e-6;
+      const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
       
+      // TODO: Combine loops, use Eigen for summations?
       double s1_Real = 0.0;
       double s1_Imag = 0.0;
       double s2_Real = 0.0;
@@ -161,26 +157,19 @@ namespace votca {
         double C_Imag = A * eta / (B * B + eta * eta);
         s2_Real += C_Real;
         s2_Imag += C_Imag;
-      } // Occupied MO c
+      } // Unoccupied MO c
 
       // TODO: Return complex result
       return s1_Real + s2_Real;
     }
 
-    // TODO: Name, input args
+    // TODO: Name
     double Sigma_Spectral::Equation48(const Eigen::VectorXd& rm_x_rn, double omega) const {
+      const int lumo = _opt.homo + 1;
+      const int n_occup = lumo - _opt.qpmin;
       
-      double s1 = 0.0;
-      double s2 = 0.0;
-
-      // TODO: Use Eigen for summations
-      for (int v = 0; v <= _opt.homo; v++) {
-        s1 += rm_x_rn[v];
-      } // Occupied MOs v
-      for (int k = 0; k < _opt.qpmax; k++) {
-        s2 += rm_x_rn[k];
-      } // All MOs k
-
+      double s1 = rm_x_rn.head(n_occup).sum(); // Occupied MOs v
+      double s2 = rm_x_rn.sum(); // All MOs k
       return (2 * s1 - s2) / omega;
     }
 

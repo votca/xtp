@@ -90,11 +90,11 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
     rpa_eigensolution RPA::calculate_eigenvalues() const {
       Eigen::VectorXd AmB = calculate_spectral_AmB();
-      CheckPositiveDefiniteness(Eigen::MatrixXd(AmB.asDiagonal()), "(A - B)", false);
+      //CheckPositiveDefiniteness(Eigen::MatrixXd(AmB.asDiagonal()), "(A - B)", false);
       Eigen::MatrixXd ApB = calculate_spectral_ApB();
-      CheckPositiveDefiniteness(ApB, "(A + B)", false);
+      //CheckPositiveDefiniteness(ApB, "(A + B)", false);
       Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
-      CheckPositiveDefiniteness(C, "C", true);
+      //CheckPositiveDefiniteness(C, "C", true);
       return diag_C(AmB, C);
     }
     
