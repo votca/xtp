@@ -54,6 +54,7 @@ private:
     
     bool _HedinApprox; // Hedin's Static Approximation
     rpa_eigensolution _EigenSol; // Eigenvalues, eigenvectors from RPA
+    std::vector<Eigen::MatrixXd> _residues;
 
     // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
     // atoms, molecules, and clusters. Computer Physics Communications 208,
