@@ -26,14 +26,14 @@ namespace votca {
   namespace xtp {
 
     void Sigma_Spectral::PrepareScreening() {
-      // Compute eigenvalues/eigenvectors
       _EigenSol = _rpa.calculate_eigenvalues();
       
-      // Compute residues
-      const int numeigenvalues = _EigenSol._Omega.size();
-      _residues.resize(numeigenvalues);
-      for (int s = 0; s < numeigenvalues; s++) {
-        _residues[s] = CalcResidues(s);
+      if (_CacheResidues) {
+        const int numeigenvalues = _EigenSol._Omega.size();
+        _residues.resize(numeigenvalues);
+        for (int s = 0; s < numeigenvalues; s++) {
+          _residues[s] = CalcResidues(s);
+        }
       }
 
       return;
@@ -48,7 +48,7 @@ namespace votca {
         
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
+          const Eigen::MatrixXd& residues = GetResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             Eigen::VectorXd rm_x_rm = residues.row(m).cwiseAbs2();
             result(m) += Equation48(rm_x_rm, omega);
@@ -59,7 +59,7 @@ namespace votca {
 
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
+          const Eigen::MatrixXd& residues = GetResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             Eigen::VectorXd rm_x_rm = residues.row(m).cwiseAbs2();
             result(m) += Equation47(rm_x_rm, omega, RPAEnergies(m)); // TODO: Pass frequency or energy?
@@ -80,7 +80,7 @@ namespace votca {
 
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
+          const Eigen::MatrixXd& residues = GetResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
               Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
@@ -95,7 +95,7 @@ namespace votca {
 
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
+          const Eigen::MatrixXd& residues = GetResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
               Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
