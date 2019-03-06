@@ -137,7 +137,7 @@ namespace votca {
     }
 
     double Sigma_Spectral::Equation47(const Eigen::VectorXd& rm_x_rn, double omega, double w) const {
-      const double eta = 1e-10;
+      const double eta = 1e-6;
       const int lumo = _opt.homo + 1;
       const int n_occup = lumo - _opt.qpmin;
       const int n_unocc = _opt.qpmax - _opt.homo;
