@@ -102,8 +102,7 @@ void TCMatrix_gwbse::Fill(const AOBasis& gwbasis, const AOBasis& dftbasis,
   auxoverlap.Fill(gwbasis);
   AOCoulomb auxcoulomb;
   auxcoulomb.Fill(gwbasis);
-  //Eigen::MatrixXd inv_sqrt = auxcoulomb.Pseudo_InvSqrt_GWBSE(auxoverlap, 5e-7);
-  Eigen::MatrixXd inv_sqrt = auxcoulomb.Pseudo_InvSqrt(5e-7);
+  Eigen::MatrixXd inv_sqrt = auxcoulomb.Pseudo_InvSqrt_GWBSE(auxoverlap, 5e-7);
   _removedfunctions = auxcoulomb.Removedfunctions();
   MultiplyRightWithAuxMatrix(inv_sqrt);
   return;
