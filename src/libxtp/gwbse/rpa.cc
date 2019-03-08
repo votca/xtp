@@ -105,13 +105,13 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int rpasize = n_occup * n_unocc;
       vc2index vc = vc2index(_rpamin, lumo, n_unocc);
       Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
-
-      for (int v = _rpamin; v <= _homo; v++ ) {
-        for (int c = lumo; c <= _rpamax; c++ ) {
-          int i = vc.I(v, c); // Composite index i
-          AmB(i) = _energies(c) - _energies(v);
-        } // Unoccupied MO c
-      } // Occupied MO v
+      
+      for (int v = _rpamin; v <= _homo; v++) {
+        int i = vc.I(v, lumo); // Composite index i
+        AmB.segment(lumo - _rpamin, n_unocc) =
+                _energies.segment(lumo - _rpamin, n_unocc) -
+                _energies(v - _rpamin);
+      }
       
       return AmB;
     }
@@ -182,7 +182,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       return sol;
     }
     
-    void RPA::CheckPositiveDefiniteness(Eigen::MatrixXd mat, std::string name, bool error) const {
+    /*void RPA::CheckPositiveDefiniteness(Eigen::MatrixXd mat, std::string name, bool error) const {
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(mat);
       Eigen::VectorXd D = es.eigenvalues();
       Eigen::MatrixXd V = es.eigenvectors();
@@ -212,7 +212,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       }
       
       return;
-    }
+    }*/
 
 }  // namespace xtp
 }  // namespace votca
