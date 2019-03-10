@@ -52,8 +52,7 @@ namespace votca {
           const Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             Eigen::VectorXd rm_x_rm = residues.col(m).cwiseAbs2();
-            // TODO: Pass frequency
-            result(m) += Equation47(rm_x_rm, omega, _rpa.getRPAInputEnergies()(m + _opt.qpmin - _opt.rpamin));
+            result(m) += Equation47(rm_x_rm, omega, frequencies(m));
           } // Energy level m
         } // Eigenvalues/poles s
 
@@ -89,9 +88,8 @@ namespace votca {
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
               Eigen::VectorXd rm_x_rn = residues.col(m).cwiseProduct(residues.col(n));
-              // TODO: Pass frequency
-              double result_m = Equation47(rm_x_rn, omega, _rpa.getRPAInputEnergies()(m + _opt.qpmin - _opt.rpamin));
-              double result_n = Equation47(rm_x_rn, omega, _rpa.getRPAInputEnergies()(n + _opt.qpmin - _opt.rpamin));
+              double result_m = Equation47(rm_x_rn, omega, frequencies(m));
+              double result_n = Equation47(rm_x_rn, omega, frequencies(n));
               // (m|S(w)|n) = 0.5 * (m|S(e_m)|n) + 0.5 * (m|S(e_n)|n)
               double res = 0.5 * (result_m + result_n);
               result(m, n) += res;
