@@ -111,17 +111,17 @@ namespace votca {
       const int n_unocc = _opt.rpamax - _opt.homo;
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       const Eigen::VectorXd& xpy = _EigenSol._XpY.col(s);
-      vc2index vc = vc2index(_opt.rpamin, lumo, n_unocc);
-      // TODO: Use size _rpatotal x _qptotal
+      vc2index vc = vc2index(0, 0, n_unocc);
+      // TODO: Use size _rpatotal x _qptotal?
       Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_rpatotal, _rpatotal);
       
-      for (int v = _opt.rpamin; v <= _opt.homo; v++) {
-        const Eigen::MatrixXd Mmn_vT = _Mmn[v - _opt.rpamin].block(lumo - _opt.rpamin, 0, n_unocc, auxsize).transpose();
-        const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, lumo), n_unocc);
+      for (int v = 0; v < n_occup; v++) {
+        const Eigen::MatrixXd Mmn_vT =
+                _Mmn[v].block(n_occup, 0, n_unocc, auxsize).transpose();
+        const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, 0), n_unocc);
         for (int m = 0; m < _rpatotal; m++) {
-          // Sum over aux. basis functions chi
-          const Eigen::MatrixXd fc = _Mmn[m] * Mmn_vT;
-          // Sum over unoccupied MOs c
+          const Eigen::MatrixXd fc =
+                  _Mmn[m + _opt.qpmin - _opt.rpamin] * Mmn_vT;
           residues.col(m) += fc * xpyv;
         } // MO m
       } // Occupied MO v

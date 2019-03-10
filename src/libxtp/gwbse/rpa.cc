@@ -100,13 +100,13 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int n_occup = lumo - _rpamin;
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
-      vc2index vc = vc2index(_rpamin, lumo, n_unocc);
+      vc2index vc = vc2index(0, 0, n_unocc);
       Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
       
-      for (int v = _rpamin; v <= _homo; v++) {
-        int i = vc.I(v, lumo); // Composite index i
+      for (int v = 0; v < n_occup; v++) {
+        int i = vc.I(v, 0);
         AmB.segment(i, n_unocc) =
-                _energies.segment(lumo - _rpamin, n_unocc).array() - _energies(v - _rpamin);
+                _energies.segment(n_occup, n_unocc).array() - _energies(v);
       } // Occupied MO v
       
       return AmB;
@@ -118,21 +118,20 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
       const int auxsize = _Mmn.auxsize();
-      vc2index vc = vc2index(_rpamin, lumo, n_unocc);
+      vc2index vc = vc2index(0, 0, n_unocc);
       Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
       
-      // Fill diagonal
       ApB.diagonal() = calculate_spectral_AmB();
       
-      for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
-        int i2 = vc.I(v2, lumo); // Composite index i2
+      for (int v2 = 0; v2 < n_occup; v2++) {
+        int i2 = vc.I(v2, 0);
         const Eigen::MatrixXd Mmn_v2T =
-                _Mmn[v2 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize).transpose();
-        for (int v1 = v2; v1 <= _homo; v1++ ) {
-          int i1 = vc.I(v1, lumo); // Composite index i1
-          // TODO: Fill lower triangular block
+                _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
+        // TODO: Fill lower triangular block
+        for (int v1 = v2; v1 < n_occup; v1++) {
+          int i1 = vc.I(v1, 0);
           ApB.block(i2, i1, n_unocc, n_unocc) -=
-                  2 * _Mmn[v1 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize) * Mmn_v2T;
+                  2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
         } // Occupied MO v1
       } // Occupied MO v2
       
@@ -143,7 +142,6 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
     }
 
-    // TODO: More efficient way to diagonalize C described in section 6.2
     rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const {
       const int lumo = _homo + 1;
       const int n_occup = lumo - _rpamin;
@@ -154,7 +152,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
 
-      // Omega has to have correct size otherwise MKL does not rescale for Sqrt
+      // Note: Omega has to have correct size otherwise MKL does not rescale for Sqrt
       sol._Omega = Eigen::VectorXd::Zero(rpasize);
       // TODO: Do not take abs
       sol._Omega = es.eigenvalues().cwiseAbs().cwiseSqrt();
