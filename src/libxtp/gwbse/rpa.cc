@@ -90,9 +90,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
     rpa_eigensolution RPA::calculate_eigenvalues() const {
       Eigen::VectorXd AmB = calculate_spectral_AmB();
-      Eigen::MatrixXd ApB = calculate_spectral_ApB();
-      Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
-      return diag_C(AmB, C);
+      return diag_C(AmB, calculate_spectral_C(AmB, calculate_spectral_ApB()));
     }
     
     Eigen::VectorXd RPA::calculate_spectral_AmB() const {
@@ -127,8 +125,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
         int i2 = vc.I(v2, 0);
         const Eigen::MatrixXd Mmn_v2T =
                 _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
-        // TODO: Fill lower triangular block
-        for (int v1 = v2; v1 < n_occup; v1++) {
+        for (int v1 = 0; v1 <= v2; v1++) {
           int i1 = vc.I(v1, 0);
           ApB.block(i2, i1, n_unocc, n_unocc) -=
                   2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
@@ -138,11 +135,11 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       return ApB;
     }
 
-    Eigen::MatrixXd RPA::calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) const {
+    Eigen::MatrixXd RPA::calculate_spectral_C(const Eigen::VectorXd& AmB, const Eigen::MatrixXd& ApB) const {
       return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
     }
 
-    rpa_eigensolution RPA::diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const {
+    rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB, const Eigen::MatrixXd& C) const {
       const int lumo = _homo + 1;
       const int n_occup = lumo - _rpamin;
       const int n_unocc = _rpamax - _homo;
@@ -154,15 +151,13 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
       // Note: Omega has to have correct size otherwise MKL does not rescale for Sqrt
       sol._Omega = Eigen::VectorXd::Zero(rpasize);
-      // TODO: Do not take abs
-      sol._Omega = es.eigenvalues().cwiseAbs().cwiseSqrt();
+      sol._Omega = es.eigenvalues().cwiseSqrt();
       sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
 
       Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
       Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
       Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
 
-      // TODO: Is this possible without for-loop?
       for (int s = 0; s < rpasize; s++) {
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;

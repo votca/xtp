@@ -82,11 +82,8 @@ class RPA {
   // Eqs. 36-41
   Eigen::VectorXd calculate_spectral_AmB() const;
   Eigen::MatrixXd calculate_spectral_ApB() const;
-  Eigen::MatrixXd calculate_spectral_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& ApB) const;
-  rpa_eigensolution diag_C(Eigen::VectorXd& AmB, Eigen::MatrixXd& C) const;
-
-  // For testing purposes:
-  void CheckPositiveDefiniteness(Eigen::MatrixXd mat, std::string name, bool error) const;
+  Eigen::MatrixXd calculate_spectral_C(const Eigen::VectorXd& AmB, const Eigen::MatrixXd& ApB) const;
+  rpa_eigensolution diag_C(const Eigen::VectorXd& AmB, const Eigen::MatrixXd& C) const;
 
   template <bool imag>
   Eigen::MatrixXd calculate_epsilon(double frequency) const;
