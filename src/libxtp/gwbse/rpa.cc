@@ -108,10 +108,9 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       
       for (int v = _rpamin; v <= _homo; v++) {
         int i = vc.I(v, lumo); // Composite index i
-        AmB.segment(lumo - _rpamin, n_unocc) =
-                _energies.segment(lumo - _rpamin, n_unocc) -
-                _energies(v - _rpamin);
-      }
+        AmB.segment(i, n_unocc) =
+                _energies.segment(lumo - _rpamin, n_unocc).array() - _energies(v - _rpamin);
+      } // Occupied MO v
       
       return AmB;
     }
@@ -124,6 +123,8 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int auxsize = _Mmn.auxsize();
       vc2index vc = vc2index(_rpamin, lumo, n_unocc);
       Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
+      
+      ApB.diagonal() = calculate_spectral_AmB();
 
       // TODO: Copy result from (A - B)?
       for (int v = _rpamin; v <= _homo; v++ ) {
