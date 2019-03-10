@@ -52,16 +52,9 @@ public:
 
 private:
     
-    bool _HedinApprox; // Hedin's static approximation
-    bool _CacheResidues; // Residue caching
-    
+    bool _HedinApprox = false; // Hedin's static approximation
+
     rpa_eigensolution _EigenSol; // Eigenvalues, eigenvectors from RPA
-    
-    // Cached residues
-    std::vector<Eigen::MatrixXd> _residues;
-    const Eigen::MatrixXd GetResidues(int s) const {
-      return _CacheResidues ? _residues[s] : CalcResidues(s);
-    }
 
     // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
     // atoms, molecules, and clusters. Computer Physics Communications 208,
