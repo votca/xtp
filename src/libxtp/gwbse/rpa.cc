@@ -90,11 +90,8 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
     rpa_eigensolution RPA::calculate_eigenvalues() const {
       Eigen::VectorXd AmB = calculate_spectral_AmB();
-      //CheckPositiveDefiniteness(Eigen::MatrixXd(AmB.asDiagonal()), "(A - B)", false);
       Eigen::MatrixXd ApB = calculate_spectral_ApB();
-      //CheckPositiveDefiniteness(ApB, "(A + B)", false);
       Eigen::MatrixXd C = calculate_spectral_C(AmB, ApB);
-      //CheckPositiveDefiniteness(C, "C", true);
       return diag_C(AmB, C);
     }
     
@@ -124,22 +121,16 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       vc2index vc = vc2index(_rpamin, lumo, n_unocc);
       Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
       
+      // Fill diagonal
       ApB.diagonal() = calculate_spectral_AmB();
-
-      // TODO: Copy result from (A - B)?
-      for (int v = _rpamin; v <= _homo; v++ ) {
-        for (int c = lumo; c <= _rpamax; c++ ) {
-          int i = vc.I(v, c); // Composite index i
-          ApB(i, i) = _energies(c) - _energies(v);
-        } // Unoccupied MO c
-      } // Occupied MO v
       
       for (int v2 = _rpamin; v2 <= _homo; v2++ ) {
         int i2 = vc.I(v2, lumo); // Composite index i2
         const Eigen::MatrixXd temp = _Mmn[v2 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize).transpose();
         for (int v1 = v2; v1 <= _homo; v1++ ) {
           int i1 = vc.I(v1, lumo); // Composite index i1
-          ApB.block(i2, i1, n_unocc, n_unocc) -= // Fill lower triangular block
+          // Fill lower triangular block
+          ApB.block(i2, i1, n_unocc, n_unocc) -=
                   2 * _Mmn[v1 - _rpamin].block(lumo - _rpamin, 0, n_unocc, auxsize) * temp;
         } // Occupied MO v1
       } // Occupied MO v2
@@ -157,17 +148,17 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int n_occup = lumo - _rpamin;
       const int n_unocc = _rpamax - _homo;
       const int rpasize = n_occup * n_unocc;
-
+      rpa_eigensolution sol;
+      
       // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
       Eigen::VectorXd eigenvalues = es.eigenvalues();
-
-      // TODO: Store copies or store references?
-      rpa_eigensolution sol;
-      sol._Omega = eigenvalues.cwiseAbs().cwiseSqrt();
+      
+      // Omega has to have correct size otherwise MKL does not rescale for Sqrt
+      sol._Omega = Eigen::VectorXd::Zero(rpasize);
+      sol._Omega = es.eigenvalues().cwiseSqrt();
       sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
 
-      // TODO: Pre-compute this, or compute on the fly in the loop?
       Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
       Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
       Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
@@ -177,43 +168,12 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
         Eigen::VectorXd z = es.eigenvectors().col(s);
-        sol._XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
+        sol._XpY.col(s) =
+                0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
       }
 
       return sol;
     }
-    
-    /*void RPA::CheckPositiveDefiniteness(Eigen::MatrixXd mat, std::string name, bool error) const {
-      Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(mat);
-      Eigen::VectorXd D = es.eigenvalues();
-      Eigen::MatrixXd V = es.eigenvectors();
-      
-      Eigen::Index idx;
-      double minCoeff = D.minCoeff(&idx);
-      if (minCoeff <= 0.0) {
-        CTP_LOG(ctp::logDEBUG, _log) << flush;
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Detected non-positive eigenvalue(s) " << flush;
-        if (tools::globals::verbose) {
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                  << " Eigenvalues: " << std::endl << D.transpose() << flush;
-        }
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << " Eigenvalue: " << minCoeff << " " << flush;
-        if (tools::globals::verbose) {
-          CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                  << " Eigenvector: " << std::endl << V.col(idx).transpose() << flush;
-        }
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-                << (error ? " Error: " : " Warning: ") << name << " is not positive definite " << flush;
-        if (error) {
-          throw std::runtime_error(
-                  name + " is not positive definite.");
-        }
-      }
-      
-      return;
-    }*/
 
 }  // namespace xtp
 }  // namespace votca
