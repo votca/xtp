@@ -40,7 +40,7 @@ namespace votca {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
-            Eigen::VectorXd rm_x_rm = residues.row(m).cwiseAbs2();
+            Eigen::VectorXd rm_x_rm = residues.col(m).cwiseAbs2();
             result(m) += Equation48(rm_x_rm, omega);
           } // Energy level m
         } // Eigenvalues/poles s
@@ -51,7 +51,7 @@ namespace votca {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
-            Eigen::VectorXd rm_x_rm = residues.row(m).cwiseAbs2();
+            Eigen::VectorXd rm_x_rm = residues.col(m).cwiseAbs2();
             // TODO: Pass frequency
             result(m) += Equation47(rm_x_rm, omega, _rpa.getRPAInputEnergies()(m + _opt.qpmin - _opt.rpamin));
           } // Energy level m
@@ -73,7 +73,7 @@ namespace votca {
           const Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
-              Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
+              Eigen::VectorXd rm_x_rn = residues.col(m).cwiseProduct(residues.col(n));
               double res = Equation48(rm_x_rn, omega);
               result(m, n) += res;
               result(n, m) += res;
@@ -88,7 +88,7 @@ namespace votca {
           const Eigen::MatrixXd residues = CalcResidues(s);
           for (int m = 0; m < _qptotal; m++) {
             for (int n = m + 1; n < _qptotal; n++) {
-              Eigen::VectorXd rm_x_rn = residues.row(m).cwiseProduct(residues.row(n));
+              Eigen::VectorXd rm_x_rn = residues.col(m).cwiseProduct(residues.col(n));
               // TODO: Pass frequency
               double result_m = Equation47(rm_x_rn, omega, _rpa.getRPAInputEnergies()(m + _opt.qpmin - _opt.rpamin));
               double result_n = Equation47(rm_x_rn, omega, _rpa.getRPAInputEnergies()(n + _opt.qpmin - _opt.rpamin));
@@ -107,20 +107,22 @@ namespace votca {
 
     Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
       const int lumo = _opt.homo + 1;
-      const int n_unocc = _opt.qpmax - _opt.homo;
+      const int n_occup = lumo - _opt.rpamin;
+      const int n_unocc = _opt.rpamax - _opt.homo;
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       const Eigen::VectorXd& xpy = _EigenSol._XpY.col(s);
-      vc2index vc = vc2index(_opt.qpmin, lumo, n_unocc);
-      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+      vc2index vc = vc2index(_opt.rpamin, lumo, n_unocc);
+      // TODO: Use size _rpatotal x _qptotal
+      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_rpatotal, _rpatotal);
       
-      for (int v = _opt.qpmin; v <= _opt.homo; v++) {
-        const Eigen::MatrixXd temp = _Mmn[v - _opt.rpamin].block(lumo - _opt.rpamin, 0, n_unocc, auxsize).transpose();
+      for (int v = _opt.rpamin; v <= _opt.homo; v++) {
+        const Eigen::MatrixXd Mmn_vT = _Mmn[v - _opt.rpamin].block(lumo - _opt.rpamin, 0, n_unocc, auxsize).transpose();
         const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, lumo), n_unocc);
-        for (int m = 0; m < _qptotal; m++) {
+        for (int m = 0; m < _rpatotal; m++) {
           // Sum over aux. basis functions chi
-          const Eigen::MatrixXd fc = _Mmn[m].block(0, 0, _qptotal, auxsize) * temp;
+          const Eigen::MatrixXd fc = _Mmn[m] * Mmn_vT;
           // Sum over unoccupied MOs c
-          residues.row(m) += (fc * xpyv).transpose();
+          residues.col(m) += fc * xpyv;
         } // MO m
       } // Occupied MO v
 
