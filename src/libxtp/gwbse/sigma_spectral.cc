@@ -110,14 +110,13 @@ namespace votca {
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       const Eigen::VectorXd& xpy = _EigenSol._XpY.col(s);
       vc2index vc = vc2index(0, 0, n_unocc);
-      // TODO: Use size _rpatotal x _qptotal?
-      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_rpatotal, _rpatotal);
+      Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_rpatotal, _qptotal);
       
       for (int v = 0; v < n_occup; v++) {
         const Eigen::MatrixXd Mmn_vT =
                 _Mmn[v].block(n_occup, 0, n_unocc, auxsize).transpose();
         const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, 0), n_unocc);
-        for (int m = 0; m < _rpatotal; m++) {
+        for (int m = 0; m < _qptotal; m++) {
           const Eigen::MatrixXd fc =
                   _Mmn[m + _opt.qpmin - _opt.rpamin] * Mmn_vT;
           residues.col(m) += fc * xpyv;
