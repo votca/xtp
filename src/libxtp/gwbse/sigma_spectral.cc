@@ -46,9 +46,9 @@ namespace votca {
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
-          for (int m = 0; m < _qptotal; m++) {
-            Eigen::VectorXd rm_x_rm = residues.col(m).cwiseAbs2();
-            result(m) += Equation48(rm_x_rm, omega);
+          for (int n = 0; n < _qptotal; n++) {
+            Eigen::VectorXd rn_x_rn = residues.col(n).cwiseAbs2();
+            result(n) += Equation48(rn_x_rn, omega);
           } // Energy level m
         } // Eigenvalues/poles s
 
@@ -57,9 +57,9 @@ namespace votca {
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
-          for (int m = 0; m < _qptotal; m++) {
-            Eigen::VectorXd rm_x_rm = residues.col(m).cwiseAbs2();
-            result(m) += Equation47(rm_x_rm, omega, frequencies(m));
+          for (int n = 0; n < _qptotal; n++) {
+            Eigen::VectorXd rn_x_rn = residues.col(n).cwiseAbs2();
+            result(n) += Equation47(rn_x_rn, omega, frequencies(n));
           } // Energy level m
         } // Eigenvalues/poles s
 
@@ -136,26 +136,21 @@ namespace votca {
     double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12, double omega, double frequency) const {
       const double eta = 1e-6;
       const int lumo = _opt.homo + 1;
-      const int n_occup = lumo - _opt.qpmin;
-      const int n_unocc = _opt.qpmax - _opt.homo;
-      
+      const int n_occup = lumo - _opt.rpamin;
+      const int n_unocc = _opt.rpamax - _opt.homo;
       Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + frequency;
       B12.segment(0, n_occup) += omega;
       B12.segment(n_occup, n_unocc) -= omega;
-
       const Eigen::ArrayXd numer = A12.array() * B12;
       const Eigen::ArrayXd denom = B12.abs2() + eta * eta;
-      
-      return numer.cwiseQuotient(denom).sum();
+      return (numer / denom).sum();
     }
 
     double Sigma_Spectral::Equation48(const Eigen::VectorXd& A12, double omega) const {
       const int lumo = _opt.homo + 1;
-      const int n_occup = lumo - _opt.qpmin;
-      
+      const int n_occup = lumo - _opt.rpamin;
       double s1 = A12.head(n_occup).sum();
       double s2 = A12.sum();
-
       return 2 * (s1 - s2) / omega;
     }
 

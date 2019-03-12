@@ -161,7 +161,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       for (int s = 0; s < rpasize; s++) {
         Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
         Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
-        Eigen::VectorXd z = es.eigenvectors().col(s);
+        const Eigen::VectorXd& z = es.eigenvectors().col(s);
         sol._XpY.col(s) = 0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
       }
 
