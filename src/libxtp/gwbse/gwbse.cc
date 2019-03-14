@@ -292,6 +292,11 @@ void GWBSE::Initialize(tools::Property& options) {
       key + ".sigma_integrator",
       _gwopt.sigma_integration);
   CTP_LOG(ctp::logDEBUG, *_pLog) << " Sigma Integration: " << _gwopt.sigma_integration << flush;
+  
+  if (_gwopt.sigma_integration == "exact") {
+    CTP_LOG(ctp::logDEBUG, *_pLog) << " RPA size: "
+            << (homo + 1 - rpamin) * (rpamax - homo) << flush;
+  }
 
   // setting some defaults
   _do_qp_diag = false;

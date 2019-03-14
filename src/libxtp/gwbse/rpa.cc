@@ -146,8 +146,17 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       const int rpasize = n_occup * n_unocc;
       rpa_eigensolution sol;
       
+      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+              << " Solving for RPA eigenvalues " << flush;
+      
       // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
+      
+      double minEigenvalue = es.eigenvalues().minCoeff();
+      if (minEigenvalue <= 0.0) {
+        throw std::runtime_error(
+          (boost::format("Detected non-positive eigenvalue: %s") % minEigenvalue).str());
+      }
 
       // Note: Omega has to have correct size otherwise MKL does not rescale for Sqrt
       sol._Omega = Eigen::VectorXd::Zero(rpasize);
