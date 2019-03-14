@@ -114,6 +114,7 @@ namespace votca {
       const int lumo = _opt.homo + 1;
       const int n_occup = lumo - _opt.rpamin;
       const int n_unocc = _opt.rpamax - _opt.homo;
+      const int qpoffset = _opt.qpmin - _opt.rpamin;
       const int auxsize = _Mmn.auxsize(); // Size of gwbasis
       const Eigen::VectorXd& xpy = _EigenSol._XpY.col(s);
       vc2index vc = vc2index(0, 0, n_unocc);
@@ -125,7 +126,7 @@ namespace votca {
         const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, 0), n_unocc);
         for (int m = 0; m < _qptotal; m++) {
           const Eigen::MatrixXd fc =
-                  _Mmn[m + _opt.qpmin - _opt.rpamin] * Mmn_vT;
+                  _Mmn[m + qpoffset] * Mmn_vT;
           residues.col(m) += fc * xpyv;
         } // MO m
       } // Occupied MO v
