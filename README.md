@@ -1,4 +1,7 @@
-For developers and installation all relevant information can be found [here](https://github.com/votca/votca/blob/master/share/doc/INSTALL.md)
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/61fbe7164ec2418b9a7de20bd0453d8b)](https://app.codacy.com/app/JoshuaSBrown/xtp?utm_source=github.com&utm_medium=referral&utm_content=votca/xtp&utm_campaign=Badge_Grade_Dashboard)
+
+Installation instructions and developer information can be found [here](https://github.com/votca/votca/blob/master/share/doc/INSTALL.md)
 
 For other questions, we provide an email list:
 
