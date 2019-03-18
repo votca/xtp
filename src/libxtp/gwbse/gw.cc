@@ -44,7 +44,8 @@ void GW::configure(const options& opt) {
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   if (_opt.g_sc_export) {
-    std::remove("g_sc.log");
+    std::remove("g_sc_sigc.log");
+    std::remove("g_sc_freq.log");
   }
 }
 
@@ -173,19 +174,21 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
 
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
     _gwa_energies = CalcDiagonalEnergies();
-    
-    if (_opt.g_sc_export && i_freq == 0) {
-      Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
-      std::ofstream g_sc_log;
-      g_sc_log.open("g_sc.log", std::ios_base::app);
-      g_sc_log << _Sigma_c.diagonal().format(fmt) << std::endl;
-      g_sc_log.close();
-    }
 
     if (tools::globals::verbose) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " G_Iteration:" << i_freq
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
+    }
+    if (_opt.g_sc_export) {
+      Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
+      std::ofstream g_sc_log;
+      g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
+      g_sc_log << _Sigma_c.diagonal().format(fmt) << std::endl;
+      g_sc_log.close();
+      g_sc_log.open("g_sc_freq.log", std::ios_base::app);
+      g_sc_log << frequencies.format(fmt) << std::endl;
+      g_sc_log.close();
     }
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
@@ -202,14 +205,6 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     } else {
       double alpha = 0.0;
       frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
-    }
-    
-    if (_opt.g_sc_export) {
-      Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
-      std::ofstream g_sc_log;
-      g_sc_log.open("g_sc.log", std::ios_base::app);
-      g_sc_log << frequencies.format(fmt) << std::endl;
-      g_sc_log.close();
     }
   }
   return frequencies;
@@ -243,7 +238,10 @@ void GW::CalculateGWPerturbation() {
         << ctp::TimeStamp() << " Calculated screening via RPA  " << std::flush;
     if (_opt.g_sc_export) {
       std::ofstream g_sc_log;
-      g_sc_log.open("g_sc.log", std::ios_base::app);
+      g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
+      g_sc_log << "GW iter: " << i_gw << std::endl;
+      g_sc_log.close();
+      g_sc_log.open("g_sc_freq.log", std::ios_base::app);
       g_sc_log << "GW iter: " << i_gw << std::endl;
       g_sc_log.close();
     }
