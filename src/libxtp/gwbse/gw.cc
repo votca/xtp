@@ -21,6 +21,7 @@
 #include "votca/xtp/sigma_ppm.h"
 #include <votca/xtp/sigma_spectral.h>
 #include <votca/xtp/gw.h>
+#include <votca/xtp/customopts.h>
 
 namespace votca {
 namespace xtp {
@@ -43,7 +44,7 @@ void GW::configure(const options& opt) {
   _sigma->configure(sigma_opt);
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-  if (_opt.g_sc_export) {
+  if (CustomOpts::GSCExport()) {
     std::remove("g_sc_sigc.log");
     std::remove("g_sc_freq.log");
   }
@@ -180,7 +181,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << ctp::TimeStamp() << " G_Iteration:" << i_freq
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
     }
-    if (_opt.g_sc_export) {
+    if (CustomOpts::GSCExport()) {
       Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
       std::ofstream g_sc_log;
       g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
@@ -236,7 +237,7 @@ void GW::CalculateGWPerturbation() {
     _sigma->PrepareScreening();
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated screening via RPA  " << std::flush;
-    if (_opt.g_sc_export) {
+    if (CustomOpts::GSCExport()) {
       std::ofstream g_sc_log;
       g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
       g_sc_log << "GW iter: " << i_gw << std::endl;
@@ -272,7 +273,7 @@ void GW::CalculateGWPerturbation() {
           << "      Run continues. Inspect results carefully!" << std::flush;
       break;
     } else {
-      double alpha = 0.0;
+      double alpha = CustomOpts::GSCAlpha();
       rpa_energies = (1 - alpha) * rpa_energies + alpha * rpa_energies_old;
     }
   }

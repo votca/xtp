@@ -52,7 +52,6 @@ class GW {
     std::string sigma_integration = "ppm";
     int reset_3c = 5;  // how often the 3c integrals in iterate should be
                        // rebuild
-    bool g_sc_export = false; // Export g iteration intermediate results
   };
 
   void configure(const options& opt);

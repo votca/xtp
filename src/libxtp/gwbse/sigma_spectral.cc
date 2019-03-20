@@ -21,6 +21,7 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/threecenter.h>
 #include "votca/xtp/vc2index.h"
+#include <votca/xtp/customopts.h>
 
 namespace votca {
   namespace xtp {
@@ -34,6 +35,8 @@ namespace votca {
       for (int s = 0; s < numeigenvalues; s++) {
         _residues[s] = CalcResidues(s);
       }
+      // Set Options
+      _HedinApprox = CustomOpts::Hedin();
       return;
     }
 

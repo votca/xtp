@@ -296,13 +296,6 @@ void GWBSE::Initialize(tools::Property& options) {
     CTP_LOG(ctp::logDEBUG, *_pLog) << " RPA size: "
             << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
-  
-  _gwopt.g_sc_export = options.ifExistsReturnElseReturnDefault<bool>(
-      key + ".g_sc_export",
-      _gwopt.g_sc_export);
-  if (_gwopt.g_sc_export) {
-    CTP_LOG(ctp::logDEBUG, *_pLog) << " Exporting g iterations " << flush;
-  }
 
   // setting some defaults
   _do_qp_diag = false;
