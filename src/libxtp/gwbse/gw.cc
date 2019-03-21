@@ -204,7 +204,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << _opt.g_sc_max_iterations << " iterations." << std::flush;
       break;
     } else {
-      double alpha = 0.0;
+      double alpha = CustomOpts::GSCAlpha();
       frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
     }
   }
