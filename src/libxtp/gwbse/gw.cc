@@ -237,15 +237,6 @@ void GW::CalculateGWPerturbation() {
     _sigma->PrepareScreening();
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated screening via RPA  " << std::flush;
-    if (CustomOpts::GSCExport()) {
-      std::ofstream g_sc_log;
-      g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
-      g_sc_log << "GW iter: " << i_gw << std::endl;
-      g_sc_log.close();
-      g_sc_log.open("g_sc_freq.log", std::ios_base::app);
-      g_sc_log << "GW iter: " << i_gw << std::endl;
-      g_sc_log.close();
-    }
     frequencies = CalculateExcitationFreq(frequencies);
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated diagonal part of Sigma  "

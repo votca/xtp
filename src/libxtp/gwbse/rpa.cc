@@ -121,6 +121,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       
       ApB.diagonal() = calculate_spectral_AmB();
       
+      // TODO: cache (A+B)? It's independent of the energy
       for (int v2 = 0; v2 < n_occup; v2++) {
         int i2 = vc.I(v2, 0);
         const Eigen::MatrixXd Mmn_v2T =
