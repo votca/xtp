@@ -1,5 +1,3 @@
-/**/
-
 #include <votca/xtp/customopts.h>
 #include <iostream>
 

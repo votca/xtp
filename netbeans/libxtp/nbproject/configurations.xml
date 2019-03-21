@@ -98,6 +98,7 @@
       <itemPath>../../include/votca/xtp/grid.h</itemPath>
       <itemPath>../../include/votca/xtp/grid_containers.h</itemPath>
       <itemPath>../../include/votca/xtp/gridbox.h</itemPath>
+      <itemPath>../../include/votca/xtp/gsclogger.h</itemPath>
       <itemPath>../../include/votca/xtp/gw.h</itemPath>
       <itemPath>../../include/votca/xtp/gwbse.h</itemPath>
       <itemPath>../../include/votca/xtp/gwbseengine.h</itemPath>
@@ -210,6 +211,7 @@
       </logicalFolder>
       <logicalFolder name="f4" displayName="mbgft" projectFiles="true">
         <itemPath>../../src/libxtp/gwbse/bse.cc</itemPath>
+        <itemPath>../../src/libxtp/gsclogger.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/gw.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/gwbse.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/gwbseengine.cc</itemPath>
@@ -3095,6 +3097,11 @@
       </item>
       <item path="../../include/votca/xtp/gridbox.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gsclogger.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gw.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gwbse.h" ex="false" tool="3" flavor2="0">
@@ -3642,6 +3649,8 @@
       </item>
       <item path="../../src/libxtp/gridbox.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gsclogger.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/gwbse/bse.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/gw.cc" ex="false" tool="1" flavor2="0">
@@ -4117,6 +4126,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gridbox.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/gsclogger.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gw.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -4664,6 +4678,8 @@
       <item path="../../src/libxtp/grid.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gridbox.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gsclogger.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/bse.cc" ex="false" tool="1" flavor2="0">
       </item>

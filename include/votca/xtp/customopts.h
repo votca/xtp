@@ -1,5 +1,3 @@
-/**/
-
 #ifndef _VOTCA_XTP_CUSTOM_OPTS_H
 #define	_VOTCA_XTP_CUSTOM_OPTS_H
 

@@ -19,6 +19,7 @@
 
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_ppm.h"
+#include "votca/xtp/gsclogger.h"
 #include <votca/xtp/sigma_spectral.h>
 #include <votca/xtp/gw.h>
 #include <votca/xtp/customopts.h>
@@ -45,8 +46,7 @@ void GW::configure(const options& opt) {
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   if (CustomOpts::GSCExport()) {
-    std::remove("g_sc_sigc.log");
-    std::remove("g_sc_freq.log");
+    GSCLogger::Initialize(_qptotal);
   }
 }
 
@@ -182,19 +182,15 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
     }
     if (CustomOpts::GSCExport()) {
-      Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
-      std::ofstream g_sc_log;
-      g_sc_log.open("g_sc_sigc.log", std::ios_base::app);
-      g_sc_log << _Sigma_c.diagonal().format(fmt) << std::endl;
-      g_sc_log.close();
-      g_sc_log.open("g_sc_freq.log", std::ios_base::app);
-      g_sc_log << frequencies.format(fmt) << std::endl;
-      g_sc_log.close();
+      GSCLogger::LogFrequencies(frequencies);
     }
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_freq + 1
           << " G iterations." << std::flush;
+      if (CustomOpts::GSCExport()) {
+        GSCLogger::LogConverged(true);
+      }
       break;
     } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
                _opt.g_sc_max_iterations > 1) {
@@ -202,6 +198,9 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << ctp::TimeStamp()
           << " G-self-consistency cycle not converged after "
           << _opt.g_sc_max_iterations << " iterations." << std::flush;
+      if (CustomOpts::GSCExport()) {
+        GSCLogger::LogConverged(false);
+      }
       break;
     } else {
       double alpha = CustomOpts::GSCAlpha();
