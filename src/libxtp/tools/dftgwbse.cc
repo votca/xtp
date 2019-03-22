@@ -18,7 +18,7 @@
 #include "dftgwbse.h"
 #include "votca/xtp/qminterface.h"
 #include <votca/xtp/gwbseengine.h>
-#include <votca/xtp/customopts.h>
+#include <votca/xtp/customtools.h>
 
 using namespace std;
 

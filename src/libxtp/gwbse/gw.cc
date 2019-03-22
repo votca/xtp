@@ -19,10 +19,9 @@
 
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_ppm.h"
-#include "votca/xtp/gsclogger.h"
 #include <votca/xtp/sigma_spectral.h>
 #include <votca/xtp/gw.h>
-#include <votca/xtp/customopts.h>
+#include <votca/xtp/customtools.h>
 
 namespace votca {
 namespace xtp {

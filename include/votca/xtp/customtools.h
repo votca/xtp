@@ -2,6 +2,7 @@
 #define	_VOTCA_XTP_CUSTOM_OPTS_H
 
 #include <votca/tools/property.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
@@ -25,7 +26,18 @@ class CustomOpts {
     static double GSCAlpha() { return _instance._gsc_alpha; }
 };
 
+class GSCLogger {
+  private:
+    static int _size;
+    static void Log(const Eigen::VectorXd& row);
+  
+  public:
+    static void Initialize(int size);
+    static void LogFrequencies(const Eigen::VectorXd& frequencies);
+    static void LogConverged(bool conv);
+};
+
 }
 }
 
-#endif	/* _VOTCA_XTP_CUSTOM_OPTS_H */
+#endif	/* _VOTCA_XTP_CUSTOM_TOOLS_H */

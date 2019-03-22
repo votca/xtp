@@ -21,7 +21,7 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/threecenter.h>
 #include "votca/xtp/vc2index.h"
-#include <votca/xtp/customopts.h>
+#include <votca/xtp/customtools.h>
 
 namespace votca {
   namespace xtp {
