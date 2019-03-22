@@ -68,6 +68,8 @@ class GW {
   // Diagonalize QP particle Hamiltonian
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DiagonalizeQPHamiltonian()
       const;
+  
+  void ExportSigmaC(Eigen::VectorXd frequencies) const;
 
  private:
   int _qptotal;
@@ -96,6 +98,7 @@ class GW {
   Eigen::VectorXd CalcDiagonalEnergies() const;
   bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                  double epsilon) const;
+  Eigen::MatrixXd CalcCorrelationDiags(const Eigen::VectorXd& frequencies) const;
 };
 }  // namespace xtp
 }  // namespace votca

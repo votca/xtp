@@ -1,10 +1,11 @@
 #include <votca/xtp/customtools.h>
 #include <iostream>
 #include <fstream>
+#include <string.h>
 
 namespace votca {
 namespace xtp {
-  
+
 /* CustomOpts */
 
 CustomOpts CustomOpts::_instance;
@@ -27,12 +28,15 @@ void CustomOpts::Parse(tools::Property& options) {
   _hedin = options.ifExistsReturnElseReturnDefault<bool>("customopts.hedin", _hedin);
   _gsc_export = options.ifExistsReturnElseReturnDefault<bool>("customopts.gsc_export", _gsc_export);
   _gsc_alpha = options.ifExistsReturnElseReturnDefault<double>("customopts.gsc_alpha", _gsc_alpha);
+  _sigc_export = options.ifExistsReturnElseReturnDefault<Eigen::Vector3d>("customopts.sigc_export", Eigen::Vector3d::Zero());
 }
 
 void CustomOpts::Report() {
-  std::cout << std::endl << "Hedin:      " << _hedin;
-  std::cout << std::endl << "GSC Export: " << _gsc_export;
-  std::cout << std::endl << "GSC Alpha:  " << _gsc_alpha;
+  Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
+  std::cout << std::endl << "Hedin:       " << _hedin;
+  std::cout << std::endl << "GSC Export:  " << _gsc_export;
+  std::cout << std::endl << "GSC Alpha:   " << _gsc_alpha;
+  std::cout << std::endl << "SigC export: " << _sigc_export.format(fmt);
 }
 
 /* GSCLogger */
@@ -59,10 +63,10 @@ void GSCLogger::LogConverged(bool conv) {
 // Keep file in comma-separated matrix style so that it is easy to read
 void GSCLogger::Log(const Eigen::VectorXd& row) {
   Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", "", "");
-  std::ofstream g_sc_log;
-  g_sc_log.open("gsc.log", std::ios_base::app);
-  g_sc_log << row.format(fmt) << std::endl;
-  g_sc_log.close();
+  std::ofstream gsc_log;
+  gsc_log.open("gsc.log", std::ios_base::app);
+  gsc_log << row.format(fmt) << std::endl;
+  gsc_log.close();
 }
 
 }

@@ -14,9 +14,10 @@ class CustomOpts {
     void Parse(tools::Property& options);
     void Report();
     
-    bool   _hedin      = false;
-    bool   _gsc_export = false; // Export g self-consistency intermediate results
-    double _gsc_alpha  = 0.0;
+    bool _hedin = false;
+    bool _gsc_export = false; // Export g self-consistency intermediate results
+    double _gsc_alpha = 0.0;
+    Eigen::Vector3d _sigc_export; // count, min, max
   
   public:
     static void Load();
@@ -24,6 +25,13 @@ class CustomOpts {
     static bool Hedin() { return _instance._hedin; }
     static bool GSCExport() { return _instance._gsc_export; }
     static double GSCAlpha() { return _instance._gsc_alpha; }
+    static bool DoSigmaCExport() { return _instance._sigc_export[0] > 0; }
+    static Eigen::VectorXd SigmaCExportFrequencies() {
+      return Eigen::VectorXd::LinSpaced(
+              _instance._sigc_export[0],
+              _instance._sigc_export[1],
+              _instance._sigc_export[2]);
+    }
 };
 
 class GSCLogger {

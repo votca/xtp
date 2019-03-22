@@ -268,6 +268,12 @@ void GW::CalculateGWPerturbation() {
   }
 
   PrintGWA_Energies();
+  
+  // TODO: Could be called somewhere else
+  // TODO: Calculate sigmac around the final or initial state frequencies (contained in 'frequencies')
+  if (CustomOpts::DoSigmaCExport()) {
+    ExportSigmaC(CustomOpts::SigmaCExportFrequencies());
+  }
 }
 
 void GW::CalculateHQP() {
@@ -275,6 +281,28 @@ void GW::CalculateHQP() {
   Eigen::VectorXd diag_backup = _Sigma_c.diagonal();
   _Sigma_c = _sigma->CalcCorrelationOffDiag(_gwa_energies);
   _Sigma_c.diagonal() = diag_backup;
+}
+
+void GW::ExportSigmaC(Eigen::VectorXd frequencies) const {
+  CTP_LOG(ctp::logDEBUG, _log)
+          << ctp::TimeStamp() << " Writing SigmaC log" << std::flush;
+  Eigen::MatrixXd A(frequencies.size(), _qptotal + 1);
+  A << frequencies, CalcCorrelationDiags(frequencies);
+  std::ofstream sigc_log;
+  sigc_log.open("sigmac.log", std::ios_base::trunc);
+  sigc_log << A << std::endl;
+  sigc_log.close();
+}
+
+Eigen::MatrixXd GW::CalcCorrelationDiags(const Eigen::VectorXd& frequencies) const {
+  const int count = frequencies.size();
+  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(count, _qptotal);
+  _sigma->PrepareScreening();
+  for (int i = 0; i < count; i++) {
+    result.row(i) =
+            _sigma->CalcCorrelationDiag(frequencies[i] * Eigen::VectorXd::Ones(_qptotal));
+  }
+  return result;
 }
 
 }  // namespace xtp
