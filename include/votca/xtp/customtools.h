@@ -18,6 +18,7 @@ class CustomOpts {
     bool _gsc_export = false; // Export g self-consistency intermediate results
     double _gsc_alpha = 0.0;
     Eigen::Vector3d _sigc_export; // count, min, max
+    double _sigma_spectral_eta = 1e-4;
   
   public:
     static void Load();
@@ -32,6 +33,7 @@ class CustomOpts {
               _instance._sigc_export[1],
               _instance._sigc_export[2]);
     }
+    static double SigmaSpectralEta() { return _instance._sigma_spectral_eta; }
 };
 
 class GSCLogger {

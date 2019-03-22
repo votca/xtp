@@ -29,6 +29,7 @@ void CustomOpts::Parse(tools::Property& options) {
   _gsc_export = options.ifExistsReturnElseReturnDefault<bool>("customopts.gsc_export", _gsc_export);
   _gsc_alpha = options.ifExistsReturnElseReturnDefault<double>("customopts.gsc_alpha", _gsc_alpha);
   _sigc_export = options.ifExistsReturnElseReturnDefault<Eigen::Vector3d>("customopts.sigc_export", Eigen::Vector3d::Zero());
+  _sigma_spectral_eta = options.ifExistsReturnElseReturnDefault<double>("customopts._sigma_spectral_eta", _sigma_spectral_eta);
 }
 
 void CustomOpts::Report() {
@@ -37,6 +38,7 @@ void CustomOpts::Report() {
   std::cout << std::endl << "GSC Export:  " << _gsc_export;
   std::cout << std::endl << "GSC Alpha:   " << _gsc_alpha;
   std::cout << std::endl << "SigC export: " << _sigc_export.format(fmt);
+  std::cout << std::endl << "Sigma Eta:   " << _sigma_spectral_eta;
 }
 
 /* GSCLogger */
