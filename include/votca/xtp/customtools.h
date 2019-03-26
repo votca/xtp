@@ -7,6 +7,12 @@
 namespace votca {
 namespace xtp {
 
+class CustomTools {
+  public:
+    static void Export(std::string filename, const Eigen::MatrixXd& mat);
+    static void Append(std::string filename, const Eigen::VectorXd& row);
+};
+
 class CustomOpts {
   private:
     static CustomOpts _instance;
@@ -14,10 +20,11 @@ class CustomOpts {
     void Parse(tools::Property& options);
     void Report();
     
-    bool _hedin = false;
-    bool _gsc_export = false; // Export g self-consistency intermediate results
-    double _gsc_alpha = 0.0;
-    Eigen::Vector3d _sigc_export; // count, min, max
+    bool   _hedin              = false;
+    bool   _gsc_export         = false;
+    double _gsc_alpha          = 0.0;
+    int    _sigma_export_range = 0;
+    double _sigma_export_delta = 1.0;
     double _sigma_spectral_eta = 1e-4;
   
   public:
@@ -26,25 +33,9 @@ class CustomOpts {
     static bool Hedin() { return _instance._hedin; }
     static bool GSCExport() { return _instance._gsc_export; }
     static double GSCAlpha() { return _instance._gsc_alpha; }
-    static bool DoSigmaCExport() { return _instance._sigc_export[0] > 0; }
-    static Eigen::VectorXd SigmaCExportFrequencies() {
-      return Eigen::VectorXd::LinSpaced(
-              _instance._sigc_export[0],
-              _instance._sigc_export[1],
-              _instance._sigc_export[2]);
-    }
+    static int SigmaExportRange() { return _instance._sigma_export_range; }
+    static double SigmaExportDelta() { return _instance._sigma_export_delta; }
     static double SigmaSpectralEta() { return _instance._sigma_spectral_eta; }
-};
-
-class GSCLogger {
-  private:
-    static int _size;
-    static void Log(const Eigen::VectorXd& row);
-  
-  public:
-    static void Initialize(int size);
-    static void LogFrequencies(const Eigen::VectorXd& frequencies);
-    static void LogConverged(bool conv);
 };
 
 }

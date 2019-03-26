@@ -98,7 +98,7 @@ class GW {
   Eigen::VectorXd CalcDiagonalEnergies() const;
   bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                  double epsilon) const;
-  Eigen::MatrixXd CalcCorrelationDiags(const Eigen::VectorXd& frequencies) const;
+  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
 };
 }  // namespace xtp
 }  // namespace votca

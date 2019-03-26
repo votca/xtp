@@ -45,7 +45,7 @@ void GW::configure(const options& opt) {
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   if (CustomOpts::GSCExport()) {
-    GSCLogger::Initialize(_qptotal);
+    std::remove("gsc.log");
   }
 }
 
@@ -181,14 +181,14 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
     }
     if (CustomOpts::GSCExport()) {
-      GSCLogger::LogFrequencies(frequencies);
+      CustomTools::Append("gsc.log", frequencies);
     }
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_freq + 1
           << " G iterations." << std::flush;
       if (CustomOpts::GSCExport()) {
-        GSCLogger::LogConverged(true);
+        CustomTools::Append("gsc.log", Eigen::VectorXd::Constant(_qptotal, 1.0));
       }
       break;
     } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
@@ -198,7 +198,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << " G-self-consistency cycle not converged after "
           << _opt.g_sc_max_iterations << " iterations." << std::flush;
       if (CustomOpts::GSCExport()) {
-        GSCLogger::LogConverged(false);
+        CustomTools::Append("gsc.log", Eigen::VectorXd::Constant(_qptotal, 0.0));
       }
       break;
     } else {
@@ -269,10 +269,8 @@ void GW::CalculateGWPerturbation() {
 
   PrintGWA_Energies();
   
-  // TODO: Could be called somewhere else
-  // TODO: Calculate sigmac around the final or initial state frequencies (contained in 'frequencies')
-  if (CustomOpts::DoSigmaCExport()) {
-    ExportSigmaC(CustomOpts::SigmaCExportFrequencies());
+  if (CustomOpts::SigmaExportRange() > 0) {
+    ExportCorrelationDiags(frequencies);
   }
 }
 
@@ -283,26 +281,26 @@ void GW::CalculateHQP() {
   _Sigma_c.diagonal() = diag_backup;
 }
 
-void GW::ExportSigmaC(Eigen::VectorXd frequencies) const {
+void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
+  const int    range = CustomOpts::SigmaExportRange();
+  const double delta = CustomOpts::SigmaExportDelta();
+  const int    size  = 2 * range + 1;
   CTP_LOG(ctp::logDEBUG, _log)
-          << ctp::TimeStamp() << " Writing SigmaC log" << std::flush;
-  Eigen::MatrixXd A(frequencies.size(), _qptotal + 1);
-  A << frequencies, CalcCorrelationDiags(frequencies);
-  std::ofstream sigc_log;
-  sigc_log.open("sigmac.log", std::ios_base::trunc);
-  sigc_log << A << std::endl;
-  sigc_log.close();
-}
-
-Eigen::MatrixXd GW::CalcCorrelationDiags(const Eigen::VectorXd& frequencies) const {
-  const int count = frequencies.size();
-  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(count, _qptotal);
+          << ctp::TimeStamp() << " Writing SigmaC log "
+          << "(" << size << ", " << _qptotal << ")"
+          << std::flush;
+  Eigen::VectorXd offsets = Eigen::VectorXd::LinSpaced(size, -range * delta, range * delta);
+  Eigen::MatrixXd results = Eigen::MatrixXd::Zero(size, _qptotal);
   _sigma->PrepareScreening();
-  for (int i = 0; i < count; i++) {
-    result.row(i) =
-            _sigma->CalcCorrelationDiag(frequencies[i] * Eigen::VectorXd::Ones(_qptotal));
+  for (int i = 0; i < size; i++) {
+    results.row(i) =
+            _sigma->CalcCorrelationDiag(frequencies + Eigen::VectorXd::Constant(_qptotal, offsets[i]));
   }
-  return result;
+  Eigen::MatrixXd table = Eigen::MatrixXd::Zero(size + 1, _qptotal + 1);
+  table.block(0, 1,    1, _qptotal) = frequencies.transpose();
+  table.block(1, 0, size,        1) = offsets;
+  table.block(1, 1, size, _qptotal) = results;
+  CustomTools::Export("sigma_c.txt", table);
 }
 
 }  // namespace xtp
