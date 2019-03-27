@@ -9,8 +9,10 @@ namespace xtp {
 
 class CustomTools {
   public:
-    static void Export(std::string filename, const Eigen::MatrixXd& mat);
-    static void Append(std::string filename, const Eigen::VectorXd& row);
+    // TODO: How could I merge ExportMat and ExportVec?
+    static void ExportMat(std::string filename, const Eigen::MatrixXd& mat);
+    static void ExportVec(std::string filename, const Eigen::VectorXd& vec);
+    static void AppendRow(std::string filename, const Eigen::VectorXd& row);
 };
 
 class CustomOpts {
@@ -20,12 +22,13 @@ class CustomOpts {
     void Parse(tools::Property& options);
     void Report();
     
-    bool   _hedin              = false;
-    bool   _gsc_export         = false;
-    double _gsc_alpha          = 0.0;
-    int    _sigma_export_range = 0;
-    double _sigma_export_delta = 1.0;
-    double _sigma_spectral_eta = 1e-4;
+    bool   _hedin               = false;
+    bool   _gsc_export          = false;
+    double _gsc_alpha           = 0.0;
+    int    _sigma_export_range  = 0;
+    double _sigma_export_delta  = 1.0;
+    double _sigma_spectral_eta  = 1e-4;
+    bool   _rpa_spectrum_export = false;
   
   public:
     static void Load();
@@ -36,6 +39,7 @@ class CustomOpts {
     static int SigmaExportRange() { return _instance._sigma_export_range; }
     static double SigmaExportDelta() { return _instance._sigma_export_delta; }
     static double SigmaSpectralEta() { return _instance._sigma_spectral_eta; }
+    static double RPASpectrumExport() { return _instance._rpa_spectrum_export; }
 };
 
 }

@@ -181,14 +181,14 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
     }
     if (CustomOpts::GSCExport()) {
-      CustomTools::Append("gsc.log", frequencies);
+      CustomTools::AppendRow("gsc.log", frequencies);
     }
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_freq + 1
           << " G iterations." << std::flush;
       if (CustomOpts::GSCExport()) {
-        CustomTools::Append("gsc.log", Eigen::VectorXd::Constant(_qptotal, 1.0));
+        CustomTools::AppendRow("gsc.log", Eigen::VectorXd::Constant(_qptotal, 1.0));
       }
       break;
     } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
@@ -198,7 +198,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << " G-self-consistency cycle not converged after "
           << _opt.g_sc_max_iterations << " iterations." << std::flush;
       if (CustomOpts::GSCExport()) {
-        CustomTools::Append("gsc.log", Eigen::VectorXd::Constant(_qptotal, 0.0));
+        CustomTools::AppendRow("gsc.log", Eigen::VectorXd::Constant(_qptotal, 0.0));
       }
       break;
     } else {
@@ -300,7 +300,7 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
   table.block(0, 1,    1, _qptotal) = frequencies.transpose();
   table.block(1, 0, size,        1) = offsets;
   table.block(1, 1, size, _qptotal) = results;
-  CustomTools::Export("sigma_c.txt", table);
+  CustomTools::ExportMat("sigma_c.txt", table);
 }
 
 }  // namespace xtp

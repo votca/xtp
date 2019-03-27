@@ -21,6 +21,7 @@
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/rpa.h>
 #include "votca/xtp/vc2index.h"
+#include "votca/xtp/customtools.h"
 
 using std::flush;
 
@@ -152,6 +153,10 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
       
       // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
+      
+      if (CustomOpts::RPASpectrumExport()) {
+        CustomTools::ExportVec("rpa_spectral.txt", es.eigenvalues());
+      }
       
       double minEigenvalue = es.eigenvalues().minCoeff();
       if (minEigenvalue <= 0.0) {

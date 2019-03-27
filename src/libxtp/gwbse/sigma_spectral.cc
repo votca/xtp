@@ -32,7 +32,6 @@ namespace votca {
       // Cache residues
       const int numeigenvalues = _EigenSol._Omega.size();
       _residues.resize(numeigenvalues);
-      #pragma omp parallel for
       for (int s = 0; s < numeigenvalues; s++) {
         _residues[s] = CalcResidues(s);
       }
@@ -47,7 +46,6 @@ namespace votca {
 
       if (_HedinApprox) {
         
-        #pragma omp parallel for
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
@@ -59,7 +57,6 @@ namespace votca {
 
       } else {
 
-        #pragma omp parallel for
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
@@ -80,7 +77,6 @@ namespace votca {
       
       if (_HedinApprox) {
 
-        #pragma omp parallel for
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
@@ -96,7 +92,6 @@ namespace votca {
 
       } else {
 
-        #pragma omp parallel for
         for (int s = 0; s < numeigenvalues; s++) {
           double omega = _EigenSol._Omega(s);
           const Eigen::MatrixXd& residues = _residues[s];
