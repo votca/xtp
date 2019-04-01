@@ -151,7 +151,7 @@ namespace votca {
       B12.segment(0, n_occup) += omega;
       B12.segment(n_occup, n_unocc) -= omega;
       const Eigen::ArrayXd numer = A12.array() * B12;
-      const Eigen::ArrayXd denom = B12.abs2() + eta * eta;
+      const Eigen::ArrayXd denom = B12.abs2() + eta;
       return (numer / denom).sum();
     }
 
