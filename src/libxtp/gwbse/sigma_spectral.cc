@@ -32,7 +32,7 @@ namespace votca {
       // Cache residues
       const int numeigenvalues = _EigenSol._Omega.size();
       _residues.resize(numeigenvalues);
-      // TODO: Parallelize
+      #pragma omp parallel for
       for (int s = 0; s < numeigenvalues; s++) {
         _residues[s] = CalcResidues(s);
       }
@@ -47,27 +47,29 @@ namespace votca {
 
       if (_HedinApprox) {
         
-        // TODO: Change order: (n, s), parallelize
-        for (int s = 0; s < numeigenvalues; s++) {
-          double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
-          for (int n = 0; n < _qptotal; n++) {
-            Eigen::VectorXd rn_x_rn = residues.col(n).cwiseAbs2();
-            result(n) += Equation48(rn_x_rn, omega);
-          } // Energy level m
-        } // Eigenvalues/poles s
+        #pragma omp parallel for
+        for (int n = 0; n < _qptotal; n++) {
+          double res = 0.0;
+          for (int s = 0; s < numeigenvalues; s++) {
+            Eigen::VectorXd rn_x_rn = _residues[s].col(n).cwiseAbs2();
+            double omega = _EigenSol._Omega(s);
+            res += Equation48(rn_x_rn, omega);
+          } // Eigenvalues/poles s
+          result(n) = res;
+        } // Energy level n
 
       } else {
-
-        // TODO: Change order: (n, s), parallelize
-        for (int s = 0; s < numeigenvalues; s++) {
-          double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
-          for (int n = 0; n < _qptotal; n++) {
-            Eigen::VectorXd rn_x_rn = residues.col(n).cwiseAbs2();
-            result(n) += Equation47(rn_x_rn, omega, frequencies(n));
-          } // Energy level m
-        } // Eigenvalues/poles s
+        
+        #pragma omp parallel for
+        for (int n = 0; n < _qptotal; n++) {
+          double res = 0.0;
+          for (int s = 0; s < numeigenvalues; s++) {
+            Eigen::VectorXd rn_x_rn = _residues[s].col(n).cwiseAbs2();
+            double omega = _EigenSol._Omega(s);
+            res += Equation47(rn_x_rn, omega, frequencies(n));
+          } // Eigenvalues/poles s
+          result(n) = res;
+        } // Energy level n
 
       }
       
@@ -79,39 +81,40 @@ namespace votca {
       Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
       
       if (_HedinApprox) {
-
-        // TODO: Change order: (m*n, s), parallelize
-        for (int s = 0; s < numeigenvalues; s++) {
-          double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
-          for (int m = 0; m < _qptotal; m++) {
-            for (int n = m + 1; n < _qptotal; n++) {
+        
+        #pragma omp parallel for
+        for (int m = 0; m < _qptotal; m++) {
+          for (int n = m + 1; n < _qptotal; n++) {
+            double res = 0.0;
+            for (int s = 0; s < numeigenvalues; s++) {
+              const Eigen::MatrixXd& residues = _residues[s];
               Eigen::VectorXd rm_x_rn = residues.col(m).cwiseProduct(residues.col(n));
-              double res = Equation48(rm_x_rn, omega);
-              result(m, n) += res;
-              result(n, m) += res;
-            } // Energy level n
-          } // Energy level m
-        } // Eigenvalues/poles s
+              double omega = _EigenSol._Omega(s);
+              res += Equation48(rm_x_rn, omega);
+            } // Eigenvalues/poles s
+            result(m, n) = res;
+            result(n, m) = res;
+          } // Energy level n
+        } // Energy level m
 
       } else {
-
-        // TODO: Change order: (m*n, s), parallelize
-        for (int s = 0; s < numeigenvalues; s++) {
-          double omega = _EigenSol._Omega(s);
-          const Eigen::MatrixXd& residues = _residues[s];
-          for (int m = 0; m < _qptotal; m++) {
-            for (int n = m + 1; n < _qptotal; n++) {
+        
+        #pragma omp parallel for
+        for (int m = 0; m < _qptotal; m++) {
+          for (int n = m + 1; n < _qptotal; n++) {
+            double res = 0.0;
+            for (int s = 0; s < numeigenvalues; s++) {
+              const Eigen::MatrixXd& residues = _residues[s];
               Eigen::VectorXd rm_x_rn = residues.col(m).cwiseProduct(residues.col(n));
-              double result_m = Equation47(rm_x_rn, omega, frequencies(m));
-              double result_n = Equation47(rm_x_rn, omega, frequencies(n));
-              // (m|S(w)|n) = 0.5 * (m|S(e_m)|n) + 0.5 * (m|S(e_n)|n)
-              double res = 0.5 * (result_m + result_n);
-              result(m, n) += res;
-              result(n, m) += res;
-            } // Energy level n
-          } // Energy level m
-        } // Eigenvalues/poles s
+              double omega = _EigenSol._Omega(s);
+              double res_m = Equation47(rm_x_rn, omega, frequencies(m));
+              double res_n = Equation47(rm_x_rn, omega, frequencies(n));
+              res += 0.5 * (res_m + res_n);
+            } // Eigenvalues/poles s
+            result(m, n) = res;
+            result(n, m) = res;
+          } // Energy level n
+        } // Energy level m
 
       }
 
