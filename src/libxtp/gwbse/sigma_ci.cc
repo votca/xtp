@@ -50,7 +50,7 @@ namespace votca {
         for (int k = 0; k < _opt.homo - _opt.rpamin; ++k) {
             //making sure the M tensor is double-valued
             #if (GWBSE_DOUBLE)
-            const Eigen::MatrixXd& MMatrix = _Mmn[k];
+            const Eigen::MatrixXd& MMx = _Mmn[k];
             #else
             const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
             #endif
@@ -126,7 +126,7 @@ namespace votca {
         // loop over occupied levels
         for ( int k = 0 ; k < _opt.homo - _opt.rpamin + 1 ; ++k ){
             #if (GWBSE_DOUBLE)
-            const Eigen::MatrixXd& MMatrix = _Mmn[k];
+            const Eigen::MatrixXd& MMx = _Mmn[k];
             #else
             const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();       
             #endif
@@ -144,7 +144,7 @@ namespace votca {
         // loop over empty levels
         for ( int k = _opt.homo - _opt.rpamin +1 ; k < DFTsize ; ++k ){
             #if (GWBSE_DOUBLE)
-            const Eigen::MatrixXd& MMatrix = _Mmn[k];
+            const Eigen::MatrixXd& MMx = _Mmn[k];
             #else
             const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();       
             #endif

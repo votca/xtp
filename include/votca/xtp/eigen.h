@@ -1,4 +1,4 @@
-/* 
+/*
  *            Copyright 2009-2018 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
@@ -18,7 +18,7 @@
  */
 
 #ifndef __XTP_EIGEN__H
-#define	__XTP_EIGEN__H
+#define __XTP_EIGEN__H
 #include <votca/tools/eigen.h>
 #include <votca/xtp/votca_config.h>
 #if (GWBSE_DOUBLE)
@@ -28,19 +28,13 @@
 #endif
 
 #define _GLIBCXX_DEBUG
-
 namespace votca {
-    namespace xtp {
-      
- typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, Eigen::Dynamic> MatrixXfd;
- typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, 1> VectorXfd;
+namespace xtp {
 
+typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, Eigen::Dynamic> MatrixXfd;
+typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, 1> VectorXfd;
 
-    }}
+}  // namespace xtp
+}  // namespace votca
 
-
-
-
-
-#endif	/*XTP_EIGEN__H */
-
+#endif /*XTP_EIGEN__H */

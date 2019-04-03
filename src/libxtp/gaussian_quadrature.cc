@@ -98,7 +98,7 @@ namespace votca {
                         }
                 //We make sure the M tensor is double-valued
                     #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
                     #else
                         const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
                     #endif
@@ -127,7 +127,7 @@ namespace votca {
                             }
                         }
                     #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
                     #else
                         const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
                     #endif
@@ -152,7 +152,7 @@ namespace votca {
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
                     #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
                     #else
                         const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
                     #endif
@@ -179,7 +179,7 @@ namespace votca {
                 Eigen::MatrixXd ResFreqs =
                     Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
                     #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMatrix = _Mmn[ k ];
+                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
                     #else
                         const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
                     #endif
