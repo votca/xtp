@@ -52,157 +52,138 @@ namespace votca {
     //matrix in a matrix vector
     std::vector<Eigen::MatrixXd> GaussianQuadrature::CalcDielInvVector(const RPA& rpa)const{
         std::vector<Eigen::MatrixXd> result;
-        for ( int i = 0 ; i < _opt.order ; i++ ) {
-            result.push_back(rpa.calculate_epsilon_i(_quadpoints(i)).inverse());
+        for ( int j = 0 ; j < _opt.order ; j++ ) {
+            //std::cd omega = 0;
+            //omega.real() = 0;
+            //omega.imag() = _quadpoints(j);
+            double omega = _quadpoints(j);
+            result.push_back(rpa.calculate_epsilon_i(omega).inverse());
             }
         return result;
         }
 
-    //This function returns the sum of the matrix vector minus the identity
-    Eigen::MatrixXd GaussianQuadrature::SumDielInvMinId(const RPA& rpa)const{
-        Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_Mmn.auxsize(),_Mmn.auxsize());
-        std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
-            for (int k = 0 ; k < _opt.order ; ++k){
-                result += DielInvVector[k];
+        Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(const Eigen::VectorXd&
+        frequencies, const RPA& rpa)const{    
+        Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
+        const std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
+        Eigen::VectorXd AdapWeights = AdaptedWeights();
+        double eta = rpa.getEta();//=1e-4
+        int rpatotal = _energies.size();
+        int auxsize = _Mmn.auxsize();
+        for (int m = 0; m < _opt.qptotal; ++m) {
+                    #if (GWBSE_DOUBLE)
+                        const Eigen::MatrixXd& Imx = _Mmn[m];
+                    #else
+                        const Eigen::MatrixXd Imx = _Mmn[m].cast<double>();
+                    #endif
+            Eigen::VectorXd DeltaE = frequencies(m) - _energies.array();
+            Eigen::VectorXd DeltaESq = (DeltaE.array()).square();
+            for (int j = 0; j < _opt.order; ++j) {
+                Eigen::MatrixXd Amx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Bmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Pmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Qmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd RealDielMxInv = Eigen::MatrixXd::Zero(auxsize,auxsize);
+                RealDielMxInv = (DielInvVector[j]).real();
+                Eigen::MatrixXd ImagDielMxInv = Eigen::MatrixXd::Zero(auxsize,auxsize);
+                ImagDielMxInv = (DielInvVector[j]).imag();
+                Pmx = Imx * RealDielMxInv - Imx;
+                Qmx = Imx * ImagDielMxInv;
+                for (int mu = 0; mu < auxsize; ++mu) {
+                    for (int i = 0; i < _opt.homo-_opt.rpamin+1; ++i) {
+                        Amx(i,mu)=DeltaE(i)*Imx(i,mu)/(DeltaESq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                        Bmx(i,mu)=(eta-_quadpoints(j))*Imx(i,mu)/(DeltaESq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                    }
+                    for (int i = _opt.homo-_opt.rpamin+1; i < rpatotal; ++i) {
+                        Amx(i,mu)=DeltaE(i)*Imx(i,mu)/(DeltaESq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                        Bmx(i,mu)=(-1)*(eta+_quadpoints(j))*Imx(i,mu)/(DeltaESq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                    }
                 }
-        result -= Eigen::MatrixXd::Identity(_Mmn.auxsize(),_Mmn.auxsize());
+                result(m)+=AdapWeights(j)*((Pmx.cwiseProduct(Amx)+Qmx.cwiseProduct(Bmx)).sum());
+            }
+        }
+        result /= (-2*M_PI);
         return result;
-    }
+        }
+       
     
     Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd&
         frequencies, const RPA& rpa)const{
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal,_opt.qptotal);
-        Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
+        const std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
         Eigen::VectorXd AdapWeights = AdaptedWeights();
-        const double eta = rpa.getEta();
-        //For occupied states, where the RPA energies are negative, we take the 
-        //indices that correspond to the DFT/RPA energies being negative (where
-        //the indices are between 1 and HOMO): this results in a shift of QPmin
-        //to the left for the frequencies
-            for (int k = 0; k < _opt.homo - _opt.qpmin + _opt.rpamin; ++k) {
-                //Now, we fill the k'th matrix in the adapted frequency tensor
-                Eigen::MatrixXd ResFreqs = Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
-                //We temporarily move to arrays for component-wise operations
-                Eigen::VectorXd DeltaE = frequencies.array() - _energies(k);
-                Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                //the imaginary perturbation is positive for occupied states
-                Eigen::VectorXd QuadPointsPlusEta = _quadpoints.array()+eta;
-                Eigen::VectorXd QuadPointsPlusEtaSq = QuadPointsPlusEta.cwiseAbs2();
-                //We cannot do a component-wise operation now, because we deal
-                //with different dimensions for j and m in the matrix
-                for (int m = 0; m < _opt.qptotal; ++m) {
-                        for (int j = 0; j < _opt.order; ++j) {
-                            ResFreqs(j, m) =
-                                QuadPointsPlusEta(j) / (DeltaESq(m) + QuadPointsPlusEtaSq(j));
-                            }
-                        }
-                //We make sure the M tensor is double-valued
-                    #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
+        double eta = rpa.getEta();//=1e-4
+        int rpatotal = _energies.size();
+        int auxsize = _Mmn.auxsize();
+        for (int m = 0; m < _opt.qptotal; ++m) {
+            #if (GWBSE_DOUBLE)
+                        const Eigen::MatrixXd& Imxm = _Mmn[m];
                     #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
+                        const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
                     #endif
-                //We now pre-compute one matrix product
-                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
-                //Now, we can add the resulting matrices to the result
-                result +=
-                    (AdapWeights.transpose() * ResFreqs).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose());
-                result +=
-                    (MMxXSumInvMinId * MMx.transpose()) * 
-                    (AdapWeights.transpose() * ResFreqs).asDiagonal();
-                }
-        //Now, we handle the indices for the unoccupied states similarly
-                    for (int k = _opt.homo - _opt.qpmin + _opt.rpamin; k < _opt.qptotal; ++k) {
-                Eigen::MatrixXd ResFreqs =
-                    Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
-                Eigen::VectorXd DeltaE = frequencies.array() - _energies(k);
-                Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                Eigen::VectorXd QuadPointsMinusEta = _quadpoints.array() - eta;
-                Eigen::VectorXd QuadPointsMinusEtaSq = QuadPointsMinusEta.cwiseAbs2();
-                    for (int m = 0; m < _opt.qptotal; ++m) {
-                        for (int j = 0; j < _opt.order; ++j) {
-                            ResFreqs(j, m) =
-                                QuadPointsMinusEta(j) / (DeltaESq(m) + QuadPointsMinusEtaSq(j));
-                            }
-                        }
+            for (int n = 0; n < m ; ++n) {
                     #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
+                        const Eigen::MatrixXd& Imxn = _Mmn[n];
                     #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
+                        const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
                     #endif
-                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
-                result +=
-                    (AdapWeights.transpose() * ResFreqs).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose());
-                result +=
-                    (MMxXSumInvMinId * MMx.transpose()) * 
-                    (AdapWeights.transpose() * ResFreqs).asDiagonal();    
+            Eigen::VectorXd DeltaEm = frequencies(m) - _energies.array();
+            Eigen::VectorXd DeltaEn = frequencies(n) - _energies.array();
+            Eigen::VectorXd DeltaEmSq = (DeltaEm.array()).square();
+            Eigen::VectorXd DeltaEnSq = (DeltaEn.array()).square();
+            for (int j = 0; j < _opt.order; ++j) {
+                Eigen::MatrixXd Amxm = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Amxn = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Bmxm = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Bmxn = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Pmxm = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Pmxn = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Qmxm = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd Qmxn = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+                Eigen::MatrixXd RealDielMxInv = Eigen::MatrixXd::Zero(auxsize,auxsize);
+                RealDielMxInv = (DielInvVector[j]).real();
+                Eigen::MatrixXd ImagDielMxInv = Eigen::MatrixXd::Zero(auxsize,auxsize);
+                ImagDielMxInv = (DielInvVector[j]).imag();
+                Pmxm = Imxm * RealDielMxInv - Imxm;
+                Pmxn = Imxn * RealDielMxInv - Imxn;
+                Qmxm = Imxm * ImagDielMxInv;
+                Qmxn = Imxn * ImagDielMxInv;
+                for (int mu = 0; mu < auxsize; ++mu) {
+                    for (int i = 0; i < _opt.homo-_opt.rpamin+1; ++i) {
+                        Amxm(i,mu)=DeltaEm(i)*Imxm(i,mu)/(DeltaEmSq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                        Amxn(i,mu)=DeltaEn(i)*Imxn(i,mu)/(DeltaEnSq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                        Bmxm(i,mu)=(eta-_quadpoints(j))*Imxm(i,mu)/(DeltaEmSq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                        Bmxn(i,mu)=(eta-_quadpoints(j))*Imxn(i,mu)/(DeltaEnSq(i)
+                                +std::pow(_quadpoints(j)-eta,2));
+                    }
+                    for (int i = _opt.homo-_opt.rpamin+1; i < rpatotal-1; ++i) {
+                        Amxm(i,mu)=DeltaEm(i)*Imxm(i,mu)/(DeltaEmSq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                        Amxn(i,mu)=DeltaEn(i)*Imxn(i,mu)/(DeltaEnSq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                        Bmxm(i,mu)=(-1)*(eta+_quadpoints(j))*Imxm(i,mu)/(DeltaEmSq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                        Bmxn(i,mu)=(-1)*(eta+_quadpoints(j))*Imxn(i,mu)/(DeltaEnSq(i)
+                                +std::pow(_quadpoints(j)+eta,2));
+                    }
                 }
-        return 0.5*result;
+                result(m,n)+=AdapWeights(j)*((Pmxn.cwiseProduct(Amxm)+Pmxm.cwiseProduct(Amxn)
+                        +Qmxn.cwiseProduct(Bmxm)+Qmxm.cwiseProduct(Bmxn)).sum());
+            }
         }
-        
-    Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(const Eigen::VectorXd&
-        frequencies, const RPA& rpa)const{    
-        Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
-        Eigen::VectorXd AdapWeights = AdaptedWeights();
-        Eigen::MatrixXd SummedDielInvMinId = SumDielInvMinId(rpa);
-        const double eta = rpa.getEta();
-        for (int k = 0; k < _opt.homo - _opt.qpmin + _opt.rpamin +1; ++k) {
-                Eigen::MatrixXd ResFreqs =
-                    Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
-                    #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
-                    #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
-                    #endif
-                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
-                    for (int m = 0; m < _opt.qptotal; ++m) {
-                        for (int j = 0; j < _opt.order; ++j) {
-                            Eigen::VectorXd DeltaE =
-                                frequencies.array() - _energies(k);
-                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                            Eigen::VectorXd QuadPointsPlusEta = 
-                                _quadpoints.array() + eta;
-                            Eigen::VectorXd QuadPointsPlusEtaSq = 
-                                QuadPointsPlusEta.cwiseAbs2();
-                            ResFreqs(j, m) = 
-                                QuadPointsPlusEta(j) / (DeltaESq(m) + QuadPointsPlusEtaSq(j));
-                            }
-                        }
-                //There is a double contribution here, since m = n
-                result += 
-                    ((AdapWeights.transpose() * ResFreqs).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose())).diagonal();
-                }
-                    for (int k = _opt.homo - _opt.qpmin + _opt.rpamin +1; k < _opt.qptotal; ++k) {
-                Eigen::MatrixXd ResFreqs =
-                    Eigen::MatrixXd::Zero(_opt.order, _opt.qptotal);
-                    #if (GWBSE_DOUBLE)
-                        const Eigen::MatrixXd& MMx = _Mmn[ k ];
-                    #else
-                        const Eigen::MatrixXd MMx = _Mmn[k].cast<double>();
-                    #endif
-                Eigen::MatrixXd MMxXSumInvMinId = MMx * SummedDielInvMinId;
-                    for (int m = 0; m < _opt.qptotal; ++m) {
-                        for (int j = 0; j < _opt.order; ++j) {
-                            Eigen::VectorXd DeltaE =
-                                frequencies.array() - _energies(k);
-                            Eigen::VectorXd DeltaESq = DeltaE.cwiseAbs2();
-                            Eigen::VectorXd QuadPointsMinusEta = 
-                                _quadpoints.array() - eta;
-                            Eigen::VectorXd QuadPointsMinusEtaSq = 
-                                QuadPointsMinusEta.cwiseAbs2();
-                            ResFreqs(j, m) = 
-                                QuadPointsMinusEta(j) / (DeltaESq(m) + QuadPointsMinusEtaSq(j));
-                            }
-                        }
-                result += 
-                    ((AdapWeights.transpose() * ResFreqs).asDiagonal() * 
-                    (MMxXSumInvMinId * MMx.transpose())).diagonal();
-                }
-        //Because of the double contributions, there is no factor 1/2 here
+        }
+        result+=result.transpose();
+        result /= (-4*M_PI);
+        result.diagonal()=SigmaGQDiag(frequencies,rpa);
         return result;
         }
+
     }
 }

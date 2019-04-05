@@ -22,6 +22,7 @@
 
 #include <votca/xtp/eigen.h>
 #include <iostream>
+#include <complex>
 #include <votca/xtp/rpa.h>
 
 //Computes the contribution from the Gauss-Hermite quadrature to the 
@@ -42,6 +43,7 @@ namespace votca {
                 int qpmin;
                 int homo;
                 int rpamin;
+                int rpamax;
             };
             
             GaussianQuadrature(const Eigen::VectorXd& energies,const TCMatrix_gwbse& Mmn);
@@ -54,7 +56,6 @@ namespace votca {
             Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
                 const RPA& rpa)const;
             
-            
         private:
             
             options _opt;
@@ -64,14 +65,12 @@ namespace votca {
             //matrix in a matrix vector
             std::vector<Eigen::MatrixXd> CalcDielInvVector(const RPA& rpa)const;
             
-            //This function returns the sum of the matrix vector minus the identity
-            Eigen::MatrixXd SumDielInvMinId(const RPA& rpa)const;
-            
             const Eigen::VectorXd& _energies;
             
             const TCMatrix_gwbse& _Mmn;
             Eigen::VectorXd _quadpoints;            
             Eigen::VectorXd _quadweights;
+            
             };
         }
     }
