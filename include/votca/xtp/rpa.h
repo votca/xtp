@@ -20,6 +20,7 @@
 #ifndef _VOTCA_XTP_RPA_H
 #define _VOTCA_XTP_RPA_H
 #include <vector>
+#include <complex>
 #include <votca/xtp/eigen.h>
 
 namespace votca {
@@ -40,7 +41,7 @@ class RPA {
         return _eta;
     }
 
-  Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
+   Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
     return calculate_epsilon<true>(frequency);
   }
 
