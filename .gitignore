@@ -60,6 +60,7 @@ install_manifest.txt
 /netbeans/libxtp/nbproject/Makefile-Release.mk
 /netbeans/libxtp/nbproject/Makefile-Debug.mk
 /netbeans/libxtp/nbproject/configurations.xml
-
+/netbeans/libxtp/nbproject/private/c_standard_headers_indexer.c
+/netbeans/libxtp/nbproject/private/cpp_standard_headers_indexer.cpp
 
 /build
