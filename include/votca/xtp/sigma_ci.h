@@ -40,6 +40,8 @@ class Sigma_CI : public Sigma_base {
  public:
   Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
       : Sigma_base(Mmn, rpa), _gq(rpa.getRPAInputEnergies(), Mmn){};
+      
+      ~Sigma_CI(){};
 
   void PrepareScreening();
 
