@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(ppm_full) {
   Mmn.Fill(aobasis, aobasis, es.eigenvectors());
 
   votca::ctp::Logger log;
-  RPA rpa=RPA(log, Mmn);
+  RPA rpa = RPA(log, Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(es.eigenvalues());
 

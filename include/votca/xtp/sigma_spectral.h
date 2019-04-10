@@ -20,8 +20,8 @@
 #ifndef _VOTCA_XTP_SIGMA_SPECTRAL_H
 #define _VOTCA_XTP_SIGMA_SPECTRAL_H
 
-#include <votca/xtp/sigma_base.h>
 #include <votca/xtp/rpa.h>
+#include <votca/xtp/sigma_base.h>
 
 namespace votca {
 namespace xtp {
@@ -30,44 +30,39 @@ class TCMatrix_gwbse;
 class RPA;
 
 class Sigma_Spectral : public Sigma_base {
-    
-public:
-    
-    Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa)
-        : Sigma_base(Mmn, rpa) {};
-    
-    bool get_HedinApprox() {
-      return _HedinApprox;
-    }
-    void set_HedinApprox(bool value) {
-      _HedinApprox=value;
-    }
 
-    // Sets up the screening parametrisation
-    void PrepareScreening();
-    // Calculates Sigma_c diag elements
-    Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
-    // Calculates Sigma_c offdiag elements
-    Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd& frequencies) const;
+ public:
+  Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa) : Sigma_base(Mmn, rpa){};
 
-private:
-    
-    bool _HedinApprox = false; // Hedin's static approximation
+  bool get_HedinApprox() { return _HedinApprox; }
+  void set_HedinApprox(bool value) { _HedinApprox = value; }
 
-    rpa_eigensolution _EigenSol; // Eigenvalues, eigenvectors from RPA
-    std::vector<Eigen::MatrixXd> _residues; // Residues
+  // Sets up the screening parametrisation
+  void PrepareScreening();
+  // Calculates Sigma_c diag elements
+  Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
+  // Calculates Sigma_c offdiag elements
+  Eigen::MatrixXd CalcCorrelationOffDiag(
+      const Eigen::VectorXd& frequencies) const;
 
-    // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
-    // atoms, molecules, and clusters. Computer Physics Communications 208,
-    // 149–161 (2016).
-    // Eq. 45, 47, 48
-    Eigen::MatrixXd CalcResidues(int s) const;
-    // Note: A12 = residues[m, :] .* residues[n, :]
-    // TODO: Method names, input too vague?
-    double Equation47(const Eigen::VectorXd& A12, double omega, double frequency) const;
-    double Equation48(const Eigen::VectorXd& A12, double omega) const;
+ private:
+  bool _HedinApprox = false;  // Hedin's static approximation
+
+  rpa_eigensolution _EigenSol;             // Eigenvalues, eigenvectors from RPA
+  std::vector<Eigen::MatrixXd> _residues;  // Residues
+
+  // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
+  // atoms, molecules, and clusters. Computer Physics Communications 208,
+  // 149–161 (2016).
+  // Eq. 45, 47, 48
+  Eigen::MatrixXd CalcResidues(int s) const;
+  // Note: A12 = residues[m, :] .* residues[n, :]
+  // TODO: Method names, input too vague?
+  double Equation47(const Eigen::VectorXd& A12, double omega,
+                    double frequency) const;
+  double Equation48(const Eigen::VectorXd& A12, double omega) const;
 };
-}
-}
+}  // namespace xtp
+}  // namespace votca
 
 #endif /* _VOTCA_XTP_SIGMA_SPECTRAL_H */

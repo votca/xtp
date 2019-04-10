@@ -17,8 +17,8 @@
 
 #include "dftgwbse.h"
 #include "votca/xtp/qminterface.h"
-#include <votca/xtp/gwbseengine.h>
 #include <votca/xtp/customtools.h>
+#include <votca/xtp/gwbseengine.h>
 
 using namespace std;
 
@@ -82,7 +82,7 @@ void DftGwBse::Initialize(tools::Property* options) {
 }
 
 bool DftGwBse::Evaluate() {
-  
+
   CustomOpts::Load();
 
   if (_reporting == "silent")

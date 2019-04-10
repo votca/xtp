@@ -68,7 +68,7 @@ class GW {
   // Diagonalize QP particle Hamiltonian
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DiagonalizeQPHamiltonian()
       const;
-  
+
   void ExportSigmaC(Eigen::VectorXd frequencies) const;
 
  private:
