@@ -20,34 +20,31 @@
 #ifndef __VOTCA_XTP_GAUS_HERMITE_QUADRATURE_CONSTANTS_H
 #define __VOTCA_XTP_GAUS_HERMITE_QUADRATURE_CONSTANTS_H
 
-#include <votca/xtp/eigen.h>
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
-    namespace xtp {
+namespace xtp {
 
-        class Gauss_Hermite_Quadrature_Constants {
-        public:
+class Gauss_Hermite_Quadrature_Constants {
+ public:
+  const Eigen::VectorXd &getPoints(int order);
 
-            const Eigen::VectorXd &getPoints(int order);
+  const Eigen::VectorXd &getWeights(int order);
 
-            const Eigen::VectorXd &getWeights(int order);
+ private:
+  bool _filled_Points = false;
+  bool _filled_Weights = false;
 
-        private:
-            
-            bool _filled_Points = false;
-            bool _filled_Weights = false;
-            
-            std::map<int, Eigen::VectorXd> _map_points;
-            std::map<int, Eigen::VectorXd> _map_weights;
-             
-            void FillPoints();
-            void FillWeights();
-        };
-    }
-}
+  std::map<int, Eigen::VectorXd> _map_points;
+  std::map<int, Eigen::VectorXd> _map_weights;
+
+  void FillPoints();
+  void FillWeights();
+};
+}  // namespace xtp
+}  // namespace votca
 
 #endif /* __VOTCA_XTP_GAUS_HERMITE_QUADRATURE_CONSTANTS_H */
-

@@ -17,12 +17,10 @@
  *
  */
 
-
-
-#include <votca/xtp/gw.h>
 #include "votca/xtp/rpa.h"
-#include "votca/xtp/sigma_ppm.h"
 #include "votca/xtp/sigma_ci.h"
+#include "votca/xtp/sigma_ppm.h"
+#include <votca/xtp/gw.h>
 
 namespace votca {
 namespace xtp {
@@ -33,26 +31,22 @@ void GW::configure(const options& opt) {
   _rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
   if (_opt.sigma_integration == "ppm") {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn, _rpa));
+  } else if (_opt.sigma_integration == "ci") {
+    _sigma = std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn, _rpa));
   }
-     else if(_opt.sigma_integration=="ci"){
-         _sigma=std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn,_rpa));
-     }
-  
-   CTP_LOG(ctp::logINFO, _log)
-      << "Using "<<_opt.sigma_integration<< " for Sigma_c."
-      << std::flush;
+
+  CTP_LOG(ctp::logINFO, _log)
+      << "Using " << _opt.sigma_integration << " for Sigma_c." << std::flush;
   Sigma_base::options sigma_opt;
-     sigma_opt.order=_opt.order;
-     sigma_opt.homo=_opt.homo;
-     sigma_opt.qpmax=_opt.qpmax;
-     sigma_opt.qpmin=_opt.qpmin;
-     sigma_opt.rpamin=_opt.rpamin;
-     _sigma->configure(sigma_opt);
-     _Sigma_x=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
-     _Sigma_c=Eigen::MatrixXd::Zero(_qptotal,_qptotal);
-
-
-  }
+  sigma_opt.order = _opt.order;
+  sigma_opt.homo = _opt.homo;
+  sigma_opt.qpmax = _opt.qpmax;
+  sigma_opt.qpmin = _opt.qpmin;
+  sigma_opt.rpamin = _opt.rpamin;
+  _sigma->configure(sigma_opt);
+  _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+  _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+}
 
 double GW::CalcHomoLumoShift() const {
   double DFTgap = _dft_energies(_opt.homo + 1) - _dft_energies(_opt.homo);

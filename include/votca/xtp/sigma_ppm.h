@@ -22,7 +22,6 @@
 #include <votca/xtp/ppm.h>
 #include <votca/xtp/sigma_base.h>
 
-
 namespace votca {
 namespace xtp {
 

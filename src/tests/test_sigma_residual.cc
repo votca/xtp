@@ -17,18 +17,14 @@
 
 #define BOOST_TEST_MODULE sigma_residual_test
 #include <boost/test/unit_test.hpp>
+#include <fstream>
 #include <votca/xtp/sigma.h>
-#include <fstream> 
-
 
 using namespace votca::xtp;
 using namespace std;
 
 BOOST_AUTO_TEST_SUITE(sigma_residual_test)
 
-BOOST_AUTO_TEST_CASE(constructor_test){
-  
-  
- }
-        
+BOOST_AUTO_TEST_CASE(constructor_test) {}
+
 BOOST_AUTO_TEST_SUITE_END()

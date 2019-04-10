@@ -19,8 +19,8 @@
 
 #ifndef _VOTCA_XTP_RPA_H
 #define _VOTCA_XTP_RPA_H
-#include <vector>
 #include <complex>
+#include <vector>
 #include <votca/xtp/eigen.h>
 
 namespace votca {
@@ -36,14 +36,12 @@ class RPA {
     _rpamin = rpamin;
     _rpamax = rpamax;
   }
-    
-    const double& getEta() const{
-        return _eta;
-    }
-    
-   Eigen::MatrixXcd calculate_epsilon(std::complex<double> frequency)const;
 
-   Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
+  const double& getEta() const { return _eta; }
+
+  Eigen::MatrixXcd calculate_epsilon(std::complex<double> frequency) const;
+
+  Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
     return calculate_epsilon<true>(frequency);
   }
 

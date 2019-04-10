@@ -19,45 +19,45 @@
 
 #ifndef _VOTCA_XTP_SIGMA_CI_H
 #define _VOTCA_XTP_SIGMA_CI_H
-#include <votca/xtp/eigen.h>
-#include <votca/xtp/sigma_base.h>
-#include <votca/ctp/logger.h>
 #include <complex>
-#include <votca/xtp/rpa.h>
+#include <votca/ctp/logger.h>
+#include <votca/xtp/eigen.h>
 #include <votca/xtp/gaussian_quadrature.h>
+#include <votca/xtp/rpa.h>
+#include <votca/xtp/sigma_base.h>
 
-//This computes the whole expectation matrix for the correlational part of the
-//self-energy: so, both the residual and the Gauss-Hermite quadrature contribution
+// This computes the whole expectation matrix for the correlational part of the
+// self-energy: so, both the residual and the Gauss-Hermite quadrature
+// contribution
 namespace votca {
-    namespace xtp {
-        
-        class TCMatrix_gwbse;
-        class RPA;
-        
-        class Sigma_CI : public Sigma_base {
-            
-            public:
-            
-            Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa ):Sigma_base(Mmn,rpa),_gq(rpa.getRPAInputEnergies(),Mmn){};
-          
-            void PrepareScreening();
-            
-            Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&frequencies)const;
-            
-            Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&frequencies)const;
-            
-            void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
-            
-            private:
-            
-            GaussianQuadrature _gq;
-            
-            double _eta;
-            
-            };
-    
-            }
-    
-        }
+namespace xtp {
+
+class TCMatrix_gwbse;
+class RPA;
+
+class Sigma_CI : public Sigma_base {
+
+ public:
+  Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
+      : Sigma_base(Mmn, rpa), _gq(rpa.getRPAInputEnergies(), Mmn){};
+
+  void PrepareScreening();
+
+  Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
+
+  Eigen::MatrixXd CalcCorrelationOffDiag(
+      const Eigen::VectorXd& frequencies) const;
+
+  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
+
+ private:
+  GaussianQuadrature _gq;
+
+  double _eta;
+};
+
+}  // namespace xtp
+
+}  // namespace votca
 
 #endif /* _VOTCA_XTP_SIGMA_CI_H */

@@ -39,7 +39,7 @@ class Sigma_base {
     int qpmin;
     int qpmax;
     int rpamin;
-      int order;
+    int order;
   };
 
   void configure(options opt) {
