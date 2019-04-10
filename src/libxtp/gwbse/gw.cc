@@ -37,6 +37,10 @@ void GW::configure(const options& opt) {
      else if(_opt.sigma_integration=="ci"){
          _sigma=std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn,_rpa));
      }
+  
+   CTP_LOG(ctp::logINFO, _log)
+      << "Using "<<_opt.sigma_integration<< " for Sigma_c."
+      << std::flush;
   Sigma_base::options sigma_opt;
      sigma_opt.order=_opt.order;
      sigma_opt.homo=_opt.homo;

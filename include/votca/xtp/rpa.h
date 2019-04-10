@@ -40,6 +40,8 @@ class RPA {
     const double& getEta() const{
         return _eta;
     }
+    
+   Eigen::MatrixXcd calculate_epsilon(std::complex<double> frequency)const;
 
    Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
     return calculate_epsilon<true>(frequency);

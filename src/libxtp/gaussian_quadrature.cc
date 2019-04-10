@@ -50,14 +50,11 @@ namespace votca {
 
     //This function calculates and stores inverses of the microscopic dielectric
     //matrix in a matrix vector
-    std::vector<Eigen::MatrixXd> GaussianQuadrature::CalcDielInvVector(const RPA& rpa)const{
-        std::vector<Eigen::MatrixXd> result;
+    std::vector<Eigen::MatrixXcd> GaussianQuadrature::CalcDielInvVector(const RPA& rpa)const{
+        std::vector<Eigen::MatrixXcd> result;
         for ( int j = 0 ; j < _opt.order ; j++ ) {
-            //std::cd omega = 0;
-            //omega.real() = 0;
-            //omega.imag() = _quadpoints(j);
-            double omega = _quadpoints(j);
-            result.push_back(rpa.calculate_epsilon_i(omega).inverse());
+            std::complex<double> omega(0,_quadpoints(j));
+            result.push_back(rpa.calculate_epsilon(omega).inverse());
             }
         return result;
         }
@@ -65,7 +62,9 @@ namespace votca {
         Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(const Eigen::VectorXd&
         frequencies, const RPA& rpa)const{    
         Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
-        const std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
+        const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
+        Eigen::VectorXd shiftedenergies = _energies.array()-
+                (_energies(_opt.homo-_opt.rpamin)+_energies(_opt.homo-_opt.rpamin+1))/2;
         Eigen::VectorXd AdapWeights = AdaptedWeights();
         double eta = rpa.getEta();//=1e-4
         int rpatotal = _energies.size();
@@ -76,7 +75,7 @@ namespace votca {
                     #else
                         const Eigen::MatrixXd Imx = _Mmn[m].cast<double>();
                     #endif
-            Eigen::VectorXd DeltaE = frequencies(m) - _energies.array();
+            Eigen::VectorXd DeltaE = frequencies(m) - shiftedenergies.array();
             Eigen::VectorXd DeltaESq = (DeltaE.array()).square();
             for (int j = 0; j < _opt.order; ++j) {
                 Eigen::MatrixXd Amx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
@@ -114,7 +113,9 @@ namespace votca {
     Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd&
         frequencies, const RPA& rpa)const{
         Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal,_opt.qptotal);
-        const std::vector<Eigen::MatrixXd> DielInvVector = CalcDielInvVector(rpa);
+        const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
+        Eigen::VectorXd shiftedenergies = _energies.array()-
+                (_energies(_opt.homo-_opt.rpamin)+_energies(_opt.homo-_opt.rpamin+1))/2;
         Eigen::VectorXd AdapWeights = AdaptedWeights();
         double eta = rpa.getEta();//=1e-4
         int rpatotal = _energies.size();
@@ -131,8 +132,8 @@ namespace votca {
                     #else
                         const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
                     #endif
-            Eigen::VectorXd DeltaEm = frequencies(m) - _energies.array();
-            Eigen::VectorXd DeltaEn = frequencies(n) - _energies.array();
+            Eigen::VectorXd DeltaEm = frequencies(m) - shiftedenergies.array();
+            Eigen::VectorXd DeltaEn = frequencies(n) - shiftedenergies.array();
             Eigen::VectorXd DeltaEmSq = (DeltaEm.array()).square();
             Eigen::VectorXd DeltaEnSq = (DeltaEn.array()).square();
             for (int j = 0; j < _opt.order; ++j) {
@@ -184,6 +185,7 @@ namespace votca {
         result.diagonal()=SigmaGQDiag(frequencies,rpa);
         return result;
         }
+
 
     }
 }

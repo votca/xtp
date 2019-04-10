@@ -63,7 +63,7 @@ namespace votca {
             
             //This function calculates and stores inverses of the microscopic dielectric
             //matrix in a matrix vector
-            std::vector<Eigen::MatrixXd> CalcDielInvVector(const RPA& rpa)const;
+            std::vector<Eigen::MatrixXcd> CalcDielInvVector(const RPA& rpa)const;
             
             const Eigen::VectorXd& _energies;
             

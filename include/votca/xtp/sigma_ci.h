@@ -22,7 +22,7 @@
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/sigma_base.h>
 #include <votca/ctp/logger.h>
-
+#include <complex>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/gaussian_quadrature.h>
 
@@ -45,6 +45,8 @@ namespace votca {
             Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd&frequencies)const;
             
             Eigen::MatrixXd CalcCorrelationOffDiag(const Eigen::VectorXd&frequencies)const;
+            
+            void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
             
             private:
             
