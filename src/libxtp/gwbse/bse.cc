@@ -29,7 +29,7 @@ namespace votca {
 namespace xtp {
 
 void BSE::SetupDirectInteractionOperator() {
-  RPA rpa = RPA(_Mmn);
+  RPA rpa = RPA(_log, _Mmn);
   rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
   rpa.UpdateRPAInputEnergies(_orbitals.MOEnergies(), _Hqp.diagonal(),
                              _opt.qpmin);

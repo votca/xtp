@@ -35,7 +35,7 @@ class GW {
         _Mmn(Mmn),
         _vxc(vxc),
         _dft_energies(dft_energies),
-        _rpa(Mmn){};
+        _rpa(log, Mmn){};
 
   struct options {
     int homo;
@@ -70,6 +70,8 @@ class GW {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DiagonalizeQPHamiltonian()
       const;
 
+  void ExportSigmaC(Eigen::VectorXd frequencies) const;
+
  private:
   int _qptotal;
 
@@ -97,6 +99,7 @@ class GW {
   Eigen::VectorXd CalcDiagonalEnergies() const;
   bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                  double epsilon) const;
+  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
 };
 }  // namespace xtp
 }  // namespace votca

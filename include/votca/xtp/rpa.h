@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -21,15 +21,21 @@
 #define _VOTCA_XTP_RPA_H
 #include <complex>
 #include <vector>
+#include <votca/ctp/logger.h>
 #include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
 class TCMatrix_gwbse;
 
+struct rpa_eigensolution {
+  Eigen::VectorXd _Omega;  // Eigenvalues
+  Eigen::MatrixXd _XpY;    // Eigenvector components (X + Y)
+};
+
 class RPA {
  public:
-  RPA(const TCMatrix_gwbse& Mmn) : _Mmn(Mmn){};
+  RPA(ctp::Logger& log, const TCMatrix_gwbse& Mmn) : _log(log), _Mmn(Mmn){};
 
   void configure(int homo, int rpamin, int rpamax) {
     _homo = homo;
@@ -40,6 +46,8 @@ class RPA {
   const double& getEta() const { return _eta; }
 
   Eigen::MatrixXcd calculate_epsilon(std::complex<double> frequency) const;
+
+  rpa_eigensolution calculate_eigenvalues() const;
 
   Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
     return calculate_epsilon<true>(frequency);
@@ -70,6 +78,19 @@ class RPA {
   Eigen::VectorXd _energies;
 
   const TCMatrix_gwbse& _Mmn;
+
+  ctp::Logger& _log;
+
+  // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
+  // atoms, molecules, and clusters. Computer Physics Communications 208,
+  // 149–161 (2016).
+  // Eqs. 36-41
+  Eigen::VectorXd calculate_spectral_AmB() const;
+  Eigen::MatrixXd calculate_spectral_ApB() const;
+  Eigen::MatrixXd calculate_spectral_C(const Eigen::VectorXd& AmB,
+                                       const Eigen::MatrixXd& ApB) const;
+  rpa_eigensolution diag_C(const Eigen::VectorXd& AmB,
+                           const Eigen::MatrixXd& C) const;
 
   template <bool imag>
   Eigen::MatrixXd calculate_epsilon(double frequency) const;

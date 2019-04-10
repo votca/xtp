@@ -40,11 +40,13 @@ class Sigma_base {
     int qpmax;
     int rpamin;
     int order;
+    int rpamax;
   };
 
   void configure(options opt) {
     _opt = opt;
     _qptotal = opt.qpmax - opt.qpmin + 1;
+    _rpatotal = opt.rpamax - opt.rpamin + 1;
   }
 
   // Calculates Full exchange matrix
@@ -65,6 +67,7 @@ class Sigma_base {
   const RPA& _rpa;
 
   int _qptotal;
+  int _rpatotal;
 };
 }  // namespace xtp
 }  // namespace votca

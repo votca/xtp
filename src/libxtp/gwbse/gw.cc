@@ -20,7 +20,9 @@
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_ci.h"
 #include "votca/xtp/sigma_ppm.h"
+#include <votca/xtp/customtools.h>
 #include <votca/xtp/gw.h>
+#include <votca/xtp/sigma_spectral.h>
 
 namespace votca {
 namespace xtp {
@@ -33,6 +35,8 @@ void GW::configure(const options& opt) {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn, _rpa));
   } else if (_opt.sigma_integration == "ci") {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn, _rpa));
+  } else if (_opt.sigma_integration == "exact") {
+    _sigma = std::unique_ptr<Sigma_base>(new Sigma_Spectral(_Mmn, _rpa));
   }
 
   CTP_LOG(ctp::logINFO, _log)
@@ -43,9 +47,13 @@ void GW::configure(const options& opt) {
   sigma_opt.qpmax = _opt.qpmax;
   sigma_opt.qpmin = _opt.qpmin;
   sigma_opt.rpamin = _opt.rpamin;
+  sigma_opt.rpamax = _opt.rpamax;
   _sigma->configure(sigma_opt);
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+  if (CustomOpts::GSCExport()) {
+    std::remove("gsc.log");
+  }
 }
 
 double GW::CalcHomoLumoShift() const {
@@ -179,10 +187,17 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << ctp::TimeStamp() << " G_Iteration:" << i_freq
           << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
     }
+    if (CustomOpts::GSCExport()) {
+      CustomTools::AppendRow("gsc.log", frequencies);
+    }
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_freq + 1
           << " G iterations." << std::flush;
+      if (CustomOpts::GSCExport()) {
+        CustomTools::AppendRow("gsc.log",
+                               Eigen::VectorXd::Constant(_qptotal, 1.0));
+      }
       break;
     } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
                _opt.g_sc_max_iterations > 1) {
@@ -190,9 +205,13 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           << ctp::TimeStamp()
           << " G-self-consistency cycle not converged after "
           << _opt.g_sc_max_iterations << " iterations." << std::flush;
+      if (CustomOpts::GSCExport()) {
+        CustomTools::AppendRow("gsc.log",
+                               Eigen::VectorXd::Constant(_qptotal, 0.0));
+      }
       break;
     } else {
-      double alpha = 0.0;
+      double alpha = CustomOpts::GSCAlpha();
       frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
     }
   }
@@ -252,12 +271,16 @@ void GW::CalculateGWPerturbation() {
           << "      Run continues. Inspect results carefully!" << std::flush;
       break;
     } else {
-      double alpha = 0.0;
+      double alpha = CustomOpts::GSCAlpha();
       rpa_energies = (1 - alpha) * rpa_energies + alpha * rpa_energies_old;
     }
   }
 
   PrintGWA_Energies();
+
+  if (CustomOpts::SigmaExportRange() > 0) {
+    ExportCorrelationDiags(frequencies);
+  }
 }
 
 void GW::CalculateHQP() {
@@ -265,6 +288,28 @@ void GW::CalculateHQP() {
   Eigen::VectorXd diag_backup = _Sigma_c.diagonal();
   _Sigma_c = _sigma->CalcCorrelationOffDiag(_gwa_energies);
   _Sigma_c.diagonal() = diag_backup;
+}
+
+void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
+  const int range = CustomOpts::SigmaExportRange();
+  const double delta = CustomOpts::SigmaExportDelta();
+  const int size = 2 * range + 1;
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Writing SigmaC log "
+      << "(" << size << ", " << _qptotal << ")" << std::flush;
+  Eigen::VectorXd offsets =
+      Eigen::VectorXd::LinSpaced(size, -range * delta, range * delta);
+  Eigen::MatrixXd results = Eigen::MatrixXd::Zero(size, _qptotal);
+  _sigma->PrepareScreening();
+  for (int i = 0; i < size; i++) {
+    results.row(i) = _sigma->CalcCorrelationDiag(
+        frequencies + Eigen::VectorXd::Constant(_qptotal, offsets[i]));
+  }
+  Eigen::MatrixXd table = Eigen::MatrixXd::Zero(size + 1, _qptotal + 1);
+  table.block(0, 1, 1, _qptotal) = frequencies.transpose();
+  table.block(1, 0, size, 1) = offsets;
+  table.block(1, 1, size, _qptotal) = results;
+  CustomTools::ExportMat("sigma_c.txt", table);
 }
 
 }  // namespace xtp

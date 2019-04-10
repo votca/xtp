@@ -17,9 +17,13 @@
  *
  */
 
+#include "votca/xtp/customtools.h"
 #include "votca/xtp/threecenter.h"
+#include "votca/xtp/vc2index.h"
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/rpa.h>
+
+using std::flush;
 
 namespace votca {
 namespace xtp {
@@ -117,6 +121,106 @@ Eigen::MatrixXcd RPA::calculate_epsilon(std::complex<double> frequency) const {
 
 template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency) const;
 template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency) const;
+
+rpa_eigensolution RPA::calculate_eigenvalues() const {
+  Eigen::VectorXd AmB = calculate_spectral_AmB();
+  return diag_C(AmB, calculate_spectral_C(AmB, calculate_spectral_ApB()));
+}
+
+Eigen::VectorXd RPA::calculate_spectral_AmB() const {
+  const int lumo = _homo + 1;
+  const int n_occup = lumo - _rpamin;
+  const int n_unocc = _rpamax - _homo;
+  const int rpasize = n_occup * n_unocc;
+  vc2index vc = vc2index(0, 0, n_unocc);
+  Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
+
+  for (int v = 0; v < n_occup; v++) {
+    int i = vc.I(v, 0);
+    AmB.segment(i, n_unocc) =
+        _energies.segment(n_occup, n_unocc).array() - _energies(v);
+  }  // Occupied MO v
+
+  return AmB;
+}
+
+Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
+  const int lumo = _homo + 1;
+  const int n_occup = lumo - _rpamin;
+  const int n_unocc = _rpamax - _homo;
+  const int rpasize = n_occup * n_unocc;
+  const int auxsize = _Mmn.auxsize();
+  vc2index vc = vc2index(0, 0, n_unocc);
+  Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
+
+  ApB.diagonal() = calculate_spectral_AmB();
+
+  // TODO: cache (A+B)? It's independent of the energy
+  for (int v2 = 0; v2 < n_occup; v2++) {
+    int i2 = vc.I(v2, 0);
+    const Eigen::MatrixXd Mmn_v2T =
+        _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
+    for (int v1 = 0; v1 <= v2; v1++) {
+      int i1 = vc.I(v1, 0);
+      ApB.block(i2, i1, n_unocc, n_unocc) -=
+          2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
+    }  // Occupied MO v1
+  }    // Occupied MO v2
+
+  return ApB;
+}
+
+Eigen::MatrixXd RPA::calculate_spectral_C(const Eigen::VectorXd& AmB,
+                                          const Eigen::MatrixXd& ApB) const {
+  return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
+}
+
+rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
+                              const Eigen::MatrixXd& C) const {
+  const int lumo = _homo + 1;
+  const int n_occup = lumo - _rpamin;
+  const int n_unocc = _rpamax - _homo;
+  const int rpasize = n_occup * n_unocc;
+  rpa_eigensolution sol;
+
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Solving for RPA eigenvalues " << flush;
+
+  // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of
+  // C
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
+
+  if (CustomOpts::RPASpectrumExport()) {
+    CustomTools::ExportVec("rpa_spectral.txt", es.eigenvalues());
+  }
+
+  double minEigenvalue = es.eigenvalues().minCoeff();
+  if (minEigenvalue <= 0.0) {
+    throw std::runtime_error(
+        (boost::format("Detected non-positive eigenvalue: %s") % minEigenvalue)
+            .str());
+  }
+
+  // Note: Omega has to have correct size otherwise MKL does not rescale for
+  // Sqrt
+  sol._Omega = Eigen::VectorXd::Zero(rpasize);
+  sol._Omega = es.eigenvalues().cwiseSqrt();
+  sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
+
+  Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
+  Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
+  Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
+
+  for (int s = 0; s < rpasize; s++) {
+    Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
+    Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
+    const Eigen::VectorXd& z = es.eigenvectors().col(s);
+    sol._XpY.col(s) =
+        0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
+  }
+
+  return sol;
+}
 
 }  // namespace xtp
 }  // namespace votca

@@ -295,6 +295,16 @@ void GWBSE::Initialize(tools::Property& options) {
       key + ".bse_print_weight", _bseopt.min_print_weight);
   // print exciton WF composition weight larger than minimum
 
+  _gwopt.sigma_integration =
+      options.ifExistsReturnElseReturnDefault<std::string>(
+          key + ".sigma_integrator", _gwopt.sigma_integration);
+  CTP_LOG(ctp::logDEBUG, *_pLog)
+      << " Sigma Integration: " << _gwopt.sigma_integration << flush;
+  if (_gwopt.sigma_integration == "exact") {
+    CTP_LOG(ctp::logDEBUG, *_pLog)
+        << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
+  }
+
   // setting some defaults
   _do_qp_diag = false;
   _do_bse_singlets = false;
