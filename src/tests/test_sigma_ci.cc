@@ -23,6 +23,7 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_ci.h>
 #include <votca/xtp/threecenter.h>
+#include <votca/ctp/logger.h>
 
 using namespace votca::xtp;
 using namespace std;
@@ -167,8 +168,8 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   TCMatrix_gwbse Mmn;
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, MOs);
-
-  RPA rpa(Mmn);
+  votca::ctp::Logger log;
+  RPA rpa(log,Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(mo_energy);
 

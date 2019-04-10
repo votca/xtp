@@ -18,6 +18,7 @@
 #define BOOST_TEST_MODULE gaussian_quadrature_test
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <votca/ctp/logger.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/gaussian_quadrature.h>
@@ -125,8 +126,8 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   TCMatrix_gwbse Mmn;
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, es.eigenvectors());
-
-  RPA rpa(Mmn);
+  votca::ctp::Logger log;
+  RPA rpa(log,Mmn);
   rpa.setRPAInputEnergies(es.eigenvalues());
   rpa.configure(4, 0, 17 - 1);
 

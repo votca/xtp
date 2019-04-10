@@ -93,7 +93,7 @@ Eigen::MatrixXcd RPA::calculate_epsilon(std::complex<double> frequency) const {
   const int lumo = _homo + 1;
   const int n_occ = lumo - _rpamin;
   const int n_unocc = _rpamax - lumo + 1;
-  const std::complex<double> ieta(0, _eta);
+  const std::complex<double> ieta(0,_eta);
 #pragma omp parallel for
   for (int m_level = 0; m_level < n_occ; m_level++) {
     const double qp_energy_m = _energies(m_level);
@@ -107,14 +107,13 @@ Eigen::MatrixXcd RPA::calculate_epsilon(std::complex<double> frequency) const {
 #endif
     const Eigen::ArrayXd deltaE =
         _energies.segment(n_occ, n_unocc).array() - qp_energy_m;
-    const Eigen::VectorXcd kernel =
-        -2 * ((frequency - deltaE + 2 * ieta).inverse() -
+    const Eigen::VectorXcd kernel = -2 * ((frequency - deltaE + 2 * ieta).inverse() -
               (frequency + deltaE - 2 * ieta).inverse());
     auto temp = Mmn_RPA.transpose() * kernel.asDiagonal();
     Eigen::MatrixXcd tempresult = temp * Mmn_RPA;
 
 #pragma omp critical
-    { result += tempresult; }
+    { result+= tempresult; }
   }
   return result;
 }

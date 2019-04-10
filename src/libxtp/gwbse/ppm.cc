@@ -26,21 +26,34 @@ namespace xtp {
 void PPM::PPM_construct_parameters(const RPA& rpa) {
 
   // Solve Eigensystem
-  // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(
-  // rpa.calculate_epsilon_r(screening_r));
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(
-      (rpa.calculate_epsilon((screening_r, 0)).real()));
-  /*Eigen::MatrixXd epsr = rpa.calculate_epsilon_r(screening_r);
-Eigen::MatrixXd eps = (rpa.calculate_epsilon((screening_r,0))).real();
+   rpa.calculate_epsilon_r(screening_r));
+  std::complex<double> frequency2 (screening_r,0);
+  //Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(
+  //    (rpa.calculate_epsilon((screening_r, 0)).real()));
+Eigen::MatrixXd epsr = rpa.calculate_epsilon_r(screening_r);
+Eigen::MatrixXd eps = (rpa.calculate_epsilon(frequency2)).real();
 std::cout << " zelfde real eps?" << std::endl;
 std::cout << " epsr(0,0) " << std::endl;
 std::cout << epsr(0,0) << std::endl;
 std::cout << " eps(0,0)" << std::endl;
 std::cout <<  eps(0,0)  << std::endl;
-std::cout << epsr-eps << std::endl;
-//std::cout << epsr.isApprox(eps) << std::endl;
-std::cout << " " << std::endl;*/
+//std::cout << epsr-eps << std::endl;
+std::cout << epsr.isApprox(eps,1e-5) << std::endl;
+std::cout << " " << std::endl;
 
+Eigen::MatrixXd epsi = rpa.calculate_epsilon_i(screening_i);
+std::complex<double> frequency (0,screening_i);
+std::cout << frequency << std::endl;
+Eigen::MatrixXd epsi2 = (rpa.calculate_epsilon(frequency)).real();//screening_i))).real();
+std::cout << " zelfde imag eps?" << std::endl;
+std::cout << epsi.isApprox(epsi2,1e-5) << std::endl;
+std::cout << epsi.isApprox(epsi2,1e-4) << std::endl;
+std::cout << epsi.isApprox(epsi2,1e-3) << std::endl;
+std::cout<< "epsi"<<std::endl;
+std::cout<< epsi<<std::endl;
+std::cout<< "epsi2"<<std::endl;
+std::cout<<epsi2<<std::endl;
   _ppm_phi = es.eigenvectors();
 
   // store PPM weights from eigenvalues
@@ -48,11 +61,11 @@ std::cout << " " << std::endl;*/
 
   // a) phi^t * epsilon(1) * phi e.g. transform epsilon(1) to the same space as
   // epsilon(0)
-  //  Eigen::MatrixXd ortho =      _ppm_phi.transpose() *
-  //  rpa.calculate_epsilon_i(screening_i) * _ppm_phi;
-  Eigen::MatrixXd ortho = _ppm_phi.transpose() *
-                          (rpa.calculate_epsilon((0, screening_i))).real() *
-                          _ppm_phi;
+    Eigen::MatrixXd ortho =      _ppm_phi.transpose() *
+    rpa.calculate_epsilon_i(screening_i) * _ppm_phi;
+  //Eigen::MatrixXd ortho = _ppm_phi.transpose() *
+   //                       (rpa.calculate_epsilon((0, screening_i))).real() *
+   //                       _ppm_phi;
 
   /*std::cout << " zelfde imag eps" << std::endl;
   std::cout <<
