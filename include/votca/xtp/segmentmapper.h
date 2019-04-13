@@ -19,7 +19,7 @@
 #define VOTCA_XTP_SEGMENTMAPPER_H
 
 #include <type_traits>
-#include <votca/csg/pdbwriter.h>
+#include <votca/csg/io/pdbwriter.h>
 #include <votca/tools/property.h>
 #include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/logger.h>
