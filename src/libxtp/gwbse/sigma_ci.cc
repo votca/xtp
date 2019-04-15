@@ -40,8 +40,104 @@ void Sigma_CI::PrepareScreening() {
   _gq.configure(opt);
 }
 
-Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
-    const Eigen::VectorXd& frequencies) const {
+Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) const{
+  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
+  Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
+  const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
+  std::cout << "original energies" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << energies << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "homo for energies" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << _opt.homo - _opt.rpamin << std::endl;
+  const Eigen::VectorXd& shiftedenergies =
+      energies.array() - (energies(_opt.homo - _opt.rpamin) +
+                          energies(_opt.homo - _opt.rpamin + 1)) / 2;
+  std::cout << "" << std::endl;
+  std::cout << "shifted energies" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << shiftedenergies << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "frequencies" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << frequencies << std::endl;
+  int rpatotal = energies.size();
+  int auxsize = _Mmn.auxsize();
+  Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
+  for (int m = 0; m < _qptotal; ++m) {
+      #if (GWBSE_DOUBLE)
+    const Eigen::MatrixXd& Imxm = _Mmn[m];
+#else
+    const Eigen::MatrixXd Imxm= _Mmn[m].cast<double>();
+#endif
+      for (int n = 0; n < _qptotal; ++n) {
+          #if (GWBSE_DOUBLE)
+    const Eigen::MatrixXd& Imxn = _Mmn[n];
+#else
+    const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
+#endif
+    for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+      std::complex<double> omegam(shiftedenergies(i) - frequencies(m), _eta);
+      std::complex<double> omegan(shiftedenergies(i) - frequencies(n), _eta);
+      Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      Eigen::MatrixXcd DielMxInvn = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
+      //std::cout << DielMxInvm.isApprox(_rpa.calculate_epsilon_r(omegam.real()).inverse(), 1) << std::endl;
+      DielMxInvn = _rpa.calculate_epsilon(omegan).inverse();
+      //std::cout << DielMxInvn.isApprox(_rpa.calculate_epsilon_r(omegan.real()).inverse(), 1) << std::endl;
+      if (frequencies(m) < shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m,n) -=
+                Imxm(i, mu) * Imxn(i, nu) * (DielMxInvm(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+      if (frequencies(n) < shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m,n) -=
+                Imxm(i, mu) * Imxn(i, nu) * (DielMxInvn(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+     for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+      std::complex<double> omegam(shiftedenergies(i) - frequencies(m), -_eta);
+      std::complex<double> omegan(shiftedenergies(i) - frequencies(n), -_eta);
+      Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      Eigen::MatrixXcd DielMxInvn = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
+      //std::cout << DielMxInvm.isApprox(_rpa.calculate_epsilon_r(omegam.real()).inverse(), 1) << std::endl;
+      DielMxInvn = _rpa.calculate_epsilon(omegan).inverse();
+      //std::cout << DielMxInvn.isApprox(_rpa.calculate_epsilon_r(omegan.real()).inverse(), 1) << std::endl;
+      if (frequencies(m) > shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m,n) -=
+                Imxm(i, mu) * Imxn(i, nu) * (DielMxInvm(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+      if (frequencies(n) > shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m,n) -=
+                Imxm(i, mu) * Imxn(i, nu) * (DielMxInvn(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+    }
+  }
+    result = complexresult.real();
+    result /= 2;
+return result;
+}
+  
+
+Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
   const Eigen::VectorXd& shiftedenergies =
@@ -50,7 +146,6 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
                              2;
   int rpatotal = energies.size();
   int auxsize = _Mmn.auxsize();
-  Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
   for (int m = 0; m < _qptotal; ++m) {
     Eigen::MatrixXd Rmx = Eigen::MatrixXd::Zero(rpatotal, auxsize);
 #if (GWBSE_DOUBLE)
@@ -59,56 +154,43 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
     const Eigen::MatrixXd Imx = _Mmn[m].cast<double>();
 #endif
     for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-      std::complex<double> omega(shiftedenergies(i) - frequencies(m), -_eta);
-      Eigen::MatrixXd DielMxInv = Eigen::MatrixXd::Zero(auxsize, auxsize);
-      Eigen::MatrixXcd DielMxInvC = _rpa.calculate_epsilon(omega).inverse();
-      DielMxInv = DielMxInvC.real();
-      Eigen::MatrixXd Jmx = Eigen::MatrixXd::Zero(rpatotal, auxsize);
-      for (int mu = 0; mu < auxsize; ++mu) {
-        for (int nu = 0; nu < auxsize; ++nu) {
-          if (frequencies(m) < shiftedenergies(i)) {
-            result(m) -=
-                Imx(i, mu) * Imx(i, nu) * (DielMxInv(mu, nu) - Id(mu, nu));
-          }
-        }
-      }
-      /*if ( frequencies(m) < shiftedenergies(i) ){
-          for ( int mu = 0; mu < auxsize; mu++ ){
-              Jmx(i,mu) = Imx(i,mu);
-         }
-      }
-      Eigen::MatrixXd JmxTimesDielMxInvmx =
-      Eigen::MatrixXd::Zero(rpatotal,auxsize); JmxTimesDielMxInvmx = Jmx *
-      DielMxInv; for ( int mu = 0; mu < auxsize; mu++ ){ Rmx(i,mu) =
-      JmxTimesDielMxInvmx(i,mu)-Jmx(i,mu); result(m)-= Rmx(i,mu)*Imx(i,mu);
-      }*/
-    }
-    for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
       std::complex<double> omega(shiftedenergies(i) - frequencies(m), _eta);
       Eigen::MatrixXd DielMxInv = Eigen::MatrixXd::Zero(auxsize, auxsize);
       Eigen::MatrixXcd DielMxInvC = _rpa.calculate_epsilon(omega).inverse();
       DielMxInv = DielMxInvC.real();
       Eigen::MatrixXd Jmx = Eigen::MatrixXd::Zero(rpatotal, auxsize);
-      for (int mu = 0; mu < auxsize; ++mu) {
-        for (int nu = 0; nu < auxsize; ++nu) {
-          if (frequencies(m) > shiftedenergies(i)) {
-            result(m) -=
-                Imx(i, mu) * Imx(i, nu) * (DielMxInv(mu, nu) - Id(mu, nu));
-          }
-        }
+      if ( frequencies(m) < shiftedenergies(i) ){
+          for ( int mu = 0; mu < auxsize; mu++ ){
+              Jmx(i,mu) = Imx(i,mu);
+         }
       }
-      /*if ( frequencies(m) > shiftedenergies(i) ){
+      Eigen::MatrixXd JmxTimesDielMxInvmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      JmxTimesDielMxInvmx = Jmx * DielMxInv;
+      for ( int mu = 0; mu < auxsize; mu++ ){
+          Rmx(i,mu) = JmxTimesDielMxInvmx(i,mu)-Jmx(i,mu);
+          result(m)-= Rmx(i,mu)*Imx(i,mu);
+      }
+    }
+    for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+      std::complex<double> omega(shiftedenergies(i) - frequencies(m), -_eta);
+      Eigen::MatrixXd DielMxInv = Eigen::MatrixXd::Zero(auxsize, auxsize);
+      Eigen::MatrixXcd DielMxInvC = _rpa.calculate_epsilon(omega).inverse();
+      DielMxInv = DielMxInvC.real();
+      Eigen::MatrixXd Jmx = Eigen::MatrixXd::Zero(rpatotal, auxsize);
+      if ( frequencies(m) > shiftedenergies(i) ){
           for ( int mu = 0; mu < auxsize; mu++ ){
               Jmx(i,mu) = Imx(i,mu);
          }
       }
       Eigen::MatrixXd JmxTimesDielMxInvmx =
-      Eigen::MatrixXd::Zero(rpatotal,auxsize); JmxTimesDielMxInvmx = Jmx *
-      DielMxInv; for ( int mu = 0; mu < auxsize; mu++ ){ Rmx(i,mu) =
-      JmxTimesDielMxInvmx(i,mu)-Jmx(i,mu); result(m)-=Rmx(i,mu)*Imx(i,mu);
-      }*/
+      Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      JmxTimesDielMxInvmx = Jmx * DielMxInv;
+      for ( int mu = 0; mu < auxsize; mu++ ){
+          Rmx(i,mu) = JmxTimesDielMxInvmx(i,mu)-Jmx(i,mu);
+          result(m)-=Rmx(i,mu)*Imx(i,mu);
+      }
     }
-    // result(m) = -(Rmx.cwiseProduct(Imx)).sum();
+    result(m) = -(Rmx.cwiseProduct(Imx)).sum();
   }
   result += _gq.SigmaGQDiag(frequencies, _rpa);
   return result;
@@ -141,8 +223,7 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
   const Eigen::VectorXd& shiftedenergies =
       energies.array() - (energies(_opt.homo - _opt.rpamin) +
-                          energies(_opt.homo - _opt.rpamin + 1)) /
-                             2;
+                          energies(_opt.homo - _opt.rpamin + 1)) / 2;
   int rpatotal = energies.size();
   int auxsize = _Mmn.auxsize();
   for (int m = 0; m < _qptotal; ++m) {
@@ -160,8 +241,8 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
       const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
 #endif
       for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-        std::complex<double> omegam(shiftedenergies(i) - frequencies(m), -_eta);
-        std::complex<double> omegan(shiftedenergies(i) - frequencies(n), -_eta);
+        std::complex<double> omegam(shiftedenergies(i) - frequencies(m), _eta);
+        std::complex<double> omegan(shiftedenergies(i) - frequencies(n), _eta);
         Eigen::MatrixXd DielMxInvm = Eigen::MatrixXd::Zero(auxsize, auxsize);
         Eigen::MatrixXd DielMxInvn = Eigen::MatrixXd::Zero(auxsize, auxsize);
         Eigen::MatrixXcd DielMxInvmC = _rpa.calculate_epsilon(omegam).inverse();
@@ -180,14 +261,18 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
             Jmxn(i, mu) = Imxn(i, mu);
           }
         }
-        for (int mu = 0; mu < auxsize; mu++) {
-          Rmxm(i, mu) = DielMxInvm(i, mu) - Jmxm(i, mu);
-          Rmxn(i, mu) = DielMxInvn(i, mu) - Jmxn(i, mu);
-        }
+      Eigen::MatrixXd JmxmTimesDielMxInvmmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      Eigen::MatrixXd JmxnTimesDielMxInvnmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      JmxmTimesDielMxInvmmx = Jmxm * DielMxInvm;
+      JmxnTimesDielMxInvnmx = Jmxn * DielMxInvn;
+      for ( int mu = 0; mu < auxsize; mu++ ){
+          Rmxm(i,mu) = JmxmTimesDielMxInvmmx(i,mu)-Jmxm(i,mu);
+          Rmxn(i,mu) = JmxnTimesDielMxInvnmx(i,mu)-Jmxn(i,mu);
+      }
       }
       for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
-        std::complex<double> omegam(shiftedenergies(i) - frequencies(m), _eta);
-        std::complex<double> omegan(shiftedenergies(i) - frequencies(n), _eta);
+        std::complex<double> omegam(shiftedenergies(i) - frequencies(m), -_eta);
+        std::complex<double> omegan(shiftedenergies(i) - frequencies(n), -_eta);
         Eigen::MatrixXd DielMxInvm = Eigen::MatrixXd::Zero(auxsize, auxsize);
         Eigen::MatrixXd DielMxInvn = Eigen::MatrixXd::Zero(auxsize, auxsize);
         Eigen::MatrixXcd DielMxInvmC = _rpa.calculate_epsilon(omegam).inverse();
@@ -206,13 +291,16 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
             Jmxn(i, mu) = Imxn(i, mu);
           }
         }
-        for (int mu = 0; mu < auxsize; mu++) {
-          Rmxm(i, mu) = DielMxInvm(i, mu) - Jmxm(i, mu);
-          Rmxn(i, mu) = DielMxInvn(i, mu) - Jmxn(i, mu);
-        }
+      Eigen::MatrixXd JmxmTimesDielMxInvmmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      Eigen::MatrixXd JmxnTimesDielMxInvnmx = Eigen::MatrixXd::Zero(rpatotal,auxsize);
+      JmxmTimesDielMxInvmmx = Jmxm * DielMxInvm;
+      JmxnTimesDielMxInvnmx = Jmxn * DielMxInvn;
+      for ( int mu = 0; mu < auxsize; mu++ ){
+          Rmxm(i,mu) = JmxmTimesDielMxInvmmx(i,mu)-Jmxm(i,mu);
+          Rmxn(i,mu) = JmxnTimesDielMxInvnmx(i,mu)-Jmxn(i,mu);
       }
-      result(m, n) =
-          (Rmxm.cwiseProduct(Imxn) + Rmxn.cwiseProduct(Imxm)).sum() / (-2);
+      }
+      result(m, n) = (Rmxm.cwiseProduct(Imxn) + Rmxn.cwiseProduct(Imxm)).sum() / (-2);
     }
   }
   result += result.transpose();

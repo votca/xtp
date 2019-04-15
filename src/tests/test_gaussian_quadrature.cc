@@ -144,7 +144,17 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   // gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(), rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(), rpa);
-
+  Eigen::MatrixXd exactresult = gq.ExactSigmaGQ(es.eigenvalues(), rpa);
+ 
+ 
+  std::cout << "Difference" << std::endl;
+  std::cout << std::endl;
+  std::cout << exactresult-result << std::endl;
+  std::cout << std::endl;
+  std::cout << "ExactGQTotal" << std::endl;
+  std::cout << std::endl;
+  std::cout << exactresult << std::endl;
+  std::cout << std::endl;
   std::cout << "GQTotal" << std::endl;
   std::cout << std::endl;
   std::cout << result << std::endl;

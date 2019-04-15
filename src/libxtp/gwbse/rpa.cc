@@ -22,6 +22,7 @@
 #include "votca/xtp/vc2index.h"
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/rpa.h>
+#include <complex>
 
 using std::flush;
 

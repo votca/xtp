@@ -32,17 +32,17 @@ class Gauss_Hermite_Quadrature_Constants {
  public:
   const Eigen::VectorXd &getPoints(int order);
 
-  const Eigen::VectorXd &getWeights(int order);
+  const Eigen::VectorXd &getAdaptedWeights(int order);
 
  private:
   bool _filled_Points = false;
-  bool _filled_Weights = false;
+  bool _filled_AdaptedWeights = false;
 
   std::map<int, Eigen::VectorXd> _map_points;
-  std::map<int, Eigen::VectorXd> _map_weights;
+  std::map<int, Eigen::VectorXd> _map_AdaptedWeights;
 
   void FillPoints();
-  void FillWeights();
+  void FillAdaptedWeights();
 };
 }  // namespace xtp
 }  // namespace votca

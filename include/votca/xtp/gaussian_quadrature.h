@@ -50,16 +50,15 @@ class GaussianQuadrature {
 
   void configure(options opt);
 
-  Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
-                          const RPA& rpa) const;
+  Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
 
-  Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
-                              const RPA& rpa) const;
+  Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
+  
+  Eigen::MatrixXd ExactSigmaGQ(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
 
  private:
   options _opt;
-  Eigen::VectorXd AdaptedWeights() const;
-
+  
   // This function calculates and stores inverses of the microscopic dielectric
   // matrix in a matrix vector
   std::vector<Eigen::MatrixXcd> CalcDielInvVector(const RPA& rpa) const;
@@ -68,7 +67,7 @@ class GaussianQuadrature {
 
   const TCMatrix_gwbse& _Mmn;
   Eigen::VectorXd _quadpoints;
-  Eigen::VectorXd _quadweights;
+  Eigen::VectorXd _quadadaptedweights;
 };
 }  // namespace xtp
 }  // namespace votca
