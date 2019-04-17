@@ -163,6 +163,10 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
 
   double minEigenvalue = es.eigenvalues().minCoeff();
   if (minEigenvalue <= 0.0) {
+    CTP_LOG(ctp::logDEBUG, _log)
+            << ctp::TimeStamp() << " Detected non-positive eigenvalue: "
+            << minEigenvalue
+            << flush;
     throw std::runtime_error(
         (boost::format("Detected non-positive eigenvalue: %s") % minEigenvalue)
             .str());
