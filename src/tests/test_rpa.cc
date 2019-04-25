@@ -346,13 +346,10 @@ BOOST_AUTO_TEST_CASE(rpa_full) {
   }
 
   BOOST_CHECK_EQUAL(r_check, 1);
-  for ( double fr = 0; fr < 20 ; fr+0.001){
-    //for ( int fi = 0; fi < 20 ; ++fi){
-//std::complex<double> frequency(0.5,0.5);
-std::complex<double> frequency(fr,0);
-Eigen::MatrixXd e_complex = rpa.calculate_epsilon(frequency).real();
-Eigen::MatrixXd complex_ref = rpa.calculate_epsilon_r(frequency.real());//Eigen::MatrixXcd::Zero(17, 17);
-/*typedef std::complex<double> cd;
+  
+std::complex<double> frequency(0.5,0.5);
+Eigen::MatrixXcd e_complex = rpa.calculate_epsilon(frequency);
+typedef std::complex<double> cd;
   Eigen::MatrixXcd complex_ref = Eigen::MatrixXcd::Zero(17, 17);
   complex_ref << cd(1.00064,6.22009e-05),cd(-0.000754644,-9.4922e-05),
 cd(-0.000880948,-9.57553e-05),cd(0.000880948,9.57553e-05),cd(-0.000880948,-9.57553e-05),
@@ -452,7 +449,6 @@ cd(-0.0317987,-0.00237233),cd(0.0317988,0.00237234),cd(0.0125666,0.00142675),
 cd(0.0841409,0.00765577),cd(0.0125666,0.00142675),cd(0.0841409,0.00765576),
 cd(0.0125666,0.00142675),cd(0.0841409,0.00765576),cd(0.00778577,0.00155258),
 cd(1.06059,0.0128387);
- */ 
   bool complex_check = complex_ref.isApprox(e_complex, 0.0001);
 
   if (!complex_check) {
@@ -465,7 +461,6 @@ cd(1.06059,0.0128387);
   BOOST_CHECK_EQUAL(complex_check, 1);
 }
 
-}
 
 
 BOOST_AUTO_TEST_SUITE_END()

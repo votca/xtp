@@ -52,8 +52,6 @@ class Sigma_CI : public Sigma_base {
   
   Eigen::MatrixXd ExactCorrelation(const Eigen::VectorXd& frequencies) const;
   
-  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
-
  private:
   GaussianQuadrature _gq;
 

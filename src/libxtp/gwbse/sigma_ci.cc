@@ -26,6 +26,11 @@
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/sigma_ci.h>
 #include <votca/xtp/threecenter.h>
+#include "votca/xtp/rpa.h"
+#include "votca/xtp/sigma_ppm.h"
+#include <votca/xtp/customtools.h>
+#include <votca/xtp/gw.h>
+#include <votca/xtp/sigma_spectral.h>
 
 namespace votca {
 namespace xtp {
@@ -44,24 +49,9 @@ Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) c
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
   Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
-  std::cout << "original energies" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << energies << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "homo for energies" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << _opt.homo - _opt.rpamin << std::endl;
   const Eigen::VectorXd& shiftedenergies =
       energies.array() - (energies(_opt.homo - _opt.rpamin) +
                           energies(_opt.homo - _opt.rpamin + 1)) / 2;
-  std::cout << "" << std::endl;
-  std::cout << "shifted energies" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << shiftedenergies << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "frequencies" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << frequencies << std::endl;
   int rpatotal = energies.size();
   int auxsize = _Mmn.auxsize();
   Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
@@ -83,9 +73,7 @@ Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) c
       Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       Eigen::MatrixXcd DielMxInvn = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
-      //std::cout << DielMxInvm.isApprox(_rpa.calculate_epsilon_r(omegam.real()).inverse(), 1) << std::endl;
       DielMxInvn = _rpa.calculate_epsilon(omegan).inverse();
-      //std::cout << DielMxInvn.isApprox(_rpa.calculate_epsilon_r(omegan.real()).inverse(), 1) << std::endl;
       if (frequencies(m) < shiftedenergies(i)) {
         for (int mu = 0; mu < auxsize; ++mu) {
             for (int nu = 0; nu < auxsize; ++nu) {
@@ -109,9 +97,7 @@ Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) c
       Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       Eigen::MatrixXcd DielMxInvn = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
-      //std::cout << DielMxInvm.isApprox(_rpa.calculate_epsilon_r(omegam.real()).inverse(), 1) << std::endl;
       DielMxInvn = _rpa.calculate_epsilon(omegan).inverse();
-      //std::cout << DielMxInvn.isApprox(_rpa.calculate_epsilon_r(omegan.real()).inverse(), 1) << std::endl;
       if (frequencies(m) > shiftedenergies(i)) {
         for (int mu = 0; mu < auxsize; ++mu) {
             for (int nu = 0; nu < auxsize; ++nu) {
@@ -146,6 +132,7 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
                              2;
   int rpatotal = energies.size();
   int auxsize = _Mmn.auxsize();
+#pragma omp parallel for
   for (int m = 0; m < _qptotal; ++m) {
     Eigen::MatrixXd Rmx = Eigen::MatrixXd::Zero(rpatotal, auxsize);
 #if (GWBSE_DOUBLE)
@@ -153,6 +140,7 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
 #else
     const Eigen::MatrixXd Imx = _Mmn[m].cast<double>();
 #endif
+   
     for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
       std::complex<double> omega(shiftedenergies(i) - frequencies(m), _eta);
       Eigen::MatrixXd DielMxInv = Eigen::MatrixXd::Zero(auxsize, auxsize);
@@ -196,27 +184,6 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
   return result;
 }
 
-/*void Sigma_CI::ExportCorrelationDiags(const Eigen::VectorXd& frequencies)
-  const { const int    range = CustomOpts::SigmaExportRange(); const double
-  delta = CustomOpts::SigmaExportDelta(); const int    size  = 2 * range + 1;
-      CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Writing SigmaC log "
-      << "(" << size << ", " << _qptotal << ")"
-      << std::flush;
-      Eigen::VectorXd offsets = Eigen::VectorXd::LinSpaced(size, -range * delta,
-  range * delta); Eigen::MatrixXd results = Eigen::MatrixXd::Zero(size,
-  _qptotal); _sigma->PrepareScreening(); for (int i = 0; i < size; i++) {
-          results.row(i) =
-          _sigma->CalcCorrelationDiag(frequencies +
-  Eigen::VectorXd::Constant(_qptotal, offsets[i]));
-      }
-      Eigen::MatrixXd table = Eigen::MatrixXd::Zero(size + 1, _qptotal + 1);
-      table.block(0, 1,    1, _qptotal) = frequencies.transpose();
-      table.block(1, 0, size,        1) = offsets;
-      table.block(1, 1, size, _qptotal) = results;
-      CustomTools::ExportMat("sigma_c.txt", table);
-  }*/
-
 Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
@@ -226,6 +193,7 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
                           energies(_opt.homo - _opt.rpamin + 1)) / 2;
   int rpatotal = energies.size();
   int auxsize = _Mmn.auxsize();
+  #pragma omp parallel for
   for (int m = 0; m < _qptotal; ++m) {
     Eigen::MatrixXd Rmxm = Eigen::MatrixXd::Zero(rpatotal, auxsize);
 #if (GWBSE_DOUBLE)
@@ -300,7 +268,7 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
           Rmxn(i,mu) = JmxnTimesDielMxInvnmx(i,mu)-Jmxn(i,mu);
       }
       }
-      result(m, n) = (Rmxm.cwiseProduct(Imxn) + Rmxn.cwiseProduct(Imxm)).sum() / (-2);
+      result(n, m) = (Rmxm.cwiseProduct(Imxn) + Rmxn.cwiseProduct(Imxm)).sum() / (-2);
     }
   }
   result += result.transpose();
