@@ -151,11 +151,13 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   rpa_eigensolution sol;
 
   CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Solving for RPA eigenvalues " << flush;
+      << ctp::TimeStamp() << " Diagonalizing BSE Hamiltonian " << flush;
 
-  // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of
-  // C
+  // Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
+  
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Diagonalization done " << flush;
 
   if (CustomOpts::RPASpectrumExport()) {
     CustomTools::ExportVec("rpa_spectral.txt", es.eigenvalues());
