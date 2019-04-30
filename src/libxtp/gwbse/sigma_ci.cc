@@ -125,6 +125,7 @@ return result;
 
 Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+  /*
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
   const Eigen::VectorXd& shiftedenergies =
       energies.array() - (energies(_opt.homo - _opt.rpamin) +
@@ -180,7 +181,8 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
     }
     result(m) = -(Rmx.cwiseProduct(Imx)).sum();
   }
-  result += _gq.SigmaGQDiag(frequencies, _rpa);
+  result += _gq.SigmaGQDiag(frequencies, _rpa);*/
+  result = _gq.SigmaGQDiag(frequencies, _rpa);
   return result;
 }
 
