@@ -90,6 +90,8 @@
       <itemPath>../../include/votca/xtp/forces.h</itemPath>
       <itemPath>../../include/votca/xtp/fourcenter.h</itemPath>
       <itemPath>../../include/votca/xtp/fragment.h</itemPath>
+      <itemPath>../../include/votca/xtp/gauss_hermite_quadrature_constants.h</itemPath>
+      <itemPath>../../include/votca/xtp/gaussian_quadrature.h</itemPath>
       <itemPath>../../include/votca/xtp/gdma.h</itemPath>
       <itemPath>../../include/votca/xtp/geometry_optimization.h</itemPath>
       <itemPath>../../include/votca/xtp/glink.h</itemPath>
@@ -126,6 +128,7 @@
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
       <itemPath>../../include/votca/xtp/segmenttype.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_base.h</itemPath>
+      <itemPath>../../include/votca/xtp/sigma_ci.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_ppm.h</itemPath>
       <itemPath>../../include/votca/xtp/sphere_lebedev_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/sqlapplication.h</itemPath>
@@ -214,6 +217,7 @@
         <itemPath>../../src/libxtp/gwbse/ppm.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/rpa.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_base.cc</itemPath>
+        <itemPath>../../src/libxtp/gwbse/sigma_ci.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_ppm.cc</itemPath>
       </logicalFolder>
       <logicalFolder name="f6" displayName="NumInt" projectFiles="true">
@@ -234,6 +238,8 @@
       <itemPath>../../src/libxtp/dftcoupling.cc</itemPath>
       <itemPath>../../src/libxtp/esp2multipole.cc</itemPath>
       <itemPath>../../src/libxtp/espfit.cc</itemPath>
+      <itemPath>../../src/libxtp/gauss_hermite_quadrature_constants.cc</itemPath>
+      <itemPath>../../src/libxtp/gaussian_quadrature.cc</itemPath>
       <itemPath>../../src/libxtp/gdma.cc</itemPath>
       <itemPath>../../src/libxtp/grid.cc</itemPath>
       <itemPath>../../src/libxtp/gyration.cc</itemPath>
@@ -282,6 +288,7 @@
       <itemPath>../../src/tests/test_segment.cc</itemPath>
       <itemPath>../../src/tests/test_segmenttype.cc</itemPath>
       <itemPath>../../src/tests/test_sigma_ppm.cc</itemPath>
+      <itemPath>../../src/tests/test_sigma_residual.cc</itemPath>
       <itemPath>../../src/tests/test_symmetric_matrix.cc</itemPath>
       <itemPath>../../src/tests/test_threecenter.cc</itemPath>
       <itemPath>../../src/tests/test_topology.cc</itemPath>
@@ -3064,6 +3071,16 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gauss_hermite_quadrature_constants.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/gaussian_quadrature.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gdma.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/geometry_optimization.h"
@@ -3178,6 +3195,8 @@
             ex="false"
             tool="3"
             flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_ci.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
@@ -3611,6 +3630,16 @@
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gauss_hermite_quadrature_constants.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/gdma.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/geometry_optimization.cc"
@@ -3643,6 +3672,8 @@
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gwbse/sigma_ci.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
             ex="false"
@@ -3912,6 +3943,11 @@
       </item>
       <item path="../../src/tests/test_sigma_ppm.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/tests/test_sigma_residual.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_symmetric_matrix.cc"
             ex="false"
             tool="1"
@@ -4060,6 +4096,16 @@
       </item>
       <item path="../../include/votca/xtp/fragment.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gauss_hermite_quadrature_constants.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/gaussian_quadrature.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gdma.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/geometry_optimization.h"
@@ -4174,6 +4220,8 @@
             ex="false"
             tool="3"
             flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_ci.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
@@ -4607,6 +4655,16 @@
       </item>
       <item path="../../src/libxtp/fourcenter_rep.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/libxtp/gauss_hermite_quadrature_constants.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gaussian_quadrature.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/gdma.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/geometry_optimization.cc"
@@ -4639,6 +4697,8 @@
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gwbse/sigma_ci.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_ppm.cc"
             ex="false"
@@ -4907,6 +4967,11 @@
             flavor2="0">
       </item>
       <item path="../../src/tests/test_sigma_ppm.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/tests/test_sigma_residual.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="../../src/tests/test_symmetric_matrix.cc"
             ex="false"
