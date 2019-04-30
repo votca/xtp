@@ -56,11 +56,9 @@ class Sigma_Spectral : public Sigma_base {
   // 149–161 (2016).
   // Eq. 45, 47, 48
   Eigen::MatrixXd CalcResidues(int s) const;
-  // Note: A12 = residues[m, :] .* residues[n, :]
-  // TODO: Method names, input too vague?
-  double Equation47(const Eigen::VectorXd& A12, double omega,
-                    double frequency) const;
+  double Equation47(const Eigen::VectorXd& A12, double omega, double freq) const;
   double Equation48(const Eigen::VectorXd& A12, double omega) const;
+  // A12 = residues[m, :] .* residues[n, :]
 };
 }  // namespace xtp
 }  // namespace votca

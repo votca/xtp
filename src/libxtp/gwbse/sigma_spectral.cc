@@ -146,13 +146,42 @@ Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
   return residues;
 }
 
+/*void Sigma_Spectral::CalcResidues() const {
+  const int lumo = _opt.homo + 1;
+  const int n_occup = lumo - _opt.rpamin;
+  const int n_unocc = _opt.rpamax - _opt.homo;
+  const int rpasize = n_occup * n_unocc;
+  const int qpoffset = _opt.qpmin - _opt.rpamin;
+  const int auxsize = _Mmn.auxsize();
+  vc2index vc = vc2index(0, 0, n_unocc);
+  
+  // Initialize residues object [m][n, s]
+  _residues.resize(_qptotal);
+  for (int m = 0; m < _qptotal; m++ ) {
+    _residues[m] = Eigen::MatrixXd::Zero(_rpatotal, rpasize);
+  }
+  
+#pragma omp parallel for
+  // To do the 4c integrals as efficiently as possible, we must loop over (v, c) first
+  for (int v = 0; v < n_occup; v++ ) { // Sum over v
+    const Eigen::MatrixXd Mmn_vT =
+        _Mmn[v].block(n_occup, 0, n_unocc, auxsize).transpose();
+    const Eigen::VectorXd xpyv = _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize);
+    for (int m = 0; m < _qptotal; m++ ) {
+      const Eigen::MatrixXd fc = _Mmn[m + qpoffset] * Mmn_vT; // Sum over chi
+#pragma omp critical
+      { _residues[m] += fc * xpyv; } // Sum over c
+    }
+  }
+}*/
+
 double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12, double omega,
-                                  double frequency) const {
+                                  double freq) const {
   const double eta = CustomOpts::SigmaSpectralEta();
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
-  Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + frequency;
+  Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + freq;
   B12.segment(0, n_occup) += omega;
   B12.segment(n_occup, n_unocc) -= omega;
   const Eigen::ArrayXd numer = A12.array() * B12;

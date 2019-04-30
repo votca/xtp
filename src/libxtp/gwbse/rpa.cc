@@ -152,10 +152,7 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
 
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Diagonalizing BSE Hamiltonian " << flush;
-
-  // Eigen's SelfAdjointEigenSolver only uses the lower triangular part of C
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);
-  
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C); // Uses lower triangle
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Diagonalization done " << flush;
 
@@ -163,19 +160,15 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
     CustomTools::ExportVec("rpa_spectral.txt", es.eigenvalues());
   }
 
-  double minEigenvalue = es.eigenvalues().minCoeff();
-  if (minEigenvalue <= 0.0) {
-    CTP_LOG(ctp::logDEBUG, _log)
-            << ctp::TimeStamp() << " Detected non-positive eigenvalue: "
-            << minEigenvalue
-            << flush;
-    throw std::runtime_error(
-        (boost::format("Detected non-positive eigenvalue: %s") % minEigenvalue)
-            .str());
+  double mc = es.eigenvalues().minCoeff();
+  if (mc <= 0.0) {
+    std::string msg =
+            (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
+    CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << msg << flush;
+    throw std::runtime_error(msg);
   }
 
-  // Note: Omega has to have correct size otherwise MKL does not rescale for
-  // Sqrt
+  // Omega has to have correct size otherwise MKL does not rescale for Sqrt
   sol._Omega = Eigen::VectorXd::Zero(rpasize);
   sol._Omega = es.eigenvalues().cwiseSqrt();
   sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
@@ -183,7 +176,6 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
   Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
   Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
-
   for (int s = 0; s < rpasize; s++) {
     Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
     Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
