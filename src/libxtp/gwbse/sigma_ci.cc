@@ -45,8 +45,7 @@ void Sigma_CI::PrepareScreening() {
   _gq.configure(opt);
 }
 
-Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
-//Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) const{
+Eigen::MatrixXd Sigma_CI::ExactCorrelationOffDiag(const Eigen::VectorXd& frequencies) const{
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
   Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
@@ -120,10 +119,59 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
   }
     result = complexresult.real();
     result /= 2;
-    //result += _gq.ExactSigmaGQ(frequencies, _rpa);
+    result += _gq.ExactSigmaGQOffDiag(frequencies, _rpa);
 return result.diagonal();
 }
-  
+
+Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
+//Eigen::MatrixXd Sigma_CI::ExactCorrelationDiag(const Eigen::VectorXd& frequencies) const{
+  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
+  Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
+  const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
+  const Eigen::VectorXd& shiftedenergies =
+      energies.array() - (energies(_opt.homo - _opt.rpamin) +
+                          energies(_opt.homo - _opt.rpamin + 1)) / 2;
+  int rpatotal = energies.size();
+  int auxsize = _Mmn.auxsize();
+  Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
+  for (int m = 0; m < _qptotal; ++m) {
+      #if (GWBSE_DOUBLE)
+    const Eigen::MatrixXd& Imxm = _Mmn[m];
+#else
+    const Eigen::MatrixXd Imxm= _Mmn[m].cast<double>();
+#endif
+    for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+      std::complex<double> omegam(shiftedenergies(i) - frequencies(m), _eta);
+      Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
+      if (frequencies(m) < shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m) -=
+                Imxm(i, mu) * Imxm(i, nu) * (DielMxInvm(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+     for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+      std::complex<double> omegam(shiftedenergies(i) - frequencies(m), -_eta);
+      Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
+      DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
+      if (frequencies(m) > shiftedenergies(i)) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+            for (int nu = 0; nu < auxsize; ++nu) {
+                complexresult(m) -=
+                Imxm(i, mu) * Imxm(i, nu) * (DielMxInvm(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+    }
+    result = complexresult.real();
+    result += _gq.ExactSigmaGQDiag(frequencies, _rpa);
+return result;
+}
+
 
 Eigen::VectorXd Sigma_CI::CalcCorrelationDiagApprox(const Eigen::VectorXd& frequencies) const {
 //Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {

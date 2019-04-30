@@ -52,7 +52,7 @@ class Sigma_CI : public Sigma_base {
   Eigen::MatrixXd CalcCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const;
   
-  //Eigen::MatrixXd ExactCorrelation(const Eigen::VectorXd& frequencies) const;
+  Eigen::MatrixXd ExactCorrelationOffDiag(const Eigen::VectorXd& frequencies) const;
   
  private:
   GaussianQuadrature _gq;
