@@ -30,12 +30,7 @@ void Sigma_Spectral::PrepareScreening() {
   // Solve eigenvalue problem
   _EigenSol = _rpa.calculate_eigenvalues();
   // Cache residues
-  const int numeigenvalues = _EigenSol._Omega.size();
-  _residues.resize(numeigenvalues);
-#pragma omp parallel for
-  for (int s = 0; s < numeigenvalues; s++) {
-    _residues[s] = CalcResidues(s);
-  }
+  _residues = CalcResidues();
   // Set Options
   _HedinApprox = CustomOpts::Hedin();
   return;
@@ -43,34 +38,36 @@ void Sigma_Spectral::PrepareScreening() {
 
 Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
     const Eigen::VectorXd& frequencies) const {
-  const int numeigenvalues = _EigenSol._Omega.size();
+  const int rpasize = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
   if (_HedinApprox) {
 
 #pragma omp parallel for
-    for (int n = 0; n < _qptotal; n++) {
+    for (int m = 0; m < _qptotal; m++) {
       double res = 0.0;
-      for (int s = 0; s < numeigenvalues; s++) {
-        Eigen::VectorXd rn_x_rn = _residues[s].col(n).cwiseAbs2();
+      const Eigen::MatrixXd& rm = _residues[m];
+      for (int s = 0; s < rpasize; s++) {
+        const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
         double omega = _EigenSol._Omega(s);
-        res += Equation48(rn_x_rn, omega);
-      }  // Eigenvalues/poles s
-      result(n) = res;
-    }  // Energy level n
+        res += Equation48(rm_x_rm, omega);
+      }  // Eigenvalues s
+      result(m) = res;
+    }  // State m
 
   } else {
 
 #pragma omp parallel for
-    for (int n = 0; n < _qptotal; n++) {
+    for (int m = 0; m < _qptotal; m++) {
       double res = 0.0;
-      for (int s = 0; s < numeigenvalues; s++) {
-        Eigen::VectorXd rn_x_rn = _residues[s].col(n).cwiseAbs2();
+      const Eigen::MatrixXd& rm = _residues[m];
+      for (int s = 0; s < rpasize; s++) {
+        const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
         double omega = _EigenSol._Omega(s);
-        res += Equation47(rn_x_rn, omega, frequencies(n));
-      }  // Eigenvalues/poles s
-      result(n) = res;
-    }  // Energy level n
+        res += Equation47(rm_x_rm, omega, frequencies(m));
+      }  // Eigenvalue s
+      result(m) = res;
+    }  // State m
   }
 
   return result;
@@ -78,75 +75,54 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
 
 Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
-  const int numeigenvalues = _EigenSol._Omega.size();
+  const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
 
   if (_HedinApprox) {
 
 #pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
+      const Eigen::MatrixXd& rm = _residues[m];
       for (int n = m + 1; n < _qptotal; n++) {
         double res = 0.0;
-        for (int s = 0; s < numeigenvalues; s++) {
-          const Eigen::MatrixXd& residues = _residues[s];
+        const Eigen::MatrixXd& rn = _residues[n];
+        for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
-              residues.col(m).cwiseProduct(residues.col(n));
+              rm.col(s).cwiseProduct(rn.col(s));
           double omega = _EigenSol._Omega(s);
           res += Equation48(rm_x_rn, omega);
-        }  // Eigenvalues/poles s
+        }  // Eigenvalue s
         result(m, n) = res;
         result(n, m) = res;
-      }  // Energy level n
-    }    // Energy level m
+      }  // State n
+    }    // State m
 
   } else {
 
 #pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
+      const Eigen::MatrixXd& rm = _residues[m];
       for (int n = m + 1; n < _qptotal; n++) {
         double res = 0.0;
-        for (int s = 0; s < numeigenvalues; s++) {
-          const Eigen::MatrixXd& residues = _residues[s];
+        const Eigen::MatrixXd& rn = _residues[n];
+        for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
-              residues.col(m).cwiseProduct(residues.col(n));
+              rm.col(s).cwiseProduct(rn.col(s));
           double omega = _EigenSol._Omega(s);
           double res_m = Equation47(rm_x_rn, omega, frequencies(m));
           double res_n = Equation47(rm_x_rn, omega, frequencies(n));
           res += 0.5 * (res_m + res_n);
-        }  // Eigenvalues/poles s
+        }  // Eigenvalue s
         result(m, n) = res;
         result(n, m) = res;
-      }  // Energy level n
-    }    // Energy level m
+      }  // State n
+    }    // State m
   }
 
   return result;
 }
 
-Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
-  const int lumo = _opt.homo + 1;
-  const int n_occup = lumo - _opt.rpamin;
-  const int n_unocc = _opt.rpamax - _opt.homo;
-  const int qpoffset = _opt.qpmin - _opt.rpamin;
-  const int auxsize = _Mmn.auxsize();  // Size of gwbasis
-  const Eigen::VectorXd& xpy = _EigenSol._XpY.col(s);
-  vc2index vc = vc2index(0, 0, n_unocc);
-  Eigen::MatrixXd residues = Eigen::MatrixXd::Zero(_rpatotal, _qptotal);
-
-  for (int v = 0; v < n_occup; v++) {
-    const Eigen::MatrixXd Mmn_vT =
-        _Mmn[v].block(n_occup, 0, n_unocc, auxsize).transpose();
-    const Eigen::VectorXd xpyv = xpy.segment(vc.I(v, 0), n_unocc);
-    for (int m = 0; m < _qptotal; m++) {
-      const Eigen::MatrixXd fc = _Mmn[m + qpoffset] * Mmn_vT;
-      residues.col(m) += fc * xpyv;
-    }  // MO m
-  }    // Occupied MO v
-
-  return residues;
-}
-
-/*void Sigma_Spectral::CalcResidues() const {
+std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
@@ -154,26 +130,30 @@ Eigen::MatrixXd Sigma_Spectral::CalcResidues(int s) const {
   const int qpoffset = _opt.qpmin - _opt.rpamin;
   const int auxsize = _Mmn.auxsize();
   vc2index vc = vc2index(0, 0, n_unocc);
-  
-  // Initialize residues object [m][n, s]
-  _residues.resize(_qptotal);
+
+  // Initialize residues object m*n*s
+  std::vector<Eigen::MatrixXd> residues;
+  residues.resize(_qptotal);
   for (int m = 0; m < _qptotal; m++ ) {
-    _residues[m] = Eigen::MatrixXd::Zero(_rpatotal, rpasize);
-  }
+    residues[m] = Eigen::MatrixXd::Zero(_rpatotal, rpasize);
+  }  // State m
   
+  // To do the 4c integrals efficiently, loop over (v, c) first
 #pragma omp parallel for
-  // To do the 4c integrals as efficiently as possible, we must loop over (v, c) first
   for (int v = 0; v < n_occup; v++ ) { // Sum over v
     const Eigen::MatrixXd Mmn_vT =
         _Mmn[v].block(n_occup, 0, n_unocc, auxsize).transpose();
-    const Eigen::VectorXd xpyv = _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize);
+    const Eigen::MatrixXd xpyv =
+        _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize);
     for (int m = 0; m < _qptotal; m++ ) {
       const Eigen::MatrixXd fc = _Mmn[m + qpoffset] * Mmn_vT; // Sum over chi
 #pragma omp critical
-      { _residues[m] += fc * xpyv; } // Sum over c
-    }
-  }
-}*/
+      { residues[m] += fc * xpyv; } // Sum over c
+    }  // State m
+  }    // Occupied state v
+  
+  return residues;
+}
 
 double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12, double omega,
                                   double freq) const {
