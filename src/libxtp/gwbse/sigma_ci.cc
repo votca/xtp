@@ -45,7 +45,8 @@ void Sigma_CI::PrepareScreening() {
   _gq.configure(opt);
 }
 
-Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) const{
+Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
+//Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) const{
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
   Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
@@ -119,13 +120,14 @@ Eigen::MatrixXd Sigma_CI::ExactCorrelation(const Eigen::VectorXd& frequencies) c
   }
     result = complexresult.real();
     result /= 2;
-return result;
+    result += _gq.ExactSigmaGQ(frequencies, _rpa);
+return result.diagonal();
 }
   
 
-Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
+Eigen::VectorXd Sigma_CI::CalcCorrelationDiagApprox(const Eigen::VectorXd& frequencies) const {
+//Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
-  /*
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
   const Eigen::VectorXd& shiftedenergies =
       energies.array() - (energies(_opt.homo - _opt.rpamin) +
@@ -181,8 +183,7 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
     }
     result(m) = -(Rmx.cwiseProduct(Imx)).sum();
   }
-  result += _gq.SigmaGQDiag(frequencies, _rpa);*/
-  result = _gq.SigmaGQDiag(frequencies, _rpa);
+  result += _gq.SigmaGQDiag(frequencies, _rpa);
   return result;
 }
 
