@@ -120,7 +120,7 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
   }
     result = complexresult.real();
     result /= 2;
-    result += _gq.ExactSigmaGQ(frequencies, _rpa);
+    //result += _gq.ExactSigmaGQ(frequencies, _rpa);
 return result.diagonal();
 }
   
