@@ -138,7 +138,7 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
     residues[m] = Eigen::MatrixXd::Zero(_rpatotal, rpasize);
   }  // State m
   
-  // To do the 4c integrals efficiently, loop over (v, c) first
+  // To do the 4c integrals (mn|vc) efficiently, loop over m, v first
 #pragma omp parallel for
   for (int v = 0; v < n_occup; v++ ) { // Sum over v
     const Eigen::MatrixXd Mmn_vT =
