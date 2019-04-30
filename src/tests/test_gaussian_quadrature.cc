@@ -144,24 +144,25 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   // gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(), rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(), rpa);
-  Eigen::MatrixXd exactresult = gq.ExactSigmaGQ(es.eigenvalues(), rpa);
+  Eigen::MatrixXd exactresultoffdiag = gq.ExactSigmaGQOffDiag(es.eigenvalues(), rpa);
+  Eigen::VectorXd exactresultdiag = gq.ExactSigmaGQDiag(es.eigenvalues(), rpa);
+  
  
- 
-  bool check_c_diag = result2.isApprox(exactresult.diagonal(), 1e-5);
+  bool check_c_diag = result2.isApprox(exactresultdiag, 1e-5);
 
   if (!check_c_diag) {
     std::cout << "Sigma C" << std::endl;
     std::cout << result2 << std::endl;
     std::cout << "Sigma C ref" << std::endl;
-    std::cout << exactresult.diagonal() << std::endl;
+    std::cout << exactresultdiag << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c_diag, true);
-  bool check_c = exactresult.isApprox(result, 1e-5);
+  bool check_c = exactresultoffdiag.isApprox(result, 1e-5);
   if (!check_c) {
     std::cout << "Sigma C" << std::endl;
     std::cout << result << std::endl;
     std::cout << "Sigma C ref" << std::endl;
-    std::cout << exactresult << std::endl;
+    std::cout << exactresultoffdiag << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c, true);
 }

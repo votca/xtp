@@ -187,9 +187,11 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   sigma.PrepareScreening();
 
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
-  Eigen::MatrixXd Exactc_off = sigma.ExactCorrelation(mo_energy);
-  Eigen::VectorXd c_diag = sigma.CalcCorrelationDiag(mo_energy);
-  c_off.diagonal() = c_diag;
+  Eigen::MatrixXd Exactc_off = sigma.ExactCorrelationOffDiag(mo_energy);
+  Eigen::VectorXd c_diagexact = sigma.CalcCorrelationDiag(mo_energy);
+  Eigen::VectorXd c_diagapprox = sigma.CalcCorrelationDiagApprox(mo_energy);
+  
+  c_off.diagonal() = c_diagexact;
 
   Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
   c_ref << 0.120676, 2.58689e-07, -2.52037e-07, 3.99968e-08, 0.0405292,
@@ -250,11 +252,11 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
       -4.27551e-09, -1.51435e-08, 0.0103057, -8.13748e-08, -8.13703e-08,
       -3.54064e-09, 0.012047, -0.40848;
 
-  bool check_c_diag = c_diag.isApprox(c_ref.diagonal(), 1e-5);
+  bool check_c_diag = c_diagexact.isApprox(c_ref.diagonal(), 1e-5);
 
   if (!check_c_diag) {
     std::cout << "Sigma C" << std::endl;
-    std::cout << c_diag << std::endl;
+    std::cout << c_diagexact << std::endl;
     std::cout << "Sigma C ref" << std::endl;
     std::cout << c_ref.diagonal() << std::endl;
   }
