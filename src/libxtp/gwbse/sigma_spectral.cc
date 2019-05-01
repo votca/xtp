@@ -147,8 +147,9 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
         _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize);
     for (int m = 0; m < _qptotal; m++ ) {
       const Eigen::MatrixXd fc = _Mmn[m + qpoffset] * Mmn_vT; // Sum over chi
+      const Eigen::MatrixXd res = fc * xpyv; // Sum over c
 #pragma omp critical
-      { residues[m] += fc * xpyv; } // Sum over c
+      { residues[m] += res; }
     }  // State m
   }    // Occupied state v
   

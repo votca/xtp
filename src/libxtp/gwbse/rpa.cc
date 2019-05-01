@@ -151,7 +151,7 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   rpa_eigensolution sol;
 
   CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Diagonalizing BSE Hamiltonian " << flush;
+      << ctp::TimeStamp() << " Diagonalizing RPA Hamiltonian " << flush;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C); // Uses lower triangle
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Diagonalization done " << flush;
