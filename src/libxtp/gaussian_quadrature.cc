@@ -315,7 +315,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
       }
     }
   }
-  result += result.transpose();
+  result.transpose() = result;
   result /= (-4 * M_PI);
   result.diagonal() = SigmaGQDiag(frequencies, rpa);
   return result;

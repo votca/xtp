@@ -120,7 +120,7 @@ Eigen::MatrixXd Sigma_CI::ExactCorrelationOffDiag(const Eigen::VectorXd& frequen
     result = complexresult.real();
     result /= 2;
     result += _gq.ExactSigmaGQOffDiag(frequencies, _rpa);
-return result.diagonal();
+return result;
 }
 
 Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
@@ -322,7 +322,7 @@ Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
       result(n, m) = (Rmxm.cwiseProduct(Imxn) + Rmxn.cwiseProduct(Imxm)).sum() / (-2);
     }
   }
-  result += result.transpose();
+  result.transpose() = result;
   result += _gq.SigmaGQ(frequencies, _rpa);
   result.diagonal() = CalcCorrelationDiag(frequencies);
   return result;

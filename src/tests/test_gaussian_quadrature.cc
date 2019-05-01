@@ -147,6 +147,23 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   Eigen::MatrixXd exactresultoffdiag = gq.ExactSigmaGQOffDiag(es.eigenvalues(), rpa);
   Eigen::VectorXd exactresultdiag = gq.ExactSigmaGQDiag(es.eigenvalues(), rpa);
   
+  std::cout << "off diag - exact" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << result << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "exact off diag" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << exactresultoffdiag << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "diag" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << result2 << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << "exact diag" << std::endl;
+  std::cout << "" << std::endl;
+  std::cout << exactresultdiag << std::endl;
+  std::cout << "" << std::endl;
+  
  
   bool check_c_diag = result2.isApprox(exactresultdiag, 1e-5);
 
