@@ -56,7 +56,7 @@ class GaussianQuadrature {
   
   Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
 
-  Eigen::MatrixXd ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
+  Eigen::VectorXd ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
 
  private:
   options _opt;

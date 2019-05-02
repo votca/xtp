@@ -140,10 +140,10 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(const Eigen::VectorXd& f
   return result;
 }
 
-Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,
+Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,
                                             const RPA& rpa) const {
-  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal, _opt.qptotal);
-  Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_opt.qptotal, _opt.qptotal);
+  Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal, _opt.qptotal);
+  Eigen::VectorXcd complexresult = Eigen::VectorXcd::Zero(_opt.qptotal, _opt.qptotal);
   const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
   Eigen::VectorXd shiftedenergies =
       _energies.array() - (_energies(_opt.homo - _opt.rpamin) +
@@ -153,12 +153,24 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
   int auxsize = _Mmn.auxsize();
   Eigen::MatrixXcd Id = Eigen::MatrixXcd::Identity(auxsize, auxsize);
   for (int m = 0; m < _opt.qptotal; ++m) {
+      std::cout << "" << std::endl;
+      std::cout << "m = " << std::endl;
+      std::cout << m << std::endl;
+      std::cout << " < " << std::endl;
+      std::cout << _opt.qptotal << std::endl;
+      std::cout << "" << std::endl;
 #if (GWBSE_DOUBLE)
     const Eigen::MatrixXd& Imxm = _Mmn[m];
 #else
     const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
 #endif
       for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+      std::cout << "" << std::endl;
+      std::cout << "i = " << std::endl;
+      std::cout << i << std::endl;
+      std::cout << " < " << std::endl;
+      std::cout << rpatotal << std::endl;
+      std::cout << "" << std::endl;
         for (int mu = 0 ; mu < auxsize ; ++mu) {
             for (int nu = 0 ; nu < auxsize ; ++nu) {
         std::complex<double> GHQ(0,0);
@@ -172,7 +184,13 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
         }
         }
         }
-        for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {  
+        for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+      std::cout << "" << std::endl;
+      std::cout << "i = " << std::endl;
+      std::cout << i << std::endl;
+      std::cout << " < " << std::endl;
+      std::cout << rpatotal << std::endl;
+      std::cout << "" << std::endl;
          for (int mu = 0 ; mu < auxsize ; ++mu) {
             for (int nu = 0 ; nu < auxsize ; ++nu) {
         std::complex<double> GHQ(0,0);
@@ -186,8 +204,16 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
         }
         }
         }
+      std::cout << "" << std::endl;
+      std::cout << "complex result = " << std::endl;
+      std::cout << complexresult << std::endl;
+      std::cout << "" << std::endl; 
   complexresult /= (2 * M_PI);
   result=complexresult.real();
+    std::cout << "" << std::endl;
+      std::cout << "result = " << std::endl;
+      std::cout << result << std::endl;
+      std::cout << "" << std::endl;
   return result;
 }
 

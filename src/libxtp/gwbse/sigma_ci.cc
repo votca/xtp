@@ -124,9 +124,9 @@ return result;
 }
 
 Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const {
-//Eigen::MatrixXd Sigma_CI::ExactCorrelationDiag(const Eigen::VectorXd& frequencies) const{
-  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal,_qptotal);
-  Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_qptotal,_qptotal);
+//Eigen::VectorXd Sigma_CI::ExactCorrelationDiag(const Eigen::VectorXd& frequencies) const{
+  Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal,_qptotal);
+  Eigen::VectorXcd complexresult = Eigen::VectorXcd::Zero(_qptotal,_qptotal);
   const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
   const Eigen::VectorXd& shiftedenergies =
       energies.array() - (energies(_opt.homo - _opt.rpamin) +
