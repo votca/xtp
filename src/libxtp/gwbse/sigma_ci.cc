@@ -185,7 +185,19 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
       }
     }
     }
+      std::cout << "" << std::endl;
+      std::cout << "complex result = " << std::endl;
+      std::cout << complexresult << std::endl;
+      std::cout << "" << std::endl; 
     result = complexresult.real();
+    std::cout << "" << std::endl;
+      std::cout << "result = " << std::endl;
+      std::cout << result << std::endl;
+      std::cout << "" << std::endl;
+      std::cout << "GQ = " << std::endl;
+      std::cout << _gq.ExactSigmaGQDiag(frequencies, _rpa) << std::endl;
+      std::cout << "" << std::endl;
+      
     result += _gq.ExactSigmaGQDiag(frequencies, _rpa);
 return result;
 }
