@@ -189,8 +189,8 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
   Eigen::MatrixXd Exactc_off = Eigen::MatrixXd::Zero(17,17);
   Exactc_off = sigma.ExactCorrelationOffDiag(mo_energy);
-  Eigen::VectorXd c_diagexact = sigma.CalcCorrelationDiag(mo_energy);
-  Eigen::VectorXd c_diagapprox = sigma.CalcCorrelationDiagApprox(mo_energy);
+  Eigen::VectorXd c_diagexact = sigma.ExactCorrelationDiag(mo_energy);
+  Eigen::VectorXd c_diagapprox = sigma.CalcCorrelationDiag(mo_energy);
   
   std::cout << "off diag" << std::endl;
   std::cout << "" << std::endl;

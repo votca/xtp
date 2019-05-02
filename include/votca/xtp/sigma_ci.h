@@ -47,7 +47,7 @@ class Sigma_CI : public Sigma_base {
 
   Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
 
-  Eigen::VectorXd CalcCorrelationDiagApprox(const Eigen::VectorXd& frequencies) const;
+  Eigen::VectorXd ExactCorrelationDiag(const Eigen::VectorXd& frequencies) const;
 
   Eigen::MatrixXd CalcCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const;
