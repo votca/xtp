@@ -135,6 +135,10 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
   int auxsize = _Mmn.auxsize();
   Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
   for (int m = 0; m < _qptotal; ++m) {
+      std::cout << "m=" << std::endl;
+      std::cout << "" << std::endl;
+      std::cout << m << std::endl;
+      std::cout << "" << std::endl;
       #if (GWBSE_DOUBLE)
     const Eigen::MatrixXd& Imxm = _Mmn[m];
 #else
