@@ -135,24 +135,24 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
   int auxsize = _Mmn.auxsize();
   Eigen::MatrixXd Id = Eigen::MatrixXd::Identity(auxsize, auxsize);
   for (int m = 0; m < _qptotal; ++m) {
-      std::cout << "" << std::endl;
+/*      std::cout << "" << std::endl;
       std::cout << "m = " << std::endl;
       std::cout << m << std::endl;
       std::cout << " < " << std::endl;
       std::cout << _qptotal << std::endl;
-      std::cout << "" << std::endl;
+      std::cout << "" << std::endl;*/
     #if (GWBSE_DOUBLE)
         const Eigen::MatrixXd& Imxm = _Mmn[m];
     #else
         const Eigen::MatrixXd Imxm= _Mmn[m].cast<double>();
     #endif
     for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-      std::cout << "" << std::endl;
+/*      std::cout << "" << std::endl;
       std::cout << "i = " << std::endl;
       std::cout << i << std::endl;
       std::cout << " < " << std::endl;
       std::cout << rpatotal << std::endl;
-      std::cout << "" << std::endl;
+      std::cout << "" << std::endl;*/
       std::complex<double> omegam(shiftedenergies(i) - frequencies(m), _eta);
       Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
@@ -166,12 +166,12 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
       }
     }
      for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
-      std::cout << "" << std::endl;
+/*      std::cout << "" << std::endl;
       std::cout << "i = " << std::endl;
       std::cout << i << std::endl;
       std::cout << " < " << std::endl;
       std::cout << rpatotal << std::endl;
-      std::cout << "" << std::endl;
+      std::cout << "" << std::endl;*/
       std::complex<double> omegam(shiftedenergies(i) - frequencies(m), -_eta);
       Eigen::MatrixXcd DielMxInvm = Eigen::MatrixXcd::Zero(auxsize,auxsize);
       DielMxInvm = _rpa.calculate_epsilon(omegam).inverse();
@@ -185,18 +185,18 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(const Eigen::VectorXd& frequencies
       }
     }
     }
-      std::cout << "" << std::endl;
+      /*std::cout << "" << std::endl;
       std::cout << "complex result = " << std::endl;
       std::cout << complexresult << std::endl;
-      std::cout << "" << std::endl; 
+      std::cout << "" << std::endl; */
     result = complexresult.real();
-    std::cout << "" << std::endl;
+/*    std::cout << "" << std::endl;
       std::cout << "result = " << std::endl;
       std::cout << result << std::endl;
       std::cout << "" << std::endl;
       std::cout << "GQ = " << std::endl;
       std::cout << _gq.ExactSigmaGQDiag(frequencies, _rpa) << std::endl;
-      std::cout << "" << std::endl;
+      std::cout << "" << std::endl;*/
       
     result += _gq.ExactSigmaGQDiag(frequencies, _rpa);
 return result;

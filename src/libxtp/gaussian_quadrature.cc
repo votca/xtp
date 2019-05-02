@@ -171,17 +171,16 @@ Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
       std::cout << " < " << std::endl;
       std::cout << rpatotal << std::endl;
       std::cout << "" << std::endl;
-        for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
+      std::complex<double> GHQ(0,0);
         for (int j = 0; j < _opt.order; ++j) {
         Eigen::MatrixXcd DielMxInv = Eigen::MatrixXcd::Zero(auxsize,auxsize);
         DielMxInv = DielInvVector[j];
         std::complex<double> omega2(0, _quadpoints(j)-eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
+        for (int mu = 0 ; mu < auxsize ; ++mu) {
+            for (int nu = 0 ; nu < auxsize ; ++nu) {
+        complexresult(m)-= Imxm(i,mu)*Imxm(i,nu)*_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
                 }
-        complexresult(m)-=Imxm(i,mu)*Imxm(i,nu)*GHQ;
-        }
+            }
         }
         }
         for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
@@ -191,15 +190,14 @@ Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
       std::cout << " < " << std::endl;
       std::cout << rpatotal << std::endl;
       std::cout << "" << std::endl;
-         for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
+      std::complex<double> GHQ(0,0);
         for (int j = 0; j < _opt.order; ++j) {
         Eigen::MatrixXcd DielMxInv = DielInvVector[j];
         std::complex<double> omega2(0, _quadpoints(j)+eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
+        for (int mu = 0 ; mu < auxsize ; ++mu) {
+            for (int nu = 0 ; nu < auxsize ; ++nu) {
+        complexresult(m)-=Imxm(i,mu)*Imxm(i,nu)*_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
             }
-        complexresult(m)-=Imxm(i,mu)*Imxm(i,nu)*GHQ;
         }
         }
         }
@@ -207,10 +205,10 @@ Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& freq
       std::cout << "" << std::endl;
       std::cout << "complex result = " << std::endl;
       std::cout << complexresult << std::endl;
-      std::cout << "" << std::endl; 
+      std::cout << "" << std::endl;
   complexresult /= (2 * M_PI);
   result=complexresult.real();
-    std::cout << "" << std::endl;
+      std::cout << "" << std::endl;
       std::cout << "result = " << std::endl;
       std::cout << result << std::endl;
       std::cout << "" << std::endl;
@@ -341,7 +339,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
       }
     }
   }
-  result.transpose() = result;
+  result += result.transpose();
   result /= (-4 * M_PI);
   result.diagonal() = SigmaGQDiag(frequencies, rpa);
   return result;
