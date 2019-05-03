@@ -177,8 +177,8 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     
     if (_opt.gw_sc_root_finder == 0) { // Fixed Point Method
       _gwa_energies = CalcDiagonalEnergies();
-    } else if (_opt.gw_sc_root_finder == 1) { // Secant Method
-      throw std::runtime_error("GW SC root finder \"Secant\" not yet implemented");
+    } else if (_opt.gw_sc_root_finder == 1) { // Regula Falsi Method
+      throw std::runtime_error("GW SC root finder \"Regula Falsi\" not yet implemented");
     } else {
       throw std::runtime_error("Invalid GW SC root finder");
     }
