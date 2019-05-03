@@ -170,10 +170,18 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 }
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
+  Eigen::VectorXd frequencies_prev = frequencies;
   for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
 
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
-    _gwa_energies = CalcDiagonalEnergies();
+    
+    if (_opt.gw_sc_root_finder == 0) { // Fixed Point Method
+      _gwa_energies = CalcDiagonalEnergies();
+    } else if (_opt.gw_sc_root_finder == 1) { // Secant Method
+      throw std::runtime_error("GW SC root finder \"Secant\" not yet implemented");
+    } else {
+      throw std::runtime_error("Invalid GW SC root finder");
+    }
 
     if (tools::globals::verbose) {
       CTP_LOG(ctp::logDEBUG, _log)
@@ -183,6 +191,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     if (CustomOpts::GSCExport()) {
       CustomTools::AppendRow("gsc.log", frequencies);
     }
+    
     if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_freq + 1
@@ -204,6 +213,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       }
       break;
     } else {
+      frequencies_prev = frequencies;
       double alpha = CustomOpts::GSCAlpha();
       frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
     }
