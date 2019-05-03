@@ -179,6 +179,8 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
       _gwa_energies = CalcDiagonalEnergies();
       if (IterConverged(i_freq, frequencies)) {
+        break;
+      } else {
         frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
       }
     }
@@ -211,7 +213,7 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
       CustomTools::AppendRow("gsc.log",
                              Eigen::VectorXd::Constant(_qptotal, 1.0));
     }
-    return false;
+    return true;
   } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
              _opt.g_sc_max_iterations > 1) {
     CTP_LOG(ctp::logDEBUG, _log)
@@ -222,9 +224,10 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
       CustomTools::AppendRow("gsc.log",
                              Eigen::VectorXd::Constant(_qptotal, 0.0));
     }
+    return true;
+  } else {
     return false;
   }
-  return true;
 }
 
 void GW::CalculateGWPerturbation() {
