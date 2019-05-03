@@ -173,8 +173,8 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   const double alpha = CustomOpts::GSCAlpha();
   
   if (_opt.gw_sc_root_finder == 0) {
-    
     // Fixed Point Method
+    
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
       _gwa_energies = CalcDiagonalEnergies();
@@ -185,9 +185,10 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       }
     }
     
-  } else if (_opt.gw_sc_root_finder == 1) {
+  } else if (_opt.gw_sc_root_finder == 1 || _opt.gw_sc_root_finder == 2) {
+    // Bisection Method, Regula Falsi Method
     
-    // Regula Falsi Method
+    const bool regulaFalsi = _opt.gw_sc_root_finder == 2;
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
     Eigen::VectorXd freq_1 = frequencies;
     Eigen::VectorXd freq_2 = CalcDiagonalEnergies(); // Second guess found by fixed point method
@@ -200,7 +201,12 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       Eigen::VectorXd func_1 = _Sigma_x.diagonal() + sigc_1 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_1;
       Eigen::VectorXd func_2 = _Sigma_x.diagonal() + sigc_2 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_2;
       // Compute next guess
-      Eigen::VectorXd freq_3 = freq_1 - func_1.cwiseProduct(freq_2 - freq_1).cwiseQuotient(func_2 - func_1);
+      Eigen::VectorXd freq_3;
+      if (regulaFalsi) {
+        freq_3 = freq_1 - func_1.cwiseProduct(freq_2 - freq_1).cwiseQuotient(func_2 - func_1);
+      } else {
+        freq_3 = (freq_1 + freq_2) / 2;
+      }
       Eigen::VectorXd sigc_3 = _sigma->CalcCorrelationDiag(freq_3);
       Eigen::VectorXd func_3 = _Sigma_x.diagonal() + sigc_3 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_3;
       _Sigma_c.diagonal() = sigc_3;
@@ -214,7 +220,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         frequencies = freq_3;
       }
     }
-    
+
   } else {
     throw std::runtime_error("Invalid GW SC root finder");
   }
