@@ -205,12 +205,13 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       Eigen::VectorXd func_3 = _Sigma_x.diagonal() + sigc_3 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_3;
       _Sigma_c.diagonal() = sigc_3;
       _gwa_energies = freq_3;
-      if (IterConverged(i_freq, freq_3)) {
+      if (IterConverged(i_freq, frequencies)) {
         break;
       } else {
         // TODO: Mixing
         freq_1 = (func_3.array().sign() == func_1.array().sign()).select(freq_3, freq_1);
         freq_2 = (func_3.array().sign() == func_2.array().sign()).select(freq_3, freq_2);
+        frequencies = freq_3;
       }
     }
     
