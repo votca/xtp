@@ -351,7 +351,7 @@ void GWBSE::Initialize(tools::Property& options) {
   
   // TODO: Parse string
   std::vector<std::string> root_finder_choice =
-      {"fixedpoint", "regulafalsi"};
+      {"fixed point", "regula falsi"};
   _gwopt.gw_sc_root_finder =
       options.ifExistsReturnElseReturnDefault<int>(
           key + ".gw_sc_root_finder", _gwopt.gw_sc_root_finder);

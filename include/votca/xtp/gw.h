@@ -100,6 +100,7 @@ class GW {
   bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                  double epsilon) const;
   void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
+  bool IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const;
 };
 }  // namespace xtp
 }  // namespace votca

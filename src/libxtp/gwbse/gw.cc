@@ -170,55 +170,61 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 }
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
-  Eigen::VectorXd frequencies_prev = frequencies;
-  for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
-
-    _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
+  const double alpha = CustomOpts::GSCAlpha();
+  
+  if (_opt.gw_sc_root_finder == 0) {
     
-    if (_opt.gw_sc_root_finder == 0) { // Fixed Point Method
+    // Fixed Point Method
+    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+      _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
       _gwa_energies = CalcDiagonalEnergies();
-    } else if (_opt.gw_sc_root_finder == 1) { // Regula Falsi Method
-      throw std::runtime_error("GW SC root finder \"Regula Falsi\" not yet implemented");
-    } else {
-      throw std::runtime_error("Invalid GW SC root finder");
-    }
-
-    if (tools::globals::verbose) {
-      CTP_LOG(ctp::logDEBUG, _log)
-          << ctp::TimeStamp() << " G_Iteration:" << i_freq
-          << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
-    }
-    if (CustomOpts::GSCExport()) {
-      CustomTools::AppendRow("gsc.log", frequencies);
+      if (IterConverged(i_freq, frequencies)) {
+        frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
+      }
     }
     
-    if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
-      CTP_LOG(ctp::logDEBUG, _log)
-          << ctp::TimeStamp() << " Converged after " << i_freq + 1
-          << " G iterations." << std::flush;
-      if (CustomOpts::GSCExport()) {
-        CustomTools::AppendRow("gsc.log",
-                               Eigen::VectorXd::Constant(_qptotal, 1.0));
-      }
-      break;
-    } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
-               _opt.g_sc_max_iterations > 1) {
-      CTP_LOG(ctp::logDEBUG, _log)
-          << ctp::TimeStamp()
-          << " G-self-consistency cycle not converged after "
-          << _opt.g_sc_max_iterations << " iterations." << std::flush;
-      if (CustomOpts::GSCExport()) {
-        CustomTools::AppendRow("gsc.log",
-                               Eigen::VectorXd::Constant(_qptotal, 0.0));
-      }
-      break;
-    } else {
-      frequencies_prev = frequencies;
-      double alpha = CustomOpts::GSCAlpha();
-      frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
-    }
+  } else if (_opt.gw_sc_root_finder == 1) {
+    
+    // Regula Falsi Method
+    
+  } else {
+    throw std::runtime_error("Invalid GW SC root finder");
   }
+  
   return frequencies;
+}
+
+bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
+  if (tools::globals::verbose) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " G_Iteration:" << i_freq
+        << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
+  }
+  if (CustomOpts::GSCExport()) {
+    CustomTools::AppendRow("gsc.log", frequencies);
+  }
+  if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Converged after " << i_freq + 1
+        << " G iterations." << std::flush;
+    if (CustomOpts::GSCExport()) {
+      CustomTools::AppendRow("gsc.log",
+                             Eigen::VectorXd::Constant(_qptotal, 1.0));
+    }
+    return false;
+  } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
+             _opt.g_sc_max_iterations > 1) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp()
+        << " G-self-consistency cycle not converged after "
+        << _opt.g_sc_max_iterations << " iterations." << std::flush;
+    if (CustomOpts::GSCExport()) {
+      CustomTools::AppendRow("gsc.log",
+                             Eigen::VectorXd::Constant(_qptotal, 0.0));
+    }
+    return false;
+  }
+  return true;
 }
 
 void GW::CalculateGWPerturbation() {
