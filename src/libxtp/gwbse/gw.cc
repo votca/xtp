@@ -227,6 +227,11 @@ void GW::CalculateGWPerturbation() {
   _rpa.setRPAInputEnergies(rpa_energies);
   Eigen::VectorXd frequencies =
       dft_shifted_energies.segment(_opt.qpmin, _qptotal);
+  
+  if (CustomOpts::SigmaExportRange() > 0 && !CustomOpts::SigmaExportConverged()) {
+    ExportCorrelationDiags(frequencies);
+  }
+  
   for (int i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
 
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
@@ -271,7 +276,7 @@ void GW::CalculateGWPerturbation() {
 
   PrintGWA_Energies();
 
-  if (CustomOpts::SigmaExportRange() > 0) {
+  if (CustomOpts::SigmaExportRange() > 0 && CustomOpts::SigmaExportConverged()) {
     ExportCorrelationDiags(frequencies);
   }
 }

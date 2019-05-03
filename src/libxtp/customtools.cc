@@ -62,6 +62,8 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.sigma_export_range", _sigma_export_range);
   _sigma_export_delta = options.ifExistsReturnElseReturnDefault<double>(
       "customopts.sigma_export_delta", _sigma_export_delta);
+  _sigma_export_converged = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.sigma_export_converged", _sigma_export_converged);
   _sigma_spectral_eta = options.ifExistsReturnElseReturnDefault<double>(
       "customopts.sigma_spectral_eta", _sigma_spectral_eta);
   _rpa_spectrum_export = options.ifExistsReturnElseReturnDefault<bool>(
