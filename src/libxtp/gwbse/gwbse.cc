@@ -348,6 +348,19 @@ void GWBSE::Initialize(tools::Property& options) {
     CTP_LOG(ctp::logDEBUG, *_pLog)
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
+  
+  // TODO: Parse string
+  std::vector<std::string> root_finder_choice =
+      {"fixed", "secant"};
+  _gwopt.gw_sc_root_finder =
+      options.ifExistsReturnElseReturnDefault<int>(
+          key + ".gw_sc_root_finder", _gwopt.gw_sc_root_finder);
+  if (_gwopt.gw_sc_root_finder < 0 || _gwopt.gw_sc_root_finder >= root_finder_choice.size()) {
+    throw std::runtime_error(
+        (boost::format("GW SC root finder must be within [0, %d]") % (root_finder_choice.size() - 1)).str());
+  }
+  CTP_LOG(ctp::logDEBUG, *_pLog)
+      << " GW SC root finder: " << root_finder_choice[_gwopt.gw_sc_root_finder] << flush;
 
   // setting some defaults
   _do_bse_singlets = false;

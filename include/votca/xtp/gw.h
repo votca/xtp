@@ -52,6 +52,7 @@ class GW {
     std::string sigma_integration = "ppm";
     int reset_3c = 5;  // how often the 3c integrals in iterate should be
                        // rebuild
+    int gw_sc_root_finder = 0; // GW SC root finder method
   };
 
   void configure(const options& opt);
