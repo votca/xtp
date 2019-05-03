@@ -188,6 +188,31 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   } else if (_opt.gw_sc_root_finder == 1) {
     
     // Regula Falsi Method
+    _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
+    Eigen::VectorXd freq_1 = frequencies;
+    Eigen::VectorXd freq_2 = CalcDiagonalEnergies(); // Second guess found by fixed point method
+    // TODO: Verify sign change
+    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+      // Compute left, right sigma_c
+      Eigen::VectorXd sigc_1 = _sigma->CalcCorrelationDiag(freq_1); // TODO: Re-use previous result
+      Eigen::VectorXd sigc_2 = _sigma->CalcCorrelationDiag(freq_2);
+      // Compute left, right function values
+      Eigen::VectorXd func_1 = _Sigma_x.diagonal() + sigc_1 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_1;
+      Eigen::VectorXd func_2 = _Sigma_x.diagonal() + sigc_2 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_2;
+      // Compute next guess
+      Eigen::VectorXd freq_3 = freq_1 - func_1.cwiseProduct(freq_2 - freq_1).cwiseQuotient(func_2 - func_1);
+      Eigen::VectorXd sigc_3 = _sigma->CalcCorrelationDiag(freq_3);
+      Eigen::VectorXd func_3 = _Sigma_x.diagonal() + sigc_3 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_3;
+      _Sigma_c.diagonal() = sigc_3;
+      _gwa_energies = freq_3;
+      if (IterConverged(i_freq, freq_3)) {
+        break;
+      } else {
+        // TODO: Mixing
+        freq_1 = (func_3.array().sign() == func_1.array().sign()).select(freq_3, freq_1);
+        freq_2 = (func_3.array().sign() == func_2.array().sign()).select(freq_3, freq_2);
+      }
+    }
     
   } else {
     throw std::runtime_error("Invalid GW SC root finder");
