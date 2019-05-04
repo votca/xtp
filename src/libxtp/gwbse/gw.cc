@@ -188,18 +188,33 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   } else if (_opt.gw_sc_root_finder == 1 || _opt.gw_sc_root_finder == 2) {
     // Bisection Method, Regula Falsi Method
     
+    // Define constants
     const bool regulaFalsi = _opt.gw_sc_root_finder == 2;
+    const Eigen::VectorXd c = _Sigma_x.diagonal() - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal);
+    // First guess, two points required
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
     Eigen::VectorXd freq_1 = frequencies;
-    Eigen::VectorXd freq_2 = CalcDiagonalEnergies(); // Second guess found by fixed point method
-    // TODO: Verify sign change
+    Eigen::VectorXd freq_2 = CalcDiagonalEnergies(); // Second point found by fixed point method
+    // Compute left, right function values
+    Eigen::VectorXd func_1 = _sigma->CalcCorrelationDiag(freq_1) + c - freq_1;
+    Eigen::VectorXd func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
+    // Verify sign change
+    Eigen::Array<bool, Eigen::Dynamic, 1> sign = (func_1.cwiseProduct(func_2).array() <= 0);
+    if (!sign.all()) {
+      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+          << " Warning: Bisection second guess requires sign change, trying to resolve"
+          << std::flush;
+      freq_2 = sign.select(freq_2, freq_1 + freq_1 - freq_2); // Try to mirror around freq_1
+      func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
+      sign = (func_1.cwiseProduct(func_2).array() <= 0);
+      if (!sign.all()) {
+        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+            << " Error: Bisection second guess requires sign change, failed to resolve"
+            << std::flush;
+        throw std::runtime_error("Bisection second guess requires sign change");
+      }
+    }
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
-      // Compute left, right sigma_c
-      Eigen::VectorXd sigc_1 = _sigma->CalcCorrelationDiag(freq_1); // TODO: Re-use previous result
-      Eigen::VectorXd sigc_2 = _sigma->CalcCorrelationDiag(freq_2);
-      // Compute left, right function values
-      Eigen::VectorXd func_1 = _Sigma_x.diagonal() + sigc_1 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_1;
-      Eigen::VectorXd func_2 = _Sigma_x.diagonal() + sigc_2 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_2;
       // Compute next guess
       Eigen::VectorXd freq_3;
       if (regulaFalsi) {
@@ -208,15 +223,23 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         freq_3 = (freq_1 + freq_2) / 2;
       }
       Eigen::VectorXd sigc_3 = _sigma->CalcCorrelationDiag(freq_3);
-      Eigen::VectorXd func_3 = _Sigma_x.diagonal() + sigc_3 - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal) - freq_3;
+      Eigen::VectorXd func_3 = sigc_3 + c - freq_3;
       _Sigma_c.diagonal() = sigc_3;
       _gwa_energies = freq_3;
       if (IterConverged(i_freq, frequencies)) {
         break;
       } else {
         // TODO: Mixing
-        freq_1 = (func_3.array().sign() == func_1.array().sign()).select(freq_3, freq_1);
-        freq_2 = (func_3.array().sign() == func_2.array().sign()).select(freq_3, freq_2);
+        // Compute sign change
+        Eigen::Array<bool, Eigen::Dynamic, 1> sign_1 = (func_1.cwiseProduct(func_3).array() <= 0);
+        Eigen::Array<bool, Eigen::Dynamic, 1> sign_2 = (func_2.cwiseProduct(func_3).array() <= 0);
+        // Update left, right frequencies
+        freq_1 = sign_1.select(freq_1, freq_3);
+        freq_2 = sign_2.select(freq_2, freq_3);
+        // Update left, right function values
+        func_1 = sign_1.select(func_1, func_3);
+        func_2 = sign_2.select(func_2, func_3);
+        // Update current guess
         frequencies = freq_3;
       }
     }
