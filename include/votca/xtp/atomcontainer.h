@@ -38,8 +38,11 @@ namespace xtp {
 template <class T>
 class AtomContainer {
  public:
-  AtomContainer(std::string name, int id)
-      : _name(name), _id(id), _position_valid(false){};
+  AtomContainer(std::string name, int id) : _name(name), _id(id){};
+
+  AtomContainer(CheckpointReader& r) { this->ReadFromCpt(r); }
+
+  typedef typename std::vector<T>::iterator iterator;
 
   const std::string& getName() const { return _name; }
 
@@ -53,6 +56,13 @@ class AtomContainer {
   }
   void push_back(T&& atom) {
     _atomlist.push_back(atom);
+    _position_valid = false;
+  }
+
+  void AddContainer(const AtomContainer<T>& container) {
+    _name += "_" + container._name;
+    _atomlist.insert(_atomlist.end(), container._atomlist.begin(),
+                     container._atomlist.end());
     _position_valid = false;
   }
 
@@ -134,12 +144,13 @@ class AtomContainer {
     bool compact = true;
     CptTable table = w.openTable(element.identify() + "s", element,
                                  _atomlist.size(), compact);
-
-    for (unsigned i = 0; i < _atomlist.size(); i++) {
-      _atomlist[i].WriteToCpt(table, i);
+    std::vector<typename T::data> dataVec(_atomlist.size());
+    for (std::size_t i = 0; i < _atomlist.size(); ++i) {
+      _atomlist[i].WriteData(dataVec[i]);
     }
-  }
 
+    table.write(dataVec);
+  }
   virtual void ReadFromCpt(CheckpointReader& r) {
     r(_name, "name");
     r(_id, "id");
@@ -150,12 +161,13 @@ class AtomContainer {
     }
     T element(0, "H", Eigen::Vector3d::Zero());  // dummy element to get
                                                  // .identify for type
-
     CptTable table = r.openTable(element.identify() + "s", _atomlist[0]);
     _atomlist.clear();
     _atomlist.reserve(table.numRows());
+    std::vector<typename T::data> dataVec(table.numRows());
+    table.read(dataVec);
     for (std::size_t i = 0; i < table.numRows(); ++i) {
-      _atomlist.emplace_back(T(table, i));
+      _atomlist.emplace_back(T(dataVec[i]));
     }
   }
 
@@ -167,7 +179,7 @@ class AtomContainer {
   bool PosIsValid() const { return _position_valid; }
 
  private:
-  mutable bool _position_valid;
+  mutable bool _position_valid = false;
   mutable Eigen::Vector3d _pos;
 
   void calcPos() const {

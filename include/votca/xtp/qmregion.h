@@ -16,35 +16,51 @@
  * limitations under the License.
  *
  */
+#include <votca/xtp/region.h>
 
-#ifndef VOTCA_XTP_IANALYZE_H
-#define VOTCA_XTP_IANALYZE_H
-#include <votca/xtp/qmcalculator.h>
-#include <votca/xtp/qmpair.h>
-#include <votca/xtp/qmstate.h>
+#include "orbitals.h"
+
+#ifndef VOTCA_XTP_QMREGION_H
+#define VOTCA_XTP_QMREGION_H
+
+/**
+ * \brief base class to derive regions from
+ *
+ *
+ *
+ */
 
 namespace votca {
 namespace xtp {
 
-class IAnalyze : public QMCalculator {
- public:
-  std::string Identify() { return "ianalyze"; }
+class QMRegion : public Region {
 
-  void Initialize(tools::Property &options);
-  bool EvaluateFrame(Topology &top);
-  void IHist(Topology &top, QMStateType state);
-  void IRdependence(Topology &top, QMStateType state);
+ public:
+  ~QMRegion(){};
+
+  void WriteToCpt(CheckpointWriter& w) const;
+
+  void ReadFromCpt(CheckpointReader& r);
+
+  int size() const { return 1; }
+
+  void WritePDB(csg::PDBWriter& writer) const;
+
+  std::string identify() const { return "QMRegion"; }
+
+  void push_back(const QMMolecule& mol) {
+    if (_orb.QMAtoms().size() == 0) {
+      _orb.QMAtoms() = mol;
+    } else {
+      _orb.QMAtoms().AddContainer(mol);
+    }
+  }
 
  private:
-  double _resolution_logJ2;
-  std::vector<QMStateType> _states;
-  double _resolution_space;
-  std::vector<QMPair::PairType> _pairtype;
-  bool _do_pairtype;
-  bool _do_IRdependence;
+  Orbitals _orb;
 };
 
 }  // namespace xtp
 }  // namespace votca
 
-#endif
+#endif  // VOTCA_XTP_REGION_H

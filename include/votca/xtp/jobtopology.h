@@ -19,17 +19,14 @@
 
 #ifndef VOTCA_XTP_JOBTOPOLOGY_H
 #define VOTCA_XTP_JOBTOPOLOGY_H
-#include <votca/tools/elements.h>
-#include <votca/xtp/checkpoint.h>
-#include <votca/xtp/region.h>
 
+#include <votca/xtp/job.h>
+#include <votca/xtp/logger.h>
+#include <votca/xtp/region.h>
+#include <votca/xtp/topology.h>
 /**
  * \brief Class to set up the toplogy, e.g division of molecules into different
  * regions for a specific job.
- *
- *
- *
- *
  */
 
 namespace votca {
@@ -37,11 +34,39 @@ namespace xtp {
 
 class JobTopology {
  public:
-  void BuildRegions(Topology& top, Mapper& mapper);
+  JobTopology(Job& job, Logger& log) : _job(job), _log(log){};
+  void BuildRegions(const Topology& top, const tools::Property& options);
 
- protected:
+  void WriteToHdf5(std::string filename) const;
+
+  void WriteToPdb(std::string filename) const;
+
+ private:
+  std::vector<std::vector<int> > PartitionRegions(
+      const std::vector<const tools::Property*>& regions_def,
+      const Topology& top) const;
+
+  void CreateRegions(const tools::Property& options, const Topology& top,
+                     const std::vector<std::vector<int> >& region_seg_ids);
+
+  template <class T>
+  T GetInputFromXMLorJob(const tools::Property* region_def,
+                         std::string keyword) const;
+
+  template <class T>
+  void ShiftPBC(const Topology& top, const Eigen::Vector3d& center,
+                T& mol) const;
+
+  void CheckEnumerationOfRegions(
+      const std::vector<const tools::Property*>& regions_def) const;
+  void SortRegionsDefbyId(
+      std::vector<const tools::Property*>& regions_def) const;
+
+  Job& _job;
+  Logger& _log;
   std::vector<std::unique_ptr<Region> > _regions;
-}
+};
 }  // namespace xtp
+}  // namespace votca
 
 #endif  // VOTCA_XTP_JOBTOPOLOGY_H

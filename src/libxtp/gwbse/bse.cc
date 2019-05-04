@@ -17,21 +17,31 @@
  *
  */
 
-#include <iostream>
-
 #include "votca/xtp/vc2index.h"
+#include <iostream>
 #include <votca/tools/linalg.h>
 #include <votca/xtp/bse.h>
 #include <votca/xtp/bse_operator.h>
 #include <votca/xtp/davidsonsolver.h>
 
 #include <chrono>
+#include <eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h>
 
 using boost::format;
 using std::flush;
 
 namespace votca {
 namespace xtp {
+
+void BSE::configure(const options& opt) {
+  _opt = opt;
+  _bse_vmax = _opt.homo;
+  _bse_cmin = _opt.homo + 1;
+  _bse_vtotal = _bse_vmax - _opt.vmin + 1;
+  _bse_ctotal = _opt.cmax - _bse_cmin + 1;
+  _bse_size = _bse_vtotal * _bse_ctotal;
+  SetupDirectInteractionOperator();
+}
 
 void BSE::SetupDirectInteractionOperator() {
   RPA rpa = RPA(_Mmn);
@@ -63,7 +73,7 @@ void BSE::configureBSEOperator(BSE_OPERATOR& H) {
 
 void BSE::Solve_triplets_TDA() {
 
-  TripletOperator_TDA Ht(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  TripletOperator_TDA Ht(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Ht);
   solve_hermitian(Ht, _bse_triplet_energies, _bse_triplet_coefficients);
 
@@ -102,7 +112,7 @@ void BSE::Solve_triplets() {
 
 void BSE::Solve_singlets_TDA() {
 
-  SingletOperator_TDA Hs(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  SingletOperator_TDA Hs(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Hs);
   XTP_LOG(logDEBUG, _log) << TimeStamp() << " Setup TDA singlet hamiltonian "
                           << flush;
@@ -112,40 +122,16 @@ void BSE::Solve_singlets_TDA() {
 
 SingletOperator_TDA BSE::getSingletOperator_TDA() {
 
-  SingletOperator_TDA Hs(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  SingletOperator_TDA Hs(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Hs);
   return Hs;
 }
 
 TripletOperator_TDA BSE::getTripletOperator_TDA() {
 
-  TripletOperator_TDA Ht(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  TripletOperator_TDA Ht(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Ht);
   return Ht;
-}
-
-Eigen::MatrixXd BSE::GetComponentMatrix(std::string name) {
-
-  Eigen::MatrixXd hmat;
-  if (name == "Hqp") {
-    HqpOperator H(_epsilon_0_inv, _log, _Mmn, _Hqp);
-    configureBSEOperator(H);
-    hmat = H.get_full_matrix();
-  } else if (name == "Hx") {
-    HxOperator H(_epsilon_0_inv, _log, _Mmn, _Hqp);
-    configureBSEOperator(H);
-    hmat = H.get_full_matrix();
-  } else if (name == "Hd") {
-    HdOperator H(_epsilon_0_inv, _log, _Mmn, _Hqp);
-    configureBSEOperator(H);
-    hmat = H.get_full_matrix();
-  } else if (name == "Hd2") {
-    Hd2Operator H(_epsilon_0_inv, _log, _Mmn, _Hqp);
-    configureBSEOperator(H);
-    hmat = H.get_full_matrix();
-  }
-
-  return hmat;
 }
 
 template <typename BSE_OPERATOR>
@@ -235,9 +221,9 @@ void BSE::solve_hermitian(BSE_OPERATOR& h, Eigen::VectorXd& energies,
 }
 
 void BSE::Solve_singlets_BTDA() {
-  SingletOperator_BTDA_ApB Hs_ApB(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  SingletOperator_BTDA_ApB Hs_ApB(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Hs_ApB);
-  Operator_BTDA_AmB Hs_AmB(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  Operator_BTDA_AmB Hs_AmB(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Hs_AmB);
   XTP_LOG(logDEBUG, _log) << TimeStamp() << " Setup Full singlet hamiltonian "
                           << flush;
@@ -246,9 +232,9 @@ void BSE::Solve_singlets_BTDA() {
 }
 
 void BSE::Solve_triplets_BTDA() {
-  TripletOperator_BTDA_ApB Ht_ApB(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  TripletOperator_BTDA_ApB Ht_ApB(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Ht_ApB);
-  Operator_BTDA_AmB Ht_AmB(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  Operator_BTDA_AmB Ht_AmB(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Ht_AmB);
   XTP_LOG(logDEBUG, _log) << TimeStamp() << " Setup Full triplet hamiltonian "
                           << flush;
@@ -328,6 +314,7 @@ void BSE::Solve_antihermitian(BSE_OPERATOR_ApB& apb, BSE_OPERATOR_AmB& amb,
   // reconstruct real eigenvectors X_l = 1/2 [sqrt(eps_l) (L^T)^-1 +
   // 1/sqrt(eps_l)L ] R_l
   //                               Y_l = 1/2 [sqrt(eps_l) (L^T)^-1 -
+  //                               1/sqrt(eps_l)L ] R_l
   //                               1/sqrt(eps_l)L ] R_l
   // determine inverse of L^T
   Eigen::MatrixXd LmT = AmB.inverse().transpose();
@@ -513,16 +500,16 @@ Eigen::VectorXd BSE::Analyze_IndividualContribution(const QMStateType& type,
 BSE::Interaction BSE::Analyze_eh_interaction(const QMStateType& type) {
   Interaction analysis;
 
-  HqpOperator hqp(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  HqpOperator hqp(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(hqp);
   analysis.qp_contrib = Analyze_IndividualContribution(type, hqp);
 
-  HdOperator hd(_epsilon_0_inv, _log, _Mmn, _Hqp);
+  HdOperator hd(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(hd);
   analysis.direct_contrib = Analyze_IndividualContribution(type, hd);
 
   if (type == QMStateType::Singlet) {
-    HxOperator hx(_epsilon_0_inv, _log, _Mmn, _Hqp);
+    HxOperator hx(_epsilon_0_inv, _Mmn, _Hqp);
     configureBSEOperator(hx);
     analysis.exchange_contrib = Analyze_IndividualContribution(type, hx);
   } else {

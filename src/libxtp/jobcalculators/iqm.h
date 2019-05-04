@@ -43,11 +43,11 @@ namespace xtp {
  * Callname: iqm
  */
 
-class IQM : public ParallelXJobCalc<std::vector<Job*>, Job*, Job::JobResult> {
+class IQM : public ParallelXJobCalc<std::vector<Job> > {
  public:
   void Initialize(tools::Property& options);
   std::string Identify() { return "iqm"; }
-  Job::JobResult EvalJob(Topology& top, Job* job, QMThread* Thread);
+  Job::JobResult EvalJob(Topology& top, Job& job, QMThread& Thread);
   void WriteJobFile(Topology& top);
   void ReadJobFile(Topology& top);
 
@@ -61,7 +61,6 @@ class IQM : public ParallelXJobCalc<std::vector<Job*>, Job*, Job::JobResult> {
   void WriteLoggerToFile(const std::string& logfile, Logger& logger);
   void addLinkers(std::vector<const Segment*>& segments, Topology& top);
   bool isLinker(const std::string& name);
-  void WriteCoordinatesToOrbitalsPBC(QMPair& pair, Orbitals& orbitals);
   void ParseOptionsXML(tools::Property& opt);
   std::map<std::string, QMState> FillParseMaps(const std::string& Mapstring);
 
@@ -74,6 +73,8 @@ class IQM : public ParallelXJobCalc<std::vector<Job*>, Job*, Job::JobResult> {
   tools::Property _bsecoupling_options;
   tools::Property _dftcoupling_options;
 
+  std::string _mapfile;
+
   // what to do
   bool _do_dft_input = false;
   bool _do_dft_run = false;
@@ -82,7 +83,7 @@ class IQM : public ParallelXJobCalc<std::vector<Job*>, Job*, Job::JobResult> {
   bool _do_gwbse = false;
   bool _do_bsecoupling = false;
 
-  std::vector<std::string> _linker_names;
+  std::map<std::string, QMState> _linkers;
 
   // what to write in the storage
   bool _store_dft = false;

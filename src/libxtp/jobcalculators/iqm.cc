@@ -18,6 +18,7 @@
  */
 
 #include "iqm.h"
+#include "votca/xtp/segmentmapper.h"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -78,8 +79,17 @@ void IQM::ParseOptionsXML(tools::Property& opt) {
   // read linker groups
   std::string linker = opt.ifExistsReturnElseReturnDefault<std::string>(
       key + ".linker_names", "");
-  tools::Tokenizer toker(linker, ",");
-  toker.ToVector(_linker_names);
+  tools::Tokenizer toker(linker, ", \t\n");
+  std::vector<std::string> linkers = toker.ToVector();
+  for (const std::string& link : linkers) {
+    tools::Tokenizer toker2(link, ":");
+    std::vector<std::string> link_split = toker2.ToVector();
+    if (link_split.size() != 2) {
+      throw std::runtime_error(
+          "Linker molecule has to be defined NAME:STATEGEO .e.g. DCV5T:n");
+    }
+    _linkers[link_split[0]] = QMState(link_split[1]);
+  }
 
   if (_do_dftcoupling) {
     _dftcoupling_options = opt.get(key + ".dftcoupling_options");
@@ -118,11 +128,10 @@ void IQM::ParseOptionsXML(tools::Property& opt) {
   // job file specification
   key = "options." + Identify();
 
-  if (opt.exists(key + ".job_file")) {
-    _jobfile = opt.get(key + ".job_file").as<std::string>();
-  } else {
-    throw std::runtime_error("Job-file not set. Abort.");
-  }
+  _jobfile =
+      opt.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".job_file");
+  _mapfile =
+      opt.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".map_file");
 
   return;
 }
@@ -147,13 +156,11 @@ std::map<std::string, QMState> IQM::FillParseMaps(
 }
 
 void IQM::addLinkers(std::vector<const Segment*>& segments, Topology& top) {
+  std::vector<QMState> result;
   const Segment* seg1 = segments[0];
   const Segment* seg2 = segments[1];
   std::vector<const Segment*> segmentsInMolecule =
       top.FindAllSegmentsOnMolecule(*seg1, *seg2);
-  if (segments.empty()) {
-    return;
-  }
 
   for (const Segment* segment : segmentsInMolecule) {
     int idIterator = segment->getId();
@@ -166,17 +173,7 @@ void IQM::addLinkers(std::vector<const Segment*>& segments, Topology& top) {
 }
 
 bool IQM::isLinker(const std::string& name) {
-  return (std::find(_linker_names.begin(), _linker_names.end(), name) !=
-          _linker_names.end());
-}
-
-void IQM::WriteCoordinatesToOrbitalsPBC(QMPair& pair, Orbitals& orbitals) {
-  const Segment* seg1 = pair.Seg1();
-  const Segment* seg2 = pair.Seg2PbCopy();
-
-  std::vector<const Segment*> segments;
-  segments.push_back(seg1);
-  segments.push_back(seg2);
+  return _linkers.count(name) == 1;
 }
 
 void IQM::SetJobToFailed(Job::JobResult& jres, Logger& pLog,
@@ -197,7 +194,7 @@ void IQM::WriteLoggerToFile(const std::string& logfile, Logger& logger) {
   ofs.close();
 }
 
-Job::JobResult IQM::EvalJob(Topology& top, Job* job, QMThread* opThread) {
+Job::JobResult IQM::EvalJob(Topology& top, Job& job, QMThread& opThread) {
 
   // report back to the progress observer
   Job::JobResult jres = Job::JobResult();
@@ -207,16 +204,33 @@ Job::JobResult IQM::EvalJob(Topology& top, Job* job, QMThread* opThread) {
   std::string frame_dir =
       "frame_" + boost::lexical_cast<std::string>(top.getStep());
 
-  Logger& pLog = opThread->getLogger();
+  Logger& pLog = opThread.getLogger();
+
+  QMMapper mapper(pLog);
+  mapper.LoadMappingFile(_mapfile);
 
   // get the information about the job executed by the thread
-  int job_ID = job->getId();
-  tools::Property job_input = job->getInput();
+  int job_ID = job.getId();
+  tools::Property job_input = job.getInput();
   std::vector<tools::Property*> segment_list = job_input.Select("segment");
   int ID_A = segment_list.front()->getAttribute<int>("id");
   std::string type_A = segment_list.front()->getAttribute<std::string>("type");
   int ID_B = segment_list.back()->getAttribute<int>("id");
   std::string type_B = segment_list.back()->getAttribute<std::string>("type");
+
+  std::string qmgeo_state_A = "n";
+  if (segment_list.front()->exists("qm_geometry")) {
+    qmgeo_state_A =
+        segment_list.front()->getAttribute<std::string>("qm_geometry");
+  }
+
+  std::string qmgeo_state_B = "n";
+  if (segment_list.back()->exists("qm_geometry")) {
+    qmgeo_state_B =
+        segment_list.back()->getAttribute<std::string>("qm_geometry");
+  }
+  QMState stateA(qmgeo_state_A);
+  QMState stateB(qmgeo_state_B);
 
   // set the folders
   std::string pair_dir =
@@ -255,7 +269,7 @@ Job::JobResult IQM::EvalJob(Topology& top, Job* job, QMThread* opThread) {
   std::string work_dir =
       (arg_path / iqm_work_dir / package_append / frame_dir / pair_dir).c_str();
 
-  if (_linker_names.size() > 0) {
+  if (_linkers.size() > 0) {
     addLinkers(segments, top);
   }
   Orbitals orbitalsAB;
@@ -268,8 +282,20 @@ Job::JobResult IQM::EvalJob(Topology& top, Job* job, QMThread* opThread) {
           << std::flush;
     }
 
+    orbitalsAB.QMAtoms() = mapper.map(*(segments[0]), stateA);
+    orbitalsAB.QMAtoms().AddContainer(mapper.map(*(segments[1]), stateB));
+
+    for (unsigned i = 2; i < segments.size(); i++) {
+      QMState linker_state = _linkers.at(segments[i]->getName());
+      orbitalsAB.QMAtoms().AddContainer(
+          mapper.map(*(segments[i]), linker_state));
+    }
+
   } else {
-    WriteCoordinatesToOrbitalsPBC(*pair, orbitalsAB);
+    const Segment* seg1 = pair->Seg1();
+    const Segment* seg2 = pair->Seg2PbCopy();
+    orbitalsAB.QMAtoms() = mapper.map(*seg1, stateA);
+    orbitalsAB.QMAtoms().AddContainer(mapper.map(*seg2, stateB));
   }
 
   if (_do_dft_input || _do_dft_run || _do_dft_parse) {
@@ -294,7 +320,7 @@ Job::JobResult IQM::EvalJob(Topology& top, Job* job, QMThread* opThread) {
     if (_do_dft_input) {
       boost::filesystem::create_directories(qmpackage_work_dir);
       if (qmpackage->GuessRequested()) {
-        if (_linker_names.size() > 0) {
+        if (_linkers.size() > 0) {
           throw std::runtime_error(
               "Error: You are using a linker and want "
               "to use a monomer guess for the dimer. These are mutually "
@@ -550,7 +576,7 @@ void IQM::WriteJobFile(Topology& top) {
 
   std::cout << std::endl << "... ... Writing job file " << std::flush;
   std::ofstream ofs;
-  ofs.open(_jobfile.c_str(), std::ofstream::out);
+  ofs.open(_jobfile, std::ofstream::out);
   if (!ofs.is_open())
     throw std::runtime_error("\nERROR: bad file handle: " + _jobfile);
 

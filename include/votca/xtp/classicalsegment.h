@@ -31,11 +31,15 @@ class ClassicalSegment : public AtomContainer<T> {
  public:
   ClassicalSegment(std::string name, int id) : AtomContainer<T>(name, id){};
 
+  ClassicalSegment(CheckpointReader& r) : AtomContainer<T>(r){};
+
   void LoadFromFile(std::string filename);
 
   void WriteMPS(std::string filename, std::string header) const;
 
   double CalcTotalQ() const;
+
+  std::string identify() const;
 
   Eigen::Vector3d CalcDipole() const;
 
@@ -48,8 +52,6 @@ class ClassicalSegment : public AtomContainer<T> {
     out << std::endl;
     return out;
   }
-
- protected:
 };
 
 typedef ClassicalSegment<PolarSite> PolarSegment;

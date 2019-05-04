@@ -28,6 +28,8 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/threecenter.h>
 
+#include <votca/xtp/bse_operator.h>
+
 namespace votca {
 namespace xtp {
 
@@ -53,9 +55,7 @@ class BSE {
         _Hqp(Hqp){};
 
   struct options {
-
     bool useTDA = true;
-
     int homo;
     int rpamin;
     int rpamax;
@@ -65,26 +65,16 @@ class BSE {
     int nmax = 5;             // number of eigenvectors to calculate
     bool davidson = true;     // use davidson to diagonalize the matrix
     bool matrixfree = false;  // use matrix free method
-
     std::string davidson_correction = "DPR";
     std::string davidson_ortho = "GS";
     std::string davidson_tolerance = "normal";
     std::string davidson_update = "safe";
-
     int davidson_maxiter = 50;
     double min_print_weight =
         0.5;  // minimium contribution for state to print it
   };
 
-  void configure(const options& opt) {
-    _opt = opt;
-    _bse_vmax = _opt.homo;
-    _bse_cmin = _opt.homo + 1;
-    _bse_vtotal = _bse_vmax - _opt.vmin + 1;
-    _bse_ctotal = _opt.cmax - _bse_cmin + 1;
-    _bse_size = _bse_vtotal * _bse_ctotal;
-    SetupDirectInteractionOperator();
-  }
+  void configure(const options& opt);
 
   void Solve_singlets();
   void Solve_triplets();
@@ -92,7 +82,6 @@ class BSE {
   SingletOperator_TDA getSingletOperator_TDA();
   TripletOperator_TDA getTripletOperator_TDA();
 
-  Eigen::MatrixXd GetComponentMatrix(std::string name);
   void Analyze_singlets(std::vector<QMFragment<BSE_Population> >& singlets);
   void Analyze_triplets(std::vector<QMFragment<BSE_Population> >& triplets);
 
@@ -123,6 +112,7 @@ class BSE {
   int _bse_ctotal;
 
   Orbitals& _orbitals;
+  Eigen::VectorXd _epsilon_0_inv;
 
   // references are stored in orbitals object
   Eigen::VectorXd& _bse_singlet_energies;
@@ -131,11 +121,8 @@ class BSE {
   Eigen::VectorXd& _bse_triplet_energies;
   Eigen::MatrixXd& _bse_triplet_coefficients;
   Eigen::MatrixXd& _bse_triplet_coefficients_AR;
-
   TCMatrix_gwbse& _Mmn;
   const Eigen::MatrixXd& _Hqp;
-
-  Eigen::VectorXd _epsilon_0_inv;
 
   void Solve_singlets_TDA();
   void Solve_singlets_BTDA();
@@ -164,7 +151,6 @@ class BSE {
   void SetupDirectInteractionOperator();
 
   Interaction Analyze_eh_interaction(const QMStateType& type);
-
   template <typename BSE_OPERATOR>
   Eigen::VectorXd Analyze_IndividualContribution(const QMStateType& type,
                                                  const BSE_OPERATOR& H);

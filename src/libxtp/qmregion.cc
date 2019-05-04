@@ -17,34 +17,29 @@
  *
  */
 
-#ifndef VOTCA_XTP_IANALYZE_H
-#define VOTCA_XTP_IANALYZE_H
-#include <votca/xtp/qmcalculator.h>
-#include <votca/xtp/qmpair.h>
-#include <votca/xtp/qmstate.h>
+#include <votca/xtp/qmregion.h>
 
 namespace votca {
 namespace xtp {
 
-class IAnalyze : public QMCalculator {
- public:
-  std::string Identify() { return "ianalyze"; }
+void QMRegion::WritePDB(csg::PDBWriter& writer) const {
+  writer.WriteContainer(_orb.QMAtoms());
+}
 
-  void Initialize(tools::Property &options);
-  bool EvaluateFrame(Topology &top);
-  void IHist(Topology &top, QMStateType state);
-  void IRdependence(Topology &top, QMStateType state);
+void QMRegion::WriteToCpt(CheckpointWriter& w) const {
+  w(_name, "name");
+  w(_id, "id");
+  w(identify(), "type");
+  CheckpointWriter v = w.openChild("orbitals");
+  _orb.WriteToCpt(v);
+}
 
- private:
-  double _resolution_logJ2;
-  std::vector<QMStateType> _states;
-  double _resolution_space;
-  std::vector<QMPair::PairType> _pairtype;
-  bool _do_pairtype;
-  bool _do_IRdependence;
-};
+void QMRegion::ReadFromCpt(CheckpointReader& r) {
+  r(_name, "name");
+  r(_id, "id");
+  CheckpointReader rr = r.openChild("orbitals");
+  _orb.ReadFromCpt(rr);
+}
 
 }  // namespace xtp
 }  // namespace votca
-
-#endif

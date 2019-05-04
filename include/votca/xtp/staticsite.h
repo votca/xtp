@@ -34,20 +34,48 @@ namespace xtp {
 class StaticSite {
 
  public:
+  struct data {
+    int id;
+    char* element;
+    double posX;
+    double posY;
+    double posZ;
+
+    int rank;
+
+    double multipoleQ00;
+    double multipoleQ11c;
+    double multipoleQ11s;
+    double multipoleQ10;
+    double multipoleQ20;
+    double multipoleQ21c;
+    double multipoleQ21s;
+    double multipoleQ22c;
+    double multipoleQ22s;
+
+    double fieldX;
+    double fieldY;
+    double fieldZ;
+
+    double phi;
+  };
   StaticSite(int id, std::string element, Eigen::Vector3d pos)
       : _id(id), _element(element), _pos(pos){};
 
   StaticSite(int id, std::string element)
       : StaticSite(id, element, Eigen::Vector3d::Zero()){};
-  StaticSite(CptTable& table, const std::size_t& idx) {
-    ReadFromCpt(table, idx);
-  }
+
+  StaticSite(data& d) { ReadData(d); }
 
   StaticSite(const QMAtom& atom, double charge)
       : StaticSite(atom.getId(), atom.getElement(), atom.getPos()) {
     setCharge(charge);
   }
 
+ protected:
+  StaticSite(){};
+
+ public:
   int getId() const { return _id; }
   int getRank() const { return _rank; }
   const std::string& getElement() const { return _element; }
@@ -82,35 +110,14 @@ class StaticSite {
 
   virtual Eigen::Vector3d getField() const { return _localpermanetField; }
 
-  virtual double getPotential() const { return PhiP; }
+  virtual double getPotential() const { return _phi; }
 
   std::string WriteMpsLine(std::string unit = "bohr") const;
 
-  struct data {
-    int id;
-    char* element;
-    double posX;
-    double posY;
-    double posZ;
-
-    int rank;
-
-    double multipoleQ00;
-    double multipoleQ11c;
-    double multipoleQ11s;
-    double multipoleQ10;
-    double multipoleQ20;
-    double multipoleQ21c;
-    double multipoleQ21s;
-    double multipoleQ22c;
-    double multipoleQ22s;
-  };
-
   virtual void SetupCptTable(CptTable& table) const;
 
-  virtual void WriteToCpt(CptTable& table, const std::size_t& idx) const;
-  virtual void ReadFromCpt(CptTable& table, const std::size_t& idx);
-
+  virtual void WriteData(data& d) const;
+  virtual void ReadData(data& d);
   virtual void setPolarisation(const Eigen::Matrix3d pol) { return; }
 
   virtual std::string identify() const { return "staticsite"; }
@@ -134,7 +141,7 @@ class StaticSite {
       Vector9d::Zero();  // Q00,Q11c,Q11s,Q10,Q20, Q21c, Q21s, Q22c, Q22s
 
   Eigen::Vector3d _localpermanetField = Eigen::Vector3d::Zero();
-  double PhiP = 0.0;  // Electric potential (due to perm.)
+  double _phi = 0.0;  // Electric potential (due to perm.)
 };
 }  // namespace xtp
 }  // namespace votca

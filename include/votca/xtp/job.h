@@ -35,20 +35,16 @@ class Job {
  public:
   enum JobStatus { AVAILABLE, ASSIGNED, FAILED, COMPLETE };
 
-  Job(tools::Property *prop);
+  Job(const tools::Property &prop);
   Job(int id, std::string &tag, std::string &input, std::string stat);
   Job(int id, std::string &tag, tools::Property &input, JobStatus stat);
-  ~Job() { ; }
 
   std::string ConvertStatus(JobStatus) const;
   JobStatus ConvertStatus(std::string) const;
 
   class JobResult {
    public:
-    JobResult() { ; }
-
     void setStatus(JobStatus stat) { _status = stat; }
-    void setStatus(std::string stat) { assert(false); }
     void setOutput(std::string output) {
       _has_output = true;
       _output = tools::Property().add("output", output);
@@ -57,26 +53,35 @@ class Job {
       _has_output = true;
       _output = output.get("output");
     }
+
+    JobStatus getStatus() const { return _status; }
+    bool hasOutput() const { return _has_output; }
+    const tools::Property &getOutput() const { return _output; }
+    bool hasError() const { return _has_error; }
+    const std::string &getError() const { return _error; }
+
     void setError(std::string error) {
       _has_error = true;
       _error = error;
     }
 
+   private:
     JobStatus _status;
     tools::Property _output;
-    bool _has_output;
+    bool _has_output = false;
     std::string _error;
-    bool _has_error;
+    bool _has_error = false;
   };
 
   void Reset();
-  void ToStream(std::ofstream &ofs, std::string fileformat);
-  void UpdateFrom(Job *ext);
-  void SaveResults(JobResult *res);
+  void ToStream(std::ofstream &ofs, std::string fileformat) const;
+  void UpdateFrom(const Job &ext);
+  void UpdateFromResult(const JobResult &res);
 
   int getId() const { return _id; }
   std::string getTag() const { return _tag; }
   tools::Property &getInput() { return _input; }
+  const tools::Property &getInput() const { return _input; }
   const JobStatus &getStatus() const { return _status; }
   std::string getStatusStr() const { return ConvertStatus(_status); }
 
@@ -107,43 +112,46 @@ class Job {
   }
 
   const std::string &getHost() const {
-    assert(_has_host);
+    assert(_has_host && "Job has no host");
     return _host;
   }
   const std::string &getTime() const {
-    assert(_has_time);
+    assert(_has_time && "Job has no time");
     return _time;
   }
   const tools::Property &getOutput() const {
-    assert(_has_output);
+    assert(_has_output && "Job has no output");
     return _output;
   }
   const std::string &getError() const {
-    assert(_has_error);
+    assert(_has_error && "Job has no error");
     return _error;
   }
 
- protected:
+ private:
   // Defined by user
   int _id;
   std::string _tag;
   JobStatus _status;
-  int _attemptsCount;
+  int _attemptsCount = 0;
   tools::Property _input;
-  std::string _sqlcmd;
 
   // Generated during runtime
   std::string _host;
-  bool _has_host;
+  bool _has_host = false;
   std::string _time;
-  bool _has_time;
+  bool _has_time = false;
   tools::Property _output;
-  bool _has_error;
-  bool _has_output;
+  bool _has_error = false;
+  bool _has_output = false;
   std::string _error;
-  bool _has_sqlcmd;
-};
+};  // namespace xtp
 
+std::vector<Job> LOAD_JOBS(const std::string &xml_file);
+void WRITE_JOBS(const std::vector<Job> &jobs, const std::string &job_file,
+                std::string fileformat);
+void UPDATE_JOBS(const std::vector<Job> &from, std::vector<Job> &to,
+                 const std::string &thisHost);
 }  // namespace xtp
 }  // namespace votca
 

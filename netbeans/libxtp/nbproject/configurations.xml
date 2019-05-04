@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="100">
+<configurationDescriptor version="97">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <logicalFolder name="f1" displayName="Calculators" projectFiles="true">
       <logicalFolder name="f2" displayName="Calculators" projectFiles="true">
+        <itemPath>../../src/libxtp/calculators/eanalyze.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/eanalyze.h</itemPath>
+        <itemPath>../../src/libxtp/calculators/einternal.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/einternal.h</itemPath>
+        <itemPath>../../src/libxtp/calculators/ianalyze.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/ianalyze.h</itemPath>
         <itemPath>../../src/libxtp/calculators/jobwriter.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/jobwriter.h</itemPath>
@@ -13,6 +16,7 @@
         <itemPath>../../src/libxtp/calculators/kmcmultiple.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/kmcmultiple.h</itemPath>
         <itemPath>../../src/libxtp/calculators/mapchecker.h</itemPath>
+        <itemPath>../../src/libxtp/calculators/neighborlist.cc</itemPath>
         <itemPath>../../src/libxtp/calculators/neighborlist.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="JobCalculators" projectFiles="true">
@@ -120,6 +124,7 @@
       <itemPath>../../include/votca/xtp/qmpackage.h</itemPath>
       <itemPath>../../include/votca/xtp/qmpackagefactory.h</itemPath>
       <itemPath>../../include/votca/xtp/qmpair.h</itemPath>
+      <itemPath>../../include/votca/xtp/qmregion.h</itemPath>
       <itemPath>../../include/votca/xtp/qmstate.h</itemPath>
       <itemPath>../../include/votca/xtp/qmthread.h</itemPath>
       <itemPath>../../include/votca/xtp/qmtool.h</itemPath>
@@ -243,6 +248,7 @@
       <itemPath>../../src/libxtp/grid.cc</itemPath>
       <itemPath>../../src/libxtp/gyration.cc</itemPath>
       <itemPath>../../src/libxtp/job.cc</itemPath>
+      <itemPath>../../src/libxtp/jobtopology.cc</itemPath>
       <itemPath>../../src/libxtp/md2qmengine.cc</itemPath>
       <itemPath>../../src/libxtp/mmregion.cc</itemPath>
       <itemPath>../../src/libxtp/nbo.cc</itemPath>
@@ -255,6 +261,7 @@
       <itemPath>../../src/libxtp/qmnblist.cc</itemPath>
       <itemPath>../../src/libxtp/qmpackage.cc</itemPath>
       <itemPath>../../src/libxtp/qmpair.cc</itemPath>
+      <itemPath>../../src/libxtp/qmregion.cc</itemPath>
       <itemPath>../../src/libxtp/qmstate.cc</itemPath>
       <itemPath>../../src/libxtp/rate_engine.cc</itemPath>
       <itemPath>../../src/libxtp/segment.cc</itemPath>
@@ -4124,6 +4131,8 @@
       </item>
       <item path="../../include/votca/xtp/qmpair.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/qmregion.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/qmstate.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/qmthread.h" ex="false" tool="3" flavor2="0">
@@ -4450,14 +4459,29 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/calculators/eanalyze.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/calculators/eanalyze.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/calculators/einternal.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/calculators/einternal.h"
             ex="false"
             tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/calculators/ianalyze.cc"
+            ex="false"
+            tool="1"
             flavor2="0">
       </item>
       <item path="../../src/libxtp/calculators/ianalyze.h"
@@ -4498,6 +4522,11 @@
       <item path="../../src/libxtp/calculators/mapchecker.h"
             ex="false"
             tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/calculators/neighborlist.cc"
+            ex="false"
+            tool="1"
             flavor2="0">
       </item>
       <item path="../../src/libxtp/calculators/neighborlist.h"
@@ -4629,6 +4658,8 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/jobtopology.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/kmccalculator.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/md2qmengine.cc" ex="false" tool="1" flavor2="0">
@@ -4717,6 +4748,8 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/qmpair.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/qmregion.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/qmstate.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -5225,6 +5258,8 @@
       </item>
       <item path="../../include/votca/xtp/qmpair.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/qmregion.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/qmstate.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/qmthread.h" ex="false" tool="3" flavor2="0">
@@ -5551,14 +5586,29 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/calculators/eanalyze.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/calculators/eanalyze.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/calculators/einternal.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/calculators/einternal.h"
             ex="false"
             tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/calculators/ianalyze.cc"
+            ex="false"
+            tool="1"
             flavor2="0">
       </item>
       <item path="../../src/libxtp/calculators/ianalyze.h"
@@ -5599,6 +5649,11 @@
       <item path="../../src/libxtp/calculators/mapchecker.h"
             ex="false"
             tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/calculators/neighborlist.cc"
+            ex="false"
+            tool="1"
             flavor2="0">
       </item>
       <item path="../../src/libxtp/calculators/neighborlist.h"
@@ -5730,6 +5785,8 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/jobtopology.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/kmccalculator.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/md2qmengine.cc" ex="false" tool="1" flavor2="0">
@@ -5818,6 +5875,8 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/qmpair.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/qmregion.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/qmstate.cc" ex="false" tool="1" flavor2="0">
       </item>
