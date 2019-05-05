@@ -199,20 +199,28 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     Eigen::VectorXd func_1 = _sigma->CalcCorrelationDiag(freq_1) + c - freq_1;
     Eigen::VectorXd func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
     // Verify sign change
-    Eigen::Array<bool, Eigen::Dynamic, 1> sign = (func_1.cwiseProduct(func_2).array() <= 0);
-    if (!sign.all()) {
+    Eigen::Array<bool, Eigen::Dynamic, 1> mask = (func_1.cwiseProduct(func_2).array() <= 0);
+    if (!mask.all()) {
       CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
           << " Warning: Bisection second guess requires sign change, trying to resolve"
           << std::flush;
-      freq_2 = sign.select(freq_2, freq_1 + freq_1 - freq_2); // Try to mirror around freq_1
+      // Try to mirror around freq_1
+      freq_2 = mask.select(freq_2, freq_1 + freq_1 - freq_2);
       func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
-      sign = (func_1.cwiseProduct(func_2).array() <= 0);
-      if (!sign.all()) {
-        CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-            << " Error: Bisection second guess requires sign change, failed to resolve"
-            << std::flush;
-        throw std::runtime_error("Bisection second guess requires sign change");
+      mask = (func_1.cwiseProduct(func_2).array() <= 0);
+    }
+    if (!mask.all()) {
+      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+          << " Warning: Bisection second guess requires sign change"
+          << std::flush;
+      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
+          << " The following states cannot converge:";
+      for (int i_state = 0; i_state < _qptotal; ++i_state) {
+        if (!mask(i_state)) {
+          CTP_LOG(ctp::logDEBUG, _log) << " " << i_state;
+        }
       }
+      CTP_LOG(ctp::logDEBUG, _log) << std::flush;
     }
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       // Compute next guess
@@ -222,25 +230,29 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       } else {
         freq_3 = (freq_1 + freq_2) / 2;
       }
+      // Apply convergence mask
+      freq_3 = mask.select(freq_3, frequencies);
+      // Compute new function values
       Eigen::VectorXd sigc_3 = _sigma->CalcCorrelationDiag(freq_3);
       Eigen::VectorXd func_3 = sigc_3 + c - freq_3;
+      // Update member variables
       _Sigma_c.diagonal() = sigc_3;
       _gwa_energies = freq_3;
+      // Check converged
       if (IterConverged(i_freq, frequencies)) {
         break;
       } else {
-        // TODO: Mixing
         // Compute sign change
         Eigen::Array<bool, Eigen::Dynamic, 1> sign_1 = (func_1.cwiseProduct(func_3).array() <= 0);
         Eigen::Array<bool, Eigen::Dynamic, 1> sign_2 = (func_2.cwiseProduct(func_3).array() <= 0);
         // Update left, right frequencies
-        freq_1 = sign_1.select(freq_1, freq_3);
+        freq_1 = sign_1.select(freq_1, freq_3); // TODO: Mixing
         freq_2 = sign_2.select(freq_2, freq_3);
         // Update left, right function values
         func_1 = sign_1.select(func_1, func_3);
         func_2 = sign_2.select(func_2, func_3);
         // Update current guess
-        frequencies = freq_3;
+        frequencies = freq_3; // TODO: Mixing
       }
     }
 
