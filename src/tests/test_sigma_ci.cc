@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 #define BOOST_TEST_MODULE sigma_ci_test
 #include <boost/test/unit_test.hpp>
 #include <fstream>
+#include <votca/ctp/logger.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_ci.h>
 #include <votca/xtp/threecenter.h>
-#include <votca/ctp/logger.h>
 
 using namespace votca::xtp;
 using namespace std;
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, MOs);
   votca::ctp::Logger log;
-  RPA rpa(log,Mmn);
+  RPA rpa(log, Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(mo_energy);
 
@@ -187,30 +187,13 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   sigma.PrepareScreening();
 
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
-  Eigen::MatrixXd Exactc_off = Eigen::MatrixXd::Zero(17,17);
-  Exactc_off = sigma.ExactCorrelationOffDiag(mo_energy);
+  Eigen::MatrixXd c_offexact = Eigen::MatrixXd::Zero(17, 17);
+  c_offexact = sigma.ExactCorrelationOffDiag(mo_energy);
   Eigen::VectorXd c_diagexact = sigma.ExactCorrelationDiag(mo_energy);
-  Eigen::VectorXd c_diagapprox = sigma.CalcCorrelationDiag(mo_energy);
-  
-  std::cout << "off diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << c_off << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "exact off diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << Exactc_off << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << c_diagapprox << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "exact diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << c_diagexact << std::endl;
-  std::cout << "" << std::endl;
-  
-  //c_off.diagonal() = c_diagexact;
+  Eigen::VectorXd c_diag = sigma.CalcCorrelationDiag(mo_energy);
+  c_off.diagonal() = c_diag;
 
+  /*
   Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
   c_ref << 0.120676, 2.58689e-07, -2.52037e-07, 3.99968e-08, 0.0405292,
       -1.25428e-07, 5.37756e-08, 2.99233e-08, -8.10766e-08, -5.95507e-08,
@@ -268,25 +251,25 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
       -0.0229993, 0.012047, -0.00144565, -1.1817e-09, 2.67092e-09, 3.24027e-10,
       -0.00771886, 3.73239e-08, -2.4424e-08, 2.22078e-09, -1.13638e-08,
       -4.27551e-09, -1.51435e-08, 0.0103057, -8.13748e-08, -8.13703e-08,
-      -3.54064e-09, 0.012047, -0.40848;
-/*
-  bool check_c_diag = c_diagexact.isApprox(c_ref.diagonal(), 1e-5);
+      -3.54064e-09, 0.012047, -0.40848;*/
+
+  bool check_c_diag = c_diag.isApprox(c_diagexact, 1e-5);
 
   if (!check_c_diag) {
     std::cout << "Sigma C" << std::endl;
-    std::cout << c_diagexact << std::endl;
+    std::cout << c_diag << std::endl;
     std::cout << "Sigma C ref" << std::endl;
-    std::cout << c_ref.diagonal() << std::endl;
+    std::cout << c_diagexact << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c_diag, true);
-  bool check_c = c_ref.isApprox(c_off, 1e-5);
+  bool check_c = c_off.isApprox(c_offexact, 1e-5);
   if (!check_c) {
     std::cout << "Sigma C" << std::endl;
     std::cout << c_off << std::endl;
     std::cout << "Sigma C ref" << std::endl;
-    std::cout << c_ref << std::endl;
+    std::cout << c_offexact << std::endl;
   }
-  BOOST_CHECK_EQUAL(check_c, true);*/
+  BOOST_CHECK_EQUAL(check_c, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

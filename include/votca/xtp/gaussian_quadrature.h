@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -50,17 +50,21 @@ class GaussianQuadrature {
 
   void configure(options opt);
 
-  Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
+  Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
+                          const RPA& rpa) const;
 
-  Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
-  
-  Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
+  Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
+                              const RPA& rpa) const;
 
-  Eigen::VectorXd ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,const RPA& rpa) const;
+  Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,
+                                      const RPA& rpa) const;
+
+  Eigen::VectorXd ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,
+                                   const RPA& rpa) const;
 
  private:
   options _opt;
-  
+
   // This function calculates and stores inverses of the microscopic dielectric
   // matrix in a matrix vector
   std::vector<Eigen::MatrixXcd> CalcDielInvVector(const RPA& rpa) const;

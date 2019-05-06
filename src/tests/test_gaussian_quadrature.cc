@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, es.eigenvectors());
   votca::ctp::Logger log;
-  RPA rpa(log,Mmn);
+  RPA rpa(log, Mmn);
   rpa.setRPAInputEnergies(es.eigenvalues());
   rpa.configure(4, 0, 17 - 1);
 
@@ -144,27 +144,10 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   // gq.configure(17,0,4);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(), rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(), rpa);
-  Eigen::MatrixXd exactresultoffdiag = gq.ExactSigmaGQOffDiag(es.eigenvalues(), rpa);
+  Eigen::MatrixXd exactresultoffdiag =
+      gq.ExactSigmaGQOffDiag(es.eigenvalues(), rpa);
   Eigen::VectorXd exactresultdiag = gq.ExactSigmaGQDiag(es.eigenvalues(), rpa);
-  
-  std::cout << "off diag - exact" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << result << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "exact off diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << exactresultoffdiag << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << result2 << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << "exact diag" << std::endl;
-  std::cout << "" << std::endl;
-  std::cout << exactresultdiag << std::endl;
-  std::cout << "" << std::endl;
-  
- 
+
   bool check_c_diag = result2.isApprox(exactresultdiag, 1e-5);
 
   if (!check_c_diag) {

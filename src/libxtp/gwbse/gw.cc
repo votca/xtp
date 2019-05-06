@@ -39,8 +39,9 @@ void GW::configure(const options& opt) {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_Spectral(_Mmn, _rpa));
   }
 
-  CTP_LOG(ctp::logINFO, _log)<<ctp::TimeStamp()<<
-      " Using " << _opt.sigma_integration << " for Sigma_c." << std::flush;
+  CTP_LOG(ctp::logINFO, _log)
+      << ctp::TimeStamp() << " Using " << _opt.sigma_integration
+      << " for Sigma_c." << std::flush;
   Sigma_base::options sigma_opt;
   sigma_opt.order = _opt.order;
   sigma_opt.homo = _opt.homo;

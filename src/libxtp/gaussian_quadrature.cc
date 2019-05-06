@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -54,167 +54,6 @@ std::vector<Eigen::MatrixXcd> GaussianQuadrature::CalcDielInvVector(
   return result;
 }
 
-Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,
-                                            const RPA& rpa) const {
-  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal, _opt.qptotal);
-  Eigen::MatrixXcd complexresult = Eigen::MatrixXcd::Zero(_opt.qptotal, _opt.qptotal);
-  const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
-  Eigen::VectorXd shiftedenergies =
-      _energies.array() - (_energies(_opt.homo - _opt.rpamin) +
-                           _energies(_opt.homo - _opt.rpamin + 1)) / 2;
-  double eta = rpa.getEta();  //=1e-4
-  int rpatotal = _energies.size();
-  int auxsize = _Mmn.auxsize();
-  Eigen::MatrixXcd Id = Eigen::MatrixXcd::Identity(auxsize, auxsize);
-  for (int m = 0; m < _opt.qptotal; ++m) {
-#if (GWBSE_DOUBLE)
-    const Eigen::MatrixXd& Imxm = _Mmn[m];
-#else
-    const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
-#endif
-    for (int n = 0; n < _opt.qptotal; ++n) {
-#if (GWBSE_DOUBLE)
-      const Eigen::MatrixXd& Imxn = _Mmn[n];
-#else
-      const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
-#endif
-      for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-        for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = Eigen::MatrixXcd::Zero(auxsize,auxsize);
-        DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)-eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-                }
-        complexresult(m,n)-=Imxm(i,mu)*Imxn(i,nu)*GHQ;
-        }
-        }
-        }
-        for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {  
-         for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)+eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-            }
-        complexresult(m,n)-=Imxm(i,mu)*Imxn(i,nu)*GHQ;
-        }
-        }
-        }
-      for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-        for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = Eigen::MatrixXcd::Zero(auxsize,auxsize);
-        DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)-eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(n)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-                }
-        complexresult(m,n)-=Imxm(i,mu)*Imxn(i,nu)*GHQ;
-        }
-        }
-        }
-        for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {  
-         for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)+eta);
-        GHQ+=_quadadaptedweights(j)*(1/(frequencies(n)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-            }
-        complexresult(m,n)-=Imxm(i,mu)*Imxn(i,nu)*GHQ;
-        }
-        }
-        }
-    }
-  }
-  complexresult /= (2 * M_PI);
-  result=complexresult.real();
-  result /= 2;
-  return result;
-}
-
-Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,
-                                            const RPA& rpa) const {
-  Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal, _opt.qptotal);
-  Eigen::VectorXcd complexresult = Eigen::VectorXcd::Zero(_opt.qptotal, _opt.qptotal);
-  const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
-  Eigen::VectorXd shiftedenergies =
-      _energies.array() - (_energies(_opt.homo - _opt.rpamin) +
-                           _energies(_opt.homo - _opt.rpamin + 1)) / 2;
-  double eta = rpa.getEta();  //=1e-4
-  int rpatotal = _energies.size();
-  int auxsize = _Mmn.auxsize();
-  Eigen::MatrixXcd Id = Eigen::MatrixXcd::Identity(auxsize, auxsize);
-  for (int m = 0; m < _opt.qptotal; ++m) {
-      std::cout << "" << std::endl;
-      std::cout << "m = " << std::endl;
-      std::cout << m << std::endl;
-      std::cout << " < " << std::endl;
-      std::cout << _opt.qptotal << std::endl;
-      std::cout << "" << std::endl;
-#if (GWBSE_DOUBLE)
-    const Eigen::MatrixXd& Imxm = _Mmn[m];
-#else
-    const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
-#endif
-      for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
-      std::cout << "" << std::endl;
-      std::cout << "i = " << std::endl;
-      std::cout << i << std::endl;
-      std::cout << " < " << std::endl;
-      std::cout << rpatotal << std::endl;
-      std::cout << "" << std::endl;
-      std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = Eigen::MatrixXcd::Zero(auxsize,auxsize);
-        DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)-eta);
-        for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        complexresult(m)-= Imxm(i,mu)*Imxm(i,nu)*_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-                }
-            }
-        }
-        }
-        for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
-      std::cout << "" << std::endl;
-      std::cout << "i = " << std::endl;
-      std::cout << i << std::endl;
-      std::cout << " < " << std::endl;
-      std::cout << rpatotal << std::endl;
-      std::cout << "" << std::endl;
-      std::complex<double> GHQ(0,0);
-        for (int j = 0; j < _opt.order; ++j) {
-        Eigen::MatrixXcd DielMxInv = DielInvVector[j];
-        std::complex<double> omega2(0, _quadpoints(j)+eta);
-        for (int mu = 0 ; mu < auxsize ; ++mu) {
-            for (int nu = 0 ; nu < auxsize ; ++nu) {
-        complexresult(m)-=Imxm(i,mu)*Imxm(i,nu)*_quadadaptedweights(j)*(1/(frequencies(m)-shiftedenergies(i)+omega2))*(DielMxInv(mu,nu)-Id(mu,nu));
-            }
-        }
-        }
-        }
-        }
-      std::cout << "" << std::endl;
-      std::cout << "complex result = " << std::endl;
-      std::cout << complexresult << std::endl;
-      std::cout << "" << std::endl;
-  complexresult /= (2 * M_PI);
-  result=complexresult.real();
-      std::cout << "" << std::endl;
-      std::cout << "result = " << std::endl;
-      std::cout << result << std::endl;
-      std::cout << "" << std::endl;
-  return result;
-}
-
 Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
     const Eigen::VectorXd& frequencies, const RPA& rpa) const {
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
@@ -259,8 +98,8 @@ Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
                        (DeltaESq(i) + std::pow(_quadpoints(j) + eta, 2));
         }
       }
-      result(m) += _quadadaptedweights(j) *
-                   ((Pmx.cwiseProduct(Amx)).sum() + (Qmx.cwiseProduct(Bmx)).sum());
+      result(m) += _quadadaptedweights(j) * ((Pmx.cwiseProduct(Amx)).sum() +
+                                             (Qmx.cwiseProduct(Bmx)).sum());
     }
   }
   result /= (-2 * M_PI);
@@ -333,15 +172,159 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
                           (DeltaEnSq(i) + std::pow(_quadpoints(j) + eta, 2));
           }
         }
-        result(m, n) += _quadadaptedweights(j) *
-                        ((Pmxn.cwiseProduct(Amxm)).sum() + (Pmxm.cwiseProduct(Amxn).sum)() +
-                          (Qmxn.cwiseProduct(Bmxm)).sum() + (Qmxm.cwiseProduct(Bmxn)).sum());
+        result(m, n) +=
+            _quadadaptedweights(j) *
+            ((Pmxn.cwiseProduct(Amxm)).sum() + (Pmxm.cwiseProduct(Amxn).sum)() +
+             (Qmxn.cwiseProduct(Bmxm)).sum() + (Qmxm.cwiseProduct(Bmxn)).sum());
       }
     }
   }
   result += result.transpose();
   result /= (-4 * M_PI);
   result.diagonal() = SigmaGQDiag(frequencies, rpa);
+  return result;
+}
+
+Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(
+    const Eigen::VectorXd& frequencies, const RPA& rpa) const {
+  Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal, _opt.qptotal);
+  Eigen::VectorXcd complexresult =
+      Eigen::VectorXcd::Zero(_opt.qptotal, _opt.qptotal);
+  const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
+  Eigen::VectorXd shiftedenergies =
+      _energies.array() - (_energies(_opt.homo - _opt.rpamin) +
+                           _energies(_opt.homo - _opt.rpamin + 1)) /
+                              2;
+  double eta = rpa.getEta();
+  int rpatotal = _energies.size();
+  int auxsize = _Mmn.auxsize();
+  Eigen::MatrixXcd Id = Eigen::MatrixXcd::Identity(auxsize, auxsize);
+  for (int m = 0; m < _opt.qptotal; ++m) {
+    const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
+    for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+      std::complex<double> GHQ(0, 0);
+      for (int j = 0; j < _opt.order; ++j) {
+        Eigen::MatrixXcd DielMxInv = Eigen::MatrixXcd::Zero(auxsize, auxsize);
+        DielMxInv = DielInvVector[j];
+        std::complex<double> omega2(0, _quadpoints(j) - eta);
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            complexresult(m) -=
+                Imxm(i, mu) * Imxm(i, nu) * _quadadaptedweights(j) *
+                (1 / (frequencies(m) - shiftedenergies(i) + omega2)) *
+                (DielMxInv(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+    for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+      std::complex<double> GHQ(0, 0);
+      for (int j = 0; j < _opt.order; ++j) {
+        Eigen::MatrixXcd DielMxInv = DielInvVector[j];
+        std::complex<double> omega2(0, _quadpoints(j) + eta);
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            complexresult(m) -=
+                Imxm(i, mu) * Imxm(i, nu) * _quadadaptedweights(j) *
+                (1 / (frequencies(m) - shiftedenergies(i) + omega2)) *
+                (DielMxInv(mu, nu) - Id(mu, nu));
+          }
+        }
+      }
+    }
+  }
+  complexresult /= (2 * M_PI);
+  result = complexresult.real();
+  return result;
+}
+
+Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(
+    const Eigen::VectorXd& frequencies, const RPA& rpa) const {
+  Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_opt.qptotal, _opt.qptotal);
+  Eigen::MatrixXcd complexresult =
+      Eigen::MatrixXcd::Zero(_opt.qptotal, _opt.qptotal);
+  const std::vector<Eigen::MatrixXcd> DielInvVector = CalcDielInvVector(rpa);
+  Eigen::VectorXd shiftedenergies =
+      _energies.array() - (_energies(_opt.homo - _opt.rpamin) +
+                           _energies(_opt.homo - _opt.rpamin + 1)) /
+                              2;
+  double eta = rpa.getEta();
+  int rpatotal = _energies.size();
+  int auxsize = _Mmn.auxsize();
+  Eigen::MatrixXcd Id = Eigen::MatrixXcd::Identity(auxsize, auxsize);
+  for (int m = 0; m < _opt.qptotal; ++m) {
+    const Eigen::MatrixXd Imxm = _Mmn[m].cast<double>();
+    for (int n = 0; n < _opt.qptotal; ++n) {
+      const Eigen::MatrixXd Imxn = _Mmn[n].cast<double>();
+      for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            std::complex<double> GHQ(0, 0);
+            for (int j = 0; j < _opt.order; ++j) {
+              Eigen::MatrixXcd DielMxInv =
+                  Eigen::MatrixXcd::Zero(auxsize, auxsize);
+              DielMxInv = DielInvVector[j];
+              std::complex<double> omega2(0, _quadpoints(j) - eta);
+              GHQ += _quadadaptedweights(j) *
+                     (1 / (frequencies(m) - shiftedenergies(i) + omega2)) *
+                     (DielMxInv(mu, nu) - Id(mu, nu));
+            }
+            complexresult(m, n) -= Imxm(i, mu) * Imxn(i, nu) * GHQ;
+          }
+        }
+      }
+      for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            std::complex<double> GHQ(0, 0);
+            for (int j = 0; j < _opt.order; ++j) {
+              Eigen::MatrixXcd DielMxInv = DielInvVector[j];
+              std::complex<double> omega2(0, _quadpoints(j) + eta);
+              GHQ += _quadadaptedweights(j) *
+                     (1 / (frequencies(m) - shiftedenergies(i) + omega2)) *
+                     (DielMxInv(mu, nu) - Id(mu, nu));
+            }
+            complexresult(m, n) -= Imxm(i, mu) * Imxn(i, nu) * GHQ;
+          }
+        }
+      }
+      for (int i = 0; i < _opt.homo - _opt.rpamin + 1; ++i) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            std::complex<double> GHQ(0, 0);
+            for (int j = 0; j < _opt.order; ++j) {
+              Eigen::MatrixXcd DielMxInv =
+                  Eigen::MatrixXcd::Zero(auxsize, auxsize);
+              DielMxInv = DielInvVector[j];
+              std::complex<double> omega2(0, _quadpoints(j) - eta);
+              GHQ += _quadadaptedweights(j) *
+                     (1 / (frequencies(n) - shiftedenergies(i) + omega2)) *
+                     (DielMxInv(mu, nu) - Id(mu, nu));
+            }
+            complexresult(m, n) -= Imxm(i, mu) * Imxn(i, nu) * GHQ;
+          }
+        }
+      }
+      for (int i = _opt.homo - _opt.rpamin + 1; i < rpatotal; ++i) {
+        for (int mu = 0; mu < auxsize; ++mu) {
+          for (int nu = 0; nu < auxsize; ++nu) {
+            std::complex<double> GHQ(0, 0);
+            for (int j = 0; j < _opt.order; ++j) {
+              Eigen::MatrixXcd DielMxInv = DielInvVector[j];
+              std::complex<double> omega2(0, _quadpoints(j) + eta);
+              GHQ += _quadadaptedweights(j) *
+                     (1 / (frequencies(n) - shiftedenergies(i) + omega2)) *
+                     (DielMxInv(mu, nu) - Id(mu, nu));
+            }
+            complexresult(m, n) -= Imxm(i, mu) * Imxn(i, nu) * GHQ;
+          }
+        }
+      }
+    }
+  }
+  complexresult /= (2 * M_PI);
+  result = complexresult.real();
+  result /= 2;
   return result;
 }
 

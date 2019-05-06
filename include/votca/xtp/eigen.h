@@ -22,6 +22,5 @@
 
 #include <votca/tools/eigen.h>
 #include <votca/xtp/votca_config.h>
-#define _GLIBCXX_DEBUG
 
 #endif /*XTP_EIGEN__H */

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -40,20 +40,22 @@ class Sigma_CI : public Sigma_base {
  public:
   Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
       : Sigma_base(Mmn, rpa), _gq(rpa.getRPAInputEnergies(), Mmn){};
-      
-      ~Sigma_CI(){};
+
+  ~Sigma_CI(){};
 
   void PrepareScreening();
 
   Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
 
-  Eigen::VectorXd ExactCorrelationDiag(const Eigen::VectorXd& frequencies) const;
+  Eigen::VectorXd ExactCorrelationDiag(
+      const Eigen::VectorXd& frequencies) const;
 
   Eigen::MatrixXd CalcCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const;
-  
-  Eigen::MatrixXd ExactCorrelationOffDiag(const Eigen::VectorXd& frequencies) const;
-  
+
+  Eigen::MatrixXd ExactCorrelationOffDiag(
+      const Eigen::VectorXd& frequencies) const;
+
  private:
   GaussianQuadrature _gq;
 

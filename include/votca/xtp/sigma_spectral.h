@@ -33,7 +33,7 @@ class Sigma_Spectral : public Sigma_base {
 
  public:
   Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa) : Sigma_base(Mmn, rpa){};
-  
+
   ~Sigma_Spectral(){};
 
   bool get_HedinApprox() { return _HedinApprox; }
