@@ -187,41 +187,18 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     
   } else if (_opt.gw_sc_root_finder == 1 || _opt.gw_sc_root_finder == 2) {
     // Bisection Method, Regula Falsi Method
-    
+
     // Define constants
     const bool regulaFalsi = _opt.gw_sc_root_finder == 2;
     const Eigen::VectorXd c = _Sigma_x.diagonal() - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal);
     // First guess, two points required
-    _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
     Eigen::VectorXd freq_1 = frequencies;
-    Eigen::VectorXd freq_2 = CalcDiagonalEnergies(); // Second point found by fixed point method
+    Eigen::VectorXd freq_2 = _sigma->CalcCorrelationDiag(frequencies) + c; // Second point found by fixed point method
     // Compute left, right function values
     Eigen::VectorXd func_1 = _sigma->CalcCorrelationDiag(freq_1) + c - freq_1;
     Eigen::VectorXd func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
-    // Verify sign change
-    Eigen::Array<bool, Eigen::Dynamic, 1> mask = (func_1.cwiseProduct(func_2).array() <= 0);
-    if (!mask.all()) {
-      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-          << " Warning: Bisection second guess requires sign change, trying to resolve"
-          << std::flush;
-      // Try to mirror around freq_1
-      freq_2 = mask.select(freq_2, freq_1 + freq_1 - freq_2);
-      func_2 = _sigma->CalcCorrelationDiag(freq_2) + c - freq_2;
-      mask = (func_1.cwiseProduct(func_2).array() <= 0);
-    }
-    if (!mask.all()) {
-      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-          << " Warning: Bisection second guess requires sign change"
-          << std::flush;
-      CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp()
-          << " The following states cannot converge:";
-      for (int i_state = 0; i_state < _qptotal; ++i_state) {
-        if (!mask(i_state)) {
-          CTP_LOG(ctp::logDEBUG, _log) << " " << i_state;
-        }
-      }
-      CTP_LOG(ctp::logDEBUG, _log) << std::flush;
-    }
+    // Check whether a root is bounded
+    Eigen::Array<bool, Eigen::Dynamic, 1> bounded = (func_1.cwiseProduct(func_2).array() <= 0);
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       // Compute next guess
       Eigen::VectorXd freq_3;
@@ -230,8 +207,8 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       } else {
         freq_3 = (freq_1 + freq_2) / 2;
       }
-      // Apply convergence mask
-      freq_3 = mask.select(freq_3, frequencies);
+      // Without a bounded root, use fixed point method
+      freq_3 = bounded.select(freq_3, _sigma->CalcCorrelationDiag(frequencies) + c);
       // Compute new function values
       Eigen::VectorXd sigc_3 = _sigma->CalcCorrelationDiag(freq_3);
       Eigen::VectorXd func_3 = sigc_3 + c - freq_3;
