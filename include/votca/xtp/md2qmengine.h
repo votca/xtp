@@ -18,7 +18,7 @@
 #ifndef VOTCA_XTP_MD2QMENGINE_H
 #define VOTCA_XTP_MD2QMENGINE_H
 
-#include <votca/csg/topology.h>
+#include <votca/csg/csgtopology.h>
 #include <votca/xtp/topology.h>
 
 namespace votca {
@@ -28,7 +28,7 @@ class Md2QmEngine {
  public:
   Md2QmEngine(std::string mapfile) : _mapfile(mapfile){};
 
-  Topology map(const csg::Topology& top);
+  Topology map(const csg::CSG_Topology& top);
 
  private:
   void CheckMappingFile(tools::Property& topology_map) const;
@@ -36,7 +36,7 @@ class Md2QmEngine {
   bool SameValueForMultipleEntries(const std::vector<tools::Property*>& props,
                                    std::string tag) const;
 
-  int DetermineResNumOffset(const csg::Molecule* mol,
+  int DetermineResNumOffset(const csg::Molecule& mol,
                             const std::vector<int>& resnums_map);
 
   std::string _mapfile;

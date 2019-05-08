@@ -20,6 +20,7 @@
 #ifndef VOTCA_XTP_MMREGION_H
 #define VOTCA_XTP_MMREGION_H
 
+#include <votca/csg/csgtopology.h>
 #include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/region.h>
 
@@ -44,7 +45,7 @@ class MMRegion : public Region {
     return _segments.end();
   }
 
-  void WritePDB(csg::PDBWriter& writer) const;
+  void WritePDB(csg::PDBWriter<csg::CSG_Topology>& writer) const;
 
   std::string identify() const;
   void push_back(const T& seg) { _segments.push_back(seg); }

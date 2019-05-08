@@ -42,6 +42,7 @@ class AtomContainer {
 
   AtomContainer(CheckpointReader& r) { this->ReadFromCpt(r); }
 
+  typedef T bead_t;
   typedef typename std::vector<T>::iterator iterator;
 
   const std::string& getName() const { return _name; }

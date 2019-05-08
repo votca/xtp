@@ -28,6 +28,14 @@ using namespace std;
 namespace votca {
 namespace xtp {
 
+  tools::StructureParameters StaticSite::getParameters() const {
+    tools::StructureParameters params;
+    params.set(tools::StructureParameter::BeadId,getId());
+    params.set(tools::StructureParameter::Element,getElement());
+    params.set(tools::StructureParameter::Position,getPos());
+    return params;
+  }
+
 Eigen::Matrix3d StaticSite::CalculateCartesianMultipole() const {
   // spherical_multipoles Q = ( Q00,Q10,Q11c,Q11s,Q20,Q21c,Q21s,Q22c,Q22s )
   // We are trasforming here just quadrupoles

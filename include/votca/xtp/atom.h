@@ -27,6 +27,7 @@
 #include <string>
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
+#include <votca/tools/structureparameters.h>
 
 namespace votca {
 namespace xtp {
@@ -56,6 +57,7 @@ class Atom {
 
   Atom(data& d) { ReadData(d); }
 
+  tools::StructureParameters getParameters() const;
   static std::string GetElementFromMDName(const std::string& MDName);
 
   int getId() const { return _id; }

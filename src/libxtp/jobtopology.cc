@@ -17,6 +17,7 @@
  *
  */
 
+#include <numeric>
 #include <votca/xtp/checkpoint.h>
 #include <votca/xtp/jobtopology.h>
 #include <votca/xtp/mmregion.h>
@@ -154,7 +155,7 @@ void JobTopology::CreateRegions(
 
 void JobTopology::WriteToPdb(std::string filename) const {
 
-  csg::PDBWriter writer;
+  csg::PDBWriter<csg::CSG_Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader("Job:" + std::to_string(this->_job.getId()));
   for (const std::unique_ptr<Region>& reg : _regions) {

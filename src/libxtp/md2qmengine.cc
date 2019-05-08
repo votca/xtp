@@ -65,11 +65,11 @@ void Md2QmEngine::CheckMappingFile(tools::Property& topology_map) const {
   }
 }
 
-int Md2QmEngine::DetermineResNumOffset(const csg::Molecule* mol,
+int Md2QmEngine::DetermineResNumOffset(const csg::Molecule& mol,
                                        const std::vector<int>& resnums_map) {
   std::vector<int> resnums;
-  for (const csg::Bead* bead : mol->Beads()) {
-    resnums.push_back(bead->getResnr());
+  for (const csg::Bead* bead : mol.getBeads()) {
+    resnums.push_back(bead->getResidueId());
   }
   std::sort(resnums.begin(), resnums.end());
   int offset = resnums[0] - resnums_map[0];
@@ -83,7 +83,7 @@ int Md2QmEngine::DetermineResNumOffset(const csg::Molecule* mol,
   return offset;
 }
 
-Topology Md2QmEngine::map(const csg::Topology& top) {
+Topology Md2QmEngine::map(const csg::CSG_Topology& top) {
 
   tools::Property topology_map;
   tools::load_property_from_xml(topology_map, _mapfile);
@@ -143,27 +143,27 @@ Topology Md2QmEngine::map(const csg::Topology& top) {
   }
 
   int atomid = 0;
-  for (const csg::Molecule* mol : top.Molecules()) {
-    const std::vector<int> resnums_map = MolToResNum[mol->getName()];
-    const std::vector<std::string> segnames = SegsinMol[mol->getName()];
+  for (const csg::Molecule& mol : top) {
+    const std::vector<int> resnums_map = MolToResNum[mol.getType()];
+    const std::vector<std::string> segnames = SegsinMol[mol.getType()];
 
     std::vector<Segment*> segments;  // we first add them to topology and then
                                      // modify them via pointers;
     for (const std::string& segname : segnames) {
       segments.push_back(&xtptop.AddSegment(segname));
-      segments.back()->AddMoleculeId(mol->getId());
+      segments.back()->AddMoleculeId(mol.getId());
     }
 
     // we have to figure out how the Residue numbers change from molecule to
     // molecule to get the correct mapping information this does not require for
     // the atoms to be sorted according to resnum
     int ResNumOffset = DetermineResNumOffset(mol, resnums_map);
-    for (const csg::Bead* bead : mol->Beads()) {
+    for (const csg::Bead* bead : mol.getBeads()) {
       Segment* seg =
-          segments[MolToSegMap[mol->getName()][bead->getResnr() - ResNumOffset]
-                              [bead->getName()]];
+          segments[MolToSegMap[mol.getType()][bead->getResidueId() - ResNumOffset]
+                              [bead->getLabel()]];
 
-      Atom atom(bead->getResnr(), bead->getName(), atomid,
+      Atom atom(bead->getResidueId(), bead->getType(), atomid,
                 bead->getPos() * tools::conv::nm2bohr);
       seg->push_back(atom);
       atomid++;
@@ -184,5 +184,5 @@ bool Md2QmEngine::SameValueForMultipleEntries(
   return adjacent_find(entries.begin(), entries.end()) != entries.end();
 }
 
-}  // namespace xtp
-}  // namespace votca
+}
+}

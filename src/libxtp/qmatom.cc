@@ -30,6 +30,25 @@ QMAtom::QMAtom(int index, std::string element, Eigen::Vector3d pos)
 
 QMAtom::QMAtom(data& d) { ReadData(d); }
 
+QMAtom::QMAtom(tools::StructureParameters & params)
+  : _index(params.get<int>(tools::StructureParameter::BeadId)),
+  _element(params.get<std::string>(tools::StructureParameter::Element)),
+  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::Position)) {
+
+    tools::Elements elements;
+    _nuccharge = elements.getNucCrg(_element);
+
+  }
+
+
+tools::StructureParameters QMAtom::getParameters() const {
+  tools::StructureParameters params;
+  params.set(tools::StructureParameter::Element,_element);
+  params.set(tools::StructureParameter::Position,_pos);
+  params.set(tools::StructureParameter::BeadId,getId());
+  return params;
+}
+
 void QMAtom::Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& refPos) {
   Eigen::Vector3d dir = _pos - refPos;
   dir = R * dir;

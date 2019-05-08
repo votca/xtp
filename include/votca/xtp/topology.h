@@ -25,6 +25,7 @@
 #include <votca/csg/orthorhombicbox.h>
 #include <votca/csg/triclinicbox.h>
 #include <votca/xtp/qmnblist.h>
+#include <votca/tools/structureparameters.h>
 
 namespace votca {
 namespace xtp {
@@ -36,6 +37,15 @@ class Segment;
  */
 class Topology {
  public:
+
+  typedef Segment::bead_t bead_t;
+  typedef Segment container_t;
+  typedef typename std::vector<Segment>::iterator iterator;
+  typename std::vector<Segment>::iterator begin() { return _segments.begin(); }
+  typename std::vector<Segment>::iterator end() { return _segments.end(); }
+  typename std::vector<Segment>::const_iterator begin() const { return _segments.begin(); }
+  typename std::vector<Segment>::const_iterator end() const { return _segments.end(); }
+
   Topology(){};
 
   Topology(const Topology &top);
@@ -45,8 +55,12 @@ class Topology {
   // I do not have to manually make a move constructor or move assignment
   // operator or destructor because I only have to reassign pointers in qmnblist
   // object
+//  size_t BeadCount() const;
+
+//  Segment::bead_t CreateBead(tools::StructureParameters params);
 
   Segment &AddSegment(std::string segment_name);
+  Segment &AddSegment(tools::StructureParameters & params);
 
   Segment &getSegment(int id) { return _segments[id]; }
   const Segment &getSegment(int id) const { return _segments[id]; }

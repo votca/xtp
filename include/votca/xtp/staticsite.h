@@ -22,7 +22,7 @@ nn * See the License for the specific language governing permissions and
 
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/qmatom.h>
-
+#include <votca/tools/structureparameters.h>
 namespace votca {
 namespace xtp {
 
@@ -71,6 +71,8 @@ class StaticSite {
       : StaticSite(atom.getId(), atom.getElement(), atom.getPos()) {
     setCharge(charge);
   }
+
+  tools::StructureParameters getParameters() const;
 
  protected:
   StaticSite(){};

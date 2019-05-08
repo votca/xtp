@@ -16,9 +16,10 @@
  *
  */
 
-#include <votca/csg/pdbwriter.h>
-#include <votca/csg/xyzreader.h>
-#include <votca/csg/xyzwriter.h>
+#include <votca/csg/io/pdbwriter.h>
+#include <votca/csg/io/xyzreader.h>
+#include <votca/csg/io/xyzwriter.h>
+#include <votca/csg/csgtopology.h>
 #include <votca/tools/elements.h>
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
@@ -31,15 +32,16 @@ namespace votca {
 namespace xtp {
 
 void QMMolecule::WriteXYZ(std::string filename, std::string header) const {
-  csg::XYZWriter writer;
+  csg::XYZWriter<csg::CSG_Topology> writer;
   writer.Open(filename, false);
-  writer.Write(*this, header);
+  writer.WriteHeader(header,size());
+  writer.Write(*this);
   writer.Close();
   return;
 }
 
 void QMMolecule::LoadFromFile(std::string filename) {
-  csg::XYZReader reader;
+  csg::XYZReader<csg::CSG_Topology> reader;
   reader.Open(filename);
   reader.ReadFile<QMMolecule>(*this);
   reader.Close();

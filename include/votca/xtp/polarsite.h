@@ -22,6 +22,7 @@
 
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/staticsite.h>
+#include <votca/tools/structureparameters.h>
 
 namespace votca {
 namespace xtp {

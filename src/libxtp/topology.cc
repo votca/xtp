@@ -23,9 +23,10 @@
 
 #include "votca/xtp/checkpointwriter.h"
 #include <boost/lexical_cast.hpp>
-#include <votca/csg/pdbwriter.h>
+#include <votca/csg/io/pdbwriter.h>
+#include <votca/csg/csgtopology.h>
 #include <votca/tools/globals.h>
-
+#include <votca/tools/structureparameters.h>
 using namespace std;
 using namespace votca::tools;
 
@@ -58,6 +59,10 @@ Topology &Topology::operator=(const Topology &top) {
     }
   }
   return *this;
+}
+
+Segment &Topology::AddSegment(tools::StructureParameters & params){
+  AddSegment(params.get<std::string>(StructureParameter::SegmentType));
 }
 
 Segment &Topology::AddSegment(string segment_name) {
@@ -168,7 +173,7 @@ std::vector<const Segment *> Topology::FindAllSegmentsOnMolecule(
 
 void Topology::WriteToPdb(std::string filename) const {
 
-  csg::PDBWriter writer;
+  csg::PDBWriter<csg::CSG_Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader("Frame:" + std::to_string(this->getStep()));
   writer.WriteBox(this->getBox() * tools::conv::bohr2ang);
