@@ -164,7 +164,7 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   if (mc <= 0.0) {
     std::string msg =
             (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
-    CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << msg << flush;
+    CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " " << msg << flush;
     throw std::runtime_error(msg);
   }
 
