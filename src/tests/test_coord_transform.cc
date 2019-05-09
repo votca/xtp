@@ -11,6 +11,7 @@
 #include <votca/xtp/coordtransform.h>
 #include <votca/xtp/internalcoords.h>
 #include <votca/xtp/orbitals.h>
+#include <votca/xtp/qmmolecule.h>
 #include <votca/xtp/qmatom.h>
 
 BOOST_AUTO_TEST_SUITE(test_coord_transform)
@@ -32,7 +33,9 @@ BOOST_AUTO_TEST_CASE(single_bond) {
                  << std::endl;
 
   Orbitals single_bond;
-  single_bond.LoadFromXYZ("single_bond.xyz");
+  QMMolecule mol("single_bond", 0);
+  mol.LoadFromFile("single_bond.xyz");
+  single_bond.QMAtoms() = mol;
   InternalCoords ic(single_bond);
 
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 1);
@@ -54,7 +57,10 @@ BOOST_AUTO_TEST_CASE(single_angle) {
                   << std::endl;
 
   Orbitals single_angle;
-  single_angle.LoadFromXYZ("single_angle.xyz");
+  QMMolecule mol("single_angle", 0);
+  mol.LoadFromFile("single_angle.xyz");
+  single_angle.QMAtoms() = mol;
+
   InternalCoords ic(single_angle);
   BOOST_CHECK_EQUAL(ic.getNumAtoms(), 3);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
@@ -80,8 +86,11 @@ BOOST_AUTO_TEST_CASE(single_dihedral_two_angles_ic_test) {
   single_dihedralXYZ << "H          1.00000        1.00000        1.00000"
                      << std::endl;
   single_dihedralXYZ.close();
+
   Orbitals single_dihedral;
-  single_dihedral.LoadFromXYZ("single_dihedral.xyz");
+  QMMolecule mol("single_dihedral", 0);
+  mol.LoadFromFile("single_dihedral.xyz");
+  single_dihedral.QMAtoms() = mol;
   InternalCoords ic(single_dihedral, true);
 
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 3);
@@ -101,7 +110,9 @@ BOOST_AUTO_TEST_CASE(linear_molecule) {
   co2XYZ << "O         2.84000        0.00000        0.00000" << std::endl;
 
   Orbitals co2;
-  co2.LoadFromXYZ("co2.xyz");
+  QMMolecule mol("co2", 0);
+  mol.LoadFromFile("co2.xyz");
+  co2.QMAtoms() = mol;
 
   InternalCoords ic(co2);
 
@@ -123,7 +134,9 @@ BOOST_AUTO_TEST_CASE(no_dihedrals) {
   ethyneXYZ << "H         3.000000        0.00000        0.00000" << std::endl;
 
   Orbitals ethyne;
-  ethyne.LoadFromXYZ("ethyne.xyz");
+  QMMolecule mol("ethyne.xyz", 0);
+  mol.LoadFromFile("ethyne.xyz");
+  ethyne.QMAtoms() = mol;
 
   InternalCoords ic(ethyne);
 
@@ -150,8 +163,10 @@ BOOST_AUTO_TEST_CASE(ammonia_internal_coords) {
   ammoniaXYZ.close();
 
   Orbitals ammonia;
+  QMMolecule mol("ammonia", 0);
 
-  ammonia.LoadFromXYZ("ammonia.xyz");
+  mol.LoadFromFile("ammonia.xyz");
+  ammonia.QMAtoms() = mol;
 
   InternalCoords ammoniaIC(ammonia);
 

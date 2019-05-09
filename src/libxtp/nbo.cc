@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -54,7 +54,7 @@ Eigen::MatrixXd NBO::IntercenterOrthogonalisation(
   int functionindex = 0;
   for (QMAtom* atom : _atomlist) {
     std::map<int, std::vector<int> > shellsort;
-    const Element& element = bs.getElement(atom->getType());
+    const Element& element = bs.getElement(atom->getElement());
     for (const Shell& shell : element) {
 
       // for loop because shells can also consist of SP shells or alike

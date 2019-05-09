@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,32 +17,23 @@
  *
  */
 #include "votca/xtp/aobasis.h"
-#include "votca/tools/elements.h"
 #include "votca/xtp/aomatrix.h"
-#include "votca/xtp/aoshell.h"
 #include "votca/xtp/qmatom.h"
 #include <votca/tools/constants.h>
 
 namespace votca {
 namespace xtp {
 
-AOBasis::~AOBasis() {
-  for (AOShell* shell : _aoshells) delete shell;
-  _aoshells.clear();
-}
-
-AOShell* AOBasis::addShell(const Shell& shell, const QMAtom& atom,
+AOShell& AOBasis::addShell(const Shell& shell, const QMAtom& atom,
                            int startIndex) {
-  AOShell* aoshell = new AOShell(shell, atom, startIndex);
-  _aoshells.push_back(aoshell);
-  return aoshell;
+  _aoshells.push_back(AOShell(shell, atom, startIndex));
+  return _aoshells.back();
 }
 
-AOShell* AOBasis::addECPShell(const Shell& shell, const QMAtom& atom,
+AOShell& AOBasis::addECPShell(const Shell& shell, const QMAtom& atom,
                               int startIndex, bool nonlocal) {
-  AOShell* aoshell = new AOShell(shell, atom, startIndex, nonlocal);
-  _aoshells.push_back(aoshell);
-  return aoshell;
+  _aoshells.push_back(AOShell(shell, atom, startIndex, nonlocal));
+  return _aoshells.back();
 }
 
 void AOBasis::ReorderMOs(Eigen::MatrixXd& v, const std::string& start,
@@ -112,9 +103,9 @@ void AOBasis::ReorderMatrix(Eigen::MatrixXd& v, const std::string& start,
   }
 
   Eigen::MatrixXd temp = v;
-  for (unsigned i = 0; i < temp.cols(); i++) {
+  for (int i = 0; i < temp.cols(); i++) {
     int i_index = order[i];
-    for (unsigned j = 0; j < temp.rows(); j++) {
+    for (int j = 0; j < temp.rows(); j++) {
       int j_index = order[j];
       v(i_index, j_index) = multiplier[i] * multiplier[j] * temp(i, j);
     }
@@ -131,9 +122,9 @@ void AOBasis::MultiplyMOs(Eigen::MatrixXd& v,
               << multiplier.size() << std::endl;
     throw std::runtime_error("Abort!");
   }
-  for (unsigned _i_basis = 0; _i_basis < v.cols(); _i_basis++) {
-    for (unsigned _i_orbital = 0; _i_orbital < v.rows(); _i_orbital++) {
-      v(_i_basis, _i_orbital) = multiplier[_i_basis] * v(_i_basis, _i_orbital);
+  for (int i_basis = 0; i_basis < v.cols(); i_basis++) {
+    for (int i_orbital = 0; i_orbital < v.rows(); i_orbital++) {
+      v(i_basis, i_orbital) = multiplier[i_basis] * v(i_basis, i_orbital);
     }
   }
   return;
@@ -143,45 +134,45 @@ void AOBasis::MultiplyMOs(Eigen::MatrixXd& v,
 // gaussian spherical
 Eigen::MatrixXd AOBasis::getTransformationCartToSpherical(
     const std::string& package) {
-  Eigen::MatrixXd _trafomatrix;
+  Eigen::MatrixXd trafomatrix;
   if (package != "gaussian") {
     std::cout << " I should not have been called, will do nothing! "
               << std::endl;
   } else {
     // go through basisset, determine function sizes
-    int _dim_sph = 0;
-    int _dim_cart = 0;
-    for (const AOShell* shell : (*this)) {
-      const std::string& _type = shell->getType();
+    int dim_sph = 0;
+    int dim_cart = 0;
+    for (const AOShell& shell : (*this)) {
+      const std::string& _type = shell.getType();
 
-      _dim_sph += NumFuncShell(_type);
-      _dim_cart += NumFuncShell_cartesian(_type);
+      dim_sph += NumFuncShell(_type);
+      dim_cart += NumFuncShell_cartesian(_type);
     }
-    _trafomatrix = Eigen::MatrixXd::Zero(_dim_sph, _dim_cart);
+    trafomatrix = Eigen::MatrixXd::Zero(dim_sph, dim_cart);
 
-    int _row_start = 0;
-    int _col_start = 0;
-    for (const AOShell* shell : (*this)) {
-      const std::string& _type = shell->getType();
-      int _row_end = _row_start + NumFuncShell(_type);
-      int _col_end = _col_start + NumFuncShell_cartesian(_type);
+    int row_start = 0;
+    int col_start = 0;
+    for (const AOShell& shell : (*this)) {
+      const std::string& type = shell.getType();
+      int row_end = row_start + NumFuncShell(type);
+      int col_end = col_start + NumFuncShell_cartesian(type);
       Eigen::Block<Eigen::MatrixXd> block =
-          _trafomatrix.block(_row_start, _col_start, NumFuncShell(_type),
-                             NumFuncShell_cartesian(_type));
+          trafomatrix.block(row_start, col_start, NumFuncShell(type),
+                            NumFuncShell_cartesian(type));
       addTrafoCartShell(shell, block);
-      _row_start = _row_end;
-      _col_start = _col_end;
+      row_start = row_end;
+      col_start = col_end;
     }
   }
-  return _trafomatrix;
+  return trafomatrix;
 }
 
-void AOBasis::addTrafoCartShell(const AOShell* shell,
+void AOBasis::addTrafoCartShell(const AOShell& shell,
                                 Eigen::Block<Eigen::MatrixXd>& submatrix) {
 
   // fill _local according to _lmax;
-  int lmax = shell->getLmax();
-  std::string type = shell->getType();
+  int lmax = shell.getLmax();
+  std::string type = shell.getType();
 
   int sph_size = NumFuncShell(type) + OffsetFuncShell(type);
   int cart_size =
@@ -208,10 +199,8 @@ void AOBasis::addTrafoCartShell(const AOShell* shell,
     local(8, 7) = 1.0;              // dxy
   }
   if (lmax > 2) {
-    std::cerr
-        << " Gaussian input with f- functions or higher not yet supported!"
-        << std::endl;
-    exit(1);
+    throw std::runtime_error(
+        " Gaussian input with f- functions or higher not yet supported!");
   }
   // now copy to _trafo
   for (int i_sph = 0; i_sph < NumFuncShell(type); i_sph++) {
@@ -238,8 +227,8 @@ std::vector<int> AOBasis::getMultiplierVector(const std::string& start,
     t = target;
   }
   // go through basisset
-  for (const AOShell* shell : (*this)) {
-    addMultiplierShell(s, t, shell->getType(), multiplier);
+  for (const AOShell& shell : (*this)) {
+    addMultiplierShell(s, t, shell.getType(), multiplier);
   }
   return multiplier;
 }
@@ -356,8 +345,8 @@ std::vector<int> AOBasis::getReorderVector(const std::string& start,
     t = target;
   }
   // go through basisset
-  for (const AOShell* shell : (*this)) {
-    addReorderShell(s, t, shell->getType(), neworder);
+  for (const AOShell& shell : (*this)) {
+    addReorderShell(s, t, shell.getType(), neworder);
   }
   if (start == "xtp") {
     neworder = invertOrder(neworder);
@@ -515,85 +504,85 @@ void AOBasis::addReorderShell(const std::string& start,
 const std::vector<const AOShell*> AOBasis::getShellsofAtom(int AtomId) const {
   std::vector<const AOShell*> result;
   for (const auto& aoshell : _aoshells) {
-    if (aoshell->getAtomIndex() == AtomId) {
-      result.push_back(aoshell);
+    if (aoshell.getAtomIndex() == AtomId) {
+      result.push_back(&aoshell);
     }
   }
   return result;
 }
 
-void AOBasis::AOBasisFill(const BasisSet& bs, std::vector<QMAtom*>& atoms,
-                          int fragbreak) {
-  _fragA = fragbreak;
-  tools::Elements elementinfo;
+void AOBasis::AOBasisFill(const BasisSet& bs, const QMMolecule& atoms) {
   _AOBasisSize = 0;
-  _AOBasisFragA = 0;
-  _AOBasisFragB = 0;
   _FuncperAtom = std::vector<int>(0);
   // loop over atoms
-  for (QMAtom* atom : atoms) {
+  for (const QMAtom& atom : atoms) {
     int atomfunc = 0;
-    const std::string& name = atom->getType();
-    atom->_nuccharge = elementinfo.getNucCrg(name);  // TODO remove this
+    const std::string& name = atom.getElement();
     const Element& element = bs.getElement(name);
     for (const Shell& shell : element) {
       int numfuncshell = NumFuncShell(shell.getType());
-      AOShell* aoshell = addShell(shell, *atom, _AOBasisSize);
+      AOShell& aoshell = addShell(shell, atom, _AOBasisSize);
       _AOBasisSize += numfuncshell;
       atomfunc += numfuncshell;
       for (const GaussianPrimitive& gaussian : shell) {
-        aoshell->addGaussian(gaussian);
+        aoshell.addGaussian(gaussian);
       }
-      aoshell->CalcMinDecay();
-      aoshell->normalizeContraction();
+      aoshell.CalcMinDecay();
+      aoshell.normalizeContraction();
     }
-    if (atom->getAtomID() < fragbreak) _AOBasisFragA = _AOBasisSize;
     _FuncperAtom.push_back(atomfunc);
-  }
-
-  if (fragbreak < 0) {
-    _AOBasisFragA = _AOBasisSize;
-    _AOBasisFragB = 0;
-  } else {
-    _AOBasisFragB = _AOBasisSize - _AOBasisFragA;
   }
   return;
 }
 
-void AOBasis::ECPFill(const BasisSet& bs, std::vector<QMAtom*>& atoms) {
+std::vector<std::string> AOBasis::ECPFill(const BasisSet& bs,
+                                          QMMolecule& atoms) {
   _FuncperAtom = std::vector<int>(0);
   _AOBasisSize = 0;
-  for (QMAtom* atom : atoms) {
+
+  std::vector<std::string> non_ecp_elements;
+  for (QMAtom& atom : atoms) {
+    std::string name = atom.getElement();
     int atomfunc = 0;
-    std::string name = atom->getType();
-    if (name == "H" || name == "He") {
+    bool element_exists = true;
+
+    try {
+      bs.getElement(name);
+    } catch (std::runtime_error& error) {
       _FuncperAtom.push_back(0);
-      continue;
+      element_exists = false;
+      if (std::find(non_ecp_elements.begin(), non_ecp_elements.end(), name) !=
+          non_ecp_elements.end()) {
+        non_ecp_elements.push_back(name);
+      }
     }
-    const Element& element = bs.getElement(name);
-    atom->_ecpcharge = element.getNcore();
-    int lmax = element.getLmax();
-    for (const Shell& shell : element) {
-      if (shell.getType().size() > 1) {
-        throw std::runtime_error(
-            "In ecps no combined shells e.g. SP are allowed");
+
+    if (element_exists) {
+      const Element& element = bs.getElement(name);
+      atom._ecpcharge = element.getNcore();
+      int lmax = element.getLmax();
+      for (const Shell& shell : element) {
+        if (shell.getType().size() > 1) {
+          throw std::runtime_error(
+              "In ecps no combined shells e.g. SP are allowed");
+        }
+        // Local part is with L=Lmax
+        bool nonlocal = false;
+        if (shell.getLmax() < lmax) {
+          nonlocal = true;
+        }
+        AOShell& aoshell = addECPShell(shell, atom, _AOBasisSize, nonlocal);
+        _AOBasisSize += NumFuncShell(shell.getType());
+        atomfunc += NumFuncShell(shell.getType());
+        for (const GaussianPrimitive& gaussian : shell) {
+          aoshell.addGaussian(gaussian);
+        }
+        aoshell.CalcMinDecay();
       }
-      // Local part is with L=Lmax
-      bool nonlocal = false;
-      if (shell.getLmax() < lmax) {
-        nonlocal = true;
-      }
-      AOShell* aoshell = addECPShell(shell, *atom, _AOBasisSize, nonlocal);
-      _AOBasisSize += NumFuncShell(shell.getType());
-      atomfunc += NumFuncShell(shell.getType());
-      for (const GaussianPrimitive& gaussian : shell) {
-        aoshell->addGaussian(gaussian);
-      }
-      aoshell->CalcMinDecay();
+      _FuncperAtom.push_back(atomfunc);
     }
-    _FuncperAtom.push_back(atomfunc);
   }
-  return;
+  return non_ecp_elements;
 }
 
 }  // namespace xtp

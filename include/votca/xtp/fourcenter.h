@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,12 +17,12 @@
  *
  */
 
-#ifndef __XTP_FOURCENTER__H
-#define __XTP_FOURCENTER__H
+#ifndef VOTCA_XTP_FOURCENTER_H
+#define VOTCA_XTP_FOURCENTER_H
 
-#include <votca/xtp/aomatrix.h>
+#include <votca/xtp/aobasis.h>
 #include <votca/xtp/eigen.h>
-#include <votca/xtp/orbitals.h>
+#include <votca/xtp/multiarray.h>
 
 /**
  * \brief Calculates four center electron overlap integrals for DFT.
@@ -41,9 +41,9 @@ class FCMatrix {
 
   const Eigen::VectorXd& get_4c_vector() { return _4c_vector; }
 
-  bool FillFourCenterRepBlock(tensor4d& block, const AOShell* _shell_1,
-                              const AOShell* _shell_2, const AOShell* _shell_3,
-                              const AOShell* _shell_4);
+  bool FillFourCenterRepBlock(tensor4d& block, const AOShell& shell_1,
+                              const AOShell& shell_2, const AOShell& shell_3,
+                              const AOShell& shell_4);
 
  private:
   Eigen::VectorXd _4c_vector;
@@ -52,4 +52,4 @@ class FCMatrix {
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* FOURCENTER_H */
+#endif  // VOTCA_XTP_FOURCENTER_H

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -152,7 +152,7 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
                                      const Orbitals& orbitalsB,
                                      Orbitals& orbitalsAB) {
 
-  CTP_LOG(ctp::logDEBUG, *_pLog) << "Calculating electronic couplings" << flush;
+  XTP_LOG(logDEBUG, *_pLog) << "Calculating electronic couplings" << flush;
 
   CheckAtomCoordinates(orbitalsA, orbitalsB, orbitalsAB);
 
@@ -170,7 +170,7 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
   int levelsA = Range_orbA.second;
   int levelsB = Range_orbB.second;
 
-  CTP_LOG(ctp::logDEBUG, *_pLog)
+  XTP_LOG(logDEBUG, *_pLog)
       << "Levels:Basis A[" << levelsA << ":" << basisA << "]"
       << " B[" << levelsB << ":" << basisB << "]" << flush;
 
@@ -185,7 +185,7 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
   Eigen::MatrixXd psi_AxB =
       Eigen::MatrixXd::Zero(basisA + basisB, levelsA + levelsB);
 
-  CTP_LOG(ctp::logDEBUG, *_pLog)
+  XTP_LOG(logDEBUG, *_pLog)
       << "Constructing direct product AxB [" << psi_AxB.rows() << "x"
       << psi_AxB.cols() << "]" << flush;
 
@@ -198,16 +198,15 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
 
   Eigen::MatrixXd overlap;
   if (orbitalsAB.hasAOOverlap()) {
-    CTP_LOG(ctp::logDEBUG, *_pLog)
+    XTP_LOG(logDEBUG, *_pLog)
         << "Reading overlap matrix from orbitals" << flush;
     overlap = orbitalsAB.AOOverlap();
   } else {
-    CTP_LOG(ctp::logDEBUG, *_pLog)
-        << "Calculating overlap matrix for basisset: "
-        << orbitalsAB.getDFTbasisName() << flush;
+    XTP_LOG(logDEBUG, *_pLog) << "Calculating overlap matrix for basisset: "
+                              << orbitalsAB.getDFTbasisName() << flush;
     overlap = CalculateOverlapMatrix(orbitalsAB);
   }
-  CTP_LOG(ctp::logDEBUG, *_pLog)
+  XTP_LOG(logDEBUG, *_pLog)
       << "Projecting dimer onto monomer orbitals" << flush;
   Eigen::MatrixXd psi_AxB_dimer_basis =
       psi_AxB.transpose() * overlap * orbitalsAB.MOCoefficients();
@@ -225,7 +224,7 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
         monomer = 2;
         level = i - levelsA;
       }
-      CTP_LOG(ctp::logERROR, *_pLog)
+      XTP_LOG(logERROR, *_pLog)
           << "\nWarning: " << i << " Projection of orbital " << level
           << " of monomer " << monomer
           << " on dimer is insufficient,mag=" << mag
@@ -234,19 +233,19 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
           << flush;
     }
   }
-  CTP_LOG(ctp::logDEBUG, *_pLog)
+  XTP_LOG(logDEBUG, *_pLog)
       << "Projecting the Fock matrix onto the dimer basis" << flush;
   Eigen::MatrixXd JAB_dimer = psi_AxB_dimer_basis *
                               orbitalsAB.MOEnergies().asDiagonal() *
                               psi_AxB_dimer_basis.transpose();
-  CTP_LOG(ctp::logDEBUG, *_pLog) << "Constructing Overlap matrix" << flush;
+  XTP_LOG(logDEBUG, *_pLog) << "Constructing Overlap matrix" << flush;
   Eigen::MatrixXd S_AxB = psi_AxB_dimer_basis * psi_AxB_dimer_basis.transpose();
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_AxB);
   Eigen::MatrixXd Sm1 = es.operatorInverseSqrt();
-  CTP_LOG(ctp::logDEBUG, *_pLog) << "Smallest eigenvalue of overlap matrix is "
-                                 << es.eigenvalues()(0) << flush;
+  XTP_LOG(logDEBUG, *_pLog) << "Smallest eigenvalue of overlap matrix is "
+                            << es.eigenvalues()(0) << flush;
   JAB = Sm1 * JAB_dimer * Sm1;
-  CTP_LOG(ctp::logDEBUG, *_pLog) << "Done with electronic couplings" << flush;
+  XTP_LOG(logDEBUG, *_pLog) << "Done with electronic couplings" << flush;
 }
 
 }  // namespace xtp

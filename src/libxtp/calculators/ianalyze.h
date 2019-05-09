@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -22,41 +22,39 @@
 
 #include <math.h>
 #include <numeric>
-#include <votca/ctp/qmcalculator.h>
-#include <votca/ctp/qmpair.h>
 #include <votca/tools/histogramnew.h>
+#include <votca/xtp/qmcalculator.h>
+#include <votca/xtp/qmpair.h>
 #include <votca/xtp/qmstate.h>
 
 namespace votca {
 namespace xtp {
 
-class IAnalyze : public ctp::QMCalculator {
+class IAnalyze : public QMCalculator {
  public:
   std::string Identify() { return "ianalyze"; }
 
-  void Initialize(tools::Property *options);
-  bool EvaluateFrame(ctp::Topology *top);
-  void IHist(ctp::Topology *top, QMStateType state);
-  void IRdependence(ctp::Topology *top, QMStateType state);
+  void Initialize(tools::Property &options);
+  bool EvaluateFrame(Topology &top);
+  void IHist(Topology &top, QMStateType state);
+  void IRdependence(Topology &top, QMStateType state);
 
  private:
   double _resolution_logJ2;
   std::vector<QMStateType> _states;
   double _resolution_space;
-  std::vector<ctp::QMPair::PairType> _pairtype;
+  std::vector<QMPair::PairType> _pairtype;
   bool _do_pairtype;
   bool _do_IRdependence;
 };
 
-void IAnalyze::Initialize(tools::Property *opt) {
+void IAnalyze::Initialize(tools::Property &opt) {
   std::cout << std::endl;
   _do_pairtype = false;
   _do_IRdependence = false;
-  // update options with the VOTCASHARE defaults
-  UpdateWithDefaults(opt, "xtp");
   std::string key = "options." + Identify();
-  if (opt->exists(key + ".states")) {
-    std::string statestrings = opt->get(key + ".states").as<std::string>();
+  if (opt.exists(key + ".states")) {
+    std::string statestrings = opt.get(key + ".states").as<std::string>();
     tools::Tokenizer tok(statestrings, ",\n\t ");
     std::vector<std::string> string_vec;
     tok.ToVector(string_vec);
@@ -68,38 +66,37 @@ void IAnalyze::Initialize(tools::Property *opt) {
     _states.push_back(QMStateType(QMStateType::Hole));
   }
 
-  _resolution_logJ2 = opt->get(key + ".resolution_logJ2").as<double>();
-  if (opt->exists(key + ".pairtype")) {
+  _resolution_logJ2 = opt.get(key + ".resolution_logJ2").as<double>();
+  if (opt.exists(key + ".pairtype")) {
     _do_pairtype = true;
-    std::string _store_stdstring =
-        opt->get(key + ".pairtype").as<std::string>();
+    std::string _store_stdstring = opt.get(key + ".pairtype").as<std::string>();
     if (_store_stdstring.find("Hopping") != std::string::npos)
-      _pairtype.push_back(ctp::QMPair::Hopping);
+      _pairtype.push_back(QMPair::Hopping);
     if (_store_stdstring.find("Excitoncl") != std::string::npos)
-      _pairtype.push_back(ctp::QMPair::Excitoncl);
+      _pairtype.push_back(QMPair::Excitoncl);
     if (!_pairtype.size()) {
       std::cout << std::endl
                 << "... ... No pairtypes recognized will output all pairs. ";
       _do_pairtype = false;
     }
   }
-  if (opt->exists(key + ".resolution_space")) {
-    _resolution_space = opt->get(key + ".resolution_space").as<double>();
+  if (opt.exists(key + ".resolution_space")) {
+    _resolution_space = opt.get(key + ".resolution_space").as<double>();
     if (_resolution_space != 0.0) _do_IRdependence = true;
   }
 }
 
-bool IAnalyze::EvaluateFrame(ctp::Topology *top) {
+bool IAnalyze::EvaluateFrame(Topology &top) {
   std::cout << std::endl;
-  ctp::QMNBList &nblist = top->NBList();
+  QMNBList &nblist = top.NBList();
   if (!nblist.size()) {
     std::cout << std::endl << "... ... No pairs in topology. Skip...";
     return 0;
   }
   if (_do_pairtype) {
     bool pairs_exist = false;
-    for (ctp::QMPair *pair : nblist) {
-      ctp::QMPair::PairType pairtype = pair->getType();
+    for (QMPair *pair : nblist) {
+      QMPair::PairType pairtype = pair->getType();
       if (std::find(_pairtype.begin(), _pairtype.end(), pairtype) !=
           _pairtype.end()) {
         pairs_exist = true;
@@ -117,26 +114,26 @@ bool IAnalyze::EvaluateFrame(ctp::Topology *top) {
               << std::endl;
     this->IHist(top, state);
     if (_do_IRdependence) {
-      this->IRdependence(top, state);
+      IRdependence(top, state);
     }
   }
   return true;
 }
 
-void IAnalyze::IHist(ctp::Topology *top, QMStateType state) {
-  ctp::QMNBList &nblist = top->NBList();
+void IAnalyze::IHist(Topology &top, QMStateType state) {
+  QMNBList &nblist = top.NBList();
 
   // Collect J2s from pairs
   std::vector<double> J2s;
-  for (ctp::QMPair *pair : nblist) {
+  for (QMPair *pair : nblist) {
     if (_do_pairtype) {
-      ctp::QMPair::PairType pairtype = pair->getType();
+      QMPair::PairType pairtype = pair->getType();
       if (!(std::find(_pairtype.begin(), _pairtype.end(), pairtype) !=
             _pairtype.end())) {
         continue;
       }
     }
-    double test = pair->getJeff2(state.ToCTPIndex());
+    double test = pair->getJeff2(state);
     if (test <= 0) {
       continue;
     }  // avoid -inf in output
@@ -175,9 +172,9 @@ void IAnalyze::IHist(ctp::Topology *top, QMStateType state) {
   tab.Save(filename);
 }
 
-void IAnalyze::IRdependence(ctp::Topology *top, QMStateType state) {
+void IAnalyze::IRdependence(Topology &top, QMStateType state) {
 
-  ctp::QMNBList &nblist = top->NBList();
+  QMNBList &nblist = top.NBList();
 
   // Collect J2s from pairs
   std::vector<double> J2s;
@@ -185,9 +182,9 @@ void IAnalyze::IRdependence(ctp::Topology *top, QMStateType state) {
   std::vector<double> distances;
   distances.reserve(nblist.size());
 
-  for (ctp::QMPair *pair : nblist) {
-    double J2 = std::log10(pair->getJeff2(state.ToCTPIndex()));
-    double distance = tools::abs(pair->getR());
+  for (QMPair *pair : nblist) {
+    double J2 = std::log10(pair->getJeff2(state));
+    double distance = pair->R().norm();
     distances.push_back(distance);
     J2s.push_back(J2);
   }

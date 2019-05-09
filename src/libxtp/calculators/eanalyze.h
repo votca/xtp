@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -23,15 +23,16 @@
 #include <fstream>
 #include <math.h>
 #include <numeric>
-#include <votca/ctp/qmcalculator.h>
 #include <votca/tools/histogramnew.h>
 #include <votca/tools/tokenizer.h>
+#include <votca/xtp/qmcalculator.h>
 #include <votca/xtp/qmstate.h>
+#include <votca/xtp/topology.h>
 
 namespace votca {
 namespace xtp {
 
-class EAnalyze : public ctp::QMCalculator {
+class EAnalyze : public QMCalculator {
  public:
   EAnalyze(){};
 
@@ -39,17 +40,17 @@ class EAnalyze : public ctp::QMCalculator {
 
   std::string Identify() { return "eanalyze"; }
 
-  void Initialize(tools::Property *opt);
-  bool EvaluateFrame(ctp::Topology *top);
-  void SiteHist(ctp::Topology *top, QMStateType state);
-  void PairHist(ctp::Topology *top, QMStateType state);
-  void SiteCorr(ctp::Topology *top, QMStateType state);
+  void Initialize(tools::Property &opt);
+  bool EvaluateFrame(Topology &top);
+  void SiteHist(Topology &top, QMStateType state);
+  void PairHist(Topology &top, QMStateType state);
+  void SiteCorr(Topology &top, QMStateType state);
 
  private:
   double _resolution_pairs;
   double _resolution_sites;
   double _resolution_space;
-  std::string _distancemode;
+  bool _atomdistances = false;
 
   std::vector<QMStateType> _states;
 
@@ -62,39 +63,39 @@ class EAnalyze : public ctp::QMCalculator {
   int _last_seg;
 
   std::string _seg_pattern;
-  std::vector<ctp::Segment *> _seg_shortlist;
+  std::vector<Segment *> _seg_shortlist;
 };
 
-void EAnalyze::Initialize(tools::Property *opt) {
+void EAnalyze::Initialize(tools::Property &opt) {
   _skip_corr = false;
   _skip_sites = false;
   _skip_pairs = false;
   // update options with the VOTCASHARE defaults
   UpdateWithDefaults(opt, "xtp");
   std::string key = "options." + Identify();
-  if (opt->exists(key + ".resolution_pairs")) {
-    _resolution_pairs = opt->get(key + ".resolution_pairs").as<double>();
+  if (opt.exists(key + ".resolution_pairs")) {
+    _resolution_pairs = opt.get(key + ".resolution_pairs").as<double>();
   } else {
     _skip_pairs = true;
   }
-  if (opt->exists(key + ".resolution_sites")) {
-    _resolution_sites = opt->get(key + ".resolution_sites").as<double>();
+  if (opt.exists(key + ".resolution_sites")) {
+    _resolution_sites = opt.get(key + ".resolution_sites").as<double>();
   } else {
     _skip_sites = true;
   }
-  if (opt->exists(key + ".resolution_space")) {
-    _resolution_space = opt->get(key + ".resolution_space").as<double>();
+  if (opt.exists(key + ".resolution_space")) {
+    _resolution_space = opt.get(key + ".resolution_space").as<double>();
   } else {
     _skip_corr = true;
   }
 
-  if (opt->exists(key + ".pattern")) {
-    _seg_pattern = opt->get(key + ".pattern").as<std::string>();
+  if (opt.exists(key + ".pattern")) {
+    _seg_pattern = opt.get(key + ".pattern").as<std::string>();
   } else
     _seg_pattern = "*";
 
-  if (opt->exists(key + ".states")) {
-    std::string statestrings = opt->get(key + ".states").as<std::string>();
+  if (opt.exists(key + ".states")) {
+    std::string statestrings = opt.get(key + ".states").as<std::string>();
     tools::Tokenizer tok(statestrings, ",\n\t ");
     std::vector<std::string> string_vec;
     tok.ToVector(string_vec);
@@ -102,30 +103,33 @@ void EAnalyze::Initialize(tools::Property *opt) {
       _states.push_back(QMStateType(state));
     }
   } else {
-    _states.push_back(QMStateType(QMStateType::Electron));
-    _states.push_back(QMStateType(QMStateType::Hole));
+    _states.push_back(QMStateType::Electron);
+    _states.push_back(QMStateType::Hole);
   }
 
-  _doenergy_landscape = opt->ifExistsReturnElseReturnDefault<bool>(
+  _doenergy_landscape = opt.ifExistsReturnElseReturnDefault<bool>(
       key + ".energy_landscape", false);
 
-  if (opt->exists(key + ".distancemode")) {
-    std::vector<std::string> choices = {"segment", "centerofmass"};
-    _distancemode =
-        opt->ifExistsAndinListReturnElseThrowRuntimeError<std::string>(
+  if (opt.exists(key + ".distancemode")) {
+    std::vector<std::string> choices = {"atoms", "centerofmass"};
+    std::string distancemode =
+        opt.ifExistsAndinListReturnElseThrowRuntimeError<std::string>(
             key + ".distancemode", choices);
-  } else {
-    _distancemode = "segment";
+    if (distancemode == "centerofmass") {
+      _atomdistances = false;
+    } else {
+      _atomdistances = true;
+    }
   }
 }
 
-bool EAnalyze::EvaluateFrame(ctp::Topology *top) {
+bool EAnalyze::EvaluateFrame(Topology &top) {
 
   // Short-list segments according to pattern
-  for (ctp::Segment *seg : top->Segments()) {
-    std::string seg_name = seg->getName();
+  for (Segment &seg : top.Segments()) {
+    std::string seg_name = seg.getName();
     if (votca::tools::wildcmp(_seg_pattern.c_str(), seg_name.c_str())) {
-      _seg_shortlist.push_back(seg);
+      _seg_shortlist.push_back(&seg);
     }
   }
   std::cout << std::endl
@@ -146,7 +150,7 @@ bool EAnalyze::EvaluateFrame(ctp::Topology *top) {
   // ... Pair-energy histogram, mean, width
   // ... Site-energy correlation
 
-  ctp::QMNBList &nblist = top->NBList();
+  QMNBList &nblist = top.NBList();
 
   for (QMStateType state : _states) {
     std::cout << std::endl
@@ -187,13 +191,12 @@ bool EAnalyze::EvaluateFrame(ctp::Topology *top) {
   return true;
 }
 
-void EAnalyze::SiteHist(ctp::Topology *top, QMStateType state) {
+void EAnalyze::SiteHist(Topology &top, QMStateType state) {
 
   std::vector<double> Es;
   Es.reserve(_seg_shortlist.size());
-  for (ctp::Segment *seg : _seg_shortlist) {
-    double E = seg->getSiteEnergy(state.ToCTPIndex());
-    Es.push_back(E);
+  for (Segment *seg : _seg_shortlist) {
+    Es.push_back(seg->getSiteEnergy(state));
   }
 
   double MAX = *std::max_element(Es.begin(), Es.end());
@@ -226,27 +229,27 @@ void EAnalyze::SiteHist(ctp::Topology *top, QMStateType state) {
     std::ofstream out;
     out.open(filename.c_str());
     if (!out) throw std::runtime_error("error, cannot open file " + filename);
-    for (ctp::Segment *seg : _seg_shortlist) {
+    for (Segment *seg : _seg_shortlist) {
       if (seg->getId() < _first_seg) {
         continue;
       }
       if (seg->getId() == _last_seg) {
         break;
       }
-      double E = seg->getSiteEnergy(state.ToCTPIndex());
-      for (ctp::Atom *atm : seg->Atoms()) {
+      double E = seg->getSiteEnergy(state);
+      for (Atom &atm : *seg) {
         out << boost::format("%1$3s %2$4.7f %3$4.7f %4$4.7f %5$4.7f\n") %
-                   seg->getName() % atm->getPos().getX() %
-                   atm->getPos().getY() % atm->getPos().getZ() % E;
+                   seg->getName() % atm.getPos().x() % atm.getPos().y() %
+                   atm.getPos().z() % E;
       }
     }
     out.close();
   }
 }
 
-void EAnalyze::PairHist(ctp::Topology *top, QMStateType state) {
+void EAnalyze::PairHist(Topology &top, QMStateType state) {
 
-  ctp::QMNBList &nblist = top->NBList();
+  QMNBList &nblist = top.NBList();
 
   std::string filenamelist = "eanalyze.pairlist_" + state.ToString() + ".out";
 
@@ -256,15 +259,12 @@ void EAnalyze::PairHist(ctp::Topology *top, QMStateType state) {
   std::ofstream out;
   out.open(filenamelist.c_str());
   if (!out) throw std::runtime_error("error, cannot open file " + filenamelist);
-  for (ctp::QMPair *pair : nblist) {
-    ctp::Segment *seg1 = pair->Seg1();
-    ctp::Segment *seg2 = pair->Seg2();
-    double deltaE = seg2->getSiteEnergy(state.ToCTPIndex()) -
-                    seg1->getSiteEnergy(state.ToCTPIndex());
+  for (QMPair *pair : nblist) {
+    double deltaE = pair->getdE12(state);
     dE.push_back(deltaE);
     dE.push_back(-deltaE);
-    out << boost::format("%1$5d %2$5d %3$4.7f \n") % seg1->getId() %
-               seg2->getId() % deltaE;
+    out << boost::format("%1$5d %2$5d %3$4.7f \n") % pair->Seg1()->getId() %
+               pair->Seg2()->getId() % deltaE;
   }
   out.close();
 
@@ -291,13 +291,12 @@ void EAnalyze::PairHist(ctp::Topology *top, QMStateType state) {
   tab.Save(filename2);
 }
 
-void EAnalyze::SiteCorr(ctp::Topology *top, QMStateType state) {
+void EAnalyze::SiteCorr(Topology &top, QMStateType state) {
 
   std::vector<double> Es;
   Es.reserve(_seg_shortlist.size());
-  for (ctp::Segment *seg : _seg_shortlist) {
-    double E = seg->getSiteEnergy(state.ToCTPIndex());
-    Es.push_back(E);
+  for (Segment *seg : _seg_shortlist) {
+    Es.push_back(seg->getSiteEnergy(state));
   }
 
   double sum = std::accumulate(Es.begin(), Es.end(), 0.0);
@@ -307,8 +306,8 @@ void EAnalyze::SiteCorr(ctp::Topology *top, QMStateType state) {
   double STD = std::sqrt(VAR);
 
   // Collect inter-site distances, correlation product
-  std::vector<ctp::Segment *>::iterator sit1;
-  std::vector<ctp::Segment *>::iterator sit2;
+  std::vector<Segment *>::iterator sit1;
+  std::vector<Segment *>::iterator sit2;
 
   tools::Table tabcorr;
   int length = _seg_shortlist.size() * (_seg_shortlist.size() - 1) / 2;
@@ -316,21 +315,16 @@ void EAnalyze::SiteCorr(ctp::Topology *top, QMStateType state) {
   int index = 0;
   for (sit1 = _seg_shortlist.begin(); sit1 < _seg_shortlist.end(); ++sit1) {
     for (sit2 = sit1 + 1; sit2 < _seg_shortlist.end(); ++sit2) {
-      double R =
-          abs(top->PbShortestConnect((*sit1)->getPos(), (*sit2)->getPos()));
-      if (_distancemode == "segment") {
-        for (ctp::Fragment *frag1 : (*sit1)->Fragments()) {
-          for (ctp::Fragment *frag2 : (*sit2)->Fragments()) {
-            double R_FF = tools::abs(
-                top->PbShortestConnect(frag1->getPos(), frag2->getPos()));
-            if (R_FF < R) {
-              R = R_FF;
-            }
-          }
-        }
+      double R = 0;
+      if (_atomdistances) {
+        R = top.GetShortestDist(*(*sit1), *(*sit2));
+      } else {
+        R = (top.PbShortestConnect((*sit1)->getPos(), (*sit2)->getPos()))
+                .norm();
       }
-      double C = ((*sit1)->getSiteEnergy(state.ToCTPIndex()) - AVG) *
-                 ((*sit2)->getSiteEnergy(state.ToCTPIndex()) - AVG);
+
+      double C = ((*sit1)->getSiteEnergy(state) - AVG) *
+                 ((*sit2)->getSiteEnergy(state) - AVG);
       tabcorr.set(index, R, C);
       index++;
     }
@@ -382,7 +376,6 @@ void EAnalyze::SiteCorr(ctp::Topology *top, QMStateType state) {
   histC.set_comment(comment);
   histC.Save(filename);
 }
-
 }  // namespace xtp
 }  // namespace votca
 

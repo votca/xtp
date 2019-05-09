@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,23 +17,11 @@
  *
  */
 
-#ifndef __XTP_EIGEN__H
-#define __XTP_EIGEN__H
+#ifndef VOTCA_XTP_EIGEN_H
+#define VOTCA_XTP_EIGEN_H
+
 #include <votca/tools/eigen.h>
 #include <votca/xtp/votca_config.h>
-#if (GWBSE_DOUBLE)
-#define real_gwbse double
-#else
-#define real_gwbse float
-#endif
+typedef Eigen::Matrix<double, 9, 1> Vector9d;
 
-namespace votca {
-namespace xtp {
-
-typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, Eigen::Dynamic> MatrixXfd;
-typedef Eigen::Matrix<real_gwbse, Eigen::Dynamic, 1> VectorXfd;
-
-}  // namespace xtp
-}  // namespace votca
-
-#endif /*XTP_EIGEN__H */
+#endif  // VOTCA_XTP_EIGEN_H

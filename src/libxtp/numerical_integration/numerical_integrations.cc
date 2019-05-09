@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -163,16 +163,17 @@ void NumericalIntegration::EvaluateXC(const double rho, const double sigma,
   return;
 }
 
-double NumericalIntegration::IntegratePotential(const tools::vec& rvector) {
+double NumericalIntegration::IntegratePotential(
+    const Eigen::Vector3d& rvector) {
 
   double result = 0.0;
   assert(_density_set && "Density not calculated");
   for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<tools::vec>& points = _grid_boxes[i].getGridPoints();
+    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
     const std::vector<double>& weights = _grid_boxes[i].getGridWeights();
     const std::vector<double>& densities = _grid_boxes[i].getGridDensities();
     for (unsigned j = 0; j < points.size(); j++) {
-      double dist = abs(points[j] - rvector);
+      double dist = (points[j] - rvector).norm();
       result -= weights[j] * densities[j] / dist;
     }
   }
@@ -186,44 +187,46 @@ void NumericalIntegration::SortGridpointsintoBlocks(
   std::vector<std::vector<
       std::vector<std::vector<GridContainers::Cartesian_gridpoint*> > > >
       boxes;
-  tools::vec min = tools::vec(std::numeric_limits<double>::max());
-  tools::vec max = tools::vec(std::numeric_limits<double>::min());
+  Eigen::Vector3d min =
+      Eigen::Vector3d::Ones() * std::numeric_limits<double>::max();
+  Eigen::Vector3d max =
+      Eigen::Vector3d::Ones() * std::numeric_limits<double>::min();
 
   for (unsigned i = 0; i < grid.size(); i++) {
     for (unsigned j = 0; j < grid[i].size(); j++) {
-      const tools::vec& pos = grid[i][j].grid_pos;
-      if (pos.getX() > max.getX()) {
-        max.x() = pos.getX();
-      } else if (pos.getX() < min.getX()) {
-        min.x() = pos.getX();
+      const Eigen::Vector3d& pos = grid[i][j].grid_pos;
+      if (pos[0] > max[0]) {
+        max[0] = pos[0];
+      } else if (pos[0] < min[0]) {
+        min[0] = pos[0];
       }
-      if (pos.getY() > max.getY()) {
-        max.y() = pos.getY();
-      } else if (pos.getY() < min.getY()) {
-        min.y() = pos.getY();
+      if (pos[1] > max[1]) {
+        max[1] = pos[1];
+      } else if (pos[1] < min[1]) {
+        min[1] = pos[1];
       }
-      if (pos.getZ() > max.getZ()) {
-        max.z() = pos.getZ();
-      } else if (pos.getZ() < min.getZ()) {
-        min.z() = pos.getZ();
+      if (pos[2] > max[2]) {
+        max[2] = pos[2];
+      } else if (pos[2] < min[2]) {
+        min[2] = pos[2];
       }
     }
   }
 
-  tools::vec molextension = (max - min);
-  tools::vec numberofboxes = molextension / boxsize;
-  tools::vec roundednumofbox = tools::vec(std::ceil(numberofboxes.getX()),
-                                          std::ceil(numberofboxes.getY()),
-                                          std::ceil(numberofboxes.getZ()));
+  Eigen::Vector3d molextension = max - min;
+  Eigen::Vector3d numberofboxes = molextension / boxsize;
+  Eigen::Vector3d roundednumofbox(std::ceil(numberofboxes[0]),
+                                  std::ceil(numberofboxes[1]),
+                                  std::ceil(numberofboxes[2]));
 
   // creating temparray
-  for (unsigned i = 0; i < unsigned(roundednumofbox.getX()); i++) {
+  for (unsigned i = 0; i < unsigned(roundednumofbox[0]); i++) {
     std::vector<
         std::vector<std::vector<GridContainers::Cartesian_gridpoint*> > >
         boxes_yz;
-    for (unsigned j = 0; j < unsigned(roundednumofbox.getY()); j++) {
+    for (unsigned j = 0; j < unsigned(roundednumofbox[1]); j++) {
       std::vector<std::vector<GridContainers::Cartesian_gridpoint*> > boxes_z;
-      for (unsigned k = 0; k < unsigned(roundednumofbox.getZ()); k++) {
+      for (unsigned k = 0; k < unsigned(roundednumofbox[2]); k++) {
         std::vector<GridContainers::Cartesian_gridpoint*> box;
         box.reserve(100);
         boxes_z.push_back(box);
@@ -235,11 +238,11 @@ void NumericalIntegration::SortGridpointsintoBlocks(
 
   for (auto& atomgrid : grid) {
     for (auto& gridpoint : atomgrid) {
-      tools::vec pos = gridpoint.grid_pos - min;
-      tools::vec index = pos / boxsize;
-      int i_x = int(index.getX());
-      int i_y = int(index.getY());
-      int i_z = int(index.getZ());
+      Eigen::Vector3d pos = gridpoint.grid_pos - min;
+      Eigen::Vector3d index = pos / boxsize;
+      int i_x = int(index[0]);
+      int i_y = int(index[1]);
+      int i_z = int(index[2]);
       boxes[i_x][i_y][i_z].push_back(&gridpoint);
     }
   }
@@ -265,15 +268,15 @@ void NumericalIntegration::SortGridpointsintoBlocks(
 void NumericalIntegration::FindSignificantShells(const AOBasis& basis) {
   for (unsigned i = 0; i < _grid_boxes.size(); ++i) {
     GridBox& box = _grid_boxes[i];
-    for (const AOShell* store : basis) {
-      const double decay = store->getMinDecay();
-      const tools::vec& shellpos = store->getPos();
+    for (const AOShell& store : basis) {
+      const double decay = store.getMinDecay();
+      const Eigen::Vector3d& shellpos = store.getPos();
       for (const auto& point : box.getGridPoints()) {
-        tools::vec dist = shellpos - point;
-        double distsq = dist * dist;
+        Eigen::Vector3d dist = shellpos - point;
+        double distsq = dist.squaredNorm();
         // if contribution is smaller than -ln(1e-10), add shell to list
         if ((decay * distsq) < 20.7) {
-          box.addShell(store);
+          box.addShell(&store);
           break;
         }
       }
@@ -388,7 +391,7 @@ Eigen::MatrixXd NumericalIntegration::IntegrateVXC(
       }
       Eigen::MatrixXd Vxc_here =
           Eigen::MatrixXd::Zero(DMAT_here.rows(), DMAT_here.cols());
-      const std::vector<tools::vec>& points = box.getGridPoints();
+      const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
       const std::vector<double>& weights = box.getGridWeights();
       const std::vector<GridboxRange>& aoranges = box.getAOranges();
       const std::vector<const AOShell*>& shells = box.getShells();
@@ -457,7 +460,7 @@ Eigen::MatrixXd NumericalIntegration::IntegrateExternalPotential(
       const GridBox& box = _grid_boxes[i];
       Eigen::MatrixXd Vex_here =
           Eigen::MatrixXd::Zero(box.Matrixsize(), box.Matrixsize());
-      const std::vector<tools::vec>& points = box.getGridPoints();
+      const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
       const std::vector<double>& weights = box.getGridWeights();
 
       // iterate over gridpoints
@@ -501,7 +504,7 @@ double NumericalIntegration::IntegrateDensity(
       double N_box = 0.0;
       GridBox& box = _grid_boxes[i];
       const Eigen::MatrixXd DMAT_here = box.ReadFromBigMatrix(density_matrix);
-      const std::vector<tools::vec>& points = box.getGridPoints();
+      const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
       const std::vector<double>& weights = box.getGridWeights();
       box.prepareDensity();
       // iterate over gridpoints
@@ -531,20 +534,20 @@ double NumericalIntegration::IntegrateDensity(
 Gyrationtensor NumericalIntegration::IntegrateGyrationTensor(
     const Eigen::MatrixXd& density_matrix) {
   double N = 0;
-  tools::vec centroid = tools::vec(0.0);
-  tools::matrix gyration = tools::matrix(0.0);
+  Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d gyration = Eigen::Matrix3d::Zero();
   unsigned nthreads = 1;
 #ifdef _OPENMP
   nthreads = omp_get_max_threads();
 #endif
   std::vector<double> N_thread = std::vector<double>(nthreads, 0.0);
   // centroid
-  std::vector<tools::vec> centroid_thread;
-  std::vector<tools::matrix> gyration_thread;
+  std::vector<Eigen::Vector3d> centroid_thread;
+  std::vector<Eigen::Matrix3d> gyration_thread;
   for (unsigned thread = 0; thread < nthreads; ++thread) {
-    tools::vec tempvec = tools::vec(0.0);
+    Eigen::Vector3d tempvec = Eigen::Vector3d::Zero();
     centroid_thread.push_back(tempvec);
-    tools::matrix tempmatrix = tools::matrix(0.0);
+    Eigen::Matrix3d tempmatrix = Eigen::Matrix3d::Zero();
     gyration_thread.push_back(tempmatrix);
   }
 
@@ -552,11 +555,11 @@ Gyrationtensor NumericalIntegration::IntegrateGyrationTensor(
   for (unsigned thread = 0; thread < nthreads; ++thread) {
     for (unsigned i = thread_start[thread]; i < thread_stop[thread]; ++i) {
       double N_box = 0.0;
-      tools::vec centroid_box = tools::vec(0.0);
-      tools::matrix gyration_box = tools::matrix(0.0);
+      Eigen::Vector3d centroid_box = Eigen::Vector3d::Zero();
+      Eigen::Matrix3d gyration_box = Eigen::Matrix3d::Zero();
       GridBox& box = _grid_boxes[i];
       const Eigen::MatrixXd DMAT_here = box.ReadFromBigMatrix(density_matrix);
-      const std::vector<tools::vec>& points = box.getGridPoints();
+      const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
       const std::vector<double>& weights = box.getGridWeights();
       box.prepareDensity();
       // iterate over gridpoints
@@ -569,11 +572,11 @@ Gyrationtensor NumericalIntegration::IntegrateGyrationTensor(
               ao.segment(aoranges[j].start, aoranges[j].size);
           shells[j]->EvalAOspace(ao_block, points[p]);
         }
-        double rho = (ao.transpose() * DMAT_here * ao)(0, 0);
+        double rho = (ao.transpose() * DMAT_here * ao).value();
         box.addDensity(rho);
         N_box += rho * weights[p];
         centroid_box += rho * weights[p] * points[p];
-        gyration_box += rho * weights[p] * (points[p] | points[p]);
+        gyration_box += rho * weights[p] * points[p] * points[p].transpose();
       }
       N_thread[thread] += N_box;
       centroid_thread[thread] += centroid_box;
@@ -589,7 +592,7 @@ Gyrationtensor NumericalIntegration::IntegrateGyrationTensor(
   // Normalize
   centroid = centroid / N;
   gyration = gyration / N;
-  gyration = gyration - (centroid | centroid);
+  gyration = gyration - centroid * centroid.transpose();
   Gyrationtensor gyro;
   gyro.mass = N;
   gyro.centroid = centroid;
@@ -598,10 +601,11 @@ Gyrationtensor NumericalIntegration::IntegrateGyrationTensor(
   return gyro;
 }
 
-std::vector<const tools::vec*> NumericalIntegration::getGridpoints() const {
-  std::vector<const tools::vec*> gridpoints;
+std::vector<const Eigen::Vector3d*> NumericalIntegration::getGridpoints()
+    const {
+  std::vector<const Eigen::Vector3d*> gridpoints;
   for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<tools::vec>& points = _grid_boxes[i].getGridPoints();
+    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
     for (unsigned j = 0; j < points.size(); j++) {
       gridpoints.push_back(&points[j]);
     }
@@ -616,7 +620,7 @@ Eigen::MatrixXd NumericalIntegration::IntegratePotential(
 
   assert(_density_set && "Density not calculated");
   for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<tools::vec>& points = _grid_boxes[i].getGridPoints();
+    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
     const std::vector<double>& weights = _grid_boxes[i].getGridWeights();
     const std::vector<double>& densities = _grid_boxes[i].getGridDensities();
     for (unsigned j = 0; j < points.size(); j++) {
@@ -634,16 +638,14 @@ Eigen::MatrixXd NumericalIntegration::IntegratePotential(
 }
 
 Eigen::MatrixXd NumericalIntegration::CalcInverseAtomDist(
-    std::vector<QMAtom*>& atoms) {
+    const QMMolecule& atoms) {
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(atoms.size(), atoms.size());
 #pragma omp parallel for
-  for (unsigned i = 0; i < atoms.size(); ++i) {
-    QMAtom* atom_a = atoms[i];
-    const tools::vec& pos_a = atom_a->getPos();
-    for (unsigned j = 0; j < i; ++j) {
-      QMAtom* atom_b = atoms[j];
-      const tools::vec& pos_b = atom_b->getPos();
-      result(j, i) = 1 / tools::abs(pos_a - pos_b);
+  for (int i = 0; i < atoms.size(); ++i) {
+    const Eigen::Vector3d& pos_a = atoms[i].getPos();
+    for (int j = 0; j < i; ++j) {
+      const Eigen::Vector3d& pos_b = atoms[j].getPos();
+      result(j, i) = 1 / (pos_a - pos_b).norm();
     }
   }
   return result + result.transpose();
@@ -688,13 +690,14 @@ int NumericalIntegration::UpdateOrder(LebedevGrid& sphericalgridofElement,
 
 GridContainers::Cartesian_gridpoint
     NumericalIntegration::CreateCartesianGridpoint(
-        const tools::vec& atomA_pos, GridContainers::radial_grid& radial_grid,
-        GridContainers::spherical_grid& spherical_grid, unsigned i_rad,
-        unsigned i_sph) {
+        const Eigen::Vector3d& atomA_pos,
+        GridContainers::radial_grid& radial_grid,
+        GridContainers::spherical_grid& spherical_grid, int i_rad, int i_sph) {
   GridContainers::Cartesian_gridpoint gridpoint;
   double p = spherical_grid.phi[i_sph];
   double t = spherical_grid.theta[i_sph];
-  const tools::vec s = tools::vec(sin(p) * cos(t), sin(p) * sin(t), cos(p));
+  const Eigen::Vector3d s =
+      Eigen::Vector3d{sin(p) * cos(t), sin(p) * sin(t), cos(p)};
   double r = radial_grid.radius[i_rad];
   gridpoint.grid_pos = atomA_pos + r * s;
   gridpoint.grid_weight =
@@ -703,30 +706,29 @@ GridContainers::Cartesian_gridpoint
 }
 
 Eigen::MatrixXd NumericalIntegration::CalcDistanceAtomsGridpoints(
-    std::vector<QMAtom*>& atoms,
+    const QMMolecule& atoms,
     std::vector<GridContainers::Cartesian_gridpoint>& atomgrid) {
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(atoms.size(), atomgrid.size());
 #pragma omp parallel for
-  for (unsigned i = 0; i < atoms.size(); ++i) {
-    QMAtom* atom = atoms[i];
-    const tools::vec& atom_pos = atom->getPos();
+  for (int i = 0; i < atoms.size(); ++i) {
+    const Eigen::Vector3d& atom_pos = atoms[i].getPos();
     for (unsigned j = 0; j < atomgrid.size(); ++j) {
       const auto& gridpoint = atomgrid[j];
-      result(i, j) = tools::abs(atom_pos - gridpoint.grid_pos);
+      result(i, j) = (atom_pos - gridpoint.grid_pos).norm();
     }
   }
   return result;
 }
 
 void NumericalIntegration::SSWpartitionAtom(
-    std::vector<QMAtom*>& atoms,
-    std::vector<GridContainers::Cartesian_gridpoint>& atomgrid, unsigned i_atom,
+    const QMMolecule& atoms,
+    std::vector<GridContainers::Cartesian_gridpoint>& atomgrid, int i_atom,
     const Eigen::MatrixXd& Rij) {
   Eigen::MatrixXd AtomGridDist = CalcDistanceAtomsGridpoints(atoms, atomgrid);
 
 #pragma omp parallel for schedule(guided)
-  for (unsigned i_grid = 0; i_grid < atomgrid.size(); i_grid++) {
-    Eigen::VectorXd p = SSWpartition(i_grid, AtomGridDist, Rij);
+  for (int i_grid = 0; i_grid < int(atomgrid.size()); i_grid++) {
+    Eigen::VectorXd p = SSWpartition(AtomGridDist.col(i_grid), Rij);
     // check weight sum
     double wsum = p.sum();
     if (wsum != 0.0) {
@@ -741,7 +743,7 @@ void NumericalIntegration::SSWpartitionAtom(
 }
 
 void NumericalIntegration::GridSetup(const std::string& type,
-                                     std::vector<QMAtom*> atoms,
+                                     const QMMolecule& atoms,
                                      const AOBasis& basis) {
   _AOBasisSize = basis.AOBasisSize();
   GridContainers initialgrids;
@@ -759,11 +761,11 @@ void NumericalIntegration::GridSetup(const std::string& type,
   _totalgridsize = 0;
   std::vector<std::vector<GridContainers::Cartesian_gridpoint> > grid;
 
-  for (unsigned i_atom = 0; i_atom < atoms.size(); ++i_atom) {
-    QMAtom* atom = atoms[i_atom];
+  for (int i_atom = 0; i_atom < atoms.size(); ++i_atom) {
+    const QMAtom& atom = atoms[i_atom];
 
-    const tools::vec& atomA_pos = atom->getPos();
-    const std::string& name = atom->getType();
+    const Eigen::Vector3d& atomA_pos = atom.getPos();
+    const std::string& name = atom.getElement();
     GridContainers::radial_grid radial_grid =
         initialgrids.radial_grids.at(name);
     GridContainers::spherical_grid spherical_grid =
@@ -777,7 +779,7 @@ void NumericalIntegration::GridSetup(const std::string& type,
     int current_order = 0;
     // for each radial value
     std::vector<GridContainers::Cartesian_gridpoint> atomgrid;
-    for (unsigned i_rad = 0; i_rad < radial_grid.radius.size(); i_rad++) {
+    for (int i_rad = 0; i_rad < radial_grid.radius.size(); i_rad++) {
       double r = radial_grid.radius[i_rad];
 
       // which Lebedev order for this point?
@@ -789,7 +791,7 @@ void NumericalIntegration::GridSetup(const std::string& type,
         current_order = order;
       }
 
-      for (unsigned i_sph = 0; i_sph < spherical_grid.phi.size(); i_sph++) {
+      for (int i_sph = 0; i_sph < spherical_grid.phi.size(); i_sph++) {
         GridContainers::Cartesian_gridpoint gridpoint =
             CreateCartesianGridpoint(atomA_pos, radial_grid, spherical_grid,
                                      i_rad, i_sph);
@@ -798,40 +800,36 @@ void NumericalIntegration::GridSetup(const std::string& type,
     }    // radial gridpoint
 
     SSWpartitionAtom(atoms, atomgrid, i_atom, Rij);
-
     // now remove points from the grid with negligible weights
-    for (std::vector<GridContainers::Cartesian_gridpoint>::iterator git =
-             atomgrid.begin();
-         git != atomgrid.end();) {
-      if (git->grid_weight < 1e-13) {
-        git = atomgrid.erase(git);
-      } else {
-        ++git;
+    std::vector<GridContainers::Cartesian_gridpoint> atomgrid_cleanedup;
+    for (const auto& point : atomgrid) {
+      if (point.grid_weight > 1e-13) {
+        atomgrid_cleanedup.push_back(point);
       }
     }
-    _totalgridsize += atomgrid.size();
-    grid.push_back(atomgrid);
+
+    _totalgridsize += atomgrid_cleanedup.size();
+    grid.push_back(atomgrid_cleanedup);
   }  // atoms
   SortGridpointsintoBlocks(grid);
   FindSignificantShells(basis);
   return;
 }
 
-Eigen::VectorXd NumericalIntegration::SSWpartition(int igrid,
-                                                   const Eigen::MatrixXd& rq,
+Eigen::VectorXd NumericalIntegration::SSWpartition(const Eigen::VectorXd& rq_i,
                                                    const Eigen::MatrixXd& Rij) {
   const double ass = 0.725;
   // initialize partition vector to 1.0
-  Eigen::VectorXd p = Eigen::VectorXd::Ones(rq.rows());
+  Eigen::VectorXd p = Eigen::VectorXd::Ones(rq_i.size());
   const double tol_scr = 1e-10;
   const double leps = 1e-6;
   // go through centers
-  for (int i = 1; i < rq.rows(); i++) {
-    double rag = rq(i, igrid);
+  for (int i = 1; i < rq_i.size(); i++) {
+    double rag = rq_i(i);
     // through all other centers (one-directional)
     for (int j = 0; j < i; j++) {
       if ((std::abs(p[i]) > tol_scr) || (std::abs(p[j]) > tol_scr)) {
-        double mu = (rag - rq(j, igrid)) * Rij(j, i);
+        double mu = (rag - rq_i(j)) * Rij(j, i);
         if (mu > ass) {
           p[i] = 0.0;
         } else if (mu < -ass) {

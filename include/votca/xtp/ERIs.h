@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef _VOTCA_XTP_ERIS_H
-#define _VOTCA_XTP_ERIS_H
+#ifndef VOTCA_XTP_ERIS_H
+#define VOTCA_XTP_ERIS_H
 
 #include <votca/xtp/fourcenter.h>
 #include <votca/xtp/threecenter.h>
@@ -93,4 +93,4 @@ class ERIs {
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* ERIS_H */
+#endif  // VOTCA_XTP_ERIS_H

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __XTP_ADIIS_COSTFUNCTION__H
-#define __XTP_ADIIS_COSTFUNCTION__H
+#ifndef VOTCA_XTP_ADIIS_COSTFUNCTION_H
+#define VOTCA_XTP_ADIIS_COSTFUNCTION_H
 
 #include <votca/xtp/optimiser_costfunction.h>
 
@@ -69,4 +69,4 @@ class ADIIS_costfunction : public Optimiser_costfunction {
 
 }  // namespace xtp
 }  // namespace votca
-#endif /* FORCES_H */
+#endif  // VOTCA_XTP_ADIIS_COSTFUNCTION_H

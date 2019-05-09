@@ -20,7 +20,7 @@ void CoordBase::Increment(Eigen::VectorXd dx) {
     std::ostringstream stream;
     stream << "Dimensions do not match." << std::endl
            << "I am a " << _coords.size() << " dimensional vector." << std::endl
-           << "you gave me a " << dx.size() << " dimensional vector."
+           << "You gave me a " << dx.size() << " dimensional vector."
            << std::endl;
     throw std::runtime_error(stream.str());
   }

@@ -3,7 +3,7 @@
 #include <string>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/orbitals.h>
-#include <votca/xtp/qmatom.h>
+#include <votca/xtp/qmmolecule.h>
 
 namespace votca {
 namespace xtp {
@@ -25,11 +25,12 @@ class CoordBase {
 
  protected:
   // CoordBase cannot be instantiated
-  CoordBase(const CoordType&, const Orbitals& orb);
+  CoordBase(const CoordType& type, const Orbitals& system);
+
   const CoordType _type;
-  const std::vector<QMAtom*>& _qmMolecule;
-  const Orbitals& _system;
+  const QMMolecule _qmMolecule;
   const int _numAtoms;
+  const Orbitals& _system;
   std::vector<double> _vector;
   Eigen::VectorXd _coords;
 };

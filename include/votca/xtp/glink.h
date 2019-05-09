@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2017 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,36 @@
  *
  */
 
-#ifndef _VOTCA_KMC_GLINK_H
-#define _VOTCA_KMC_GLINK_H
-#include <votca/tools/vec.h>
+#ifndef VOTCA_XTP_GLINK_H
+#define VOTCA_XTP_GLINK_H
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
 
-struct GLink {
-  int destination;
-  double rate;
-  votca::tools::vec dr;
-  bool decayevent;
-  // new stuff for Coulomb interaction
-  double Jeff2;
-  double reorg_out;
-  double initialrate;
-  double getValue() { return rate; }
+class GNode;
+class GLink {
+
+ public:
+  GLink(GNode* dest, double rate, const Eigen::Vector3d& dr)
+      : destination(dest), _rate(rate), _dr(dr), _decayevent(false){};
+
+  GLink(double rate) : _rate(rate), _decayevent(true){};
+
+  double getValue() const { return _rate; }
+  double getRate() const { return _rate; }
+  GNode* getDestination() const { return destination; }
+  const Eigen::Vector3d& getDeltaR() const { return _dr; }
+
+  bool isDecayEvent() const { return _decayevent; }
+
+ private:
+  GNode* destination = nullptr;
+  double _rate = 0.0;
+  Eigen::Vector3d _dr = Eigen::Vector3d::Zero();
+  bool _decayevent = false;
 };
 }  // namespace xtp
 }  // namespace votca
 
-#endif  // _VOTCA_KMC_GLINK_H
+#endif  // VOTCA_XTP_GLINK_H

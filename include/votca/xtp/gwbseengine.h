@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,15 +17,11 @@
  *
  */
 
-#ifndef _VOTCA_XTP_GWBSEENGINE_H
-#define _VOTCA_XTP_GWBSEENGINE_H
+#ifndef VOTCA_XTP_GWBSEENGINE_H
+#define VOTCA_XTP_GWBSEENGINE_H
 
-#include <boost/filesystem.hpp>
-#include <votca/ctp/apolarsite.h>
-#include <votca/ctp/logger.h>
-#include <votca/ctp/polarseg.h>
-#include <votca/ctp/segment.h>
-#include <votca/ctp/topology.h>
+#include <votca/tools/property.h>
+#include <votca/xtp/logger.h>
 
 namespace votca {
 namespace xtp {
@@ -47,7 +43,7 @@ class GWBSEEngine {
   void Initialize(tools::Property& options, std::string archive_filename);
   void ExcitationEnergies(Orbitals& orbitals);
 
-  void setLog(ctp::Logger* pLog) { _pLog = pLog; }
+  void setLog(Logger* pLog) { _pLog = pLog; }
 
   void setQMPackage(QMPackage* qmpackage) { _qmpackage = qmpackage; }
 
@@ -64,7 +60,7 @@ class GWBSEEngine {
  private:
   QMPackage* _qmpackage;
 
-  ctp::Logger* _pLog;
+  Logger* _pLog;
 
   // task options
   bool _do_guess;
@@ -87,10 +83,10 @@ class GWBSEEngine {
   tools::Property _gwbse_options;
   tools::Property _summary;
 
-  void WriteLoggerToFile(ctp::Logger* pLog);
+  void WriteLoggerToFile(Logger* pLog);
 };
 
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* _VOTCA_XTP_GWBSEENGINE_H */
+#endif  // VOTCA_XTP_GWBSEENGINE_H

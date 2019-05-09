@@ -25,17 +25,17 @@ inline bool IsElectronegative(const std::string& type) {
 
 inline std::tuple<int, int, double> ClosestAtoms(
     const std::vector<int>& comp1, const std::vector<int>& comp2,
-    const std::vector<QMAtom*>& qmm) {
+    const QMMolecule& qmm) {
 
   double min = std::numeric_limits<double>::infinity();
   std::pair<int, int> closest = std::make_pair(-1, -1);
 
   for (const auto& i : comp1) {
-    auto posI = qmm[i]->getPos();
+    auto posI = qmm[i].getPos();
     for (const auto& j : comp2) {
-      auto posJ = qmm[j]->getPos();
+      auto posJ = qmm[j].getPos();
 
-      const double dist = abs(posI - posJ);
+      const double dist = (posI - posJ).norm();
 
       if (dist < min) {
         closest = std::make_pair(i, j);
@@ -55,17 +55,17 @@ void InternalCoords::ConnectBonds() {
   for (int i = 0; i < _numAtoms; ++i) {
     auto atomI = _qmMolecule[i];
 
-    const double iCovRad = elements.getCovRad(atomI->getType(), "bohr");
-    const tools::vec iPos = atomI->getPos();
+    const double iCovRad = elements.getCovRad(atomI.getElement(), "bohr");
+    const Eigen::Vector3d iPos = atomI.getPos();
     for (int j = i + 1; j < _numAtoms; ++j) {
       auto atomJ = _qmMolecule[j];
 
-      const double jCovRad = elements.getCovRad(atomJ->getType(), "bohr");
-      const tools::vec jPos = atomJ->getPos();
+      const double jCovRad = elements.getCovRad(atomJ.getElement(), "bohr");
+      const Eigen::Vector3d jPos = atomJ.getPos();
 
       double thresh = (iCovRad + jCovRad);
 
-      double dist = abs(iPos - jPos);
+      double dist = (iPos - jPos).norm();
 
       if (dist < threshFactor * thresh) {
 
@@ -143,8 +143,8 @@ void InternalCoords::ConnectMolecules() {
           // to different components
           for (const auto& iAtom : compIAtoms) {
             for (const auto& jAtom : compJAtoms) {
-              const double dist = abs(_qmMolecule[iAtom]->getPos() -
-                                      _qmMolecule[jAtom]->getPos());
+              const double dist = (_qmMolecule[iAtom].getPos() -
+                                   _qmMolecule[jAtom].getPos()).norm();
               if (dist <= thresholdDist) {
                 boost::add_edge(iAtom, jAtom, _bondGraph);
                 _numInterMolBonds += 1;
@@ -184,48 +184,48 @@ void InternalCoords::ConnectHBonds() {
   double hVdWRad = tools::conv::ang2bohr * elements.getVdWChelpG("H");
   for (int i = 0; i < _numAtoms; ++i) {
     // first, for each H atom...
-    if (_qmMolecule[i]->getType() == "H") {
+    if (_qmMolecule[i].getElement() == "H") {
       const int HAtomInd = i;
       BglGraph::adjacency_iterator it, it_end;
       boost::tie(it, it_end) = boost::adjacent_vertices(HAtomInd, _bondGraph);
 
-      const tools::vec HAtomPos = _qmMolecule[i]->getPos();
+      const Eigen::Vector3d HAtomPos = _qmMolecule[i].getPos();
 
       for (; it != it_end; ++it) {
         // if a BONDED neighbour is electronegative
-        if (IsElectronegative(_qmMolecule[*it]->getType())) {
+        if (IsElectronegative(_qmMolecule[*it].getElement())) {
           const int neighAInd = *it;
-          const tools::vec neighAPos = _qmMolecule[neighAInd]->getPos();
+          const Eigen::Vector3d neighAPos = _qmMolecule[neighAInd].getPos();
 
           // for each neighbour within range
           for (int neighBInd = 0; neighBInd < _numAtoms; ++neighBInd) {
 
             if (neighBInd == HAtomInd || neighBInd == neighAInd ||
                 // if the neighbour is electronegative
-                !IsElectronegative(_qmMolecule[neighBInd]->getType()))
+                !IsElectronegative(_qmMolecule[neighBInd].getElement()))
               continue;
 
-            const tools::vec neighBPos = _qmMolecule[neighBInd]->getPos();
+            const Eigen::Vector3d neighBPos = _qmMolecule[neighBInd].getPos();
 
-            const double dist = abs(HAtomPos - neighBPos);
+            const double dist = (HAtomPos - neighBPos).norm();
 
             double lowerBound =
                 0.9 *
-                (elements.getCovRad(_qmMolecule[neighBInd]->getType(), "bohr") +
+                (elements.getCovRad(_qmMolecule[neighBInd].getElement(), "bohr") +
                  elements.getCovRad("H", "bohr"));
 
             double upperBound =
                 tools::conv::ang2bohr *
-                (elements.getVdWChelpG(_qmMolecule[neighBInd]->getType()) +
+                (elements.getVdWChelpG(_qmMolecule[neighBInd].getElement()) +
                  elements.getVdWChelpG("H"));
             // And it is within range
             if (lowerBound < dist && dist < upperBound) {
 
-              const tools::vec HABond =
-                  _qmMolecule[neighAInd]->getPos() - HAtomPos;
-              const tools::vec HBBond =
-                  _qmMolecule[neighBInd]->getPos() - HAtomPos;
-              const double cosTheta = HABond * HBBond;
+              const Eigen::Vector3d HABond =
+                  _qmMolecule[neighAInd].getPos() - HAtomPos;
+              const Eigen::Vector3d HBBond =
+                  _qmMolecule[neighBInd].getPos() - HAtomPos;
+              const double cosTheta = HABond.dot(HBBond);
               // And the angle is greater than 90
               // ie cos(angle) < 0
               if (cosTheta < 0) {
@@ -266,14 +266,15 @@ void InternalCoords::CalculateAnglesDihedrals() {
     BglGraph::adjacency_iterator itA, itA_end;
     boost::tie(itA, itA_end) = boost::adjacent_vertices(atomAIdx, _bondGraph);
 
-    const tools::vec atomAPos = _qmMolecule[atomAIdx]->getPos();
+    Eigen::Vector3d atomAPos = _qmMolecule[atomAIdx].getPos();
 
     for (; itA != itA_end; ++itA) {
       const int atomBIdx = *itA;
       if (_auxBonds.Contains({atomAIdx, atomBIdx})) continue;
 
-      const tools::vec atomBPos = _qmMolecule[atomBIdx]->getPos();
-      const tools::vec BAVec = (atomAPos - atomBPos).normalize();
+      Eigen::Vector3d atomBPos = _qmMolecule[atomBIdx].getPos();
+      Eigen::Vector3d BAVec = atomAPos - atomBPos;
+      BAVec.normalize();
 
       BglGraph::adjacency_iterator itB, itB_end;
       boost::tie(itB, itB_end) = boost::adjacent_vertices(atomBIdx, _bondGraph);
@@ -283,13 +284,14 @@ void InternalCoords::CalculateAnglesDihedrals() {
         if (_auxBonds.Contains({atomBIdx, atomCIdx}) || atomCIdx == atomAIdx)
           continue;
 
-        const tools::vec atomCPos = _qmMolecule[atomCIdx]->getPos();
+        Eigen::Vector3d atomCPos = _qmMolecule[atomCIdx].getPos();
 
         auto index = AngleIdx{atomAIdx, atomBIdx, atomCIdx};
 
-        const tools::vec BCVec = (atomCPos - atomBPos).normalize();
+        Eigen::Vector3d BCVec = atomCPos - atomBPos;
+        BCVec.normalize();
 
-        double cosABC = BAVec * BCVec;
+        double cosABC = BAVec.dot(BCVec);
 
         if (!_angles.Contains(index)) {
           // If the 175<angle<180, then a special orthogonal angle
@@ -302,7 +304,7 @@ void InternalCoords::CalculateAnglesDihedrals() {
         BglGraph::adjacency_iterator itC, itC_end;
         boost::tie(itC, itC_end) =
             boost::adjacent_vertices(atomCIdx, _bondGraph);
-        tools::vec normPlaneA = BAVec ^ BCVec;
+        Eigen::Vector3d normPlaneA = BAVec.cross(BCVec);
 
         for (; itC != itC_end; ++itC) {
           const int atomDIdx = *itC;
@@ -310,25 +312,26 @@ void InternalCoords::CalculateAnglesDihedrals() {
               atomDIdx == atomBIdx || atomDIdx == atomAIdx)
             continue;
 
-          const tools::vec atomDPos = _qmMolecule[atomDIdx]->getPos();
+          const Eigen::Vector3d atomDPos = _qmMolecule[atomDIdx].getPos();
           auto index = DihedralIdx{atomAIdx, atomBIdx, atomCIdx, atomDIdx};
 
           if (!_dihedrals.Contains(index)) {
-            const tools::vec CBVec = -BCVec;
-            const tools::vec CDVec = (atomDPos - atomCPos).normalize();
+            Eigen::Vector3d CBVec = -BCVec;
+            Eigen::Vector3d CDVec = atomDPos - atomCPos;
+            CDVec.normalize();
 
-            const double cosBCD = BCVec * CDVec;
+            const double cosBCD = BCVec.dot(CDVec);
 
             // ABC and BCD must not be 180 degrees
             // abs(cosABC + 1) < tol
             if (std::abs(-1 - cosABC) > tol && std::abs(-1 - cosBCD) > tol) {
 
-              tools::vec normPlaneB = (CBVec ^ CDVec);
+                Eigen::Vector3d normPlaneB = CBVec.cross(CDVec);
 
-              const double cosPhi = normPlaneA * normPlaneB;
+                const double cosPhi = normPlaneA.dot(normPlaneB);
 
-              _dihedrals[index] = std::acos(cosPhi);
-              _vector.emplace_back(std::acos(cosPhi));
+                _dihedrals[index] = std::acos(cosPhi);
+                _vector.emplace_back(std::acos(cosPhi));
             }
           }
         }
@@ -392,25 +395,23 @@ void InternalCoords::CalculateAnglesDihedrals() {
         // std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
         //           << ind[3] << ")"<< std::endl;
 
-        const tools::vec BAVec =
-            (_qmMolecule[atomAIdx]->getPos() - _qmMolecule[atomBIdx]->getPos())
-                .normalize();
-        const tools::vec BCVec =
-            (_qmMolecule[atomCIdx]->getPos() - _qmMolecule[atomBIdx]->getPos())
-                .normalize();
+        Eigen::Vector3d BAVec =_qmMolecule[atomAIdx].getPos() - _qmMolecule[atomBIdx].getPos();
+        BAVec.normalize();
 
-        const tools::vec CBVec = -BCVec;
-        const tools::vec CDVec =
-            (_qmMolecule[atomDIdx]->getPos() - _qmMolecule[atomCIdx]->getPos())
-                .normalize();
+        Eigen::Vector3d BCVec =_qmMolecule[atomCIdx].getPos() - _qmMolecule[atomBIdx].getPos();
+        BCVec.normalize();
 
-        const double cosABC = BAVec * BCVec;
-        const double cosBCD = CBVec * CDVec;
+        Eigen::Vector3d CBVec = -BCVec;
+        Eigen::Vector3d CDVec =_qmMolecule[atomDIdx].getPos() - _qmMolecule[atomCIdx].getPos();
+        CDVec.normalize();
+
+        const double cosABC = BAVec.dot(BCVec);
+        const double cosBCD = CBVec.dot(CDVec);
 
         if (abs(-1 - cosABC) > tol && abs(-1 - cosBCD) > tol) {
-          const tools::vec normPlaneA = BAVec ^ BCVec;
-          const tools::vec normPlaneB = CBVec ^ CDVec;
-          const double cosPhi = normPlaneA * normPlaneB;
+          const Eigen::Vector3d normPlaneA = BAVec.cross(BCVec);
+          const Eigen::Vector3d normPlaneB = CBVec.cross(CDVec);
+          const double cosPhi = normPlaneA.dot(normPlaneB);
           auto index = DihedralIdx{atomAIdx, atomBIdx, atomCIdx, atomDIdx};
 
           if (!_dihedrals.Contains(index)) {
@@ -436,27 +437,27 @@ inline int zeta(const int& a, const int& m, const int& n) {
   return (delta(a, m) - delta(a, n));
 }
 
-inline tools::vec GetPerpTo(const tools::vec& u, const tools::vec& v) {
+inline Eigen::Vector3d GetPerpTo(const Eigen::Vector3d& u, const Eigen::Vector3d& v) {
   double tol = 1e-6;
-  if (std::abs(1 - abs(u)) > tol || std::abs(1 - abs(v)) > tol)
+  if (std::abs(1 - u.norm()) > tol || std::abs(1 - v.norm()) > tol)
     throw std::runtime_error("GetPerpTo only accepts normalized vectors.");
 
-  tools::vec x(1, -1, 1);
-  tools::vec y(-1, 1, 1);
-  tools::vec ret;
+  Eigen::Vector3d x(1, -1, 1);
+  Eigen::Vector3d y(-1, 1, 1);
+  Eigen::Vector3d ret;
 
-  auto AreParallel = [](const tools::vec& a, const tools::vec& b) -> bool {
-    return (1 - std::abs(a * b) < 1e-3);
+  auto AreParallel = [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) -> bool {
+      return (1 - std::abs(a.dot(b)) < 1e-3);
   };
 
   if (!AreParallel(u, v))
-    ret = u ^ v;
+      ret = u.cross(v);
   else if (!AreParallel(u, x) && !AreParallel(v, x))
-    ret = u ^ x;
+      ret = u.cross(x);
   else
-    ret = u ^ y;
+      ret = u.cross(y);
 
-  ret = ret.normalize();
+  ret.normalize();
 
   return ret;
 }
@@ -474,9 +475,8 @@ void InternalCoords::PopulateWilsonMatrix() {
     atIdxM = bondIdx[0];
     atIdxN = bondIdx[1];
 
-    tools::vec bondVec =
-        (_qmMolecule[atIdxM]->getPos() - _qmMolecule[atIdxN]->getPos())
-            .normalize();
+    Eigen::Vector3d bondVec =_qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxN].getPos();
+    bondVec.normalize();
 
     auto writeBondElem = [&](int a) -> void {
       double z_amn = zeta(a, atIdxM, atIdxN);
@@ -513,27 +513,27 @@ void InternalCoords::PopulateWilsonMatrix() {
     atIdxO = angleIdx[1];
     atIdxN = angleIdx[2];
 
-    tools::vec u =
-        (_qmMolecule[atIdxM]->getPos() - _qmMolecule[atIdxO]->getPos());
+    Eigen::Vector3d u =
+        (_qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxO].getPos());
 
-    double lu = abs(u);
-    u = u.normalize();
+    double lu = u.norm();
+    u.normalize();
 
-    tools::vec v =
-        (_qmMolecule[atIdxN]->getPos() - _qmMolecule[atIdxO]->getPos());
+    Eigen::Vector3d v =
+        (_qmMolecule[atIdxN].getPos() - _qmMolecule[atIdxO].getPos());
 
-    double lv = abs(v);
-    v = v.normalize();
+    double lv = v.norm();
+    v.normalize();
 
-    tools::vec w = GetPerpTo(u, v);  // w = u^v
+    Eigen::Vector3d w = GetPerpTo(u, v);  // w = u^v
                                      // UNLESS u is parallel to v
 
-    tools::vec uw = (u ^ w) / lu;
+    Eigen::Vector3d uw = (u.cross(w)) / lu;
 
-    tools::vec wv = (w ^ v) / lv;
+    Eigen::Vector3d wv = (w.cross(v)) / lv;
 
     auto writeAngleElem = [&](int a) -> void {
-      tools::vec t =
+      Eigen::Vector3d t =
           zeta(a, atIdxM, atIdxO) * uw + zeta(a, atIdxN, atIdxO) * wv;
       a *= 3;
       _wilsonBMatrix(idx, a + 0) = t.x();
@@ -571,25 +571,25 @@ void InternalCoords::PopulateWilsonMatrix() {
     atIdxP = index[2];
     atIdxN = index[3];
 
-    tools::vec u =
-        _qmMolecule[atIdxM]->getPos() - _qmMolecule[atIdxO]->getPos();
+    Eigen::Vector3d u =
+        _qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxO].getPos();
 
-    tools::vec v =
-        _qmMolecule[atIdxN]->getPos() - _qmMolecule[atIdxP]->getPos();
+    Eigen::Vector3d v =
+        _qmMolecule[atIdxN].getPos() - _qmMolecule[atIdxP].getPos();
 
-    tools::vec w =
-        _qmMolecule[atIdxP]->getPos() - _qmMolecule[atIdxO]->getPos();
+    Eigen::Vector3d w =
+        _qmMolecule[atIdxP].getPos() - _qmMolecule[atIdxO].getPos();
 
-    double lu = abs(u);
-    double lv = abs(v);
-    double lw = abs(w);
+    double lu = u.norm();
+    double lv = v.norm();
+    double lw = w.norm();
 
-    u = u.normalize();
-    v = v.normalize();
-    w = w.normalize();
+    u.normalize();
+    v.normalize();
+    w.normalize();
 
-    double cosPhiU = u * v;
-    double cosPhiV = -v * w;
+    double cosPhiU = u.dot(v);
+    double cosPhiV = -v.dot(w);
 
     double sinPhiU = sqrt(1 - cosPhiU * cosPhiU);
     double sinPhiV = sqrt(1 - cosPhiV * cosPhiV);
@@ -597,13 +597,13 @@ void InternalCoords::PopulateWilsonMatrix() {
     double su2 = sinPhiU * sinPhiU;
     double sv2 = sinPhiV * sinPhiV;
 
-    tools::vec uw = u ^ w;
-    tools::vec vw = v ^ w;
+    Eigen::Vector3d uw = u.cross(w);
+    Eigen::Vector3d vw = v.cross(w);
 
     auto writeDihedralElem = [&](int a) -> void {
-      tools::vec t1 = (zeta(a, atIdxM, atIdxO) / (lu * su2)) * uw;
-      tools::vec t2 = (zeta(a, atIdxP, atIdxN) / (lv * sv2)) * vw;
-      tools::vec t3 = zeta(a, atIdxO, atIdxP) *
+      Eigen::Vector3d t1 = (zeta(a, atIdxM, atIdxO) / (lu * su2)) * uw;
+      Eigen::Vector3d t2 = (zeta(a, atIdxP, atIdxN) / (lv * sv2)) * vw;
+      Eigen::Vector3d t3 = zeta(a, atIdxO, atIdxP) *
                       (uw * cosPhiU / (lw * su2) - vw * cosPhiV / lw * sv2);
       a *= 3;
       _wilsonBMatrix(idx, a + 0) = t1.x() - t2.x() - t3.x();

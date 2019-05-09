@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 #define BOOST_TEST_MODULE eris_test
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/ERIs.h>
-
+#include <votca/xtp/orbitals.h>
 using namespace votca::xtp;
 using namespace std;
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(fourcenter_cache) {
   basisfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
   BasisSet basis;
   basis.LoadBasisSet("3-21G.xml");
 
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(threecenter) {
   basisfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
   BasisSet basis;
   basis.LoadBasisSet("3-21G.xml");
 
@@ -637,7 +637,7 @@ BOOST_AUTO_TEST_CASE(fourcenter_direct) {
   basisfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
   BasisSet basis;
   basis.LoadBasisSet("3-21G.xml");
 

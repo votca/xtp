@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -22,19 +22,19 @@
 
 #include <stdio.h>
 
-#include <votca/ctp/atom.h>
-#include <votca/ctp/logger.h>
-#include <votca/ctp/qmtool.h>
-#include <votca/ctp/segment.h>
 #include <votca/tools/constants.h>
+#include <votca/xtp/atom.h>
 #include <votca/xtp/geometry_optimization.h>
 #include <votca/xtp/gwbse.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/qmpackagefactory.h>
+#include <votca/xtp/qmtool.h>
+#include <votca/xtp/segment.h>
 
 namespace votca {
 namespace xtp {
 
-class DftGwBse : public ctp::QMTool {
+class DftGwBse : public QMTool {
  public:
   DftGwBse(){};
 
@@ -42,7 +42,7 @@ class DftGwBse : public ctp::QMTool {
 
   std::string Identify() { return "dftgwbse"; }
 
-  void Initialize(tools::Property *options);
+  void Initialize(tools::Property &options);
   bool Evaluate();
 
  private:
@@ -65,7 +65,7 @@ class DftGwBse : public ctp::QMTool {
   tools::Property _gwbseengine_options;
   tools::Property _geoopt_options;
 
-  ctp::Logger _log;
+  Logger _log;
 
   bool _do_optimize;
 };

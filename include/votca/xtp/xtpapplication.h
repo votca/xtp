@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -29,7 +29,7 @@ namespace xtp {
 class XtpApplication : public votca::tools::Application {
  public:
   XtpApplication();
-  ~XtpApplication(){};
+  virtual ~XtpApplication(){};
 
   void Initialize();
   bool EvaluateOptions();
@@ -43,4 +43,4 @@ class XtpApplication : public votca::tools::Application {
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* _QMApplication_H */
+#endif  // VOTCA_XTP_XTPAPPLICATION_H

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,11 +17,13 @@
  *
  */
 
-#ifndef _VOTCA_XTP_STATEFILTER_H
-#define _VOTCA_XTP_STATEFILTER_H
+#ifndef VOTCA_XTP_STATEFILTER_H
+#define VOTCA_XTP_STATEFILTER_H
 
-#include <votca/ctp/logger.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/orbitals.h>
+#include <votca/xtp/populationanalysis.h>
+#include <votca/xtp/qmfragment.h>
 #include <votca/xtp/qmstate.h>
 
 namespace votca {
@@ -44,7 +46,7 @@ class Statefilter {
     ;
   }
   void Initialize(tools::Property& options);
-  void setLogger(ctp::Logger* log) { _log = log; }
+  void setLogger(Logger* log) { _log = log; }
   void setInitialState(const QMState& state) { _statehist.push_back(state); }
   void PrintInfo() const;
   QMState CalcStateAndUpdate(Orbitals& orbitals);
@@ -66,7 +68,7 @@ class Statefilter {
   std::vector<int> ComparePairofVectors(std::vector<int>& vec1,
                                         std::vector<int>& vec2) const;
 
-  ctp::Logger* _log;
+  Logger* _log;
 
   std::vector<QMState> _statehist;
 
@@ -82,13 +84,19 @@ class Statefilter {
   double _overlapthreshold;
 
   bool _use_localisationfilter;
-  bool _localiseonA;
+
+  mutable std::vector<QMFragment<BSE_Population> >
+      _fragment_loc;  // contain value and definition but between iterations it
+                      // does not change so mutalbe now
   double _loc_threshold;
 
   bool _use_dQfilter;
+  mutable std::vector<QMFragment<BSE_Population> > _fragment_dQ;  // contain
+                                                                  // value and
+                                                                  // definition
   double _dQ_threshold;
 };
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* _VOTCA_XTP_STATEFILTER_H */
+#endif  // VOTCA_XTP_STATEFILTER_H

@@ -6,7 +6,7 @@ CartesianCoords::CartesianCoords(const Orbitals& system)
     : CoordBase(CARTESIAN, system) {
 
   for (auto& qma : _qmMolecule) {
-    auto pos = qma->getPos();
+    auto pos = qma.getPos();
     _vector.push_back(pos.x());
     _vector.push_back(pos.y());
     _vector.push_back(pos.z());

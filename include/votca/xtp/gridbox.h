@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,10 +17,9 @@
  *
  */
 
-#ifndef __XTP_GRIDBOX__H
-#define __XTP_GRIDBOX__H
+#ifndef VOTCA_XTP_GRIDBOX_H
+#define VOTCA_XTP_GRIDBOX_H
 
-#include <votca/tools/vec.h>
 #include <votca/xtp/aoshell.h>
 #include <votca/xtp/grid_containers.h>
 
@@ -34,7 +33,7 @@ struct GridboxRange {
 class GridBox {
 
  public:
-  const std::vector<tools::vec>& getGridPoints() const { return grid_pos; }
+  const std::vector<Eigen::Vector3d>& getGridPoints() const { return grid_pos; }
 
   const std::vector<double>& getGridWeights() const { return weights; }
 
@@ -51,7 +50,7 @@ class GridBox {
   unsigned Matrixsize() const { return matrix_size; }
 
   void addGridBox(const GridBox& box) {
-    const std::vector<tools::vec>& p = box.getGridPoints();
+    const std::vector<Eigen::Vector3d>& p = box.getGridPoints();
     const std::vector<double>& w = box.getGridWeights();
     for (unsigned i = 0; i < w.size(); ++i) {
       grid_pos.push_back(p[i]);
@@ -109,13 +108,12 @@ class GridBox {
   std::vector<GridboxRange> aoranges;
   std::vector<GridboxRange> ranges;
   std::vector<GridboxRange> inv_ranges;
-  std::vector<tools::vec> grid_pos;  // bohr
+  std::vector<Eigen::Vector3d> grid_pos;  // bohr
   std::vector<const AOShell*> significant_shells;
   std::vector<double> weights;
   std::vector<double> densities;
-  std::vector<Eigen::MatrixXd> dens_grad;
 };
 
 }  // namespace xtp
 }  // namespace votca
-#endif /* NUMERICAL_INTEGRATION_H */
+#endif  // VOTCA_XTP_GRIDBOX_H

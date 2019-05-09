@@ -18,16 +18,11 @@
  */
 
 #include "xtpdft.h"
-#include <votca/ctp/segment.h>
-#include <votca/xtp/qminterface.h>
-
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <iomanip>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <vector>
 #include <votca/tools/constants.h>
 
 namespace votca {
@@ -63,7 +58,7 @@ void XTPDFT::Initialize(tools::Property& options) {
   }
 }
 
-bool XTPDFT::WriteInputFile(Orbitals& orbitals) {
+bool XTPDFT::WriteInputFile(const Orbitals& orbitals) {
   _orbitals = orbitals;
   return true;
 }
@@ -72,27 +67,25 @@ bool XTPDFT::WriteInputFile(Orbitals& orbitals) {
  * Run calls DFTENGINE
  */
 bool XTPDFT::Run() {
-  DFTEngine xtpdft;
+  DFTEngine xtpdft = DFTEngine(_orbitals);
   xtpdft.Initialize(_xtpdft_options);
   xtpdft.setLogger(_pLog);
 
   if (_write_charges) {
-    xtpdft.setExternalcharges(_PolarSegments);
+    xtpdft.setExternalcharges(&_externalsites);
   }
-  xtpdft.Prepare(_orbitals);
-  xtpdft.Evaluate(_orbitals);
+  xtpdft.Prepare();
+  bool success = xtpdft.Evaluate();
   _basisset_name = xtpdft.getDFTBasisName();
   std::string file_name = _run_dir + "/" + _log_file_name;
-  CTP_LOG(ctp::logDEBUG, *_pLog)
-      << "Writing result to " << _log_file_name << flush;
+  XTP_LOG(logDEBUG, *_pLog) << "Writing result to " << _log_file_name << flush;
   _orbitals.WriteToCpt(file_name);
-  return true;
+  return success;
 }
 
 void XTPDFT::CleanUp() {
   if (_cleanup.size() != 0) {
-    CTP_LOG(ctp::logDEBUG, *_pLog)
-        << "Removing " << _cleanup << " files" << flush;
+    XTP_LOG(logDEBUG, *_pLog) << "Removing " << _cleanup << " files" << flush;
     tools::Tokenizer tok_cleanup(_cleanup, ", ");
     std::vector<std::string> cleanup_info;
     tok_cleanup.ToVector(cleanup_info);
@@ -119,12 +112,12 @@ bool XTPDFT::ParseLogFile(Orbitals& orbitals) {
   try {
     std::string file_name = _run_dir + "/" + _log_file_name;
     orbitals.ReadFromCpt(file_name);
-    CTP_LOG(ctp::logDEBUG, *_pLog)
+    XTP_LOG(logDEBUG, *_pLog)
         << (boost::format("QM energy[Hrt]: %4.8f ") % orbitals.getQMEnergy())
                .str()
         << flush;
   } catch (std::runtime_error& error) {
-    CTP_LOG(ctp::logDEBUG, *_pLog)
+    XTP_LOG(logDEBUG, *_pLog)
         << "Reading" << _log_file_name << " failed" << flush;
     return false;
   }

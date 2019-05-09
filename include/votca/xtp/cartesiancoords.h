@@ -1,7 +1,6 @@
 #ifndef _VOTCA_XTP_CARTESIAN_COORD
 #define _VOTCA_XTP_CARTESIAN_COORD
 
-#include <votca/tools/vec.h>
 #include <votca/xtp/coordbase.h>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/orbitals.h>

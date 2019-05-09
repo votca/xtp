@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(Contraction_test) {
   xyzfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("CO.xyz");
+  orbitals.QMAtoms().LoadFromFile("CO.xyz");
   BasisSet basis;
   basis.LoadBasisSet("contracted.xml");
 }

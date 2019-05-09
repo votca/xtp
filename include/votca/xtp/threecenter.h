@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -48,9 +48,9 @@ class TCMatrix {
   int _removedfunctions = 0;
   Eigen::MatrixXd _inv_sqrt;
 
-  bool FillThreeCenterRepBlock(tensor3d& threec_block, const AOShell* shell,
-                               const AOShell* shell_row,
-                               const AOShell* shell_col);
+  bool FillThreeCenterRepBlock(tensor3d& threec_block, const AOShell& shell,
+                               const AOShell& shell_row,
+                               const AOShell& shell_col);
 };
 
 class TCMatrix_dft : public TCMatrix {
@@ -73,10 +73,10 @@ class TCMatrix_dft : public TCMatrix {
 class TCMatrix_gwbse : public TCMatrix {
  public:
   // returns one level as a constant reference
-  const MatrixXfd& operator[](int i) const { return _matrix[i]; }
+  const Eigen::MatrixXd& operator[](int i) const { return _matrix[i]; }
 
   // returns one level as a reference
-  MatrixXfd& operator[](int i) { return _matrix[i]; }
+  Eigen::MatrixXd& operator[](int i) { return _matrix[i]; }
   // returns auxbasissize
   int auxsize() const { return _basissize; }
 
@@ -104,7 +104,7 @@ class TCMatrix_gwbse : public TCMatrix {
 
  private:
   // store vector of matrices
-  std::vector<MatrixXfd> _matrix;
+  std::vector<Eigen::MatrixXd> _matrix;
 
   // band summation indices
   int _mmin;
@@ -119,7 +119,7 @@ class TCMatrix_gwbse : public TCMatrix {
   const AOBasis* _dftbasis = nullptr;
   const Eigen::MatrixXd* _dft_orbitals = nullptr;
 
-  void FillBlock(std::vector<Eigen::MatrixXd>& matrix, const AOShell* auxshell,
+  void FillBlock(std::vector<Eigen::MatrixXd>& matrix, const AOShell& auxshell,
                  const AOBasis& dftbasis, const Eigen::MatrixXd& dft_orbitals);
 };
 

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef __XTP_LEBEDEV__H
-#define __XTP_LEBEDEV__H
+#ifndef VOTCA_XTP_LEBEDEV_H
+#define VOTCA_XTP_LEBEDEV_H
 
 #include <boost/math/constants/constants.hpp>
 #include <votca/tools/property.h>
@@ -37,7 +37,7 @@ class LebedevGrid {
   };
 
   std::map<std::string, GridContainers::spherical_grid> CalculateSphericalGrids(
-      std::vector<QMAtom *> atoms, const std::string &type);
+      const QMMolecule &atoms, const std::string &type);
   GridContainers::spherical_grid CalculateUnitSphereGrid(
       const std::string &element, const std::string &type);
   GridContainers::spherical_grid CalculateUnitSphereGrid(int order);
@@ -415,4 +415,4 @@ class LebedevGrid {
 
 }  // namespace xtp
 }  // namespace votca
-#endif /* LEBEDEV_H */
+#endif  // VOTCA_XTP_LEBEDEV_H

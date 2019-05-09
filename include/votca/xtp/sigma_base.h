@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -19,7 +19,6 @@
 
 #ifndef _VOTCA_XTP_SIGMA_BASE_H
 #define _VOTCA_XTP_SIGMA_BASE_H
-#include <votca/ctp/logger.h>
 #include <votca/xtp/eigen.h>
 
 namespace votca {

@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,16 +17,16 @@
  *
  */
 
-#ifndef _VOTCA_XTP_DFTENGINE_H
-#define _VOTCA_XTP_DFTENGINE_H
+#ifndef VOTCA_XTP_DFTENGINE_H
+#define VOTCA_XTP_DFTENGINE_H
 
 #include <boost/filesystem.hpp>
-#include <votca/ctp/logger.h>
-#include <votca/ctp/polarseg.h>
-#include <votca/ctp/topology.h>
 #include <votca/xtp/ERIs.h>
+#include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/convergenceacc.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/numerical_integrations.h>
+#include <votca/xtp/topology.h>
 
 namespace votca {
 namespace xtp {
@@ -42,18 +42,13 @@ class Orbitals;
 
 class DFTEngine {
  public:
-  DFTEngine() {
-    _numofelectrons = 0;
-    _addexternalsites = false;
-    _do_externalfield = false;
-    _integrate_ext_density = false;
-  };
+  DFTEngine(Orbitals& orbitals) : _orbitals(orbitals){};
 
   void Initialize(tools::Property& options);
 
   void CleanUp();
 
-  void setLogger(ctp::Logger* pLog) { _pLog = pLog; }
+  void setLogger(Logger* pLog) { _pLog = pLog; }
 
   void ConfigureExternalGrid(const std::string& grid_name_ext) {
     _grid_name_ext = grid_name_ext;
@@ -61,7 +56,7 @@ class DFTEngine {
   }
 
   void setExternalcharges(
-      std::vector<std::shared_ptr<ctp::PolarSeg> > externalsites) {
+      std::vector<std::unique_ptr<StaticSite> >* externalsites) {
     _externalsites = externalsites;
     _addexternalsites = true;
   }
@@ -72,43 +67,42 @@ class DFTEngine {
     _externalgrid_nuc = nucleigrid;
   }
 
-  std::vector<const tools::vec*> getExternalGridpoints() {
+  std::vector<const Eigen::Vector3d*> getExternalGridpoints() {
     return _gridIntegration_ext.getGridpoints();
   }
 
-  bool Evaluate(Orbitals& orbitals);
+  bool Evaluate();
 
-  void Prepare(Orbitals& orbitals);
+  void Prepare();
 
   std::string getDFTBasisName() const { return _dftbasis_name; };
 
  private:
-  Eigen::MatrixXd OrthogonalizeGuess(const Eigen::MatrixXd& GuessMOs);
+  Eigen::MatrixXd OrthogonalizeGuess(const Eigen::MatrixXd& GuessMOs) const;
   void PrintMOs(const Eigen::VectorXd& MOEnergies);
-  void CalcElDipole(Orbitals& orbitals) const;
+  void CalcElDipole() const;
   void CalculateERIs(const AOBasis& dftbasis, const Eigen::MatrixXd& DMAT);
-  void ConfigOrbfile(Orbitals& orbitals);
+  void ConfigOrbfile();
   void SetupInvariantMatrices();
-  Eigen::MatrixXd AtomicGuess(Orbitals& orbitals);
+  Eigen::MatrixXd AtomicGuess();
   std::string ReturnSmallGrid(const std::string& largegrid);
 
-  Eigen::MatrixXd IntegrateExternalDensity(Orbitals& extdensity);
+  Eigen::MatrixXd IntegrateExternalDensity(const Orbitals& extdensity);
 
-  Eigen::MatrixXd RunAtomicDFT_unrestricted(QMAtom* uniqueAtom);
-  Eigen::MatrixXd RunAtomicDFT_fractional(QMAtom* uniqueAtom);
+  Eigen::MatrixXd RunAtomicDFT_unrestricted(const QMAtom& uniqueAtom);
 
   void NuclearRepulsion();
-  double ExternalRepulsion(ctp::Topology* top = NULL);
+  double ExternalRepulsion();
   double ExternalGridRepulsion(std::vector<double> externalpotential_nuc);
   Eigen::MatrixXd SphericalAverageShells(const Eigen::MatrixXd& dmat,
                                          AOBasis& dftbasis);
 
-  ctp::Logger* _pLog;
+  Logger* _pLog;
 
   int _openmp_threads;
 
   // atoms
-  std::vector<QMAtom*> _atoms;
+  Orbitals& _orbitals;
 
   // basis sets
   std::string _auxbasis_name;
@@ -140,7 +134,7 @@ class DFTEngine {
 
   // numerical integration externalfield;
   // this will not remain here but be moved to qmape
-  bool _do_externalfield;
+  bool _do_externalfield = false;
   std::string _grid_name_ext;
   NumericalIntegration _gridIntegration_ext;
   std::vector<double> _externalgrid;
@@ -171,14 +165,14 @@ class DFTEngine {
   ERIs _ERIs;
 
   // external charges
-  std::vector<std::shared_ptr<ctp::PolarSeg> > _externalsites;
-  bool _addexternalsites;
+  std::vector<std::unique_ptr<StaticSite> >* _externalsites;
+  bool _addexternalsites = false;
 
   // exchange and correlation
   double _ScaHFX;
   std::string _xc_functional_name;
 
-  bool _integrate_ext_density;
+  bool _integrate_ext_density = false;
   // integrate external density
   std::string _orbfilename;
   std::string _gridquality;
@@ -188,4 +182,4 @@ class DFTEngine {
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* _VOTCA_XTP_DFTENGINE_H */
+#endif  // VOTCA_XTP_DFTENGINE_H

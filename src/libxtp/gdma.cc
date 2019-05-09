@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -21,8 +21,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <votca/ctp/logger.h>
 #include <votca/xtp/gdma.h>
+#include <votca/xtp/logger.h>
 
 namespace votca {
 namespace xtp {
@@ -75,8 +75,7 @@ void GDMA::RunExternal() {
   // check if the input file exists
   string fullInput = _runFolder + "/gdma.in";
   if (!boost::filesystem::exists(fullInput)) {
-    CTP_LOG(ctp::logINFO, *_log)
-        << "GDMA input file has not been found!" << flush;
+    XTP_LOG(logINFO, *_log) << "GDMA input file has not been found!" << flush;
     throw runtime_error(" GDMA cannot be run! ");
   }
 
@@ -95,15 +94,15 @@ void GDMA::RunExternal() {
       }
       // check again for fchk
       if (!boost::filesystem::exists(fullFChk)) {
-        CTP_LOG(ctp::logINFO, *_log) << "Formatted Checkpoint file has not "
-                                        "been found and cannot be created!"
-                                     << flush;
+        XTP_LOG(logINFO, *_log) << "Formatted Checkpoint file has not been "
+                                   "found and cannot be created!"
+                                << flush;
         throw runtime_error(" GDMA cannot be run! ");
       }
     } else {
-      CTP_LOG(ctp::logINFO, *_log) << "Formatted Checkpoint file has not been "
-                                      "found and cannot be created!"
-                                   << flush;
+      XTP_LOG(logINFO, *_log) << "Formatted Checkpoint file has not been found "
+                                 "and cannot be created!"
+                              << flush;
       throw runtime_error(" GDMA cannot be run! ");
     }
   }

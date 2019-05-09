@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,10 +17,9 @@
  *
  */
 
-#ifndef __XTP_GRID_CONTAINERS__H
-#define __XTP_GRID_CONTAINERS__H
+#ifndef VOTCA_XTP_GRID_CONTAINERS_H
+#define VOTCA_XTP_GRID_CONTAINERS_H
 
-#include <votca/tools/vec.h>
 #include <votca/xtp/aobasis.h>
 
 namespace votca {
@@ -47,11 +46,11 @@ class GridContainers {
 
   // container for cartesian grid points and weights
   struct Cartesian_gridpoint {
-    tools::vec grid_pos;  // bohr
+    Eigen::Vector3d grid_pos;  // bohr
     double grid_weight;
   };
 };
 
 }  // namespace xtp
 }  // namespace votca
-#endif /* NUMERICAL_INTEGRATION_H */
+#endif  // VOTCA_XTP_GRID_CONTAINERS_H

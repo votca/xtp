@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -17,22 +17,19 @@
  *
  */
 
-#ifndef __VOTCA_XTP_GDMA_H
-#define __VOTCA_XTP_GDMA_H
+#ifndef VOTCA_XTP_GDMA_H
+#define VOTCA_XTP_GDMA_H
 
 #include <fstream>
 #include <map>
 #include <string>
-#include <votca/ctp/logger.h>
 #include <votca/tools/property.h>
+#include <votca/xtp/logger.h>
 
 namespace votca {
 namespace xtp {
 /**
-    \brief information about an element
-
-    The Atom class stores atom id, name, type, mass, charge, residue number
-
+    \brief provides interface to external GDMA code
 */
 class GDMA {
  public:
@@ -50,7 +47,7 @@ class GDMA {
   void SetRadius(double radius) { _radius = radius; };
   void SetSwitch(double sw) { _switch = sw; };
 
-  void setLog(ctp::Logger* pLog) { _log = pLog; };
+  void setLog(Logger* pLog) { _log = pLog; };
   std::vector<std::vector<double> >& GetMultipoles() { return _multipoles; };
 
  private:
@@ -65,9 +62,9 @@ class GDMA {
   double _radius;
   double _switch;
   std::string _outFile;
-  ctp::Logger* _log;
+  Logger* _log;
 };
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* __VOTCA_XTP_GDMA_H */
+#endif  // VOTCA_XTP_GDMA_H

@@ -49,14 +49,6 @@ endif()
 ########################################################################
 # User input options                                                   #
 ########################################################################
-if(GWBSE_DOUBLE)
-   add_definitions(-DGWBSE_DOUBLE)
-    set(GWBSE_DOUBLE_VALUE 1)
-else()
-    set(GWBSE_DOUBLE_VALUE 0)
-endif()
-add_definitions(-DGWBSE_DOUBLE=${GWBSE_DOUBLE_VALUE})
-
 
 find_package(LIBXC REQUIRED)
 include_directories(${LIBXC_INCLUDE_DIRS})
@@ -88,7 +80,7 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   find_package(Git)
 endif(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
-find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options filesystem system timer)
+find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options serialization filesystem system timer)
 include_directories(${Boost_INCLUDE_DIRS})
 set (BOOST_CFLAGS_PKG "-I${Boost_INCLUDE_DIRS}")
 set(BOOST_LIBS_PKG "-L${Boost_LIBRARY_DIRS}")
@@ -107,8 +99,6 @@ find_package(VOTCA_TOOLS REQUIRED)
 include_directories(${VOTCA_TOOLS_INCLUDE_DIRS})
 find_package(VOTCA_CSG REQUIRED)
 include_directories(${VOTCA_CSG_INCLUDE_DIRS})
-find_package(VOTCA_CTP REQUIRED)
-include_directories(${VOTCA_CTP_INCLUDE_DIRS})
 ########################################################################
 # Checks what linear algebra packages are installed                    #
 ########################################################################

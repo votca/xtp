@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2018 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(levelshift_test) {
   basisfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
   BasisSet basis;
   basis.LoadBasisSet("3-21G.xml");
   AOBasis aobasis;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(levelshift_test) {
   ConvergenceAcc d;
   Orbitals orb;
   int occlevels = 5;
-  votca::ctp::Logger log;
+  Logger log;
   ConvergenceAcc::options opt;
   opt.mode = ConvergenceAcc::KSmode::closed;
   opt.levelshift = 0.1;

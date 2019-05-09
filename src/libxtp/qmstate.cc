@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -27,24 +27,6 @@
 
 namespace votca {
 namespace xtp {
-
-int QMStateType::ToCTPIndex() const {
-  if (_type == QMStateType::Singlet) {
-    return 2;
-  } else if (_type == QMStateType::Triplet) {
-    return 3;
-  } else if (_type == QMStateType::Hole) {
-    return 1;
-  } else if (_type == QMStateType::Electron) {
-    return -1;
-  } else if (_type == QMStateType::Gstate) {
-    return 0;
-  } else {
-    throw std::runtime_error("For state " + this->ToString() +
-                             " no conversion to ctp exists");
-  }
-  return 0;
-}
 
 std::string QMStateType::ToString() const {
   std::string identifier = "";

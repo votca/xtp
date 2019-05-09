@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2017 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,24 +29,19 @@ namespace xtp {
 class KMCMultiple : public KMCCalculator {
  public:
   KMCMultiple(){};
-  ~KMCMultiple() {
-    for (auto &node : _nodes) {
-      delete node;
-    }
-    for (auto &carrier : _carriers) {
-      delete carrier;
-    }
-  };
+  ~KMCMultiple(){};
   std::string Identify() { return "kmcmultiple"; }
-  void Initialize(tools::Property *options);
-  bool EvaluateFrame(ctp::Topology *top);
+  void Initialize(tools::Property &options);
+  bool EvaluateFrame(Topology &top);
 
  private:
-  void RunVSSM(ctp::Topology *top);
+  void RunVSSM(Topology &top);
+
   double _runtime;
   double _outputtime;
   std::string _trajectoryfile;
   std::string _timefile;
+  std::string _occfile;
   double _maxrealtime;
   int _intermediateoutput_frequency;
 };

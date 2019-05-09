@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2017 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -21,14 +21,14 @@
 #define VOTCA_XTP_EXTRACTORFACTORY_H
 
 #include <map>
-#include <votca/ctp/qmcalculator.h>
 #include <votca/tools/objectfactory.h>
+#include <votca/xtp/qmcalculator.h>
 
 namespace votca {
 namespace xtp {
 
 class ExtractorFactory
-    : public tools::ObjectFactory<std::string, ctp::QMCalculator> {
+    : public tools::ObjectFactory<std::string, QMCalculator> {
  private:
   ExtractorFactory() {}
 
@@ -39,7 +39,7 @@ class ExtractorFactory
      Create an instance of the object identified by key.
   *  Overwritten to load calculator defaults
   */
-  ctp::QMCalculator *Create(const std::string &key);
+  QMCalculator *Create(const std::string &key);
 
   friend ExtractorFactory &Extractors();
 };
@@ -49,10 +49,10 @@ inline ExtractorFactory &Extractors() {
   return _instance;
 }
 
-inline ctp::QMCalculator *ExtractorFactory::Create(const std::string &key) {
+inline QMCalculator *ExtractorFactory::Create(const std::string &key) {
   assoc_map::const_iterator it(getObjects().find(key));
   if (it != getObjects().end()) {
-    ctp::QMCalculator *calc = (it->second)();
+    QMCalculator *calc = (it->second)();
     // calc->LoadDefaults();
     return calc;
   } else
@@ -62,4 +62,4 @@ inline ctp::QMCalculator *ExtractorFactory::Create(const std::string &key) {
 }  // namespace xtp
 }  // namespace votca
 
-#endif /* VOTCA_XTP_EXTRACTORFACTORY_H.h */
+#endif  // VOTCA_XTP_EXTRACTORFACTORY_H
