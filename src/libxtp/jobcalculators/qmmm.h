@@ -17,22 +17,37 @@
  *
  */
 
-#include <votca/xtp/jobcalculatorfactory.h>
+#ifndef VOTCA_XTP_QMMM_H
+#define VOTCA_XTP_QMMM_H
 
-#include "jobcalculators/eqm.h"
-#include "jobcalculators/iexcitoncl.h"
-#include "jobcalculators/iqm.h"
-#include "jobcalculators/qmmm.h"
+#include <votca/xtp/parallelxjobcalc.h>
 
 namespace votca {
 namespace xtp {
 
-void JobCalculatorfactory::RegisterAll(void) {
-  JobCalculators().Register<IQM>("iqm");
-  JobCalculators().Register<EQM>("eqm");
-  JobCalculators().Register<IEXCITON>("iexcitoncl");
-  JobCalculators().Register<QMMM>("qmmm");
-}
+/**
+ * \brief QM/MM with different regions around
+ *
+ * Calculates properties of different regions inside a multiregion calculation
+ *
+ * Callname: qmmm
+ */
+
+class QMMM : public ParallelXJobCalc<std::vector<Job> > {
+ public:
+  void Initialize(tools::Property& options);
+  std::string Identify() { return "qmmm"; }
+  Job::JobResult EvalJob(Topology& top, Job& job, QMThread& Thread);
+  void WriteJobFile(Topology& top);
+  void ReadJobFile(Topology& top);
+
+ private:
+  tools::Property _regions_def;
+  tools::Property _interactor_def;
+
+  bool _print_regions_pdb = false;
+};
 
 }  // namespace xtp
 }  // namespace votca
+#endif
