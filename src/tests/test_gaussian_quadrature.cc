@@ -140,8 +140,7 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   opt.order = 12;
   opt.rpamin = 0;
 
-  gq.configure(opt);
-  // gq.configure(17,0,4);
+  gq.configure(opt, rpa);
   Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(), rpa);
   Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(), rpa);
   Eigen::MatrixXd exactresultoffdiag =

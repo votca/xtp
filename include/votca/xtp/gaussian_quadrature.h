@@ -20,8 +20,6 @@
 #ifndef __XTP_GAUSSIAN_QUADRATURE__H
 #define __XTP_GAUSSIAN_QUADRATURE__H
 
-#include <complex>
-#include <iostream>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/rpa.h>
 
@@ -48,7 +46,7 @@ class GaussianQuadrature {
   GaussianQuadrature(const Eigen::VectorXd& energies,
                      const TCMatrix_gwbse& Mmn);
 
-  void configure(options opt);
+  void configure(options opt, const RPA& rpa);
 
   Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
                           const RPA& rpa) const;
@@ -67,10 +65,11 @@ class GaussianQuadrature {
 
   // This function calculates and stores inverses of the microscopic dielectric
   // matrix in a matrix vector
-  std::vector<Eigen::MatrixXcd> CalcDielInvVector(const RPA& rpa) const;
+  void CalcDielInvVector(const RPA& rpa);
 
   const Eigen::VectorXd& _energies;
 
+  std::vector<Eigen::MatrixXcd> _dielinv_matrices;
   const TCMatrix_gwbse& _Mmn;
   Eigen::VectorXd _quadpoints;
   Eigen::VectorXd _quadadaptedweights;

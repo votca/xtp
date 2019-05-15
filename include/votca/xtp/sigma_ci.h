@@ -57,6 +57,13 @@ class Sigma_CI : public Sigma_base {
       const Eigen::VectorXd& frequencies) const;
 
  private:
+  double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row, int eta,
+                                   double delta) const;
+
+  double CalcOffDiagContributionValue(const Eigen::RowVectorXd& Imx_row1,
+                                      const Eigen::RowVectorXd& Imx_row2,
+                                      int eta, double delta) const;
+
   GaussianQuadrature _gq;
 
   double _eta;
