@@ -33,6 +33,15 @@ void CustomTools::AppendRow(std::string filename, const Eigen::VectorXd& row) {
   file.close();
 }
 
+void CustomTools::ExportMatBinary(std::string filename, const Eigen::MatrixXd& mat) {
+  std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+  Eigen::MatrixXd::Index rows = mat.rows(), cols = mat.cols();
+  out.write((char*) (&rows), sizeof(Eigen::MatrixXd::Index));
+  out.write((char*) (&cols), sizeof(Eigen::MatrixXd::Index));
+  out.write((char*) mat.data(), rows * cols * sizeof(Eigen::MatrixXd::Scalar));
+  out.close();
+}
+
 /* Custom Options */
 
 CustomOpts CustomOpts::_instance;
@@ -64,6 +73,8 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.sigma_export_delta", _sigma_export_delta);
   _sigma_export_converged = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.sigma_export_converged", _sigma_export_converged);
+  _sigma_export_binary = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.sigma_export_binary", _sigma_export_binary);
   _sigma_spectral_eta = options.ifExistsReturnElseReturnDefault<double>(
       "customopts.sigma_spectral_eta", _sigma_spectral_eta);
   _rpa_spectrum_export = options.ifExistsReturnElseReturnDefault<bool>(
@@ -77,8 +88,10 @@ void CustomOpts::Report() {
   std::cout << std::endl << "GSC Export:   " << _gsc_export;
   std::cout << std::endl << "GSC Alpha:    " << _gsc_alpha;
   std::cout << std::endl
-            << "Sigma export: " << _sigma_export_range << ", "
-            << _sigma_export_delta;
+            << "Sigma export: "
+            << "range: "  << _sigma_export_range << ", "
+            << "delta: "  << _sigma_export_delta << ", "
+            << "binary: " << _sigma_export_binary;
   std::cout << std::endl << "Sigma Eta:    " << _sigma_spectral_eta;
   std::cout << std::endl << "Spec. export: " << _rpa_spectrum_export;
 }

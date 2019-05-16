@@ -370,7 +370,13 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
   table.block(0, 1, 1, _qptotal) = frequencies.transpose();
   table.block(1, 0, size, 1) = offsets;
   table.block(1, 1, size, _qptotal) = results;
-  CustomTools::ExportMat("sigma_c.txt", table);
+  if (CustomOpts::SigmaExportBinary()) {
+    CustomTools::ExportMatBinary("sigma_c.bin", table);
+  } else {
+    CustomTools::ExportMat("sigma_c.txt", table);
+  }
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Done writing SigmaC log " << std::flush;
 }
 
 }  // namespace xtp
