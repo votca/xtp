@@ -26,6 +26,7 @@
 #include <votca/csg/triclinicbox.h>
 #include <votca/xtp/qmnblist.h>
 #include <votca/tools/structureparameters.h>
+#include <votca/tools/unitconverter.h>
 
 namespace votca {
 namespace xtp {
@@ -46,6 +47,12 @@ class Topology {
   typename std::vector<Segment>::const_iterator begin() const { return _segments.begin(); }
   typename std::vector<Segment>::const_iterator end() const { return _segments.end(); }
 
+  static const tools::DistanceUnit distance_unit;                               
+  static const tools::MassUnit mass_unit;                                       
+  static const tools::TimeUnit time_unit;                                       
+  static const tools::ChargeUnit charge_unit;                                   
+  static const tools::EnergyUnit energy_unit;                                   
+
   Topology(){};
 
   Topology(const Topology &top);
@@ -60,7 +67,6 @@ class Topology {
 //  Segment::bead_t CreateBead(tools::StructureParameters params);
 
   Segment &AddSegment(std::string segment_name);
-  Segment &AddSegment(tools::StructureParameters & params);
 
   Segment &getSegment(int id) { return _segments[id]; }
   const Segment &getSegment(int id) const { return _segments[id]; }

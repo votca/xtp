@@ -22,6 +22,13 @@
 namespace votca {
 namespace xtp {
 
+  Atom::Atom(tools::StructureParameters params) : 
+  _id(params.get<int>(tools::StructureParameter::BeadId)),
+  _name(params.get<std::string>(tools::StructureParameter::BeadType)),
+  _resnr(params.get<int>(tools::StructureParameter::ResidueId)),
+  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::XTP_Position)),
+  _element(params.get<std::string>(tools::StructureParameter::Element)){}
+
 Atom::Atom(int resnr, std::string md_atom_name, int atom_id,
            Eigen::Vector3d pos)
     : _id(atom_id), _name(md_atom_name), _resnr(resnr), _pos(pos) {
@@ -41,7 +48,7 @@ tools::StructureParameters Atom::getParameters() const {
   params.set(tools::StructureParameter::BeadType,_name);
   params.set(tools::StructureParameter::Element,_element);
   params.set(tools::StructureParameter::ResidueId,_resnr);
-  params.set(tools::StructureParameter::Position,_pos);
+  params.set(tools::StructureParameter::XTP_Position,_pos);
   return params;
 }
 

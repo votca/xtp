@@ -33,7 +33,7 @@ QMAtom::QMAtom(data& d) { ReadData(d); }
 QMAtom::QMAtom(tools::StructureParameters & params)
   : _index(params.get<int>(tools::StructureParameter::BeadId)),
   _element(params.get<std::string>(tools::StructureParameter::Element)),
-  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::Position)) {
+  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::XTP_Position)) {
 
     tools::Elements elements;
     _nuccharge = elements.getNucCrg(_element);
@@ -44,7 +44,7 @@ QMAtom::QMAtom(tools::StructureParameters & params)
 tools::StructureParameters QMAtom::getParameters() const {
   tools::StructureParameters params;
   params.set(tools::StructureParameter::Element,_element);
-  params.set(tools::StructureParameter::Position,_pos);
+  params.set(tools::StructureParameter::XTP_Position,_pos);
   params.set(tools::StructureParameter::BeadId,getId());
   return params;
 }

@@ -49,6 +49,8 @@ class Atom {
     double z;
     int resnr;
   };
+
+  Atom(tools::StructureParameters params);
   Atom(int resnr, std::string md_atom_name, int atom_id, Eigen::Vector3d pos);
 
   Atom(int atom_id, std::string md_atom_name, Eigen::Vector3d pos);

@@ -22,14 +22,25 @@
 
 #include <votca/xtp/atomcontainer.h>
 #include <votca/xtp/qmatom.h>
+#include <votca/tools/structureparameters.h>
+#include <votca/tools/unitconverter.h>
 
 namespace votca {
 namespace xtp {
 
 class QMMolecule : public AtomContainer<QMAtom> {
  public:
+  typedef QMAtom bead_t;
+
+  static const tools::DistanceUnit distance_unit;                                  
+  static const tools::MassUnit mass_unit;                                          
+  static const tools::TimeUnit time_unit;                                          
+  static const tools::ChargeUnit charge_unit;                                      
+  static const tools::EnergyUnit energy_unit;  
+  
   QMMolecule(std::string name, int id) : AtomContainer<QMAtom>(name, id){};
 
+  tools::StructureParameters getParameters() const;
   void LoadFromFile(std::string filename);
 
   void WriteXYZ(std::string filename, std::string header) const;

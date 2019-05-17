@@ -32,7 +32,7 @@ namespace xtp {
     tools::StructureParameters params;
     params.set(tools::StructureParameter::BeadId,getId());
     params.set(tools::StructureParameter::Element,getElement());
-    params.set(tools::StructureParameter::Position,getPos());
+    params.set(tools::StructureParameter::XTP_Position,getPos());
     return params;
   }
 

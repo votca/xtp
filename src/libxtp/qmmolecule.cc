@@ -24,6 +24,7 @@
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
 #include <votca/xtp/qmmolecule.h>
+#include "../../include/votca/xtp/fileadapter.h"
 
 using namespace std;
 using namespace votca::tools;
@@ -31,20 +32,42 @@ using namespace votca::tools;
 namespace votca {
 namespace xtp {
 
+const tools::DistanceUnit QMMolecule::distance_unit =                             
+    tools::DistanceUnit::angstroms;                                             
+const tools::MassUnit QMMolecule::mass_unit =                                     
+    tools::MassUnit::atomic_mass_units;                                         
+const tools::TimeUnit QMMolecule::time_unit = tools::TimeUnit::seconds;            
+const tools::ChargeUnit QMMolecule::charge_unit = tools::ChargeUnit::e;           
+const tools::EnergyUnit QMMolecule::energy_unit =                                 
+    tools::EnergyUnit::hartrees; 
+
+  tools::StructureParameters QMMolecule::getParameters() const {
+    tools::StructureParameters params;
+    params.set(tools::StructureParameter::AtomContainerType,getName());
+    params.set(tools::StructureParameter::AtomContainerId,getId());
+    return params;
+  }
+
 void QMMolecule::WriteXYZ(std::string filename, std::string header) const {
   csg::XYZWriter<csg::CSG_Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader(header,size());
-  writer.Write(*this);
+  FileAdapter file_adapter;
+  csg::CSG_Topology csg_temp;
+  file_adapter.convertXTPContainerToCSGTopology(*this,csg_temp);
+  writer.Write(csg_temp);
   writer.Close();
   return;
 }
 
 void QMMolecule::LoadFromFile(std::string filename) {
   csg::XYZReader<csg::CSG_Topology> reader;
-  reader.Open(filename);
-  reader.ReadFile<QMMolecule>(*this);
-  reader.Close();
+  //reader.Open(filename);
+  csg::CSG_Topology csg_temp;
+  reader.ReadTopology(filename,csg_temp);
+  FileAdapter file_adapter;
+  file_adapter.convertCSGTopologyToXTPContainer(csg_temp,*this);
+  //reader.Close();
 }
 }  // namespace xtp
 }  // namespace votca

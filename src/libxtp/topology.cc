@@ -33,6 +33,15 @@ using namespace votca::tools;
 namespace votca {
 namespace xtp {
 
+const tools::DistanceUnit Topology::distance_unit =                         
+    tools::DistanceUnit::angstroms;                                            
+const tools::MassUnit Topology::mass_unit =                                 
+    tools::MassUnit::atomic_mass_units;                                         
+const tools::TimeUnit Topology::time_unit = tools::TimeUnit::seconds;   
+const tools::ChargeUnit Topology::charge_unit = tools::ChargeUnit::e;          
+const tools::EnergyUnit Topology::energy_unit =                             
+    tools::EnergyUnit::hartrees;                                     
+  
 Topology::Topology(const Topology &top) {
   _segments = top._segments;
   _time = top._time;
@@ -59,10 +68,6 @@ Topology &Topology::operator=(const Topology &top) {
     }
   }
   return *this;
-}
-
-Segment &Topology::AddSegment(tools::StructureParameters & params){
-  AddSegment(params.get<std::string>(StructureParameter::SegmentType));
 }
 
 Segment &Topology::AddSegment(string segment_name) {
