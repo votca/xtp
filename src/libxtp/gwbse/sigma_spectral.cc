@@ -80,7 +80,7 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
 
   if (_COHSEX) {
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
       const Eigen::MatrixXd& rm = _residues[m];
       for (int n = m + 1; n < _qptotal; n++) {
@@ -99,22 +99,22 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
 
   } else {
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
       const Eigen::MatrixXd& rm = _residues[m];
       for (int n = m + 1; n < _qptotal; n++) {
-        double res = 0.0;
+        double res_m = 0.0;
+        double res_n = 0.0;
         const Eigen::MatrixXd& rn = _residues[n];
         for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
               rm.col(s).cwiseProduct(rn.col(s));
           double omega = _EigenSol._Omega(s);
-          double res_m = Equation47(rm_x_rn, omega, frequencies(m));
-          double res_n = Equation47(rm_x_rn, omega, frequencies(n));
-          res += 0.5 * (res_m + res_n);
+          res_m += Equation47(rm_x_rn, omega, frequencies(m));
+          res_n += Equation47(rm_x_rn, omega, frequencies(n));
         }  // Eigenvalue s
-        result(m, n) = res;
-        result(n, m) = res;
+        result(m, n) = res_m;
+        result(n, m) = res_n;
       }  // State n
     }    // State m
   }
