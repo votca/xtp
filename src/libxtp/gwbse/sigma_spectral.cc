@@ -102,7 +102,8 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
 #pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
       const Eigen::MatrixXd& rm = _residues[m];
-      for (int n = m + 1; n < _qptotal; n++) {
+//      for (int n = m + 1; n < _qptotal; n++) {
+      for (int n = 0; n < _qptotal; n++) {
         double res = 0.0;
         const Eigen::MatrixXd& rn = _residues[n];
         for (int s = 0; s < rpasize; s++) {
@@ -115,7 +116,7 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
           res += Equation47(rm_x_rn, omega, frequencies(m));
         }  // Eigenvalue s
         result(m, n) = res;
-        result(n, m) = res;
+//        result(n, m) = res;
       }  // State n
     }    // State m
   }
