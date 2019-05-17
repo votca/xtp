@@ -356,13 +356,12 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
   const double delta = CustomOpts::SigmaExportDelta();
   const int size = 2 * range + 1;
   CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Exporting SigmaC diagonals "
-      << "(" << size << ", " << _qptotal << ")" << std::flush;
+      << ctp::TimeStamp() << " Exporting SigmaC diagonals " << std::flush;
   _sigma->PrepareScreening();
   Eigen::VectorXd offsets =
       Eigen::VectorXd::LinSpaced(size, -range * delta, range * delta);
   CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Collecting SigmaC diagonals " << std::flush;
+      << ctp::TimeStamp() << " Calculating SigmaC diagonals " << std::flush;
   Eigen::MatrixXd results = Eigen::MatrixXd::Zero(_qptotal, size);
   for (int i = 0; i < size; i++) {
     results.col(i) = _sigma->CalcCorrelationDiag(
@@ -373,10 +372,12 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
           << i << "/" << size << std::flush;
     }
   }
-  Eigen::MatrixXd table = Eigen::MatrixXd::Zero(_qptotal + 1, size + 1);
-  table.block(0, 1, _qptotal, 1) = frequencies;
-  table.block(1, 0, 1, size) = offsets.transpose();
-  table.block(1, 1, _qptotal, size) = results;
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Formatting SigmaC diagonals " << std::flush;
+  Eigen::MatrixXd table = Eigen::MatrixXd::Zero(size + 1, _qptotal + 1);
+  table.block(0, 1, 1, _qptotal) = frequencies.transpose();
+  table.block(1, 0, size, 1) = offsets;
+  table.block(1, 1, size, _qptotal) = results.transpose();
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Writing SigmaC diagonals " << std::flush;
   if (CustomOpts::SigmaExportBinary()) {
