@@ -104,17 +104,15 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
       const Eigen::MatrixXd& rm = _residues[m];
       for (int n = m + 1; n < _qptotal; n++) {
         double res_m = 0.0;
-        double res_n = 0.0;
         const Eigen::MatrixXd& rn = _residues[n];
         for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
               rm.col(s).cwiseProduct(rn.col(s));
           double omega = _EigenSol._Omega(s);
           res_m += Equation47(rm_x_rn, omega, frequencies(m));
-          res_n += Equation47(rm_x_rn, omega, frequencies(n));
         }  // Eigenvalue s
         result(m, n) = res_m;
-        result(n, m) = res_n;
+        result(n, m) = res_m;
       }  // State n
     }    // State m
   }
