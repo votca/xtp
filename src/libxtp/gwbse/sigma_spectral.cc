@@ -32,7 +32,7 @@ void Sigma_Spectral::PrepareScreening() {
   // Cache residues
   _residues = CalcResidues();
   // Set Options
-  _HedinApprox = CustomOpts::Hedin();
+  _COHSEX = CustomOpts::COHSEX();
   return;
 }
 
@@ -41,7 +41,7 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
   const int rpasize = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
-  if (_HedinApprox) {
+  if (_COHSEX) {
 
 #pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {
@@ -78,7 +78,7 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
 
-  if (_HedinApprox) {
+  if (_COHSEX) {
 
 #pragma omp parallel for
     for (int m = 0; m < _qptotal; m++) {

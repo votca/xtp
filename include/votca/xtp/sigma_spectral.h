@@ -34,8 +34,8 @@ class Sigma_Spectral : public Sigma_base {
  public:
   Sigma_Spectral(TCMatrix_gwbse& Mmn, RPA& rpa) : Sigma_base(Mmn, rpa){};
 
-  bool get_HedinApprox() { return _HedinApprox; }
-  void set_HedinApprox(bool value) { _HedinApprox = value; }
+  bool get_COHSEX() { return _COHSEX; }
+  void set_COHSEX(bool value) { _COHSEX = value; }
 
   // Sets up the screening parametrisation
   void PrepareScreening();
@@ -46,7 +46,7 @@ class Sigma_Spectral : public Sigma_base {
       const Eigen::VectorXd& frequencies) const;
 
  private:
-  bool _HedinApprox = false;  // Hedin's static approximation
+  bool _COHSEX = false;  // Hedin's static approximation
 
   rpa_eigensolution _EigenSol;             // Eigenvalues, eigenvectors from RPA
   std::vector<Eigen::MatrixXd> _residues;  // Residues

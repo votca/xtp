@@ -22,7 +22,7 @@ class CustomOpts {
   void Parse(tools::Property& options);
   void Report();
 
-  bool _hedin = false;
+  bool _COHSEX = false;
   bool _gsc_export = false;
   double _gsc_alpha = 0.0;
   int _sigma_export_range = 0;
@@ -35,7 +35,7 @@ class CustomOpts {
  public:
   static void Load();
 
-  static bool Hedin() { return _instance._hedin; }
+  static bool COHSEX() { return _instance._COHSEX; }
   static bool GSCExport() { return _instance._gsc_export; }
   static double GSCAlpha() { return _instance._gsc_alpha; }
   static int SigmaExportRange() { return _instance._sigma_export_range; }

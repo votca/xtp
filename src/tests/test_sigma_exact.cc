@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   BOOST_CHECK_EQUAL(check_x, true);
 
   sigma.PrepareScreening();
-  sigma.set_HedinApprox(false);
+  sigma.set_COHSEX(false);
 
   Eigen::VectorXd c_diag = sigma.CalcCorrelationDiag(mo_energy);
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   }
   BOOST_CHECK_EQUAL(check_c, true);
 
-  sigma.set_HedinApprox(true);
+  sigma.set_COHSEX(true);
 
   Eigen::VectorXd c_diag_Hedin = sigma.CalcCorrelationDiag(mo_energy);
   Eigen::MatrixXd c_off_Hedin = sigma.CalcCorrelationOffDiag(mo_energy);

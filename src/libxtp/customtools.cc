@@ -61,8 +61,8 @@ void CustomOpts::Load() {
 }
 
 void CustomOpts::Parse(tools::Property& options) {
-  _hedin =
-      options.ifExistsReturnElseReturnDefault<bool>("customopts.hedin", _hedin);
+  _COHSEX = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.cohsex", _COHSEX);
   _gsc_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.gsc_export", _gsc_export);
   _gsc_alpha = options.ifExistsReturnElseReturnDefault<double>(
@@ -84,7 +84,7 @@ void CustomOpts::Parse(tools::Property& options) {
 void CustomOpts::Report() {
   Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ",
                       "", "", "", "");
-  std::cout << std::endl << "Hedin:        " << _hedin;
+  std::cout << std::endl << "COHSEX:       " << _COHSEX;
   std::cout << std::endl << "GSC Export:   " << _gsc_export;
   std::cout << std::endl << "GSC Alpha:    " << _gsc_alpha;
   std::cout << std::endl
