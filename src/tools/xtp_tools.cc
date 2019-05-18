@@ -42,8 +42,8 @@ class XtpTools : public xtp::XtpApplication {
     out << "Runs excitation/charge transport tools" << endl;
   }
 
-  void AddTool(xtp::QMTool* tool) {
-    _tools.push_back(std::unique_ptr<xtp::QMTool>(tool));
+  void AddTool(std::unique_ptr<xtp::QMTool> tool) {
+    _tools.push_back(std::move(tool));
   }
   void Initialize();
   bool EvaluateOptions();

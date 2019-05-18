@@ -125,7 +125,7 @@ bool MapChecker::EvaluateFrame(Topology& top) {
     qmwriter.Open(filename_qm_state, false);
     qmwriter.WriteHeader("QMFrame:" + std::to_string(top.getStep()) +
                          " state:" + state.ToString());
-    qmwriter.WriteBox(top.getBox() * tools::conv::bohr2ang);
+    //qmwriter.WriteBox(top.getBox() * tools::conv::bohr2ang);
     for (const Segment& seg : top.Segments()) {
       QMMolecule mol = map.map(seg, state);
       qmwriter.WriteContainer(mol);
@@ -141,7 +141,7 @@ bool MapChecker::EvaluateFrame(Topology& top) {
     mpwriter.Open(filename_mp_state, false);
     mpwriter.WriteHeader("MPFrame:" + std::to_string(top.getStep()) +
                          " state:" + state.ToString());
-    mpwriter.WriteBox(top.getBox() * tools::conv::bohr2ang);
+    //mpwriter.WriteBox(top.getBox() * tools::conv::bohr2ang);
     for (const Segment& seg : top.Segments()) {
       PolarSegment mol = mp.map(seg, state);
       mpwriter.WriteContainer(mol);

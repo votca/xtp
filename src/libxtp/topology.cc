@@ -181,7 +181,7 @@ void Topology::WriteToPdb(std::string filename) const {
   csg::PDBWriter<csg::CSG_Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader("Frame:" + std::to_string(this->getStep()));
-  writer.WriteBox(this->getBox() * tools::conv::bohr2ang);
+//  writer.WriteBox(this->getBox() * tools::conv::bohr2ang);
   for (const Segment &seg : _segments) {
     writer.WriteContainer(seg);
   }
