@@ -349,6 +349,15 @@ void GW::CalculateHQP() {
   Eigen::VectorXd diag_backup = _Sigma_c.diagonal();
   _Sigma_c = _sigma->CalcCorrelationOffDiag(_gwa_energies);
   _Sigma_c.diagonal() = diag_backup;
+  if (CustomOpts::SigmaMatrixExport()) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Exporting SigmaC matrix " << std::flush;
+    if (CustomOpts::SigmaExportBinary()) {
+      CustomTools::ExportMatBinary("sigma_c_matrix.bin", _Sigma_c);
+    } else {
+      CustomTools::ExportMat("sigma_c_matrix.txt", _Sigma_c);
+    }
+  }
 }
 
 void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
