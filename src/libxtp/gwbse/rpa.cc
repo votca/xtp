@@ -122,14 +122,13 @@ Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
 
   ApB.diagonal() = calculate_spectral_AmB();
 
-  // TODO: cache (A+B)? It's independent of the energy
   for (int v2 = 0; v2 < n_occup; v2++) {
     int i2 = vc.I(v2, 0);
     const Eigen::MatrixXd Mmn_v2T =
         _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
     for (int v1 = 0; v1 <= v2; v1++) {
       int i1 = vc.I(v1, 0);
-      ApB.block(i2, i1, n_unocc, n_unocc) -=
+      ApB.block(i2, i1, n_unocc, n_unocc) +=
           2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
     }  // Occupied MO v1
   }    // Occupied MO v2
@@ -163,7 +162,7 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   double mc = es.eigenvalues().minCoeff();
   if (mc <= 0.0) {
     std::string msg =
-            (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
+        (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
     CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " " << msg << flush;
     throw std::runtime_error(msg);
   }
