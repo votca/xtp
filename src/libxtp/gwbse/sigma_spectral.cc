@@ -160,7 +160,7 @@ double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12, double omega,
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
-  Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + freq;
+  Eigen::ArrayXd B12 = _rpa.getRPAInputEnergies().array() + freq;
   B12.segment(0, n_occup) += omega;
   B12.segment(n_occup, n_unocc) -= omega;
   const Eigen::ArrayXd numer = A12.array() * B12;
