@@ -45,7 +45,7 @@ void GW::configure(const options& opt) {
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   if (CustomOpts::GSCExport()) {
-    std::remove("gsc.log");
+    GWSelfConsistencyLogger::Initialize(_qptotal, _opt.g_sc_max_iterations);
   }
 }
 
@@ -247,15 +247,14 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
         << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
   }
   if (CustomOpts::GSCExport()) {
-    CustomTools::AppendRow("gsc.log", frequencies);
+    GWSelfConsistencyLogger::LogFrequencies(frequencies);
   }
   if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Converged after " << i_freq + 1
         << " G iterations." << std::flush;
     if (CustomOpts::GSCExport()) {
-      CustomTools::AppendRow("gsc.log",
-                             Eigen::VectorXd::Constant(_qptotal, 1.0));
+      GWSelfConsistencyLogger::WriteGWIter(true);
     }
     return true;
   } else if (i_freq == _opt.g_sc_max_iterations - 1 &&
@@ -265,8 +264,7 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
         << " G-self-consistency cycle not converged after "
         << _opt.g_sc_max_iterations << " iterations." << std::flush;
     if (CustomOpts::GSCExport()) {
-      CustomTools::AppendRow("gsc.log",
-                             Eigen::VectorXd::Constant(_qptotal, 0.0));
+      GWSelfConsistencyLogger::WriteGWIter(false);
     }
     return true;
   } else {
@@ -320,6 +318,9 @@ void GW::CalculateGWPerturbation() {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_gw + 1
           << " GW iterations." << std::flush;
+      if (CustomOpts::GSCExport()) {
+        GWSelfConsistencyLogger::WriteCount(true);
+      }
       break;
     } else if (i_gw == _opt.gw_sc_max_iterations - 1 &&
                _opt.gw_sc_max_iterations > 1) {
@@ -330,6 +331,9 @@ void GW::CalculateGWPerturbation() {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp()
           << "      Run continues. Inspect results carefully!" << std::flush;
+      if (CustomOpts::GSCExport()) {
+        GWSelfConsistencyLogger::WriteCount(false);
+      }
       break;
     } else {
       double alpha = CustomOpts::GSCAlpha();

@@ -155,10 +155,6 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Diagonalization done " << flush;
 
-  if (CustomOpts::RPASpectrumExport()) {
-    CustomTools::ExportVec("rpa_spectral.txt", es.eigenvalues());
-  }
-
   double mc = es.eigenvalues().minCoeff();
   if (mc <= 0.0) {
     std::string msg =

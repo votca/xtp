@@ -16,23 +16,6 @@ void CustomTools::ExportMat(std::string filename, const Eigen::MatrixXd& mat) {
   file.close();
 }
 
-void CustomTools::ExportVec(std::string filename, const Eigen::VectorXd& vec) {
-  Eigen::IOFormat fmt(Eigen::StreamPrecision, 0, ", ", "\n", "", "");
-  std::ofstream file;
-  file.open(filename, std::ios_base::trunc);
-  file << vec.format(fmt) << std::endl;
-  file.close();
-}
-
-void CustomTools::AppendRow(std::string filename, const Eigen::VectorXd& row) {
-  Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ",
-                      "", "", "", "");
-  std::ofstream file;
-  file.open(filename, std::ios_base::app);
-  file << row.format(fmt) << std::endl;
-  file.close();
-}
-
 void CustomTools::ExportMatBinary(std::string filename, const Eigen::MatrixXd& mat) {
   std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
   Eigen::MatrixXd::Index rows = mat.rows(), cols = mat.cols();
@@ -96,6 +79,59 @@ void CustomOpts::Report() {
             << "delta: "  << _sigma_export_delta << ", "
             << "binary: " << _sigma_export_binary;
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
+}
+
+/* GW Self Consistency Logger */
+
+GWSelfConsistencyLogger GWSelfConsistencyLogger::_instance;
+
+void GWSelfConsistencyLogger::SelfInitialize(int qp_total, int g_max) {
+  _qp_total = qp_total;
+  _g_max = g_max;
+  _gw_iter = 0;
+  _g_iter = 0;
+  _log = Eigen::MatrixXd::Zero(_qp_total, _g_max);
+  // BEGIN Create file
+  int zero = 0;
+  std::ofstream out("gwsc.bin", std::ios::out | std::ios::binary | std::ios::trunc);
+  out.write((char*) (&zero), sizeof(int)); // version
+  out.write((char*) (&zero), sizeof(int)); // gw iters
+  out.write((char*) (&zero), sizeof(int)); // conv
+  out.close();
+  // END Create file
+}
+
+void GWSelfConsistencyLogger::SelfLogFrequencies(const Eigen::VectorXd& frequencies) {
+  if (_g_iter < _g_max) { _log.col(_g_iter++) = frequencies; }
+}
+
+void GWSelfConsistencyLogger::SelfWriteGWIter(bool conv) {
+  if (_g_iter == 0) { return; }
+  // BEGIN Write frequencies
+  int iconv = conv ? 1 : 0;
+  Eigen::MatrixXd mat = _log.leftCols(_g_iter).transpose();
+  std::ofstream out("gwsc.bin", std::ios::out | std::ios::binary | std::ios::app);
+  Eigen::MatrixXd::Index rows = mat.rows(), cols = mat.cols();
+  out.write((char*) (&iconv), sizeof(int));
+  out.write((char*) (&rows), sizeof(Eigen::MatrixXd::Index));
+  out.write((char*) (&cols), sizeof(Eigen::MatrixXd::Index));
+  out.write((char*) mat.data(), rows * cols * sizeof(Eigen::MatrixXd::Scalar));
+  out.close();
+  // END Write frequencies
+  _gw_iter++;
+  _g_iter = 0;
+  _log = Eigen::MatrixXd::Zero(_qp_total, _g_max);
+}
+
+void GWSelfConsistencyLogger::SelfWriteCount(bool conv) {
+  // BEGIN Write count
+  int iconv = conv ? 1 : 0;
+  std::ofstream out("gwsc.bin", std::ios::in | std::ios::out | std::ios::binary);
+  out.seekp(sizeof(int), std::ios::beg);
+  out.write((char*) (&_gw_iter), sizeof(int));
+  out.write((char*) (&iconv), sizeof(int));
+  out.close();
+  // END Write count
 }
 
 }  // namespace xtp
