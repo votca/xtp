@@ -62,10 +62,6 @@ class Topology {
   // I do not have to manually make a move constructor or move assignment
   // operator or destructor because I only have to reassign pointers in qmnblist
   // object
-//  size_t BeadCount() const;
-
-//  Segment::bead_t CreateBead(tools::StructureParameters params);
-
   Segment &AddSegment(std::string segment_name);
 
   Segment &getSegment(int id) { return _segments[id]; }
