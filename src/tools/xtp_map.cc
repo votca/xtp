@@ -30,7 +30,7 @@
 #include <votca/xtp/md2qmengine.h>
 #include <votca/xtp/topology.h>
 #include <votca/xtp/version.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 
 using namespace std;
 
@@ -121,7 +121,7 @@ void XtpMap::Run() {
     throw runtime_error(string("Input format not supported: ") +
                         _op_vm["topology"].as<string>());
   }
-  CSG::CSG_Topology mdtopol;
+  CSG::Topology mdtopol;
   topread->ReadTopology(topfile, mdtopol);
   if (TOOLS::globals::verbose) {
     cout << "Read MD topology from " << topfile << ": Found "

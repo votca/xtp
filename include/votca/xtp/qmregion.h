@@ -17,7 +17,7 @@
  *
  */
 #include <votca/xtp/region.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 #include "orbitals.h"
 
 #ifndef VOTCA_XTP_QMREGION_H
@@ -44,7 +44,7 @@ class QMRegion : public Region {
 
   int size() const { return 1; }
 
-  void WritePDB(csg::PDBWriter<csg::CSG_Topology>& writer) const;
+  void WritePDB(csg::PDBWriter<csg::Topology>& writer) const;
 
   std::string identify() const { return "QMRegion"; }
 

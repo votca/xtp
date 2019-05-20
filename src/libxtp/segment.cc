@@ -24,6 +24,13 @@
 namespace votca {
 namespace xtp {
 
+  tools::StructureParameters Segment::getParameters() const {
+    tools::StructureParameters params;
+    params.set(tools::StructureParameter::AtomContainerType,getName());
+    params.set(tools::StructureParameter::AtomContainerId,getId());
+    return params;
+  }
+
 double Segment::getApproxSize() const {
   if (!_has_approxsize || !this->PosIsValid()) {
     if (!PosIsValid()) {

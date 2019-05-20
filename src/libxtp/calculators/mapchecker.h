@@ -21,7 +21,7 @@
 #define _VOTCA_XTP_MAPCHECKER_H
 
 #include <votca/tools/filesystem.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 #include <votca/xtp/qmcalculator.h>
 #include <votca/xtp/segmentmapper.h>
 
@@ -118,7 +118,7 @@ bool MapChecker::EvaluateFrame(Topology& top) {
     mp.LoadMappingFile(_mapfile);
     std::string filename_qm = AddStatetoFilename(_qmfile, state);
 
-    csg::PDBWriter<csg::CSG_Topology> qmwriter;
+    csg::PDBWriter<csg::Topology> qmwriter;
     std::string filename_qm_state =
         AddSteptoFilename(filename_qm, top.getStep());
     std::cout << "Writing qmmolecules to " << filename_qm_state << std::endl;
@@ -134,7 +134,7 @@ bool MapChecker::EvaluateFrame(Topology& top) {
 
     std::string filename_mp = AddStatetoFilename(_mpfile, state);
 
-    csg::PDBWriter<csg::CSG_Topology> mpwriter;
+    csg::PDBWriter<csg::Topology> mpwriter;
     std::string filename_mp_state =
         AddSteptoFilename(filename_mp, top.getStep());
     std::cout << "Writing polarsegments to " << filename_mp_state << std::endl;

@@ -46,6 +46,7 @@ tools::StructureParameters QMAtom::getParameters() const {
   params.set(tools::StructureParameter::Element,_element);
   params.set(tools::StructureParameter::XTP_Position,_pos);
   params.set(tools::StructureParameter::BeadId,getId());
+  params.set(tools::StructureParameter::BeadType,_element);
   return params;
 }
 

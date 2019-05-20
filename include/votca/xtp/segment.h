@@ -22,6 +22,7 @@
 
 #include <map>
 #include <vector>
+#include <votca/tools/structureparameters.h>
 
 #include "atom.h"
 #include "atomcontainer.h"
@@ -32,6 +33,11 @@ namespace xtp {
 class Segment : public AtomContainer<Atom> {
  public:
 
+  Segment(const tools::StructureParameters & params) :
+    AtomContainer<Atom>(
+        params.get<std::string>(tools::StructureParameter::AtomContainerType),
+        params.get<int>(tools::StructureParameter::AtomContainerId)) {};
+  
   Segment(std::string name, int id) : AtomContainer<Atom>(name, id){};
   // cannot use standard AtomContainer constructor because ReadFromCpt is
   // different.
@@ -39,6 +45,7 @@ class Segment : public AtomContainer<Atom> {
 
   ~Segment(){};
 
+  tools::StructureParameters getParameters() const;
   /// Following notation can be observed in:
   /// [1. Victor, R. et al. Microscopic Simulations of Charge Transport in
   /// Disordered Organic Semiconductors. J. Chem. Theory Comput. 7, 3335–3345

@@ -22,7 +22,7 @@
 namespace votca {
 namespace xtp {
 
-void QMRegion::WritePDB(csg::PDBWriter<csg::CSG_Topology>& writer) const {
+void QMRegion::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
   writer.WriteContainer(_orb.QMAtoms());
 }
 

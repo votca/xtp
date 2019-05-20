@@ -17,7 +17,7 @@
  *
  */
 #include <votca/csg/io/pdbwriter.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 #include <votca/xtp/checkpoint.h>
 #ifndef VOTCA_XTP_REGION_H
 #define VOTCA_XTP_REGION_H
@@ -45,7 +45,7 @@ class Region {
 
   virtual std::string identify() const = 0;
 
-  virtual void WritePDB(csg::PDBWriter<csg::CSG_Topology>& writer) const = 0;
+  virtual void WritePDB(csg::PDBWriter<csg::Topology>& writer) const = 0;
 
   const std::string& getName() const { return _name; }
   int getId() const { return _id; }

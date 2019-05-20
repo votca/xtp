@@ -38,6 +38,11 @@ class QMMolecule : public AtomContainer<QMAtom> {
   static const tools::ChargeUnit charge_unit;                                      
   static const tools::EnergyUnit energy_unit;  
   
+  QMMolecule(const tools::StructureParameters & params) : 
+    AtomContainer<QMAtom>(
+        params.get<std::string>(tools::StructureParameter::AtomContainerType),
+        params.get<int>(tools::StructureParameter::AtomContainerId)) {};
+
   QMMolecule(std::string name, int id) : AtomContainer<QMAtom>(name, id){};
 
   tools::StructureParameters getParameters() const;

@@ -153,7 +153,7 @@ void JobTopology::CreateRegions(
 
 void JobTopology::WriteToPdb(std::string filename) const {
 
-  csg::PDBWriter<csg::CSG_Topology> writer;
+  csg::PDBWriter<csg::Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader("Job:" + std::to_string(this->_job.getId()));
   for (const std::unique_ptr<Region>& reg : _regions) {

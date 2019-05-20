@@ -37,7 +37,7 @@ std::string StaticRegion::identify() const {
 }
 
 template <class T>
-void MMRegion<T>::WritePDB(csg::PDBWriter<csg::CSG_Topology>& writer) const {
+void MMRegion<T>::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
   for (const auto& seg : _segments) {
     writer.WriteContainer(seg);
   }

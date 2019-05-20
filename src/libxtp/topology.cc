@@ -24,7 +24,7 @@
 #include "votca/xtp/checkpointwriter.h"
 #include <boost/lexical_cast.hpp>
 #include <votca/csg/io/pdbwriter.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 #include <votca/tools/globals.h>
 #include <votca/tools/structureparameters.h>
 using namespace std;
@@ -34,7 +34,7 @@ namespace votca {
 namespace xtp {
 
 const tools::DistanceUnit Topology::distance_unit =                         
-    tools::DistanceUnit::angstroms;                                            
+    tools::DistanceUnit::bohr;                                            
 const tools::MassUnit Topology::mass_unit =                                 
     tools::MassUnit::atomic_mass_units;                                         
 const tools::TimeUnit Topology::time_unit = tools::TimeUnit::seconds;   
@@ -178,7 +178,7 @@ std::vector<const Segment *> Topology::FindAllSegmentsOnMolecule(
 
 void Topology::WriteToPdb(std::string filename) const {
 
-  csg::PDBWriter<csg::CSG_Topology> writer;
+  csg::PDBWriter<csg::Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader("Frame:" + std::to_string(this->getStep()));
 //  writer.WriteBox(this->getBox() * tools::conv::bohr2ang);

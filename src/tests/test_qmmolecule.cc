@@ -44,7 +44,6 @@ BOOST_AUTO_TEST_CASE(load_xyz_test) {
   Eigen::Vector3d max(0.629118, 0.629118, 0.629118);
   max *= votca::tools::conv::ang2bohr;
   Eigen::Vector3d min = -max;
-
   bool check_min = extension.first.isApprox(min, 0.00001);
 
   if (!check_min) {

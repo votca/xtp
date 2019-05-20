@@ -83,7 +83,7 @@ int Md2QmEngine::DetermineResNumOffset(const csg::Molecule& mol,
   return offset;
 }
 
-Topology Md2QmEngine::map(const csg::CSG_Topology& top) {
+Topology Md2QmEngine::map(const csg::Topology& top) {
 
   tools::Property topology_map;
   tools::load_property_from_xml(topology_map, _mapfile);

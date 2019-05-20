@@ -19,12 +19,12 @@
 #include <votca/csg/io/pdbwriter.h>
 #include <votca/csg/io/xyzreader.h>
 #include <votca/csg/io/xyzwriter.h>
-#include <votca/csg/csgtopology.h>
+#include <votca/csg/topology.h>
 #include <votca/tools/elements.h>
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
 #include <votca/xtp/qmmolecule.h>
-#include "../../include/votca/xtp/fileadapter.h"
+#include "../../include/votca/xtp/topologyconverter.h"
 
 using namespace std;
 using namespace votca::tools;
@@ -33,7 +33,7 @@ namespace votca {
 namespace xtp {
 
 const tools::DistanceUnit QMMolecule::distance_unit =                             
-    tools::DistanceUnit::angstroms;                                             
+    tools::DistanceUnit::bohr;                                             
 const tools::MassUnit QMMolecule::mass_unit =                                     
     tools::MassUnit::atomic_mass_units;                                         
 const tools::TimeUnit QMMolecule::time_unit = tools::TimeUnit::seconds;            
@@ -49,24 +49,23 @@ const tools::EnergyUnit QMMolecule::energy_unit =
   }
 
 void QMMolecule::WriteXYZ(std::string filename, std::string header) const {
-  csg::XYZWriter<csg::CSG_Topology> writer;
+  csg::XYZWriter<csg::Topology> writer;
   writer.Open(filename, false);
   writer.WriteHeader(header,size());
-  FileAdapter file_adapter;
-  csg::CSG_Topology csg_temp;
-  file_adapter.convertXTPContainerToCSGTopology(*this,csg_temp);
-  writer.Write(csg_temp);
+  TopologyContainerConverter converter;
+  csg::Topology csg_top = converter.Convert(*this);
+  //writer.Write(&csg_top);
   writer.Close();
   return;
 }
 
 void QMMolecule::LoadFromFile(std::string filename) {
-  csg::XYZReader<csg::CSG_Topology> reader;
+  csg::XYZReader<csg::Topology> reader;
   //reader.Open(filename);
-  csg::CSG_Topology csg_temp;
-  reader.ReadTopology(filename,csg_temp);
-  FileAdapter file_adapter;
-  file_adapter.convertCSGTopologyToXTPContainer(csg_temp,*this);
+  csg::Topology csg_top;
+  reader.ReadTopology(filename,&csg_top);
+  TopologyContainerConverter cont_converter;
+  *this = cont_converter.Convert<QMMolecule>(csg_top);
   //reader.Close();
 }
 }  // namespace xtp
