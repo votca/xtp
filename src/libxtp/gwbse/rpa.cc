@@ -166,17 +166,16 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   // Omega has to have correct size otherwise MKL does not rescale for Sqrt
   sol._Omega = Eigen::VectorXd::Zero(rpasize);
   sol._Omega = es.eigenvalues().cwiseSqrt();
+  
+  // X     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] * Z
+  // Y     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) - Omega^(+1/2) * (A-B)^(-1/2)] * Z
+  // X + Y =       [Omega^(-1/2) * (A-B)^(+1/2)                              ] * Z
   sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
-
   Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
-  Eigen::VectorXd AmB_sqrt_inv = AmB_sqrt.cwiseInverse();
-  Eigen::VectorXd Omega_sqrt = sol._Omega.cwiseSqrt();
+  Eigen::VectorXd Omega_sqrt_inv = sol._Omega.cwiseSqrt().cwiseInverse();
   for (int s = 0; s < rpasize; s++) {
-    Eigen::VectorXd lhs = (1 / Omega_sqrt(s)) * AmB_sqrt;
-    Eigen::VectorXd rhs = (1 * Omega_sqrt(s)) * AmB_sqrt_inv;
-    const Eigen::VectorXd& z = es.eigenvectors().col(s);
     sol._XpY.col(s) =
-        0.50 * ((lhs + rhs).cwiseProduct(z) + (lhs - rhs).cwiseProduct(z));
+        Omega_sqrt_inv(s) * AmB_sqrt.cwiseProduct(es.eigenvectors().col(s));
   }
 
   return sol;
