@@ -153,27 +153,27 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
   return residues;
 }
 
-double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12, double omega,
-                                  double freq) const {
+double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
+                                  double eigenvalue, double freq) const {
   const double eta = CustomOpts::SigmaSpectralEta();
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
   Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + freq;
-  B12.segment(0, n_occup) += omega;
-  B12.segment(n_occup, n_unocc) -= omega;
+  B12.segment(0, n_occup) += eigenvalue;
+  B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
   const Eigen::ArrayXd denom = B12.abs2() + eta;
   return (numer / denom).sum();
 }
 
 double Sigma_Spectral::Equation48(const Eigen::VectorXd& A12,
-                                  double omega) const {
+                                  double eigenvalue) const {
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   double s1 = A12.head(n_occup).sum();
   double s2 = A12.sum();
-  return 2 * (s1 - s2) / omega;
+  return 2 * (s1 - s2) / eigenvalue;
 }
 
 }  // namespace xtp
