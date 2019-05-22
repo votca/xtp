@@ -49,8 +49,8 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
       const Eigen::MatrixXd& rm = _residues[m];
       for (int s = 0; s < rpasize; s++) {
         const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
-        double omega = _EigenSol._Omega(s);
-        res += Equation48(rm_x_rm, omega);
+        double eigenvalue = _EigenSol._Omega(s);
+        res += Equation48(rm_x_rm, eigenvalue);
       }  // Eigenvalues s
       result(m) = res;
     }  // State m
@@ -63,8 +63,8 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
       const Eigen::MatrixXd& rm = _residues[m];
       for (int s = 0; s < rpasize; s++) {
         const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
-        double omega = _EigenSol._Omega(s);
-        res += Equation47(rm_x_rm, omega, frequencies(m));
+        double eigenvalue = _EigenSol._Omega(s);
+        res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
       }  // Eigenvalue s
       result(m) = res;
     }  // State m
@@ -89,10 +89,8 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
         for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
               rm.col(s).cwiseProduct(rn.col(s));
-          double omega = _EigenSol._Omega(s);
-          double res_m = Equation48(rm_x_rn, omega, frequencies(m));
-          double res_n = Equation48(rm_x_rn, omega, frequencies(n));
-          res += 0.5 * (res_m + res_n);
+          double eigenvalue = _EigenSol._Omega(s);
+          res += Equation48(rm_x_rn, eigenvalue);
         }  // Eigenvalue s
         result(m, n) = res;
         result(n, m) = res;
@@ -110,9 +108,9 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
         for (int s = 0; s < rpasize; s++) {
           Eigen::VectorXd rm_x_rn =
               rm.col(s).cwiseProduct(rn.col(s));
-          double omega = _EigenSol._Omega(s);
-          double res_m = Equation47(rm_x_rn, omega, frequencies(m));
-          double res_n = Equation47(rm_x_rn, omega, frequencies(n));
+          double eigenvalue = _EigenSol._Omega(s);
+          double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
+          double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
           res += 0.5 * (res_m + res_n);
         }  // Eigenvalue s
         result(m, n) = res;
@@ -160,7 +158,7 @@ double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
   Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + freq;
-  B12.segment(0, n_occup) += eigenvalue;
+  B12.segment(0,       n_occup) += eigenvalue;
   B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
   const Eigen::ArrayXd denom = B12.abs2() + eta;
@@ -169,11 +167,16 @@ double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
 
 double Sigma_Spectral::Equation48(const Eigen::VectorXd& A12,
                                   double eigenvalue) const {
+  const double eta = CustomOpts::SigmaSpectralEta();
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
-  double s1 = A12.head(n_occup).sum();
-  double s2 = A12.sum();
-  return 2 * (s1 - s2) / eigenvalue;
+  const int n_unocc = _opt.rpamax - _opt.homo;
+  Eigen::ArrayXd B12 = Eigen::VectorXd::Zero(_rpatotal); // eigenvalue >> |freq - energy|
+  B12.segment(0,       n_occup) += eigenvalue;
+  B12.segment(n_occup, n_unocc) -= eigenvalue;
+  const Eigen::ArrayXd numer = A12.array() * B12;
+  const Eigen::ArrayXd denom = B12.abs2() + eta;
+  return (numer / denom).sum();
 }
 
 }  // namespace xtp
