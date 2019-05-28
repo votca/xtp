@@ -64,6 +64,8 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.sigma_export_binary", _sigma_export_binary);
   _sigma_matrix_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.sigma_matrix_export", _sigma_matrix_export);
+  _gw_dft_shift = options.ifExistsReturnElseReturnDefault<double>(
+      "customopts.gw_dft_shift", _gw_dft_shift);
 }
 
 void CustomOpts::Report() {
@@ -79,6 +81,7 @@ void CustomOpts::Report() {
             << "delta: "  << _sigma_export_delta << ", "
             << "binary: " << _sigma_export_binary;
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
+  std::cout << std::endl << "GW DFT shift: " << _gw_dft_shift;
 }
 
 /* GW Self Consistency Logger */

@@ -19,7 +19,6 @@
 
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_ppm.h"
-#include <votca/xtp/customtools.h>
 #include <votca/xtp/gw.h>
 #include <votca/xtp/sigma_spectral.h>
 
