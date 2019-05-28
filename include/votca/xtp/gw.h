@@ -24,7 +24,6 @@
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_base.h>
 #include <votca/xtp/threecenter.h>
-#include <votca/xtp/customtools.h>
 namespace votca {
 namespace xtp {
 
@@ -35,7 +34,7 @@ class GW {
       : _log(log),
         _Mmn(Mmn),
         _vxc(vxc),
-        _dft_energies(dft_energies + CustomOpts::GWDFTShift() * Eigen::VectorXd::Ones(dft_energies.size())),
+        _dft_energies(dft_energies),
         _rpa(log, Mmn){};
 
   struct options {

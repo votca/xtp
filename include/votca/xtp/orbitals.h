@@ -36,6 +36,8 @@
 
 #include "basisset.h"
 
+#include "customtools.h"
+
 namespace votca {
 namespace xtp {
 
@@ -123,7 +125,7 @@ class Orbitals {
 
   // access to DFT molecular orbital energy of a specific level (in eV)
   double getEnergy(int level) const {
-    return (hasMOEnergies()) ? votca::tools::conv::hrt2ev * _mo_energies[level]
+    return (hasMOEnergies()) ? votca::tools::conv::hrt2ev * _mo_energies[level] + CustomOpts::GWDFTShift()
                              : 0;
   }
 
