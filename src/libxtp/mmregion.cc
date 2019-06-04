@@ -21,20 +21,6 @@
 
 namespace votca {
 namespace xtp {
-template <class T>
-std::string MMRegion<T>::identify() const {
-  return "";
-}
-
-template <>
-std::string PolarRegion::identify() const {
-  return "PolarRegion";
-}
-
-template <>
-std::string StaticRegion::identify() const {
-  return "StaticRegion";
-}
 
 template <class T>
 void MMRegion<T>::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
@@ -44,8 +30,16 @@ void MMRegion<T>::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
 }
 
 template <class T>
+void MMRegion<T>::ResetRegion() {
+  for (auto& seg : _segments) {
+    for (auto& site : seg) {
+      site.Reset();
+    }
+  }
+}
+
+template <class T>
 void MMRegion<T>::WriteToCpt(CheckpointWriter& w) const {
-  w(_name, "name");
   w(_id, "id");
   w(identify(), "type");
   int size = _segments.size();
@@ -59,7 +53,6 @@ void MMRegion<T>::WriteToCpt(CheckpointWriter& w) const {
 }
 template <class T>
 void MMRegion<T>::ReadFromCpt(CheckpointReader& r) {
-  r(_name, "name");
   r(_id, "id");
   int size;
   r(size, "size");

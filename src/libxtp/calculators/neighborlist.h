@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_NEIGHBORLIST_H
 #define __VOTCA_XTP_NEIGHBORLIST_H
 
@@ -27,10 +28,6 @@
 #include <votca/xtp/qmcalculator.h>
 #include <votca/xtp/qmnblist.h>
 #include <votca/xtp/topology.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 namespace votca {
 namespace xtp {

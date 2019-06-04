@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_MMREGION_H
 #define VOTCA_XTP_MMREGION_H
 
@@ -26,14 +27,30 @@
 
 namespace votca {
 namespace xtp {
+
+class QMRegion;
+class PolarRegion;
+class StaticRegion;
+
 template <class T>
 class MMRegion : public Region {
  public:
+  MMRegion(int id, Logger& log) : Region(id, log){};
   void WriteToCpt(CheckpointWriter& w) const;
 
   void ReadFromCpt(CheckpointReader& r);
 
   int size() const { return _segments.size(); }
+
+  typedef typename std::vector<T>::iterator iterator;
+
+  virtual void Initialize(const tools::Property& prop) = 0;
+
+  virtual bool Converged() const = 0;
+
+  virtual void Evaluate(std::vector<std::unique_ptr<Region> >& regions) = 0;
+
+  virtual std::string identify() const = 0;
 
   typename std::vector<T>::iterator begin() { return _segments.begin(); }
   typename std::vector<T>::iterator end() { return _segments.end(); }
@@ -45,17 +62,19 @@ class MMRegion : public Region {
     return _segments.end();
   }
 
+  void ResetRegion();
+
   void WritePDB(csg::PDBWriter<csg::Topology>& writer) const;
 
-  std::string identify() const;
   void push_back(const T& seg) { _segments.push_back(seg); }
 
- private:
+ protected:
+  virtual void InteractwithQMRegion(const QMRegion& region) = 0;
+  virtual void InteractwithPolarRegion(const PolarRegion& region) = 0;
+  virtual void InteractwithStaticRegion(const StaticRegion& region) = 0;
+
   std::vector<T> _segments;
 };
-
-typedef MMRegion<PolarSegment> PolarRegion;
-typedef MMRegion<StaticSegment> StaticRegion;
 
 }  // namespace xtp
 }  // namespace votca

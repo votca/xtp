@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_JOBTOPOLOGY_H
 #define VOTCA_XTP_JOBTOPOLOGY_H
 
@@ -25,7 +26,7 @@
 #include <votca/xtp/region.h>
 #include <votca/xtp/topology.h>
 /**
- * \brief Class to set up the toplogy, e.g division of molecules into different
+ * \brief Class to set up the topology, e.g division of molecules into different
  * regions for a specific job.
  */
 
@@ -40,6 +41,28 @@ class JobTopology {
   void WriteToHdf5(std::string filename) const;
 
   void WriteToPdb(std::string filename) const;
+
+  std::vector<std::unique_ptr<Region> >::iterator begin() {
+    return _regions.begin();
+  }
+  std::vector<std::unique_ptr<Region> >::iterator end() {
+    return _regions.end();
+  }
+
+  const std::vector<std::unique_ptr<Region> >& Regions() const {
+    return _regions;
+  }
+
+  std::vector<std::unique_ptr<Region> >& Regions() { return _regions; }
+
+  int size() const { return _regions.size(); }
+
+  std::vector<std::unique_ptr<Region> >::const_iterator begin() const {
+    return _regions.begin();
+  }
+  std::vector<std::unique_ptr<Region> >::const_iterator end() const {
+    return _regions.end();
+  }
 
  private:
   std::vector<std::vector<int> > PartitionRegions(

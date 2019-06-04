@@ -17,17 +17,31 @@
  *
  */
 
+#include <votca/xtp/polarregion.h>
 #include <votca/xtp/qmregion.h>
+#include <votca/xtp/staticregion.h>
 
 namespace votca {
 namespace xtp {
+
+void QMRegion::Initialize(const tools::Property& prop) { return; }
+
+bool QMRegion::Converged() const { return true; }
+
+void QMRegion::Evaluate(std::vector<std::unique_ptr<Region> >& regions) {
+  return;
+}
+
+void QMRegion::ResetRegion() { return; }
+void QMRegion::InteractwithQMRegion(const QMRegion& region) { return; }
+void QMRegion::InteractwithPolarRegion(const PolarRegion& region) { return; }
+void QMRegion::InteractwithStaticRegion(const StaticRegion& region) { return; }
 
 void QMRegion::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
   writer.WriteContainer(_orb.QMAtoms());
 }
 
 void QMRegion::WriteToCpt(CheckpointWriter& w) const {
-  w(_name, "name");
   w(_id, "id");
   w(identify(), "type");
   CheckpointWriter v = w.openChild("orbitals");
@@ -35,7 +49,6 @@ void QMRegion::WriteToCpt(CheckpointWriter& w) const {
 }
 
 void QMRegion::ReadFromCpt(CheckpointReader& r) {
-  r(_name, "name");
   r(_id, "id");
   CheckpointReader rr = r.openChild("orbitals");
   _orb.ReadFromCpt(rr);

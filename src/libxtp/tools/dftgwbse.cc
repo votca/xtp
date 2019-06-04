@@ -31,7 +31,6 @@ void DftGwBse::Initialize(tools::Property& options) {
   if (options.exists(key + ".mpsfile")) {
     _do_external = true;
     _mpsfile = options.get(key + ".mpsfile").as<string>();
-    _dipole_spacing = options.get(key + ".multipolespacing").as<double>();
   } else {
     _do_external = false;
   }
@@ -112,12 +111,11 @@ bool DftGwBse::Evaluate() {
   qmpackage->setRunDir(".");
 
   if (_do_external) {
-    StaticRegion region;
+    StaticRegion region(0, _log);
     StaticSegment seg = StaticSegment("", 0);
     seg.LoadFromFile(_mpsfile);
     region.push_back(seg);
     qmpackage->AddRegion(region);
-    qmpackage->setDipoleSpacing(_dipole_spacing);
   }
 
   GWBSEEngine gwbse_engine;

@@ -20,6 +20,7 @@
 #include <votca/csg/topology.h>
 #include "orbitals.h"
 
+#pragma once
 #ifndef VOTCA_XTP_QMREGION_H
 #define VOTCA_XTP_QMREGION_H
 
@@ -33,16 +34,28 @@
 namespace votca {
 namespace xtp {
 
+class PolarRegion;
+class StaticRegion;
 class QMRegion : public Region {
 
  public:
+  QMRegion(int id, Logger& log) : Region(id, log){};
   ~QMRegion(){};
+
+  void Initialize(const tools::Property& prop);
+
+  bool Converged() const;
+
+  void Evaluate(std::vector<std::unique_ptr<Region> >& regions);
+
+  void ApplyInfluenceOfOtherRegions(
+      const std::vector<std::unique_ptr<Region> >& regions);
 
   void WriteToCpt(CheckpointWriter& w) const;
 
   void ReadFromCpt(CheckpointReader& r);
 
-  int size() const { return 1; }
+  int size() const { return _size; }
 
   void WritePDB(csg::PDBWriter<csg::Topology>& writer) const;
 
@@ -54,9 +67,17 @@ class QMRegion : public Region {
     } else {
       _orb.QMAtoms().AddContainer(mol);
     }
+    _size++;
   }
 
+ protected:
+  void ResetRegion();
+  void InteractwithQMRegion(const QMRegion& region);
+  void InteractwithPolarRegion(const PolarRegion& region);
+  void InteractwithStaticRegion(const StaticRegion& region);
+
  private:
+  int _size = 0;
   Orbitals _orb;
 };
 

@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_XTPDFT_H
 #define __VOTCA_XTP_XTPDFT_H
 
@@ -50,7 +51,7 @@ class XTPDFT : public QMPackage {
 
   bool ParseLogFile(Orbitals& orbitals);
 
-  bool ParseOrbitalsFile(Orbitals& orbitals);
+  bool ParseMOsFile(Orbitals& orbitals);
 
  private:
   void WriteChargeOption() { return; }

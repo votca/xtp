@@ -23,7 +23,8 @@ namespace votca {
 namespace xtp {
 
 void AOECP::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                      const AOShell& shell_row, const AOShell& shell_col) {
+                      const AOShell& shell_row,
+                      const AOShell& shell_col) const {
 
   /*
    *
@@ -180,7 +181,7 @@ Eigen::MatrixXd AOECP::calcVNLmatrix(
     int lmax_ecp, const Eigen::Vector3d& posC, const AOGaussianPrimitive& g_row,
     const AOGaussianPrimitive& g_col, const Eigen::Matrix<int, 4, 5>& power_ecp,
     const Eigen::Matrix<double, 4, 5>& gamma_ecp,
-    const Eigen::Matrix<double, 4, 5>& pref_ecp) {
+    const Eigen::Matrix<double, 4, 5>& pref_ecp) const {
 
   /* calculate the contribution of the nonlocal
    *     ECP of atom at posC with
@@ -762,12 +763,12 @@ Eigen::MatrixXd AOECP::calcVNLmatrix(
 
       tensor3d CC;
       CC.resize(extents3D[range(0, 5)][range(0, 9)][range(0, 9)]);
+      std::fill_n(CC.data(), CC.num_elements(), 0.0);
       for (index3d L = 0; L <= lmax_ecp; L++) {
         int range_M1 = std::min(lmax_row, int(L));
         int range_M2 = std::min(lmax_col, int(L));
         for (index3d M1 = 4 - range_M1; M1 <= 4 + range_M1; M1++) {
           for (index3d M2 = 4 - range_M2; M2 <= 4 + range_M2; M2++) {
-            CC[L][M1][M2] = 0.0;
             for (index3d M = 4 - L; M <= 4 + L; M++) {
               CC[L][M1][M2] += CA[L][M][M1] * CB[L][M][M2];
             }
@@ -780,6 +781,8 @@ Eigen::MatrixXd AOECP::calcVNLmatrix(
       type_5D SUMCI;
       SUMCI.resize(extents5D[range(0, 5)][range(0, 5)][range(0, 5)][range(0, 9)]
                             [range(0, 9)]);
+      std::fill_n(SUMCI.data(), SUMCI.num_elements(), 0.0);
+
       for (index3d L = 0; L <= lmax_ecp; L++) {
         for (index3d L1 = 0; L1 <= lmax_row; L1++) {
           int range_M1 = std::min(L1, L);
@@ -787,8 +790,6 @@ Eigen::MatrixXd AOECP::calcVNLmatrix(
             int range_M2 = std::min(L2, L);
             for (index3d M1 = 4 - range_M1; M1 <= 4 + range_M1; M1++) {
               for (index3d M2 = 4 - range_M2; M2 <= 4 + range_M2; M2++) {
-
-                SUMCI[L][L1][L2][M1][M2] = 0.0;
 
                 double fak1 = 2.0 * alpha * AVSSQ;
                 double pow1 = 1;
@@ -866,7 +867,7 @@ Eigen::MatrixXd AOECP::calcVNLmatrix(
   return matrix;
 }
 
-Eigen::VectorXd AOECP::CalcNorms(double decay, int size) {
+Eigen::VectorXd AOECP::CalcNorms(double decay, int size) const {
   Eigen::VectorXd Norms = Eigen::VectorXd(size);
   const double PI = boost::math::constants::pi<double>();
   double SQ2, SQ3, SQ5;
@@ -929,7 +930,7 @@ Eigen::VectorXd AOECP::CalcNorms(double decay, int size) {
 }
 
 void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
-                      tensor3d& BLC, tensor3d& C) {
+                      tensor3d& BLC, tensor3d& C) const {
 
   tensor3d::extent_gen extents;
 
@@ -938,11 +939,12 @@ void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
   int lmin_dft_ecp = std::min(lmax_dft, lmax_ecp);
 
   BLC.resize(extents[range(0, nsph)][range(0, 5)][range(0, 9)]);
+  std::fill_n(BLC.data(), BLC.num_elements(), 0.0);
   C.resize(extents[range(0, 5)][range(0, 9)][range(0, 9)]);
-
+  std::fill_n(C.data(), C.num_elements(), 0.0);
   tensor3d BLM;
   BLM.resize(extents[range(0, nsph)][range(0, 5)][range(0, 9)]);
-
+  std::fill_n(BLM.data(), BLM.num_elements(), 0.0);
   const double PI = boost::math::constants::pi<double>();
   double SQPI = sqrt(PI);
   double SQ2 = sqrt(2.);
@@ -954,14 +956,6 @@ void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
 
   double XP, XD, XD_0, XD_p2;
   double XF_0, XF_1, XF_m2, XF_p2, XF_3;
-
-  for (index3d I = 0; I < nsph; I++) {
-    for (index3d L = 0; L <= lmax_dft; L++) {
-      for (index3d M = 4 - L; M <= 4 + L; M++) {
-        BLM[I][L][M] = 0.0;
-      }
-    }
-  }
 
   double BVS_X = pos(0);
   double BVS_Y = pos(1);
@@ -1227,13 +1221,6 @@ void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
     BLM[24][4][8] = XG_p4;
   }
 
-  for (index3d L = 0; L <= lmax_dft_ecp; L++) {
-    for (index3d M = 4 - L; M <= 4 + L; M++) {
-      for (index3d MM = 4 - L; MM <= 4 + L; MM++) {
-        C[L][M][MM] = 0.0;
-      }
-    }
-  }
   double SXY = sqrt(BVS_XX + BVS_YY);  // SXY = r * sin(theta)
   double SXYZ = sqrt(BVS_RR);          // SXYZ = r
 
@@ -1735,7 +1722,6 @@ void AOECP::getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
     for (index3d I = 0; I < nsph; I++) {
       for (index3d L = 0; L <= lmax_dft; L++) {
         for (index3d M = 4 - L; M <= 4 + L; M++) {
-          BLC[I][L][M] = 0.0;
           for (index3d M1 = 4 - L; M1 <= 4 + L; M1++) {
             BLC[I][L][M] += BLM[I][L][M1] * C[L][M1][M];
           }

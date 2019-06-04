@@ -17,6 +17,7 @@
  *
  */
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <votca/tools/constants.h>
@@ -259,14 +260,10 @@ void GWBSE::Initialize(tools::Property& options) {
       options.ifExistsReturnElseReturnDefault<int>(key + ".openmp", 0);
 
   if (options.exists(key + ".vxc")) {
-    _doVxc =
-        options.ifExistsReturnElseThrowRuntimeError<bool>(key + ".vxc.dovxc");
-    if (_doVxc) {
-      _functional = options.ifExistsReturnElseThrowRuntimeError<std::string>(
-          key + ".vxc.functional");
-      _grid = options.ifExistsReturnElseReturnDefault<std::string>(
-          key + ".vxc.grid", "medium");
-    }
+    _functional = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+        key + ".vxc.functional");
+    _grid = options.ifExistsReturnElseReturnDefault<std::string>(
+        key + ".vxc.grid", "medium");
   }
 
   _auxbasis_name = options.ifExistsReturnElseThrowRuntimeError<std::string>(
@@ -320,6 +317,7 @@ void GWBSE::Initialize(tools::Property& options) {
   // possible tasks
   std::string tasks_string =
       options.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".tasks");
+  boost::algorithm::to_lower(tasks_string);
   if (tasks_string.find("all") != std::string::npos) {
     _do_gw = true;
     _do_bse_singlets = true;
@@ -334,6 +332,7 @@ void GWBSE::Initialize(tools::Property& options) {
 
   std::string store_string =
       options.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".store");
+  boost::algorithm::to_lower(store_string);
   if ((store_string.find("all") != std::string::npos) ||
       (store_string.find("") != std::string::npos)) {
     // store according to tasks choice
@@ -470,58 +469,29 @@ void GWBSE::addoutput(tools::Property& summary) {
 
 Eigen::MatrixXd GWBSE::CalculateVXC(const AOBasis& dftbasis) {
 
-  Eigen::MatrixXd vxc_ao;
-  if (_orbitals.hasAOVxc()) {
-    if (_doVxc) {
-      if (_orbitals.getQMpackage() == "xtp") {
-        XTP_LOG(logDEBUG, *_pLog)
-            << TimeStamp() << " Taking VXC from xtp DFT run." << flush;
-      } else {
-        XTP_LOG(logDEBUG, *_pLog)
-            << TimeStamp()
-            << " There is already a Vxc matrix loaded from DFT, did you maybe "
-               "run a DFT code with outputVxc?\n I will take the external "
-               "implementation"
-            << flush;
-      }
-      _doVxc = false;
-    }
-    XTP_LOG(logDEBUG, *_pLog)
-        << TimeStamp() << " Loaded external Vxc matrix" << flush;
-    vxc_ao = _orbitals.AOVxc();
-  } else if (_doVxc) {
-
-    NumericalIntegration numint;
-    numint.setXCfunctional(_functional);
-    double ScaHFX_temp = numint.getExactExchange(_functional);
-    if (ScaHFX_temp != _orbitals.getScaHFX()) {
-      throw std::runtime_error(
-          (boost::format("GWBSE exact exchange a=%s differs from qmpackage "
-                         "exact exchange a=%s, probably your functionals are "
-                         "inconsistent") %
-           ScaHFX_temp % _orbitals.getScaHFX())
-              .str());
-    }
-    numint.GridSetup(_grid, _orbitals.QMAtoms(), dftbasis);
-    XTP_LOG(logDEBUG, *_pLog)
-        << TimeStamp() << " Setup grid for integration with gridsize: " << _grid
-        << " with " << numint.getGridSize() << " points, divided into "
-        << numint.getBoxesSize() << " boxes" << flush;
-    XTP_LOG(logDEBUG, *_pLog)
-        << TimeStamp() << " Integrating Vxc in VOTCA with functional "
-        << _functional << flush;
-    Eigen::MatrixXd DMAT = _orbitals.DensityMatrixGroundState();
-
-    vxc_ao = numint.IntegrateVXC(DMAT);
-    XTP_LOG(logDEBUG, *_pLog)
-        << TimeStamp() << " Calculated Vxc in VOTCA" << flush;
-
-  } else {
+  NumericalIntegration numint;
+  numint.setXCfunctional(_functional);
+  double ScaHFX_temp = numint.getExactExchange(_functional);
+  if (ScaHFX_temp != _orbitals.getScaHFX()) {
     throw std::runtime_error(
-        "So your DFT data contains no Vxc, if you want to proceed use the "
-        "dovxc option.");
+        (boost::format("GWBSE exact exchange a=%s differs from qmpackage "
+                       "exact exchange a=%s, probably your functionals are "
+                       "inconsistent") %
+         ScaHFX_temp % _orbitals.getScaHFX())
+            .str());
   }
-
+  numint.GridSetup(_grid, _orbitals.QMAtoms(), dftbasis);
+  XTP_LOG(logDEBUG, *_pLog)
+      << TimeStamp() << " Setup grid for integration with gridsize: " << _grid
+      << " with " << numint.getGridSize() << " points, divided into "
+      << numint.getBoxesSize() << " boxes" << flush;
+  XTP_LOG(logDEBUG, *_pLog)
+      << TimeStamp() << " Integrating Vxc in VOTCA with functional "
+      << _functional << flush;
+  Eigen::MatrixXd DMAT = _orbitals.DensityMatrixGroundState();
+  Mat_p_Energy e_vxc_ao = numint.IntegrateVXC(DMAT);
+  XTP_LOG(logDEBUG, *_pLog)
+      << TimeStamp() << " Calculated Vxc in VOTCA" << flush;
   XTP_LOG(logDEBUG, *_pLog)
       << TimeStamp() << " Set hybrid exchange factor: " << _orbitals.getScaHFX()
       << flush;
@@ -530,7 +500,7 @@ Eigen::MatrixXd GWBSE::CalculateVXC(const AOBasis& dftbasis) {
   Eigen::MatrixXd mos =
       _orbitals.MOCoefficients().block(0, _gwopt.qpmin, basissize, qptotal);
 
-  Eigen::MatrixXd vxc = mos.transpose() * vxc_ao * mos;
+  Eigen::MatrixXd vxc = mos.transpose() * e_vxc_ao.matrix() * mos;
   XTP_LOG(logDEBUG, *_pLog)
       << TimeStamp() << " Calculated exchange-correlation expectation values "
       << flush;
@@ -540,14 +510,10 @@ Eigen::MatrixXd GWBSE::CalculateVXC(const AOBasis& dftbasis) {
 
 bool GWBSE::Evaluate() {
 
-// set the parallelization
-#ifdef _OPENMP
-  if (_openmp_threads > 0) {
-    omp_set_num_threads(_openmp_threads);
-    XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " Using "
-                              << omp_get_max_threads() << " threads" << flush;
-  }
-#endif
+  // set the parallelization
+  OPENMP::setMaxThreads(_openmp_threads);
+  XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " Using "
+                            << OPENMP::getMaxThreads() << " threads" << flush;
 
   if (tools::globals::VOTCA_MKL) {
     XTP_LOG(logDEBUG, *_pLog)
@@ -614,6 +580,11 @@ bool GWBSE::Evaluate() {
     }
   }
 
+  if (!_do_gw && !_orbitals.hasQPdiag()) {
+    throw std::runtime_error(
+        "You want no GW calculation but the orb file has no QPcoefficients for "
+        "BSE");
+  }
   TCMatrix_gwbse Mmn;
   // rpamin here, because RPA needs till rpamin
   Mmn.Initialize(auxbasis.AOBasisSize(), _gwopt.rpamin, _gwopt.qpmax,
@@ -659,13 +630,9 @@ bool GWBSE::Evaluate() {
     _orbitals.QPdiagCoefficients() = es.eigenvectors();
     _orbitals.QPdiagEnergies() = es.eigenvalues();
   } else {
-    if (_orbitals.hasQPdiag()) {
-      const Eigen::MatrixXd& qpcoeff = _orbitals.QPdiagCoefficients();
-      Hqp = qpcoeff * _orbitals.QPdiagEnergies().asDiagonal() *
-            qpcoeff.transpose();
-    } else {
-      throw std::runtime_error("orb file has no QPcoefficients");
-    }
+    const Eigen::MatrixXd& qpcoeff = _orbitals.QPdiagCoefficients();
+    Hqp =
+        qpcoeff * _orbitals.QPdiagEnergies().asDiagonal() * qpcoeff.transpose();
   }
 
   // proceed only if BSE requested

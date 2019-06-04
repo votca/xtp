@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_ATOMCONTAINER_H
 #define VOTCA_XTP_ATOMCONTAINER_H
 #include <limits>
@@ -51,6 +52,8 @@ class AtomContainer {
   typedef typename std::vector<T>::iterator iterator;
 
   const std::string& getName() const { return _name; }
+
+  void setName(std::string name) { _name = name; }
 
   int getId() const { return _id; }
 

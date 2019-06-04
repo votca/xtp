@@ -15,6 +15,7 @@
  *
  */
 
+#pragma once
 #ifndef __VOTCA_TOOLS_DAVIDSON_SOLVER_H
 #define __VOTCA_TOOLS_DAVIDSON_SOLVER_H
 
@@ -50,19 +51,21 @@ class DavidsonSolver {
   void set_correction(std::string method);
   void set_ortho(std::string method);
   void set_size_update(std::string method);
-  int get_size_update(int neigen);
+  int get_size_update(int neigen) const;
 
   Eigen::VectorXd eigenvalues() const { return this->_eigenvalues; }
   Eigen::MatrixXd eigenvectors() const { return this->_eigenvectors; }
 
   template <typename MatrixReplacement>
-  void solve(MatrixReplacement &A, int neigen, int size_initial_guess = 0) {
+  void solve(const MatrixReplacement &A, int neigen,
+             int size_initial_guess = 0) {
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
     std::chrono::duration<double> elapsed_time;
     start = std::chrono::system_clock::now();
 
-    XTP_LOG(logDEBUG, _log) << TimeStamp() << " Davidson Solver" << flush;
+    XTP_LOG(logDEBUG, _log) << TimeStamp() << " Davidson Solver using "
+                            << OPENMP::getMaxThreads() << " threads." << flush;
 
     switch (this->_davidson_correction) {
 
@@ -113,7 +116,6 @@ class DavidsonSolver {
     int search_space = size_initial_guess;
     int size_restart = size_initial_guess;
     int size_update = DavidsonSolver::get_size_update(neigen);
-    int nupdate;
 
     Eigen::ArrayXd res_norm = Eigen::ArrayXd::Zero(size_update);
     Eigen::ArrayXd root_converged = Eigen::ArrayXd::Zero(size_update);
@@ -124,13 +126,11 @@ class DavidsonSolver {
     // initialize the guess eigenvector
     Eigen::VectorXd Adiag = A.diagonal();
 
+    Eigen::VectorXd lambda;
+    Eigen::MatrixXd q;
     // target the lowest diagonal element
     Eigen::MatrixXd V =
         DavidsonSolver::SetupInitialEigenvectors(Adiag, size_initial_guess);
-
-    // eigenvalues and Ritz Eigenvector
-    Eigen::VectorXd lambda;
-    Eigen::MatrixXd q;
 
     // project the matrix on the trial subspace
     Eigen::MatrixXd T = V.transpose() * (A * V);
@@ -144,7 +144,7 @@ class DavidsonSolver {
       // diagonalize the small subspace
       Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(T);
       lambda = es.eigenvalues();
-      Eigen::MatrixXd U = es.eigenvectors();
+      const Eigen::MatrixXd &U = es.eigenvectors();
 
       // Ritz eigenvectors
       q = V * U;
@@ -153,7 +153,7 @@ class DavidsonSolver {
       Eigen::MatrixXd Aq = A * q - q * lambda.asDiagonal();
 
       // correction vectors
-      nupdate = 0;
+      int nupdate = 0;
       for (int j = 0; j < size_update; j++) {
 
         // skip the root that have already converged
@@ -212,10 +212,7 @@ class DavidsonSolver {
 
         // recompute the projected matrix
         T = V.transpose() * (A * V);
-      }
-
-      // continue otherwise
-      else {
+      } else {
 
         switch (this->_davidson_ortho) {
           case ORTHO::GS:
@@ -245,8 +242,8 @@ class DavidsonSolver {
 
       for (int i = 0; i < neigen; i++) {
         if (not root_converged[i]) {
-          this->_eigenvalues(i) = 0;
-          this->_eigenvectors.col(i) = Eigen::VectorXd::Zero(op_size);
+          _eigenvalues(i) = 0;
+          _eigenvectors.col(i) = Eigen::VectorXd::Zero(op_size);
         }
       }
     } else {
@@ -277,27 +274,30 @@ class DavidsonSolver {
   Eigen::VectorXd _eigenvalues;
   Eigen::MatrixXd _eigenvectors;
 
-  Eigen::ArrayXi argsort(Eigen::VectorXd &V) const;
+  Eigen::ArrayXi argsort(const Eigen::VectorXd &V) const;
   Eigen::MatrixXd SetupInitialEigenvectors(Eigen::VectorXd &D, int size) const;
 
   Eigen::MatrixXd QR_ortho(const Eigen::MatrixXd &A) const;
   Eigen::MatrixXd gramschmidt_ortho(const Eigen::MatrixXd &A, int nstart) const;
-  Eigen::VectorXd dpr_correction(Eigen::VectorXd &w, Eigen::VectorXd &A0,
+  Eigen::VectorXd dpr_correction(const Eigen::VectorXd &w,
+                                 const Eigen::VectorXd &A0,
                                  double lambda) const;
-  Eigen::VectorXd olsen_correction(Eigen::VectorXd &r, Eigen::VectorXd &x,
-                                   Eigen::VectorXd &D, double lambda) const;
+  Eigen::VectorXd olsen_correction(const Eigen::VectorXd &r,
+                                   const Eigen::VectorXd &x,
+                                   const Eigen::VectorXd &D,
+                                   double lambda) const;
 
   template <class MatrixReplacement>
-  void update_projected_matrix(Eigen::MatrixXd &T, MatrixReplacement &A,
-                               Eigen::MatrixXd &V) const {
+  void update_projected_matrix(Eigen::MatrixXd &T, const MatrixReplacement &A,
+                               const Eigen::MatrixXd &V) const {
     int size = V.rows();
     int old_dim = T.cols();
     int new_dim = V.cols();
     int nvec = new_dim - old_dim;
 
     T.conservativeResize(new_dim, new_dim);
-    Eigen::MatrixXd _tmp = A * V.block(0, old_dim, size, nvec);
-    T.block(0, old_dim, new_dim, nvec) = V.transpose() * _tmp;
+    const Eigen::MatrixXd tmp = A * V.block(0, old_dim, size, nvec);
+    T.block(0, old_dim, new_dim, nvec) = V.transpose() * tmp;
     T.block(old_dim, 0, nvec, old_dim) =
         T.block(0, old_dim, old_dim, nvec).transpose();
     return;

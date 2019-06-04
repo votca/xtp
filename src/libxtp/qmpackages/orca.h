@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_ORCA_H
 #define __VOTCA_XTP_ORCA_H
 
@@ -51,7 +52,7 @@ class Orca : public QMPackage {
 
   bool ParseLogFile(Orbitals& orbitals);
 
-  bool ParseOrbitalsFile(Orbitals& orbitals);
+  bool ParseMOsFile(Orbitals& orbitals);
 
  private:
   std::string indent(const double& number);

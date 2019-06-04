@@ -17,6 +17,7 @@ nn * See the License for the specific language governing permissions and
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_STATICSITE_H
 #define __VOTCA_XTP_STATICSITE_H
 
@@ -111,9 +112,16 @@ class StaticSite {
   static Eigen::VectorXd CalculateSphericalMultipole(
       const Eigen::Matrix3d& quadrupole_cartesian);
 
-  virtual Eigen::Vector3d getField() const { return _localpermanentField; }
+  const Eigen::Vector3d& getField() const { return _localpermanentField; }
+  Eigen::Vector3d& getField() { return _localpermanentField; }
 
-  virtual double getPotential() const { return _phi; }
+  const double& getPotential() const { return _phi; }
+  double& getPotential() { return _phi; }
+
+  virtual void Reset() {
+    _localpermanentField.setZero();
+    _phi = 0.0;
+  }
 
   std::string WriteMpsLine(std::string unit = "bohr") const;
 

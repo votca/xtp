@@ -89,13 +89,8 @@ int Neighborlist::DetClassicalPairs(Topology& top) {
 }
 
 bool Neighborlist::EvaluateFrame(Topology& top) {
-
-#ifdef _OPENMP
-  if (_nThreads > 0) {
-    omp_set_num_threads(_nThreads);
-    std::cout << " Using " << omp_get_max_threads() << " threads" << std::flush;
-  }
-#endif
+  OPENMP::setMaxThreads(_nThreads);
+  std::cout << " Using " << OPENMP::getMaxThreads() << " threads" << std::flush;
 
   if (tools::globals::verbose) {
     std::cout << std::endl << "... ..." << std::flush;
@@ -162,7 +157,7 @@ bool Neighborlist::EvaluateFrame(Topology& top) {
         throw std::runtime_error(
             (boost::format("Cutoff is larger than half the box size. Maximum "
                            "allowed cutoff is %1$1.1f") %
-             (0.5 * min))
+             (tools::conv::nm2bohr * 0.5 * min))
                 .str());
       }
       double cutoff2 = cutoff * cutoff;
