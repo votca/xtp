@@ -24,8 +24,8 @@
 #include <votca/xtp/atomcontainer.h>
 #include <votca/xtp/qmatom.h>
 #include <votca/tools/structureparameters.h>
-#include <votca/tools/unitconverter.h>
-
+//#include <votca/tools/unitconverter.h>
+#include "units.h"
 namespace votca {
 namespace xtp {
 
@@ -33,12 +33,8 @@ class QMMolecule : public AtomContainer<QMAtom> {
  public:
   typedef QMAtom bead_t;
 
-  static const tools::DistanceUnit distance_unit;                                  
-  static const tools::MassUnit mass_unit;                                          
-  static const tools::TimeUnit time_unit;                                          
-  static const tools::ChargeUnit charge_unit;                                      
-  static const tools::EnergyUnit energy_unit;  
-  
+  typedef const Units units;
+ 
   QMMolecule(const tools::StructureParameters & params) : 
     AtomContainer<QMAtom>(
         params.get<std::string>(tools::StructureParameter::AtomContainerType),
