@@ -28,6 +28,7 @@
 #include <votca/xtp/qmnblist.h>
 #include <votca/tools/structureparameters.h>
 #include <votca/tools/unitconverter.h>
+#include "units.h"
 
 namespace votca {
 namespace xtp {
@@ -48,12 +49,13 @@ class Topology {
   typename std::vector<Segment>::const_iterator begin() const { return _segments.begin(); }
   typename std::vector<Segment>::const_iterator end() const { return _segments.end(); }
 
-  static const tools::DistanceUnit distance_unit;                               
+  typedef const Units units;
+/*  static const tools::DistanceUnit distance_unit;                               
   static const tools::MassUnit mass_unit;                                       
   static const tools::TimeUnit time_unit;                                       
   static const tools::ChargeUnit charge_unit;                                   
   static const tools::EnergyUnit energy_unit;                                   
-
+*/
   Topology(){};
 
   Topology(const Topology &top);

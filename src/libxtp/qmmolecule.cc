@@ -32,14 +32,14 @@ using namespace votca::tools;
 namespace votca {
 namespace xtp {
 
-const tools::DistanceUnit QMMolecule::distance_unit =                             
+/*const tools::DistanceUnit QMMolecule::distance_unit =                             
     tools::DistanceUnit::bohr;                                             
 const tools::MassUnit QMMolecule::mass_unit =                                     
     tools::MassUnit::atomic_mass_units;                                         
 const tools::TimeUnit QMMolecule::time_unit = tools::TimeUnit::seconds;            
 const tools::ChargeUnit QMMolecule::charge_unit = tools::ChargeUnit::e;           
 const tools::EnergyUnit QMMolecule::energy_unit =                                 
-    tools::EnergyUnit::hartrees; 
+    tools::EnergyUnit::hartrees; */
 
   tools::StructureParameters QMMolecule::getParameters() const {
     tools::StructureParameters params;
