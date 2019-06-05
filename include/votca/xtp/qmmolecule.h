@@ -24,7 +24,6 @@
 #include <votca/xtp/atomcontainer.h>
 #include <votca/xtp/qmatom.h>
 #include <votca/tools/structureparameters.h>
-//#include <votca/tools/unitconverter.h>
 #include "units.h"
 namespace votca {
 namespace xtp {

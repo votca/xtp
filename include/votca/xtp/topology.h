@@ -50,12 +50,7 @@ class Topology {
   typename std::vector<Segment>::const_iterator end() const { return _segments.end(); }
 
   typedef const Units units;
-/*  static const tools::DistanceUnit distance_unit;                               
-  static const tools::MassUnit mass_unit;                                       
-  static const tools::TimeUnit time_unit;                                       
-  static const tools::ChargeUnit charge_unit;                                   
-  static const tools::EnergyUnit energy_unit;                                   
-*/
+
   Topology(){};
 
   Topology(const Topology &top);
@@ -77,6 +72,9 @@ class Topology {
   Eigen::Vector3d PbShortestConnect(const Eigen::Vector3d &r1,
                                     const Eigen::Vector3d &r2) const;
   const Eigen::Matrix3d &getBox() const { return _bc->getBox(); }
+  csg::BoundaryCondition::eBoxtype getBoxType() const { return _bc->getBoxType(); }
+  bool BoundaryExist() const noexcept { return _bc != nullptr; }
+
   double BoxVolume() const { return _bc->BoxVolume(); }
   void setBox(const Eigen::Matrix3d &box,
               csg::BoundaryCondition::eBoxtype boxtype =
@@ -103,6 +101,7 @@ class Topology {
   std::vector<const Segment *> FindAllSegmentsOnMolecule(
       const Segment &seg1, const Segment &seg2) const;
 
+  
  protected:
   std::vector<Segment> _segments;
 
