@@ -296,6 +296,7 @@ void GW::CalculateGWPerturbation() {
     Eigen::MatrixXd rpa_energies_mat = CustomTools::ImportMatBinary("rpa_energies.bin");
     rpa_energies_vec.resize(rpa_energies_mat.rows());
     rpa_energies_vec << rpa_energies_mat;
+    frequencies = rpa_energies_vec;
     _rpa.UpdateRPAInputEnergies(_dft_energies, rpa_energies_vec, _opt.qpmin);
   }
   if (CustomOpts::SigmaExportRange() > 0 && !CustomOpts::SigmaExportConverged()) {
