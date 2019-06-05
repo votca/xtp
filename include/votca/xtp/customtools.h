@@ -11,6 +11,7 @@ class CustomTools {
  public:
   static void ExportMat(std::string filename, const Eigen::MatrixXd& mat);
   static void ExportMatBinary(std::string filename, const Eigen::MatrixXd& mat);
+  static Eigen::MatrixXd ImportMatBinary(std::string filename);
 };
 
 class CustomOpts {
@@ -35,6 +36,9 @@ class CustomOpts {
   bool _sigma_matrix_export = false;
   // GW DFT Shift
   double _gw_dft_shift = 0.0;
+  // RPA ENergies
+  bool _rpa_energies_import = false;
+  bool _rpa_energies_export = false;
   
   void Parse(tools::Property& options);
   void Report();
@@ -52,7 +56,9 @@ class CustomOpts {
   static bool SigmaExportConverged() { return _instance._sigma_export_converged; }
   static bool SigmaExportBinary() { return _instance._sigma_export_binary; }
   static bool SigmaMatrixExport() { return _instance._sigma_matrix_export; }
-  static bool GWDFTShift() { return _instance._gw_dft_shift; }
+  static double GWDFTShift() { return _instance._gw_dft_shift; }
+  static bool RPAEnergiesImport() { return _instance._rpa_energies_import; }
+  static bool RPAEnergiesExport() { return _instance._rpa_energies_export; }
 };
 
 class GWSelfConsistencyLogger {

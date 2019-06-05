@@ -25,6 +25,18 @@ void CustomTools::ExportMatBinary(std::string filename, const Eigen::MatrixXd& m
   out.close();
 }
 
+Eigen::MatrixXd CustomTools::ImportMatBinary(std::string filename) {
+  std::ifstream in(filename, std::ios::in | std::ios::binary);
+  Eigen::MatrixXd::Index rows = 0, cols = 0;
+  in.read((char*) (&rows), sizeof(typename Eigen::MatrixXd::Index));
+  in.read((char*) (&cols), sizeof(typename Eigen::MatrixXd::Index));
+  Eigen::MatrixXd mat;
+  mat.resize(rows, cols);
+  in.read((char*) mat.data(), rows * cols * sizeof(Eigen::MatrixXd::Scalar));
+  in.close();
+  return mat;
+}
+
 /* Custom Options */
 
 CustomOpts CustomOpts::_instance;
@@ -66,6 +78,10 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.sigma_matrix_export", _sigma_matrix_export);
   _gw_dft_shift = options.ifExistsReturnElseReturnDefault<double>(
       "customopts.gw_dft_shift", _gw_dft_shift);
+  _rpa_energies_import = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.rpa_energies_import", _rpa_energies_import);
+  _rpa_energies_export = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.rpa_energies_export", _rpa_energies_export);
 }
 
 void CustomOpts::Report() {
@@ -82,6 +98,8 @@ void CustomOpts::Report() {
             << "binary: " << _sigma_export_binary;
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
   std::cout << std::endl << "GW DFT shift: " << _gw_dft_shift;
+  std::cout << std::endl << "RPA energies import: " << _rpa_energies_import;
+  std::cout << std::endl << "RPA energies export: " << _rpa_energies_export;
 }
 
 /* GW Self Consistency Logger */
