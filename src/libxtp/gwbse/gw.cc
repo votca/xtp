@@ -289,6 +289,15 @@ void GW::CalculateGWPerturbation() {
   Eigen::VectorXd frequencies =
       dft_shifted_energies.segment(_opt.qpmin, _qptotal);
   
+  if (CustomOpts::RPAEnergiesImport()) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Importing rpa energies (/frequencies) " << std::flush;
+    Eigen::VectorXd rpa_energies_vec;
+    Eigen::MatrixXd rpa_energies_mat = CustomTools::ImportMatBinary("rpa_energies.bin");
+    rpa_energies_vec.resize(rpa_energies_mat.rows());
+    rpa_energies_vec << rpa_energies_mat;
+    _rpa.UpdateRPAInputEnergies(_dft_energies, rpa_energies_vec, _opt.qpmin);
+  }
   if (CustomOpts::SigmaExportRange() > 0 && !CustomOpts::SigmaExportConverged()) {
     ExportCorrelationDiags(frequencies);
   }
@@ -345,6 +354,15 @@ void GW::CalculateGWPerturbation() {
 
   if (CustomOpts::SigmaExportRange() > 0 && CustomOpts::SigmaExportConverged()) {
     ExportCorrelationDiags(frequencies);
+  }
+  if (CustomOpts::RPAEnergiesExport() && !CustomOpts::RPAEnergiesImport()) {
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Exporting rpa energies (/frequencies) " << std::flush;
+    Eigen::VectorXd rpa_energies_vec = frequencies;
+    Eigen::MatrixXd rpa_energies_mat;
+    rpa_energies_mat.resize(rpa_energies_vec.size(), 1);
+    rpa_energies_mat << rpa_energies_vec;
+    CustomTools::ExportMatBinary("rpa_energies.bin", rpa_energies_mat);
   }
 }
 
