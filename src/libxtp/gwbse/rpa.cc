@@ -156,12 +156,9 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
       << ctp::TimeStamp() << " Diagonalization done " << flush;
 
   double mc = es.eigenvalues().minCoeff();
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Lowest neutral excitation energy (eV): " 
-      << tools::conv::hrt2ev * mc << flush;
   if (mc <= 0.0) {
     std::string msg =
-        (boost::format("Detected non-positive eigenvalue (Ha): %s") % mc).str();
+        (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
     CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " " << msg << flush;
     throw std::runtime_error(msg);
   }
@@ -169,6 +166,10 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   // Omega has to have correct size otherwise MKL does not rescale for Sqrt
   sol._Omega = Eigen::VectorXd::Zero(rpasize);
   sol._Omega = es.eigenvalues().cwiseSqrt();
+  
+  CTP_LOG(ctp::logDEBUG, _log)
+      << ctp::TimeStamp() << " Lowest neutral excitation energy (eV): " 
+      << tools::conv::hrt2ev * sol._Omega.minCoeff() << flush;
   
   // X     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] * Z
   // Y     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) - Omega^(+1/2) * (A-B)^(-1/2)] * Z
