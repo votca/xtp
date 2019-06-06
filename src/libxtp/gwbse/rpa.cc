@@ -120,13 +120,16 @@ Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
     int i2 = vc.I(v2, 0);
     const Eigen::MatrixXd Mmn_v2T =
         _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
-    for (int v1 =v2; v1 <n_occup; v1++) {
+    for (int v1 = v2; v1 < n_occup; v1++) {
       int i1 = vc.I(v1, 0);
+      // Multiply with factor 2 to sum over both (identical) spin states
       ApB.block(i1, i2, n_unocc, n_unocc) =
-          4 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
+          2 * 2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
     }  // Occupied MO v1
   }    // Occupied MO v2
-ApB.diagonal() += calculate_spectral_AmB();
+  
+  ApB.diagonal() += calculate_spectral_AmB();
+  
   return ApB;
 }
 
