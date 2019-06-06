@@ -126,7 +126,7 @@ Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
     int i2 = vc.I(v2, 0);
     const Eigen::MatrixXd Mmn_v2T =
         _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
-    for (int v1 = 0; v1 <= v2; v1++) {
+    for (int v1 = 0; v1 < v2; v1++) {
       int i1 = vc.I(v1, 0);
       ApB.block(i2, i1, n_unocc, n_unocc) +=
           2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
