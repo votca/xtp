@@ -58,13 +58,8 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
   for (int m_level = 0; m_level < n_occ; m_level++) {
     const double qp_energy_m = _energies(m_level);
 
-#if (GWBSE_DOUBLE)
     const Eigen::MatrixXd Mmn_RPA =
         _Mmn[m_level].block(n_occ, 0, n_unocc, size);
-#else
-    const Eigen::MatrixXd Mmn_RPA =
-        _Mmn[m_level].block(n_occ, 0, n_unocc, size).cast<double>();
-#endif
     const Eigen::ArrayXd deltaE =
         _energies.segment(n_occ, n_unocc).array() - qp_energy_m;
     Eigen::VectorXd denom;
@@ -120,19 +115,18 @@ Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
   vc2index vc = vc2index(0, 0, n_unocc);
   Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
 
-  ApB.diagonal() = calculate_spectral_AmB();
-
+#pragma omp parallel for schedule(guided)
   for (int v2 = 0; v2 < n_occup; v2++) {
     int i2 = vc.I(v2, 0);
     const Eigen::MatrixXd Mmn_v2T =
         _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
-    for (int v1 = 0; v1 <= v2; v1++) {
+    for (int v1 =v2; v1 <n_occup; v1++) {
       int i1 = vc.I(v1, 0);
-      ApB.block(i2, i1, n_unocc, n_unocc) +=
-          2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
+      ApB.block(i1, i2, n_unocc, n_unocc) =
+          4 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
     }  // Occupied MO v1
   }    // Occupied MO v2
-
+ApB.diagonal() += calculate_spectral_AmB();
   return ApB;
 }
 
