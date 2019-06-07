@@ -29,6 +29,7 @@
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
 #include <votca/tools/structureparameters.h>
+#include <votca/tools/constants.h>
 
 namespace votca {
 namespace xtp {
@@ -101,8 +102,8 @@ class Atom {
   int _id = -1;
   std::string _name = "";
 
-  std::string _element = "";
-  int _resnr = -1;
+  std::string _element = tools::topology_constants::unassigned_element;
+  int _resnr = tools::topology_constants::unassigned_residue_id;
   Eigen::Vector3d _pos = Eigen::Vector3d::Zero();
 };
 
