@@ -52,7 +52,7 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
         double eigenvalue = _EigenSol._Omega(s);
         res += Equation48(rm_x_rm, eigenvalue);
       }  // Eigenvalues s
-      result(m) = res;
+      result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
     }  // State m
 
   } else {
@@ -66,7 +66,7 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
         double eigenvalue = _EigenSol._Omega(s);
         res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
       }  // Eigenvalue s
-      result(m) = res;
+      result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
     }  // State m
   }
 
@@ -92,8 +92,8 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
           double eigenvalue = _EigenSol._Omega(s);
           res += Equation48(rm_x_rn, eigenvalue);
         }  // Eigenvalue s
-        result(m, n) = res;
-        result(n, m) = res;
+        result(m, n) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
+        result(n, m) = 0.5 * res;
       }  // State n
     }    // State m
 
@@ -111,10 +111,10 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
           double eigenvalue = _EigenSol._Omega(s);
           double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
           double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
-          res += 0.5 * (res_m + res_n);
+          res += res_m + res_n;
         }  // Eigenvalue s
-        result(m, n) = res;
-        result(n, m) = res;
+        result(m, n) = 0.5 * 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
+        result(n, m) = 0.5 * 0.5 * res;
       }  // State n
     }    // State m
   }
@@ -145,7 +145,8 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
       const Eigen::MatrixXd fc = _Mmn[v].block(n_occup, 0, n_unocc, auxsize) * Mmn_mT; // Sum over chi
       res += fc.transpose() * _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize); // Sum over c
     }
-    residues[m] = res;
+    // Multiply with factor 2 to sum over both (identical) spin states
+    residues[m] = 2 * res;
   }
   
   return residues;
