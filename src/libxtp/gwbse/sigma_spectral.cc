@@ -162,7 +162,7 @@ double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
   B12.segment(0,       n_occup) += eigenvalue;
   B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
-  const Eigen::ArrayXd denom = B12.abs2() + eta;
+  const Eigen::ArrayXd denom = B12.abs2() + eta * eta;
   return (numer / denom).sum();
 }
 
@@ -176,7 +176,7 @@ double Sigma_Spectral::Equation48(const Eigen::VectorXd& A12,
   B12.segment(0,       n_occup) += eigenvalue;
   B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
-  const Eigen::ArrayXd denom = B12.abs2() + eta;
+  const Eigen::ArrayXd denom = B12.abs2() + eta * eta;
   return (numer / denom).sum();
 }
 
