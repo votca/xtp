@@ -357,18 +357,30 @@ void GWBSE::Initialize(tools::Property& options) {
         << " eta: " << _gwopt.sigma_eta << flush;
   }
   
-  // TODO: Parse string
+  // TODO: Allow string input
   std::vector<std::string> root_finder_choice =
-      {"fixed point", "bisection", "regula falsi"};
-  _gwopt.gw_sc_root_finder =
+      {"fixed point", "bisection", "regula falsi", "grid"};
+  _gwopt.gw_sc_root_finder_method =
       options.ifExistsReturnElseReturnDefault<int>(
-          key + ".gw_sc_root_finder", _gwopt.gw_sc_root_finder);
-  if (_gwopt.gw_sc_root_finder < 0 || _gwopt.gw_sc_root_finder >= root_finder_choice.size()) {
+          key + ".gw_sc_root_finder_method", _gwopt.gw_sc_root_finder_method);
+  if (_gwopt.gw_sc_root_finder_method < 0 || _gwopt.gw_sc_root_finder_method >= root_finder_choice.size()) {
     throw std::runtime_error(
-        (boost::format("GW SC root finder must be within [0, %d]") % (root_finder_choice.size() - 1)).str());
+        (boost::format("Root finder must be within [0, %d]") % (root_finder_choice.size() - 1)).str());
   }
+  _gwopt.gw_sc_root_finder_range = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".gw_sc_root_finder_range",
+      _gwopt.gw_sc_root_finder_range); 
+  _gwopt.gw_sc_root_finder_steps = options.ifExistsReturnElseReturnDefault<int>(
+      key + ".gw_sc_root_finder_steps",
+      _gwopt.gw_sc_root_finder_steps);
   CTP_LOG(ctp::logDEBUG, *_pLog)
-      << " GW SC root finder: " << root_finder_choice[_gwopt.gw_sc_root_finder] << flush;
+      << " Root finder method: " << root_finder_choice[_gwopt.gw_sc_root_finder_method] << flush;
+  if (_gwopt.gw_sc_root_finder_method == 3) {
+    CTP_LOG(ctp::logDEBUG, *_pLog)
+        << " Root finder range: " << _gwopt.gw_sc_root_finder_range << flush;
+    CTP_LOG(ctp::logDEBUG, *_pLog)
+        << " Root finder steps: " << _gwopt.gw_sc_root_finder_steps << flush;
+  }
 
   // setting some defaults
   _do_bse_singlets = false;

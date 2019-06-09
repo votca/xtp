@@ -173,7 +173,7 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   const double alpha = CustomOpts::GSCAlpha();
   
-  if (_opt.gw_sc_root_finder == 0) {
+  if (_opt.gw_sc_root_finder_method == 0) {
     // Fixed Point Method
     
     for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
@@ -186,11 +186,11 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       }
     }
     
-  } else if (_opt.gw_sc_root_finder == 1 || _opt.gw_sc_root_finder == 2) {
+  } else if (_opt.gw_sc_root_finder_method == 1 || _opt.gw_sc_root_finder_method == 2) {
     // Bisection Method, Regula Falsi Method
 
     // Define constants
-    const bool regulaFalsi = _opt.gw_sc_root_finder == 2;
+    const bool regulaFalsi = _opt.gw_sc_root_finder_method == 2;
     const Eigen::VectorXd c = _Sigma_x.diagonal() - _vxc.diagonal() + _dft_energies.segment(_opt.qpmin, _qptotal);
     // First guess, two points required
     Eigen::VectorXd freq_1 = frequencies;
@@ -233,6 +233,9 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         frequencies = freq_3; // TODO: Mixing
       }
     }
+    
+  } else if (_opt.gw_sc_root_finder_method == 3) {
+    // Grid Method
 
   } else {
     throw std::runtime_error("Invalid GW SC root finder");

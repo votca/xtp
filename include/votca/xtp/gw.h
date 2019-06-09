@@ -53,7 +53,10 @@ class GW {
     double sigma_eta = 1e-3;
     int reset_3c = 5;  // how often the 3c integrals in iterate should be
                        // rebuild
-    int gw_sc_root_finder = 0;  // GW self-consistency root finder method
+    // QP equation root finder
+    int    gw_sc_root_finder_method = 0;
+    double gw_sc_root_finder_range  = 1.0;
+    int    gw_sc_root_finder_steps  = 101;
   };
 
   void configure(const options& opt);
