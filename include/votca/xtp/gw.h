@@ -50,9 +50,10 @@ class GW {
     double shift = 0;
     double ScaHFX = 0.0;
     std::string sigma_integration = "ppm";
+    double sigma_eta = 1e-3;
     int reset_3c = 5;  // how often the 3c integrals in iterate should be
                        // rebuild
-    int gw_sc_root_finder = 0; // GW SC root finder method
+    int gw_sc_root_finder = 0;  // GW self-consistency root finder method
   };
 
   void configure(const options& opt);

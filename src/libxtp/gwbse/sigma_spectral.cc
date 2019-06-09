@@ -31,8 +31,6 @@ void Sigma_Spectral::PrepareScreening() {
   _EigenSol = _rpa.calculate_eigenvalues();
   // Cache residues
   _residues = CalcResidues();
-  // Set Options
-  _COHSEX = CustomOpts::COHSEX();
   return;
 }
 
@@ -41,34 +39,17 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
   const int rpasize = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
-  if (_COHSEX) {
-
 #pragma omp parallel for
-    for (int m = 0; m < _qptotal; m++) {
-      double res = 0.0;
-      const Eigen::MatrixXd& rm = _residues[m];
-      for (int s = 0; s < rpasize; s++) {
-        const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
-        double eigenvalue = _EigenSol._Omega(s);
-        res += Equation48(rm_x_rm, eigenvalue);
-      }  // Eigenvalues s
-      result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
-    }  // State m
-
-  } else {
-
-#pragma omp parallel for
-    for (int m = 0; m < _qptotal; m++) {
-      double res = 0.0;
-      const Eigen::MatrixXd& rm = _residues[m];
-      for (int s = 0; s < rpasize; s++) {
-        const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
-        double eigenvalue = _EigenSol._Omega(s);
-        res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
-      }  // Eigenvalue s
-      result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
-    }  // State m
-  }
+  for (int m = 0; m < _qptotal; m++) {
+    double res = 0.0;
+    const Eigen::MatrixXd& rm = _residues[m];
+    for (int s = 0; s < rpasize; s++) {
+      const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
+      double eigenvalue = _EigenSol._Omega(s);
+      res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
+    }  // Eigenvalue s
+    result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
+  }  // State m
 
   return result;
 }
@@ -78,46 +59,24 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
 
-  if (_COHSEX) {
-
 #pragma omp parallel for
-    for (int m = 0; m < _qptotal; m++) {
-      const Eigen::MatrixXd& rm = _residues[m];
-      for (int n = m + 1; n < _qptotal; n++) {
-        double res = 0.0;
-        const Eigen::MatrixXd& rn = _residues[n];
-        for (int s = 0; s < rpasize; s++) {
-          Eigen::VectorXd rm_x_rn =
-              rm.col(s).cwiseProduct(rn.col(s));
-          double eigenvalue = _EigenSol._Omega(s);
-          res += Equation48(rm_x_rn, eigenvalue);
-        }  // Eigenvalue s
-        result(m, n) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
-        result(n, m) = 0.5 * res;
-      }  // State n
-    }    // State m
-
-  } else {
-
-#pragma omp parallel for
-    for (int m = 0; m < _qptotal; m++) {
-      const Eigen::MatrixXd& rm = _residues[m];
-      for (int n = m + 1; n < _qptotal; n++) {
-        double res = 0.0;
-        const Eigen::MatrixXd& rn = _residues[n];
-        for (int s = 0; s < rpasize; s++) {
-          Eigen::VectorXd rm_x_rn =
-              rm.col(s).cwiseProduct(rn.col(s));
-          double eigenvalue = _EigenSol._Omega(s);
-          double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
-          double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
-          res += res_m + res_n;
-        }  // Eigenvalue s
-        result(m, n) = 0.5 * 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
-        result(n, m) = 0.5 * 0.5 * res;
-      }  // State n
-    }    // State m
-  }
+  for (int m = 0; m < _qptotal; m++) {
+    const Eigen::MatrixXd& rm = _residues[m];
+    for (int n = m + 1; n < _qptotal; n++) {
+      double res = 0.0;
+      const Eigen::MatrixXd& rn = _residues[n];
+      for (int s = 0; s < rpasize; s++) {
+        Eigen::VectorXd rm_x_rn =
+            rm.col(s).cwiseProduct(rn.col(s));
+        double eigenvalue = _EigenSol._Omega(s);
+        double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
+        double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
+        res += res_m + res_n;
+      }  // Eigenvalue s
+      result(m, n) = 0.5 * 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
+      result(n, m) = 0.5 * 0.5 * res;
+    }  // State n
+  }    // State m
 
   return result;
 }
@@ -154,7 +113,7 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
 
 double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
                                   double eigenvalue, double freq) const {
-  const double eta = CustomOpts::SigmaSpectralEta();
+  const double eta = _opt.eta;
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
@@ -168,7 +127,7 @@ double Sigma_Spectral::Equation47(const Eigen::VectorXd& A12,
 
 double Sigma_Spectral::Equation48(const Eigen::VectorXd& A12,
                                   double eigenvalue) const {
-  const double eta = CustomOpts::SigmaSpectralEta();
+  const double eta = _opt.eta;
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;

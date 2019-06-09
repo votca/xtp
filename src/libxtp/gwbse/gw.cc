@@ -41,6 +41,7 @@ void GW::configure(const options& opt) {
   sigma_opt.qpmin = _opt.qpmin;
   sigma_opt.rpamin = _opt.rpamin;
   sigma_opt.rpamax = _opt.rpamax;
+  sigma_opt.eta = _opt.sigma_eta;
   _sigma->configure(sigma_opt);
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);

@@ -40,6 +40,7 @@ class Sigma_base {
     int qpmax;
     int rpamin;
     int rpamax;
+    double eta;
   };
 
   void configure(options opt) {

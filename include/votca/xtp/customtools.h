@@ -20,8 +20,7 @@ class CustomOpts {
   CustomOpts() {}
 
   // Sigma exact options
-  double _sigma_spectral_eta = 1e-1;
-  bool   _COHSEX             = false;
+  double _sigma_spectral_eta = 1e-3; // Outdated
   // G/GW SC cycle options
   bool   _gsc_export = false;
   double _gsc_alpha  = 0.0;
@@ -47,7 +46,6 @@ class CustomOpts {
   static void Load();
   
   static double SigmaSpectralEta() { return _instance._sigma_spectral_eta; }
-  static bool COHSEX() { return _instance._COHSEX; }
   static bool GSCExport() { return _instance._gsc_export; }
   static double GSCAlpha() { return _instance._gsc_alpha; }
   static bool RPASpectrumExport() { return _instance._rpa_spectrum_export; }

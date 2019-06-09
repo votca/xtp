@@ -349,6 +349,14 @@ void GWBSE::Initialize(tools::Property& options) {
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
   
+  _gwopt.sigma_eta = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".sigma_eta",
+      CustomOpts::SigmaSpectralEta());
+  if (_gwopt.sigma_integration == "exact") {
+    CTP_LOG(ctp::logDEBUG, *_pLog)
+        << " eta: " << _gwopt.sigma_eta << flush;
+  }
+  
   // TODO: Parse string
   std::vector<std::string> root_finder_choice =
       {"fixed point", "bisection", "regula falsi"};

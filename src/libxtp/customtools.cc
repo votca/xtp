@@ -58,8 +58,6 @@ void CustomOpts::Load() {
 void CustomOpts::Parse(tools::Property& options) {
   _sigma_spectral_eta = options.ifExistsReturnElseReturnDefault<double>(
       "customopts.sigma_spectral_eta", _sigma_spectral_eta);
-  _COHSEX = options.ifExistsReturnElseReturnDefault<bool>(
-      "customopts.cohsex", _COHSEX);
   _gsc_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.gsc_export", _gsc_export);
   _gsc_alpha = options.ifExistsReturnElseReturnDefault<double>(
@@ -88,7 +86,6 @@ void CustomOpts::Report() {
   Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ",
                       "", "", "", "");
   std::cout << std::endl << "Sigma Eta: " << _sigma_spectral_eta;
-  std::cout << std::endl << "COHSEX: " << _COHSEX;
   std::cout << std::endl << "GSC Export: " << _gsc_export;
   std::cout << std::endl << "GSC Alpha: " << _gsc_alpha;
   std::cout << std::endl << "RPA Spect. export: " << _rpa_spectrum_export;
