@@ -380,6 +380,7 @@ void GWBSE::Initialize(tools::Property& options) {
         << " Root finder range: " << _gwopt.gw_sc_root_finder_range << flush;
     CTP_LOG(ctp::logDEBUG, *_pLog)
         << " Root finder steps: " << _gwopt.gw_sc_root_finder_steps << flush;
+    _gwopt.g_sc_max_iterations = 1; // Grid method does not support mutliple g iterations
   }
 
   // setting some defaults

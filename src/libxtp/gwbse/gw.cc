@@ -22,6 +22,8 @@
 #include <votca/xtp/customtools.h>
 #include <votca/xtp/gw.h>
 #include <votca/xtp/sigma_spectral.h>
+#include <eigen3/Eigen/src/Core/Matrix.h>
+#include <eigen3/Eigen/src/Core/util/Constants.h>
 
 namespace votca {
 namespace xtp {
@@ -236,6 +238,68 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     
   } else if (_opt.gw_sc_root_finder_method == 3) {
     // Grid Method
+
+    // Define constants
+    const double rx = _opt.gw_sc_root_finder_range; // Range
+    const int    nx = _opt.gw_sc_root_finder_steps; // Steps
+    const Eigen::VectorXd xx_off = Eigen::VectorXd::LinSpaced(nx, -rx, +rx);
+    const Eigen::VectorXd sx_vxc = _Sigma_x.diagonal() - _vxc.diagonal();
+    const double inf = std::numeric_limits<double>::infinity();
+    // Evaluate sigma_c at all grid points
+    Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(_qptotal, nx); // TODO: Do not cache this
+    Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(_qptotal, nx);
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Evaluating sigma_c on all "
+        << _qptotal << "x" << nx << " grid points" << std::flush;
+    for (int ix = 0; ix < nx; ix++) {
+      xx.col(ix) = frequencies.array() + xx_off[ix];
+      fx.col(ix) = _sigma->CalcCorrelationDiag(xx.col(ix));
+    } // Grid point ix
+    xx = xx.transpose();
+    fx = fx.transpose();
+    // For each state, find best root
+    Eigen::VectorXd roots = Eigen::VectorXd::Zero(_qptotal);
+    Eigen::VectorXd dists = Eigen::VectorXd::Zero(_qptotal);
+    CTP_LOG(ctp::logDEBUG, _log)
+        << ctp::TimeStamp() << " Finding roots " << std::flush;
+    for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
+      // e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
+      const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
+      Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
+      Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // lhs
+      Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target function
+      // Find closest root
+      double root_min = 0.0;
+      double dist_min = inf;
+      for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
+        if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
+          double root_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0; // TODO: Smarter estimate, use dg/dx
+          double dist_cur = std::abs(root_cur - frequencies[i_qp]);
+          if (dist_cur < dist_min) { // We found a closer root
+            root_min = root_cur;
+            dist_min = dist_cur;
+          }
+        }
+      } // Grid point ix
+      roots[i_qp] = root_min;
+      dists[i_qp] = dist_min;
+    } // State i_qp
+    if (tools::globals::verbose) {
+      for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
+        CTP_LOG(ctp::logINFO, _log)
+            << boost::format(
+                "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha") %
+                i_qp % frequencies[i_qp] % roots[i_qp]
+            << std::flush;
+      }
+    }
+    // Update member variables
+    _gwa_energies = (dists.array() != inf).select(roots, frequencies);
+    _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(_gwa_energies);
+    // Check converged
+    if (!IterConverged(0, frequencies)) {
+      frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
+    }
 
   } else {
     throw std::runtime_error("Invalid GW SC root finder");
