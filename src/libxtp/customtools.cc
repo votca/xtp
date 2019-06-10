@@ -56,12 +56,8 @@ void CustomOpts::Load() {
 }
 
 void CustomOpts::Parse(tools::Property& options) {
-  _sigma_spectral_eta = options.ifExistsReturnElseReturnDefault<double>(
-      "customopts.sigma_spectral_eta", _sigma_spectral_eta);
-  _gsc_export = options.ifExistsReturnElseReturnDefault<bool>(
-      "customopts.gsc_export", _gsc_export);
-  _gsc_alpha = options.ifExistsReturnElseReturnDefault<double>(
-      "customopts.gsc_alpha", _gsc_alpha);
+  _gw_sc_export = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.gw_sc_export", _gw_sc_export);
   _rpa_spectrum_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.rpa_spectrum_export", _rpa_spectrum_export);
   _sigma_export_range = options.ifExistsReturnElseReturnDefault<int>(
@@ -70,33 +66,29 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.sigma_export_delta", _sigma_export_delta);
   _sigma_export_converged = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.sigma_export_converged", _sigma_export_converged);
-  _sigma_export_binary = options.ifExistsReturnElseReturnDefault<bool>(
-      "customopts.sigma_export_binary", _sigma_export_binary);
   _sigma_matrix_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.sigma_matrix_export", _sigma_matrix_export);
-  _gw_dft_shift = options.ifExistsReturnElseReturnDefault<double>(
-      "customopts.gw_dft_shift", _gw_dft_shift);
   _rpa_energies_import = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.rpa_energies_import", _rpa_energies_import);
   _rpa_energies_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.rpa_energies_export", _rpa_energies_export);
+    _export_binary = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.export_binary", _export_binary);
 }
 
 void CustomOpts::Report() {
   Eigen::IOFormat fmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ",
                       "", "", "", "");
-  std::cout << std::endl << "Sigma Eta: " << _sigma_spectral_eta;
-  std::cout << std::endl << "GSC Export: " << _gsc_export;
-  std::cout << std::endl << "GSC Alpha: " << _gsc_alpha;
+  std::cout << std::endl << "GW SC Export: " << _gw_sc_export;
   std::cout << std::endl << "RPA Spect. export: " << _rpa_spectrum_export;
   std::cout << std::endl << "Sigma diag. export: "
-            << "range: "  << _sigma_export_range << ", "
-            << "delta: "  << _sigma_export_delta << ", "
-            << "binary: " << _sigma_export_binary;
+            << "range: " << _sigma_export_range << ", "
+            << "delta: " << _sigma_export_delta << ", "
+            << "converged: " << _sigma_export_converged;
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
-  std::cout << std::endl << "GW DFT shift: " << _gw_dft_shift;
   std::cout << std::endl << "RPA energies import: " << _rpa_energies_import;
   std::cout << std::endl << "RPA energies export: " << _rpa_energies_export;
+  std::cout << std::endl << "Export binary: " << _export_binary;
 }
 
 /* GW Self Consistency Logger */

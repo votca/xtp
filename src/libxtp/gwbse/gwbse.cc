@@ -351,7 +351,7 @@ void GWBSE::Initialize(tools::Property& options) {
   
   _gwopt.sigma_eta = options.ifExistsReturnElseReturnDefault<double>(
       key + ".sigma_eta",
-      CustomOpts::SigmaSpectralEta());
+      _gwopt.sigma_eta);
   if (_gwopt.sigma_integration == "exact") {
     CTP_LOG(ctp::logDEBUG, *_pLog)
         << " eta: " << _gwopt.sigma_eta << flush;

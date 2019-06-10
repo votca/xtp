@@ -47,7 +47,7 @@ void GW::configure(const options& opt) {
   _sigma->configure(sigma_opt);
   _Sigma_x = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-  if (CustomOpts::GSCExport()) {
+  if (CustomOpts::GWSCExport()) {
     GWSelfConsistencyLogger::Initialize(_qptotal, _opt.g_sc_max_iterations);
   }
 }
@@ -173,7 +173,9 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 }
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
-  const double alpha = 0.0; // TODO
+  const double alpha = 0.0; // TODO: Mixing parameter
+  // TODO: Make "Update" function that updates members variables: _Sigma_c,
+  // _gwa_energies after each iteration.
   
   if (_opt.gw_sc_root_finder_method == 0) {
     // Fixed Point Method
@@ -238,6 +240,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     
   } else if (_opt.gw_sc_root_finder_method == 3) {
     // Grid Method
+    // TODO: Grid refinement
 
     // Define constants
     const double rx = _opt.gw_sc_root_finder_range; // Range
@@ -314,14 +317,14 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
         << ctp::TimeStamp() << " G_Iteration:" << i_freq
         << " Shift[Hrt]:" << CalcHomoLumoShift() << std::flush;
   }
-  if (CustomOpts::GSCExport()) {
+  if (CustomOpts::GWSCExport()) {
     GWSelfConsistencyLogger::LogFrequencies(frequencies);
   }
   if (Converged(_gwa_energies, frequencies, _opt.g_sc_limit)) {
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Converged after " << i_freq + 1
         << " G iterations." << std::flush;
-    if (CustomOpts::GSCExport()) {
+    if (CustomOpts::GWSCExport()) {
       GWSelfConsistencyLogger::WriteGWIter(true);
     }
     return true;
@@ -331,7 +334,7 @@ bool GW::IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const {
         << ctp::TimeStamp()
         << " G-self-consistency cycle not converged after "
         << _opt.g_sc_max_iterations << " iterations." << std::flush;
-    if (CustomOpts::GSCExport()) {
+    if (CustomOpts::GWSCExport()) {
       GWSelfConsistencyLogger::WriteGWIter(false);
     }
     return true;
@@ -395,7 +398,7 @@ void GW::CalculateGWPerturbation() {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " Converged after " << i_gw + 1
           << " GW iterations." << std::flush;
-      if (CustomOpts::GSCExport()) {
+      if (CustomOpts::GWSCExport()) {
         GWSelfConsistencyLogger::WriteCount(true);
       }
       break;
@@ -408,12 +411,12 @@ void GW::CalculateGWPerturbation() {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp()
           << "      Run continues. Inspect results carefully!" << std::flush;
-      if (CustomOpts::GSCExport()) {
+      if (CustomOpts::GWSCExport()) {
         GWSelfConsistencyLogger::WriteCount(false);
       }
       break;
     } else {
-      double alpha = CustomOpts::GSCAlpha();
+      const double alpha = 0.0; // TODO: Mixing parameter
       rpa_energies = (1 - alpha) * rpa_energies + alpha * rpa_energies_old;
     }
   }
@@ -442,7 +445,7 @@ void GW::CalculateHQP() {
   if (CustomOpts::SigmaMatrixExport()) {
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Exporting SigmaC matrix " << std::flush;
-    if (CustomOpts::SigmaExportBinary()) {
+    if (CustomOpts::ExportBinary()) {
       CustomTools::ExportMatBinary("sigma_c_matrix.bin", _Sigma_c);
     } else {
       CustomTools::ExportMat("sigma_c_matrix.txt", _Sigma_c);
@@ -479,7 +482,7 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
   table.block(1, 1, size, _qptotal) = results.transpose();
   CTP_LOG(ctp::logDEBUG, _log)
       << ctp::TimeStamp() << " Writing SigmaC diagonals " << std::flush;
-  if (CustomOpts::SigmaExportBinary()) {
+  if (CustomOpts::ExportBinary()) {
     CustomTools::ExportMatBinary("sigma_c.bin", table);
   } else {
     CustomTools::ExportMat("sigma_c.txt", table);
