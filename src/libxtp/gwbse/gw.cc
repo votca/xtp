@@ -173,7 +173,7 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 }
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
-  const double alpha = CustomOpts::GSCAlpha();
+  const double alpha = 0.0; // TODO
   
   if (_opt.gw_sc_root_finder_method == 0) {
     // Fixed Point Method
