@@ -274,6 +274,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       // Find closest root
       double root_min = 0.0;
       double dist_min = inf;
+      int    root_idx = 0;
       for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
         if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
           double root_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0; // TODO: Smarter estimate, use dg/dx
@@ -282,12 +283,22 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
             root_min = root_cur;
             dist_min = dist_cur;
           }
+          if (tools::globals::verbose && i_qp <= _opt.homo) {
+            CTP_LOG(ctp::logINFO, _log)
+                << boost::format(
+                    "Level = %1$4d Index = %2$4d Root = %3$+1.6f Ha Dist = %4$+1.6f Ha") %
+                    i_qp % root_idx % root_cur % dist_cur
+                << std::flush;
+          }
+          root_idx++;
         }
       } // Grid point ix
       roots[i_qp] = root_min;
       dists[i_qp] = dist_min;
     } // State i_qp
     if (tools::globals::verbose) {
+      CTP_LOG(ctp::logDEBUG, _log)
+          << ctp::TimeStamp() << " QP roots " << std::flush;
       for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
         CTP_LOG(ctp::logINFO, _log)
             << boost::format(
@@ -360,14 +371,14 @@ void GW::CalculateGWPerturbation() {
   Eigen::VectorXd frequencies =
       dft_shifted_energies.segment(_opt.qpmin, _qptotal);
   
-  if (CustomOpts::RPAEnergiesImport()) {
+  if (CustomOpts::GWEnergiesImport()) {
     CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Importing rpa energies (/frequencies) " << std::flush;
-    Eigen::VectorXd rpa_energies_vec;
-    Eigen::MatrixXd rpa_energies_mat = CustomTools::ImportMatBinary("rpa_energies.bin");
-    rpa_energies_vec.resize(rpa_energies_mat.rows());
-    rpa_energies_vec << rpa_energies_mat;
-    frequencies = rpa_energies_vec;
+        << ctp::TimeStamp() << " Importing GW energies (/frequencies) " << std::flush;
+    Eigen::VectorXd gw_energies_vec;
+    Eigen::MatrixXd gw_energies_mat = CustomTools::ImportMatBinary("gw_energies.bin");
+    gw_energies_vec.resize(gw_energies_mat.rows());
+    gw_energies_vec << gw_energies_mat;
+    frequencies = gw_energies_vec;
   }
   if (CustomOpts::SigmaExportRange() > 0 && !CustomOpts::SigmaExportConverged()) {
     ExportCorrelationDiags(frequencies);
@@ -426,7 +437,7 @@ void GW::CalculateGWPerturbation() {
   if (CustomOpts::SigmaExportRange() > 0 && CustomOpts::SigmaExportConverged()) {
     ExportCorrelationDiags(frequencies);
   }
-  if (CustomOpts::RPAEnergiesExport() && !CustomOpts::RPAEnergiesImport()) {
+  if (CustomOpts::GWEnergiesExport() && !CustomOpts::GWEnergiesImport()) {
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Exporting rpa energies (/frequencies) " << std::flush;
     Eigen::VectorXd rpa_energies_vec = frequencies;

@@ -29,9 +29,9 @@ class CustomOpts {
   bool   _sigma_export_converged = false;
   // Sigma_c matrix export
   bool _sigma_matrix_export = false;
-  // RPA Energies import/export
-  bool _rpa_energies_import = false;
-  bool _rpa_energies_export = false;
+  // GW Energies import/export
+  bool _gw_energies_import = false;
+  bool _gw_energies_export = false;
   // Misc.
   bool _export_binary = false;
   
@@ -52,8 +52,8 @@ class CustomOpts {
   // Sigma_c matrix export
   static bool SigmaMatrixExport() { return _instance._sigma_matrix_export; }
   // RPA Energies import/export
-  static bool RPAEnergiesImport() { return _instance._rpa_energies_import; }
-  static bool RPAEnergiesExport() { return _instance._rpa_energies_export; }
+  static bool GWEnergiesImport() { return _instance._gw_energies_import; }
+  static bool GWEnergiesExport() { return _instance._gw_energies_export; }
   // Misc.
   static bool ExportBinary() { return _instance._export_binary; }
 };
