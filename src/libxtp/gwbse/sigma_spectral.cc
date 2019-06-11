@@ -38,8 +38,6 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
     const Eigen::VectorXd& frequencies) const {
   const int rpasize = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
-
-  // TODO: Loop over s first?
   
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {
@@ -61,8 +59,6 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-  
-  // TODO: Loop over s first?
 
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {
