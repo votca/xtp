@@ -244,8 +244,8 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
 
     // Options
     // TODO: Make grid root-finder base class? Or use function delegates?
-    const int root_value_method = 0;
-    const int root_score_method = 0;
+    const int root_value_method = 1;
+    const int root_score_method = 1;
     // Define constants
     const double rx = _opt.gw_sc_root_finder_range; // Range
     const int    nx = _opt.gw_sc_root_finder_steps; // Steps
@@ -284,17 +284,24 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
           // Estimate the root
           double root_value_cur;
-          if (root_value_method == 0 ) {
+          if (root_value_method == 0 ) { // Average
             root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0;
+          } else if (root_value_method == 1) { // Fixed-point
+            double dgdx = (gx_cur[ix + 1] - gx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
+            root_value_cur = xx_cur[ix] - gx_cur[ix] / dgdx;
           } else {
-            throw std::runtime_error("Invalid value method");
+            throw std::runtime_error("Grid root-finder: Invalid value method");
           }
           // Score the root
           double root_score_cur;
-          if (root_score_method == 0 ) {
+          if (root_score_method == 0 ) { // Distance
             root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
+          } else if (root_score_method == 1) { // Spectral weight
+            double dfdx = (fx_cur[ix + 1] - fx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
+            root_score_cur = 1.0 / (1.0 - dfdx); // Should be in (0, 1)
+            if (root_score_cur < 1e-5) { continue; } // Invalid root
           } else {
-            throw std::runtime_error("Invalid score method");
+            throw std::runtime_error("Grid root-finder: Invalid score method");
           }
           // Check if the root is better
           if (root_score_cur > root_score_max) { // We found a closer root
@@ -305,7 +312,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
           if (tools::globals::verbose && i_qp <= _opt.homo) {
             CTP_LOG(ctp::logINFO, _log)
                 << boost::format(
-                    "Level = %1$4d Index = %2$4d Value = %3$+1.6f Ha Score = %4$+1.6f Ha") %
+                    "Level = %1$4d Index = %2$4d Value = %3$+1.6f Ha Score = %4$+1.6f") %
                     i_qp % root_idx % root_value_cur % root_score_cur
                 << std::flush;
           }
@@ -315,14 +322,15 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       root_values[i_qp] = root_value_max;
       root_scores[i_qp] = root_score_max;
     } // State i_qp
+    // Display all roots
     if (tools::globals::verbose) {
       CTP_LOG(ctp::logDEBUG, _log)
           << ctp::TimeStamp() << " QP roots " << std::flush;
       for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
         CTP_LOG(ctp::logINFO, _log)
             << boost::format(
-                "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha") %
-                i_qp % frequencies[i_qp] % root_values[i_qp]
+                "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha Score = %4$+1.6f") %
+                i_qp % frequencies[i_qp] % root_values[i_qp] % root_scores[i_qp]
             << std::flush;
       }
     }
