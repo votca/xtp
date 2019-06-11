@@ -242,6 +242,10 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     // Grid Method
     // TODO: Grid refinement
 
+    // Options
+    // TODO: Make grid root-finder base class? Or use function delegates?
+    const int root_value_method = 0;
+    const int root_score_method = 0;
     // Define constants
     const double rx = _opt.gw_sc_root_finder_range; // Range
     const int    nx = _opt.gw_sc_root_finder_steps; // Steps
@@ -279,9 +283,19 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
         if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
           // Estimate the root
-          double root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0; // TODO: Smarter estimate, use dg/dx
+          double root_value_cur;
+          if (root_value_method == 0 ) {
+            root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0;
+          } else {
+            throw std::runtime_error("Invalid value method");
+          }
           // Score the root
-          double root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
+          double root_score_cur;
+          if (root_score_method == 0 ) {
+            root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
+          } else {
+            throw std::runtime_error("Invalid score method");
+          }
           // Check if the root is better
           if (root_score_cur > root_score_max) { // We found a closer root
             root_value_max = root_value_cur;
