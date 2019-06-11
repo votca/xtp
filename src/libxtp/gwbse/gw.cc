@@ -261,40 +261,45 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       fx.row(ix) = _sigma->CalcCorrelationDiag(xx_cur);
     } // Grid point ix
     // For each state, find best root
-    Eigen::VectorXd roots = Eigen::VectorXd::Zero(_qptotal);
-    Eigen::VectorXd dists = Eigen::VectorXd::Zero(_qptotal);
+    Eigen::VectorXd root_values = Eigen::VectorXd::Zero(_qptotal);
+    Eigen::VectorXd root_scores = Eigen::VectorXd::Zero(_qptotal);
     CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Finding roots " << std::flush;
+        << ctp::TimeStamp() << " Finding QP roots " << std::flush;
     for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
-      // e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
+      //    e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
+      // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
       const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
       Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
       Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // lhs
-      Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target function
+      Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target
       // Find closest root
-      double root_min = 0.0;
-      double dist_min = inf;
-      int    root_idx = 0;
+      double root_value_max =  0.0;
+      double root_score_max = -1.0;
+      int root_idx = 0;
       for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
         if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
-          double root_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0; // TODO: Smarter estimate, use dg/dx
-          double dist_cur = std::abs(root_cur - frequencies[i_qp]);
-          if (dist_cur < dist_min) { // We found a closer root
-            root_min = root_cur;
-            dist_min = dist_cur;
+          // Estimate the root
+          double root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0; // TODO: Smarter estimate, use dg/dx
+          // Score the root
+          double root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
+          // Check if the root is better
+          if (root_score_cur > root_score_max) { // We found a closer root
+            root_value_max = root_value_cur;
+            root_score_max = root_score_cur;
           }
+          // Display the root
           if (tools::globals::verbose && i_qp <= _opt.homo) {
             CTP_LOG(ctp::logINFO, _log)
                 << boost::format(
-                    "Level = %1$4d Index = %2$4d Root = %3$+1.6f Ha Dist = %4$+1.6f Ha") %
-                    i_qp % root_idx % root_cur % dist_cur
+                    "Level = %1$4d Index = %2$4d Value = %3$+1.6f Ha Score = %4$+1.6f Ha") %
+                    i_qp % root_idx % root_value_cur % root_score_cur
                 << std::flush;
           }
           root_idx++;
         }
       } // Grid point ix
-      roots[i_qp] = root_min;
-      dists[i_qp] = dist_min;
+      root_values[i_qp] = root_value_max;
+      root_scores[i_qp] = root_score_max;
     } // State i_qp
     if (tools::globals::verbose) {
       CTP_LOG(ctp::logDEBUG, _log)
@@ -303,12 +308,12 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         CTP_LOG(ctp::logINFO, _log)
             << boost::format(
                 "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha") %
-                i_qp % frequencies[i_qp] % roots[i_qp]
+                i_qp % frequencies[i_qp] % root_values[i_qp]
             << std::flush;
       }
     }
     // Update member variables
-    _gwa_energies = (dists.array() != inf).select(roots, frequencies);
+    _gwa_energies = (root_scores.array() < 0).select(root_values, frequencies);
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(_gwa_energies);
     // Check converged
     if (!IterConverged(0, frequencies)) {
