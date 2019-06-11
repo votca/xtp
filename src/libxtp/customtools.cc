@@ -86,8 +86,8 @@ void CustomOpts::Report() {
             << "delta: " << _sigma_export_delta << ", "
             << "converged: " << _sigma_export_converged;
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
-  std::cout << std::endl << "RPA energies import: " << _gw_energies_import;
-  std::cout << std::endl << "RPA energies export: " << _gw_energies_export;
+  std::cout << std::endl << "GW energies import: " << _gw_energies_import;
+  std::cout << std::endl << "GW energies export: " << _gw_energies_export;
   std::cout << std::endl << "Export binary: " << _export_binary;
 }
 
