@@ -276,7 +276,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
       Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // lhs
       Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target
-      // Find closest root
+      // Find best root
       double root_value_max =  0.0;
       double root_score_max = -1.0;
       int root_idx = 0;
