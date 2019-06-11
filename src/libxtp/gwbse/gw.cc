@@ -248,18 +248,18 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     const Eigen::VectorXd xx_off = Eigen::VectorXd::LinSpaced(nx, -rx, +rx);
     const Eigen::VectorXd sx_vxc = _Sigma_x.diagonal() - _vxc.diagonal();
     const double inf = std::numeric_limits<double>::infinity();
-    // Evaluate sigma_c at all grid points
-    Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(_qptotal, nx); // TODO: Do not cache this
-    Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(_qptotal, nx);
+    // Evaluate sigma_c on all grid points
+    Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(nx, _qptotal); // TODO: Do not cache this
+    Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(nx, _qptotal);
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Evaluating sigma_c on all "
         << _qptotal << "x" << nx << " grid points" << std::flush;
+    // TODO: Is it faster to first fill the columns and then transpose the entire matrix?
     for (int ix = 0; ix < nx; ix++) {
-      xx.col(ix) = frequencies.array() + xx_off[ix];
-      fx.col(ix) = _sigma->CalcCorrelationDiag(xx.col(ix));
+      Eigen::VectorXd xx_cur = frequencies.array() + xx_off[ix];
+      xx.row(ix) = xx_cur;
+      fx.row(ix) = _sigma->CalcCorrelationDiag(xx_cur);
     } // Grid point ix
-    xx = xx.transpose();
-    fx = fx.transpose();
     // For each state, find best root
     Eigen::VectorXd roots = Eigen::VectorXd::Zero(_qptotal);
     Eigen::VectorXd dists = Eigen::VectorXd::Zero(_qptotal);
