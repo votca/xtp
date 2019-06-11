@@ -39,6 +39,8 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
   const int rpasize = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
+  // TODO: Loop over s first?
+  
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {
     double res = 0.0;
@@ -48,7 +50,8 @@ Eigen::VectorXd Sigma_Spectral::CalcCorrelationDiag(
       double eigenvalue = _EigenSol._Omega(s);
       res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
     }  // Eigenvalue s
-    result(m) = 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
+    // Multiply with factor 2.0 to sum over both (identical) spin states
+    result(m) = 2.0 * res;
   }  // State m
 
   return result;
@@ -58,6 +61,8 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+  
+  // TODO: Loop over s first?
 
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {
@@ -73,8 +78,9 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
         double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
         res += res_m + res_n;
       }  // Eigenvalue s
-      result(m, n) = 0.5 * 0.5 * res; // Add 0.5 factor, just like in PPM. Why?
-      result(n, m) = 0.5 * 0.5 * res;
+      // Multiply with factor 2.0 to sum over both (identical) spin states
+      result(m, n) = 0.5 * 2.0 * res;
+      result(n, m) = 0.5 * 2.0 * res;
     }  // State n
   }    // State m
 
@@ -104,8 +110,7 @@ std::vector<Eigen::MatrixXd> Sigma_Spectral::CalcResidues() const {
       const Eigen::MatrixXd fc = _Mmn[v].block(n_occup, 0, n_unocc, auxsize) * Mmn_mT; // Sum over chi
       res += fc.transpose() * _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize); // Sum over c
     }
-    // Multiply with factor 2 to sum over both (identical) spin states
-    residues[m] = 2 * res;
+    residues[m] = res;
   }
   
   return residues;
