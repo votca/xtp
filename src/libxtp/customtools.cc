@@ -69,9 +69,9 @@ void CustomOpts::Parse(tools::Property& options) {
   _sigma_matrix_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.sigma_matrix_export", _sigma_matrix_export);
   _gw_energies_import = options.ifExistsReturnElseReturnDefault<bool>(
-      "customopts.rpa_energies_import", _gw_energies_import);
+      "customopts.gw_energies_import", _gw_energies_import);
   _gw_energies_export = options.ifExistsReturnElseReturnDefault<bool>(
-      "customopts.rpa_energies_export", _gw_energies_export);
+      "customopts.gw_energies_export", _gw_energies_export);
     _export_binary = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.export_binary", _export_binary);
 }
