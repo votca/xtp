@@ -335,12 +335,11 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       }
     }
     // Update member variables
-    _gwa_energies = (root_scores.array() < 0).select(root_values, frequencies);
+    _gwa_energies = (root_scores.array() >= 0).select(root_values, frequencies);
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(_gwa_energies);
-    // Check converged
-    if (!IterConverged(0, frequencies)) {
-      frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
-    }
+    // TODO: Check convergence criteria?
+    // Update frequencies
+    frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
 
   } else {
     throw std::runtime_error("Invalid GW SC root finder");
