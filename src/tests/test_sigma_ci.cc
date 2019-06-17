@@ -187,13 +187,20 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   sigma.PrepareScreening();
 
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
-  // Eigen::MatrixXd c_offexact = Eigen::MatrixXd::Zero(17, 17);
-  // c_offexact = sigma.ExactCorrelationOffDiag(mo_energy);
-  // Eigen::VectorXd c_diagexact = sigma.ExactCorrelationDiag(mo_energy);
+  Eigen::MatrixXd c_offexact = Eigen::MatrixXd::Zero(17, 17);
+  c_offexact = sigma.ExactCorrelationOffDiag(mo_energy);
+  Eigen::VectorXd c_diagexact = sigma.ExactCorrelationDiag(mo_energy);
+  std::cout << "exact" << std::endl;
+  std::cout << " " << std::endl;
+  std::cout << c_diagexact << std::endl;
+  std::cout << " " << std::endl;
   Eigen::VectorXd c_diag = sigma.CalcCorrelationDiag(mo_energy);
   c_off.diagonal() = c_diag;
+  std::cout << "diag" << std::endl;
+  std::cout << " " << std::endl;
+  std::cout << c_diag << std::endl;
 
-  Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
+  /*Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
   c_ref << 0.120676, 2.58689e-07, -2.52037e-07, 3.99968e-08, 0.0405292,
       -1.25428e-07, 5.37756e-08, 2.99233e-08, -8.10766e-08, -5.95507e-08,
       -1.4014e-07, -0.0233041, -3.41069e-07, -2.17655e-07, -2.87835e-08,
@@ -250,23 +257,23 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
       -0.0229993, 0.012047, -0.00144565, -1.1817e-09, 2.67092e-09, 3.24027e-10,
       -0.00771886, 3.73239e-08, -2.4424e-08, 2.22078e-09, -1.13638e-08,
       -4.27551e-09, -1.51435e-08, 0.0103057, -8.13748e-08, -8.13703e-08,
-      -3.54064e-09, 0.012047, -0.40848;
+      -3.54064e-09, 0.012047, -0.40848;*/
 
-  bool check_c_diag = c_diag.isApprox(c_ref.diagonal(), 1e-5);
+  bool check_c_diag = c_diag.isApprox(c_diagexact.diagonal(), 1e-5);
 
   if (!check_c_diag) {
-    std::cout << "Sigma C" << std::endl;
+    std::cout << "Sigma C Diag" << std::endl;
     std::cout << c_diag << std::endl;
-    std::cout << "Sigma C ref" << std::endl;
-    std::cout << c_ref.diagonal() << std::endl;
+    std::cout << "Sigma C Diag Exact" << std::endl;
+    std::cout << c_diagexact << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c_diag, true);
-  bool check_c = c_off.isApprox(c_ref, 1e-5);
+  bool check_c = c_off.isApprox(c_offexact, 1e-4);
   if (!check_c) {
-    std::cout << "Sigma C" << std::endl;
+    std::cout << "Sigma C OffDiag" << std::endl;
     std::cout << c_off << std::endl;
-    std::cout << "Sigma C ref" << std::endl;
-    std::cout << c_ref << std::endl;
+    std::cout << "Sigma C OffDiag Exact" << std::endl;
+    std::cout << c_offexact << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c, true);
 }

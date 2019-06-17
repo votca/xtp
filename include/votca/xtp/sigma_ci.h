@@ -39,7 +39,9 @@ class Sigma_CI : public Sigma_base {
 
  public:
   Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
-      : Sigma_base(Mmn, rpa), _gq(rpa.getRPAInputEnergies(), Mmn){};
+      : Sigma_base(Mmn, rpa),
+        _gq(rpa.getRPAInputEnergies(), Mmn),
+        _eta(rpa.getEta()){};
 
   ~Sigma_CI(){};
 
@@ -57,12 +59,15 @@ class Sigma_CI : public Sigma_base {
       const Eigen::VectorXd& frequencies) const;
 
  private:
-  double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row, int eta,
-                                   double delta) const;
+  double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
+                                   double eta, double delta) const;
+
+  /*double CalcDiagContributionValue(const Eigen::MatrixXd& IMatrix, double eta,
+                                   double delta) const;*/
 
   double CalcOffDiagContributionValue(const Eigen::RowVectorXd& Imx_row1,
                                       const Eigen::RowVectorXd& Imx_row2,
-                                      int eta, double delta) const;
+                                      double eta, double delta) const;
 
   GaussianQuadrature _gq;
 
