@@ -79,7 +79,7 @@ Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
           (DeltaESq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
 
       Eigen::MatrixXd Amx = coeffs1.asDiagonal() * Imx;
-      Eigen::MatrixXd Pmx = Imx * (_dielinv_matrices[j].real()) - Imx;
+      Eigen::MatrixXd Pmx = Imx * ((_dielinv_matrices[j]).real()) - Imx;
       double value = (Pmx.cwiseProduct(Amx)).sum();
 
       Eigen::VectorXd coeffs2 = Eigen::VectorXd(rpatotal);
@@ -90,7 +90,7 @@ Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
           quad_p_eta /
           (DeltaESq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
 
-      Eigen::MatrixXd Qmx = Imx * (_dielinv_matrices[j].imag());
+      Eigen::MatrixXd Qmx = Imx * ((_dielinv_matrices[j]).imag());
       Eigen::MatrixXd Bmx = coeffs2.asDiagonal() * Imx;
       value += (Qmx.cwiseProduct(Bmx)).sum();
 
@@ -128,7 +128,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
       for (int j = 0; j < _opt.order; ++j) {
         double quad_m_eta = _quadpoints(j) - eta;
         double quad_p_eta = _quadpoints(j) + eta;
-        Eigen::MatrixXd Pmxn = Imxn * (_dielinv_matrices[j]).real() - Imxn;
+        Eigen::MatrixXd Pmxn = Imxn * ((_dielinv_matrices[j]).real()) - Imxn;
         Eigen::VectorXd coeffs1m = Eigen::VectorXd(rpatotal);
         coeffs1m.segment(0, occupied) =
             DeltaEm.segment(0, occupied) /
@@ -138,7 +138,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEmSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Amxm = coeffs1m.asDiagonal() * Imxm;
         double value = (Pmxn.cwiseProduct(Amxm)).sum();
-        Eigen::MatrixXd Pmxm = Imxm * (_dielinv_matrices[j]).real() - Imxm;
+        Eigen::MatrixXd Pmxm = Imxm * ((_dielinv_matrices[j]).real()) - Imxm;
         Eigen::VectorXd coeffs1n = Eigen::VectorXd(rpatotal);
         coeffs1n.segment(0, occupied) =
             DeltaEn.segment(0, occupied) /
@@ -148,7 +148,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEnSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Amxn = coeffs1n.asDiagonal() * Imxn;
         value += (Pmxm.cwiseProduct(Amxn).sum)();
-        Eigen::MatrixXd Qmxn = Imxn * (_dielinv_matrices[j]).imag();
+        Eigen::MatrixXd Qmxn = Imxn * ((_dielinv_matrices[j]).imag());
         Eigen::VectorXd coeffs2m = Eigen::VectorXd(rpatotal);
         coeffs2m.segment(0, occupied) =
             quad_m_eta /
@@ -158,7 +158,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEmSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Bmxm = coeffs2m.asDiagonal() * Imxm;
         value += (Qmxn.cwiseProduct(Bmxm)).sum();
-        Eigen::MatrixXd Qmxm = Imxm * (_dielinv_matrices[j]).imag();
+        Eigen::MatrixXd Qmxm = Imxm * ((_dielinv_matrices[j]).imag());
         Eigen::VectorXd coeffs2n = Eigen::VectorXd(rpatotal);
         coeffs2n.segment(0, occupied) =
             quad_m_eta /
