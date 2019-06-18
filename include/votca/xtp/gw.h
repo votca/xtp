@@ -57,6 +57,7 @@ class GW {
     int    gw_sc_root_finder_method = 0;
     double gw_sc_root_finder_range  = 1.0;
     int    gw_sc_root_finder_steps  = 101;
+    double gw_sc_root_finder_refine = 0.1; // Grid refinement factor for each gw iter
   };
 
   void configure(const options& opt);
@@ -94,7 +95,7 @@ class GW {
 
   RPA _rpa;
 
-  Eigen::VectorXd CalculateExcitationFreq(Eigen::VectorXd frequencies);
+  Eigen::VectorXd CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_gw);
   double CalcHomoLumoShift() const;
   Eigen::VectorXd ScissorShift_DFTlevel(
       const Eigen::VectorXd& dft_energies) const;

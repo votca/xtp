@@ -373,6 +373,9 @@ void GWBSE::Initialize(tools::Property& options) {
   _gwopt.gw_sc_root_finder_steps = options.ifExistsReturnElseReturnDefault<int>(
       key + ".gw_sc_root_finder_steps",
       _gwopt.gw_sc_root_finder_steps);
+  _gwopt.gw_sc_root_finder_refine = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".gw_sc_root_finder_refine",
+      _gwopt.gw_sc_root_finder_refine); 
   CTP_LOG(ctp::logDEBUG, *_pLog)
       << " Root finder method: " << root_finder_choice[_gwopt.gw_sc_root_finder_method] << flush;
   if (_gwopt.gw_sc_root_finder_method == 3) {
@@ -380,6 +383,8 @@ void GWBSE::Initialize(tools::Property& options) {
         << " Root finder range: " << _gwopt.gw_sc_root_finder_range << flush;
     CTP_LOG(ctp::logDEBUG, *_pLog)
         << " Root finder steps: " << _gwopt.gw_sc_root_finder_steps << flush;
+    CTP_LOG(ctp::logDEBUG, *_pLog)
+        << " Root finder refine: " << _gwopt.gw_sc_root_finder_refine << flush;
     _gwopt.g_sc_max_iterations = 1; // Grid method does not support mutliple g iterations
   }
 

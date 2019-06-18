@@ -172,7 +172,7 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
   return energies_converged;
 }
 
-Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
+Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_gw) {
   const double alpha = 0.0; // TODO: Mixing parameter
   // TODO: Make "Update" function that updates members variables: _Sigma_c,
   // _gwa_energies after each iteration.
@@ -247,17 +247,23 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     const int root_value_method = 1;
     const int root_score_method = 1;
     // Define constants
-    const double rx = _opt.gw_sc_root_finder_range; // Range
-    const int    nx = _opt.gw_sc_root_finder_steps; // Steps
+    const double rx0 = _opt.gw_sc_root_finder_range; // Range
+    const int    nx  = _opt.gw_sc_root_finder_steps; // Steps
+    const double rf  = _opt.gw_sc_root_finder_refine; // Refinement factor
+    const double inf = std::numeric_limits<double>::infinity();
+    // Grid refinement
+    const double dx_min = _opt.g_sc_limit * (nx - 1.0) / (2.0 * rx0);
+    const int    nr_max = std::ceil(std::log(dx_min) / std::log(rf));
+    const double rx     = rx0 * std::pow(rf, std::min(nr_max, i_gw));
+    // Prepare vectors
     const Eigen::VectorXd xx_off = Eigen::VectorXd::LinSpaced(nx, -rx, +rx);
     const Eigen::VectorXd sx_vxc = _Sigma_x.diagonal() - _vxc.diagonal();
-    const double inf = std::numeric_limits<double>::infinity();
     // Evaluate sigma_c on all grid points
     Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(nx, _qptotal); // TODO: Do not cache this
     Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(nx, _qptotal);
     CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Evaluating sigma_c on all "
-        << _qptotal << "x" << nx << " grid points" << std::flush;
+        << ctp::TimeStamp() << " Evaluating sigma_c on grid:"
+        << " nx: " << nx << " rx: " << rx << std::flush;
     // TODO: Is it faster to first fill the columns and then transpose the entire matrix?
     for (int ix = 0; ix < nx; ix++) {
       Eigen::VectorXd xx_cur = frequencies.array() + xx_off[ix];
@@ -269,6 +275,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     Eigen::VectorXd root_scores = Eigen::VectorXd::Zero(_qptotal);
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Finding QP roots " << std::flush;
+    // TODO: Multi-thread?
     for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
       //    e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
       // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
@@ -420,7 +427,7 @@ void GW::CalculateGWPerturbation() {
     _sigma->PrepareScreening();
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated screening via RPA  " << std::flush;
-    frequencies = CalculateExcitationFreq(frequencies);
+    frequencies = CalculateExcitationFreq(frequencies, i_gw);
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated diagonal part of Sigma  "
         << std::flush;
