@@ -258,8 +258,6 @@ void KMCMultiple::RunVSSM() {
           << endl;
   }
 
-  double absolute_field = _field.norm();
-
   RandomlyCreateCharges();
   vector<Eigen::Vector3d> startposition(_numberofcharges,
                                         Eigen::Vector3d::Zero());
