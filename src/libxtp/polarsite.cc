@@ -89,7 +89,6 @@ void PolarSite::calcDIIS_InducedDipole() {
     if (std::abs(eigenvectors.col(mincoeff).maxCoeff()) > MaxWeight) {
       errors[mincoeff] = std::numeric_limits<double>::max();
     } else {
-      success = true;
       break;
     }
   }
