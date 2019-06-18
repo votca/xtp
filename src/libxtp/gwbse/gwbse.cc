@@ -98,9 +98,9 @@ void GWBSE::Initialize(tools::Property& options) {
   } else if (ranges == "default") {
     rpamax = num_of_levels - 1;
     qpmin = 0;
-    qpmax = 2 * homo + 1;
+    qpmax = 3 * homo + 1;
     bse_vmin = 0;
-    bse_cmax = 2 * homo + 1;
+    bse_cmax = 3 * homo + 1;
   } else if (ranges == "full") {
     rpamax = num_of_levels - 1;
     qpmin = 0;
@@ -169,13 +169,13 @@ void GWBSE::Initialize(tools::Property& options) {
   int bse_ctotal = bse_cmax - bse_cmin + 1;
   int bse_size = bse_vtotal * bse_ctotal;
 
-  XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " Set RPA level range [" << rpamin
+  XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " RPA level range [" << rpamin
                             << ":" << rpamax << "]" << flush;
-  XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " Set GW  level range [" << qpmin
+  XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " GW  level range [" << qpmin
                             << ":" << qpmax << "]" << flush;
   XTP_LOG(logDEBUG, *_pLog)
-      << TimeStamp() << " Set BSE level range occ[" << bse_vmin << ":"
-      << bse_vmax << "]  virt[" << bse_cmin << ":" << bse_cmax << "]" << flush;
+      << TimeStamp() << " BSE level range occ[" << bse_vmin << ":" << bse_vmax
+      << "]  virt[" << bse_cmin << ":" << bse_cmax << "]" << flush;
   XTP_LOG(logDEBUG, *_pLog) << TimeStamp() << " BSE Hamiltonian has size "
                             << bse_size << "x" << bse_size << flush;
 
@@ -286,8 +286,8 @@ void GWBSE::Initialize(tools::Property& options) {
   XTP_LOG(logDEBUG, *_pLog) << " Running GW as: " << mode << flush;
   _gwopt.ScaHFX = _orbitals.getScaHFX();
 
-  _gwopt.shift = options.ifExistsReturnElseReturnDefault<double>(key + ".shift",
-                                                                 _gwopt.shift);
+  _gwopt.shift = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".scissor_shift", _gwopt.shift);
   _gwopt.g_sc_limit = options.ifExistsReturnElseReturnDefault<double>(
       key + ".g_sc_limit",
       _gwopt.g_sc_limit);  // convergence criteria for qp iteration [Hartree]]
@@ -480,6 +480,7 @@ Eigen::MatrixXd GWBSE::CalculateVXC(const AOBasis& dftbasis) {
          ScaHFX_temp % _orbitals.getScaHFX())
             .str());
   }
+  _orbitals.setXCFunctionalName(_functional);
   numint.GridSetup(_grid, _orbitals.QMAtoms(), dftbasis);
   XTP_LOG(logDEBUG, *_pLog)
       << TimeStamp() << " Setup grid for integration with gridsize: " << _grid

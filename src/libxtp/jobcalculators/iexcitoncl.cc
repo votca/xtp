@@ -117,7 +117,7 @@ Job::JobResult IEXCITON::EvalJob(Topology& top, Job& job, QMThread& opThread) {
   map.LoadMappingFile(_mapfile);
   StaticSegment seg1 = map.map(*(pair->Seg1()), mps_fileA);
   StaticSegment seg2 = map.map(*(pair->Seg2PbCopy()), mps_fileB);
-  eeInteractor actor = eeInteractor(0);
+  eeInteractor actor;
 
   double JAB = actor.InteractStatic(seg1, seg2);
   _cutoff = 0;
@@ -131,7 +131,7 @@ Job::JobResult IEXCITON::EvalJob(Topology& top, Job& job, QMThread& opThread) {
   pair_summary.setAttribute("typeA", nameA);
   pair_summary.setAttribute("typeB", nameB);
   Property& coupling_summary = pair_summary.add("Coupling", "");
-  coupling_summary.setAttribute("jABstatic", JAB);
+  coupling_summary.setAttribute("jABstatic", JAB * tools::conv::hrt2ev);
 
   jres.setOutput(job_summary);
   jres.setStatus(Job::COMPLETE);
@@ -277,7 +277,7 @@ void IEXCITON::ReadJobFile(Topology& top) {
       for (Property* coup : pCoupling) {
         jAB = coup->getAttribute<double>("jABstatic");
       }
-      Jeff2 = jAB * jAB;
+      Jeff2 = jAB * jAB * tools::conv::ev2hrt * tools::conv::ev2hrt;
       pair->setJeff2(Jeff2, QMStateType::Singlet);
     }
   }

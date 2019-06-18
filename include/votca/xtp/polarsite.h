@@ -50,6 +50,8 @@ class PolarSite : public StaticSite {
   void setPolarisation(const Eigen::Matrix3d pol) override;
   void ResetInduction();
 
+  const Eigen::Matrix3d& getPolarisation() const { return _Ps; }
+
   // MULTIPOLES DEFINITION
   Eigen::Vector3d getDipole() const override;
 
@@ -113,11 +115,13 @@ class PolarSite : public StaticSite {
   // do not move up has to be below data definition
   PolarSite(data& d);
 
-  void Reset() {
+  void Reset() override {
     StaticSite::Reset();
     ResetInduction();
     _dipole_hist.clear();
   }
+
+  double DipoleChange() const;
 
   void SetupCptTable(CptTable& table) const override;
   void WriteData(data& d) const;

@@ -18,39 +18,41 @@
  */
 
 #pragma once
-#ifndef VOTCA_XTP_RATE_ENGINE_H
-#define VOTCA_XTP_RATE_ENGINE_H
+#ifndef _VOTCA_XTP_VAVERAGE_H
+#define _VOTCA_XTP_VAVERAGE_H
+
+#include <stdio.h>
+
 #include <votca/xtp/eigen.h>
-#include <votca/xtp/qmpair.h>
-#include <votca/xtp/qmstate.h>
+#include <votca/xtp/logger.h>
+#include <votca/xtp/qmcalculator.h>
+#include <votca/xtp/rate_engine.h>
 
 namespace votca {
 namespace xtp {
 
-class Rate_Engine {
-
+class VAverage : public QMCalculator {
  public:
-  struct PairRates {
-    double rate12 = 0.0;
-    double rate21 = 0.0;
-  };
+  VAverage(){};
 
-  Rate_Engine(double temperature, const Eigen::Vector3d& field)
-      : _temperature(temperature), _field(field){};
+  ~VAverage(){};
 
-  PairRates Rate(const QMPair& pair, QMStateType carriertype) const;
+  std::string Identify() { return "vaverage"; }
 
-  friend std::ostream& operator<<(std::ostream& out,
-                                  const Rate_Engine& rate_engine);
+  void Initialize(tools::Property& options);
+  bool EvaluateFrame(Topology& top);
 
  private:
-  double Markusrate(double Jeff2, double deltaG, double reorg) const;
-  std::string _ratetype = "markus";
-  double _temperature = 0.0;                         // units:Hartree
-  Eigen::Vector3d _field = Eigen::Vector3d::Zero();  // units:Hartree/bohr
+  Logger _log;
+  std::string _ratefile;
+  std::string _occfile;
+  std::string _outputfile;
+
+  std::vector<double> ReadOccfile(std::string filename) const;
+  std::vector<Rate_Engine::PairRates> ReadRatefile(std::string filename) const;
 };
 
 }  // namespace xtp
 }  // namespace votca
 
-#endif  // VOTCA_XTP_RATE_ENGINE_H
+#endif

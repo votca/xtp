@@ -18,49 +18,47 @@
  */
 
 #pragma once
-#ifndef _VOTCA_XTP_DFTGWBSE_H
-#define _VOTCA_XTP_DFTGWBSE_H
+#ifndef _VOTCA_XTP_MOLPOL_H
+#define _VOTCA_XTP_MOLPOL_H
 
 #include <stdio.h>
+#include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/logger.h>
 #include <votca/xtp/qmtool.h>
 
 namespace votca {
 namespace xtp {
-
-class DftGwBse : public QMTool {
+class PolarRegion;
+class MolPol : public QMTool {
  public:
-  DftGwBse(){};
+  MolPol() : _input("", 0){};
 
-  ~DftGwBse(){};
+  ~MolPol(){};
 
-  std::string Identify() { return "dftgwbse"; }
+  std::string Identify() { return "molpol"; }
 
-  void Initialize(tools::Property &options);
+  void Initialize(tools::Property& options);
   bool Evaluate();
 
  private:
-  std::string _guess_file;
-  bool _do_guess;
+  void PrintPolarisation(const Eigen::Matrix3d& result) const;
 
-  std::string _mpsfile;
-  bool _do_external;
-
-  std::string _xyzfile;
-  std::string _xml_output;  // .xml output
-  std::string _package;
-  std::string _archive_file;  // .orb file to parse to
-  std::string _reporting;
-  std::string _guess_orbA;
-  std::string _guess_orbB;
-
-  tools::Property _package_options;
-  tools::Property _gwbseengine_options;
-  tools::Property _geoopt_options;
-
+  Eigen::Matrix3d CalcClassicalPol(const PolarSegment& input) const;
+  Eigen::Vector3d Polarize(PolarRegion& pol,
+                           const Eigen::Vector3d& ext_field) const;
   Logger _log;
 
-  bool _do_optimize;
+  std::string _mps_output;
+  PolarSegment _input;
+  Eigen::Matrix3d _polarisation_target;
+
+  Eigen::VectorXd _weights;
+
+  tools::Property _polar_options;
+
+  double _tolerance_pol = 1e-4;
+  int _max_iter = 1000;
+  double _alpha = 1.0;
 };
 
 }  // namespace xtp

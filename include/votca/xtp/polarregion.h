@@ -23,6 +23,14 @@
 
 #include <votca/xtp/mmregion.h>
 
+/**
+ * \brief defines a polar region and of interacting electrostatic and induction
+ * segments
+ *
+ *
+ *
+ */
+
 namespace votca {
 namespace xtp {
 class QMRegion;
@@ -33,7 +41,7 @@ class PolarRegion : public MMRegion<PolarSegment> {
  public:
   PolarRegion(int id, Logger& log) : MMRegion<PolarSegment>(id, log){};
 
-  std::string identify() const { return "PolarRegion"; }
+  std::string identify() const { return "polarregion"; }
 
   void Initialize(const tools::Property& prop);
 
@@ -47,7 +55,17 @@ class PolarRegion : public MMRegion<PolarSegment> {
   void InteractwithStaticRegion(const StaticRegion& region);
 
  private:
+  std::pair<bool, double> DipolesConverged() const;
+  void ResetFields();
+  void CalcInducedDipoles();
+  double StaticInteraction();
+  double PolarInteraction();
+
+  hist<double> _E_hist;
+  hist<double> _D_hist;
+
   double _deltaE = 1e-5;
+  double _deltaD = 1e-5;
   int _max_iter = 100;
   double _exp_damp = 0.39;
   bool _induce_intra_mol = true;

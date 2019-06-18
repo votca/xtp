@@ -62,6 +62,8 @@ class Region {
 
   virtual void WritePDB(csg::PDBWriter<csg::Topology>& writer) const = 0;
 
+  virtual void Reset() = 0;
+
   int getId() const { return _id; }
 
   friend std::ostream& operator<<(std::ostream& out, const Region& region) {
@@ -71,10 +73,39 @@ class Region {
   }
 
  protected:
+  template <class T>
+  class hist {
+   public:
+    T getDiff() const {
+      if (_filled > 1) {
+        return _metric - _metric_old;
+      } else if (_filled == 1) {
+        return _metric;
+      } else {
+        throw std::runtime_error("hist is not filled yet");
+      }
+    }
+
+    void push_back(const T& metric) {
+      _metric_old = std::move(_metric);
+      _metric = metric;
+      _filled++;
+    }
+    void push_back(T&& metric) {
+      _metric_old = std::move(_metric);
+      _metric = std::move(metric);
+      _filled++;
+    }
+
+   private:
+    int _filled = 0;
+    T _metric;
+    T _metric_old;
+  };
+
   void ApplyInfluenceOfOtherRegions(
       std::vector<std::unique_ptr<Region> >& regions);
 
-  virtual void ResetRegion() = 0;
   virtual void InteractwithQMRegion(const QMRegion& region) = 0;
   virtual void InteractwithPolarRegion(const PolarRegion& region) = 0;
   virtual void InteractwithStaticRegion(const StaticRegion& region) = 0;
