@@ -18,6 +18,7 @@
 #define BOOST_TEST_MODULE qmmolecule_test
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/qmmolecule.h>
+#include <votca/tools/constants.h>
 
 using namespace votca::xtp;
 using namespace std;
