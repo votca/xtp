@@ -26,10 +26,10 @@
 #include <exception>
 #include <map>
 #include <string>
+#include <votca/tools/constants.h>
+#include <votca/tools/structureparameters.h>
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
-#include <votca/tools/structureparameters.h>
-#include <votca/tools/constants.h>
 
 namespace votca {
 namespace xtp {

@@ -23,10 +23,10 @@
 
 #include <string>
 #include <vector>
+#include <votca/tools/constants.h>
 #include <votca/xtp/logger.h>
 #include <votca/xtp/qmatom.h>
 #include <votca/xtp/qmmolecule.h>
-#include <votca/tools/constants.h>
 /**
  * \brief Takes a list of atoms, and creates CHELPG grid.
  *

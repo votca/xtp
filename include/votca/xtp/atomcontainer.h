@@ -41,9 +41,10 @@ template <class T>
 class AtomContainer {
  public:
   AtomContainer(std::string name, int id) : _name(name), _id(id){};
-  AtomContainer(tools::StructureParameters params) : 
-    _name(params.get<std::string>(tools::StructureParameter::AtomContainerType)), 
-    _id(params.get<int>(tools::StructureParameter::AtomContainerId)){};
+  AtomContainer(tools::StructureParameters params)
+      : _name(params.get<std::string>(
+            tools::StructureParameter::AtomContainerType)),
+        _id(params.get<int>(tools::StructureParameter::AtomContainerId)){};
 
   AtomContainer(CheckpointReader& r) { this->ReadFromCpt(r); }
   virtual ~AtomContainer(){};

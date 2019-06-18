@@ -21,9 +21,9 @@ nn * See the License for the specific language governing permissions and
 #ifndef __VOTCA_XTP_STATICSITE_H
 #define __VOTCA_XTP_STATICSITE_H
 
+#include <votca/tools/structureparameters.h>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/qmatom.h>
-#include <votca/tools/structureparameters.h>
 namespace votca {
 namespace xtp {
 

@@ -21,14 +21,14 @@
 #ifndef VOTCA_XTP_TOPOLOGY_H
 #define VOTCA_XTP_TOPOLOGY_H
 
+#include "units.h"
 #include <votca/csg/boundarycondition.h>
 #include <votca/csg/openbox.h>
 #include <votca/csg/orthorhombicbox.h>
 #include <votca/csg/triclinicbox.h>
-#include <votca/xtp/qmnblist.h>
 #include <votca/tools/structureparameters.h>
 #include <votca/tools/unitconverter.h>
-#include "units.h"
+#include <votca/xtp/qmnblist.h>
 
 namespace votca {
 namespace xtp {
@@ -40,14 +40,17 @@ class Segment;
  */
 class Topology {
  public:
-
   typedef Segment::bead_t bead_t;
   typedef Segment container_t;
   typedef typename std::vector<Segment>::iterator iterator;
   typename std::vector<Segment>::iterator begin() { return _segments.begin(); }
   typename std::vector<Segment>::iterator end() { return _segments.end(); }
-  typename std::vector<Segment>::const_iterator begin() const { return _segments.begin(); }
-  typename std::vector<Segment>::const_iterator end() const { return _segments.end(); }
+  typename std::vector<Segment>::const_iterator begin() const {
+    return _segments.begin();
+  }
+  typename std::vector<Segment>::const_iterator end() const {
+    return _segments.end();
+  }
 
   typedef const Units units;
 
@@ -72,7 +75,9 @@ class Topology {
   Eigen::Vector3d PbShortestConnect(const Eigen::Vector3d &r1,
                                     const Eigen::Vector3d &r2) const;
   const Eigen::Matrix3d &getBox() const { return _bc->getBox(); }
-  csg::BoundaryCondition::eBoxtype getBoxType() const { return _bc->getBoxType(); }
+  csg::BoundaryCondition::eBoxtype getBoxType() const {
+    return _bc->getBoxType();
+  }
   bool BoundaryExist() const noexcept { return _bc != nullptr; }
 
   double BoxVolume() const { return _bc->BoxVolume(); }
@@ -101,7 +106,6 @@ class Topology {
   std::vector<const Segment *> FindAllSegmentsOnMolecule(
       const Segment &seg1, const Segment &seg2) const;
 
-  
  protected:
   std::vector<Segment> _segments;
 

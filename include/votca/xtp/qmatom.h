@@ -22,8 +22,8 @@
 #define VOTCA_XTP_QMATOM_H
 
 #include <votca/tools/elements.h>
-#include <votca/xtp/checkpoint.h>
 #include <votca/tools/structureparameters.h>
+#include <votca/xtp/checkpoint.h>
 namespace votca {
 namespace xtp {
 
@@ -50,8 +50,8 @@ class QMAtom {
 
   QMAtom(data& d);
 
-  QMAtom(tools::StructureParameters & params);
-  tools::StructureParameters getParameters() const; 
+  QMAtom(tools::StructureParameters& params);
+  tools::StructureParameters getParameters() const;
 
   const Eigen::Vector3d& getPos() const { return _pos; }
 

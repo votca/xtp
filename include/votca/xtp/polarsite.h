@@ -21,9 +21,9 @@
 #ifndef __VOTCA_XTP_POLARSITE_H
 #define __VOTCA_XTP_POLARSITE_H
 
+#include <votca/tools/structureparameters.h>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/staticsite.h>
-#include <votca/tools/structureparameters.h>
 
 namespace votca {
 namespace xtp {
