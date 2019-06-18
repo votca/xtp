@@ -21,8 +21,8 @@
 #ifndef _VOTCA_XTP_MAPCHECKER_H
 #define _VOTCA_XTP_MAPCHECKER_H
 
-#include <votca/tools/filesystem.h>
 #include <votca/csg/topology.h>
+#include <votca/tools/filesystem.h>
 #include <votca/xtp/qmcalculator.h>
 #include <votca/xtp/segmentmapper.h>
 

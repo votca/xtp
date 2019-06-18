@@ -22,12 +22,13 @@
 namespace votca {
 namespace xtp {
 
-  Atom::Atom(tools::StructureParameters params) : 
-  _id(params.get<int>(tools::StructureParameter::BeadId)),
-  _name(params.get<std::string>(tools::StructureParameter::BeadType)),
-  _element(params.get<std::string>(tools::StructureParameter::Element)),
-  _resnr(params.get<int>(tools::StructureParameter::ResidueId)),
-  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::XTP_Position)){};
+Atom::Atom(tools::StructureParameters params)
+    : _id(params.get<int>(tools::StructureParameter::BeadId)),
+      _name(params.get<std::string>(tools::StructureParameter::BeadType)),
+      _element(params.get<std::string>(tools::StructureParameter::Element)),
+      _resnr(params.get<int>(tools::StructureParameter::ResidueId)),
+      _pos(params.get<Eigen::Vector3d>(
+          tools::StructureParameter::XTP_Position)){};
 
 Atom::Atom(int resnr, std::string md_atom_name, int atom_id,
            Eigen::Vector3d pos)
@@ -36,19 +37,20 @@ Atom::Atom(int resnr, std::string md_atom_name, int atom_id,
 }
 
 Atom::Atom(int atom_id, std::string md_atom_name, Eigen::Vector3d pos)
-    : Atom(tools::topology_constants::unassigned_residue_id, md_atom_name, atom_id, pos) {
+    : Atom(tools::topology_constants::unassigned_residue_id, md_atom_name,
+           atom_id, pos) {
   _element = GetElementFromMDName(md_atom_name);
 }
 
 tools::StructureParameters Atom::getParameters() const {
   tools::StructureParameters params;
   tools::byte_t symmetry = 1;
-  params.set(tools::StructureParameter::Symmetry,symmetry);
-  params.set(tools::StructureParameter::BeadId,_id);
-  params.set(tools::StructureParameter::BeadType,_name);
-  params.set(tools::StructureParameter::Element,_element);
-  params.set(tools::StructureParameter::ResidueId,_resnr);
-  params.set(tools::StructureParameter::XTP_Position,_pos);
+  params.set(tools::StructureParameter::Symmetry, symmetry);
+  params.set(tools::StructureParameter::BeadId, _id);
+  params.set(tools::StructureParameter::BeadType, _name);
+  params.set(tools::StructureParameter::Element, _element);
+  params.set(tools::StructureParameter::ResidueId, _resnr);
+  params.set(tools::StructureParameter::XTP_Position, _pos);
   return params;
 }
 

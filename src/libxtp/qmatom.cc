@@ -30,23 +30,22 @@ QMAtom::QMAtom(int index, std::string element, Eigen::Vector3d pos)
 
 QMAtom::QMAtom(data& d) { ReadData(d); }
 
-QMAtom::QMAtom(tools::StructureParameters & params)
-  : _index(params.get<int>(tools::StructureParameter::BeadId)),
-  _element(params.get<std::string>(tools::StructureParameter::Element)),
-  _pos(params.get<Eigen::Vector3d>(tools::StructureParameter::XTP_Position)) {
+QMAtom::QMAtom(tools::StructureParameters& params)
+    : _index(params.get<int>(tools::StructureParameter::BeadId)),
+      _element(params.get<std::string>(tools::StructureParameter::Element)),
+      _pos(params.get<Eigen::Vector3d>(
+          tools::StructureParameter::XTP_Position)) {
 
-    tools::Elements elements;
-    _nuccharge = elements.getNucCrg(_element);
-
-  }
-
+  tools::Elements elements;
+  _nuccharge = elements.getNucCrg(_element);
+}
 
 tools::StructureParameters QMAtom::getParameters() const {
   tools::StructureParameters params;
-  params.set(tools::StructureParameter::Element,_element);
-  params.set(tools::StructureParameter::XTP_Position,_pos);
-  params.set(tools::StructureParameter::BeadId,getId());
-  params.set(tools::StructureParameter::BeadType,_element);
+  params.set(tools::StructureParameter::Element, _element);
+  params.set(tools::StructureParameter::XTP_Position, _pos);
+  params.set(tools::StructureParameter::BeadId, getId());
+  params.set(tools::StructureParameter::BeadType, _element);
   return params;
 }
 

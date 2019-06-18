@@ -16,6 +16,7 @@
  *
  */
 
+#include "../../include/votca/xtp/topologyconverter.h"
 #include <votca/csg/io/pdbwriter.h>
 #include <votca/csg/io/xyzreader.h>
 #include <votca/csg/io/xyzwriter.h>
@@ -24,7 +25,6 @@
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
 #include <votca/xtp/qmmolecule.h>
-#include "../../include/votca/xtp/topologyconverter.h"
 
 using namespace std;
 using namespace votca::tools;
@@ -32,41 +32,41 @@ using namespace votca::tools;
 namespace votca {
 namespace xtp {
 
-/*const tools::DistanceUnit QMMolecule::distance_unit =                             
-    tools::DistanceUnit::bohr;                                             
-const tools::MassUnit QMMolecule::mass_unit =                                     
-    tools::MassUnit::atomic_mass_units;                                         
-const tools::TimeUnit QMMolecule::time_unit = tools::TimeUnit::seconds;            
-const tools::ChargeUnit QMMolecule::charge_unit = tools::ChargeUnit::e;           
-const tools::EnergyUnit QMMolecule::energy_unit =                                 
+/*const tools::DistanceUnit QMMolecule::distance_unit =
+    tools::DistanceUnit::bohr;
+const tools::MassUnit QMMolecule::mass_unit =
+    tools::MassUnit::atomic_mass_units;
+const tools::TimeUnit QMMolecule::time_unit = tools::TimeUnit::seconds;
+const tools::ChargeUnit QMMolecule::charge_unit = tools::ChargeUnit::e;
+const tools::EnergyUnit QMMolecule::energy_unit =
     tools::EnergyUnit::hartrees; */
 
-  tools::StructureParameters QMMolecule::getParameters() const {
-    tools::StructureParameters params;
-    params.set(tools::StructureParameter::AtomContainerType,getName());
-    params.set(tools::StructureParameter::AtomContainerId,getId());
-    return params;
-  }
+tools::StructureParameters QMMolecule::getParameters() const {
+  tools::StructureParameters params;
+  params.set(tools::StructureParameter::AtomContainerType, getName());
+  params.set(tools::StructureParameter::AtomContainerId, getId());
+  return params;
+}
 
 void QMMolecule::WriteXYZ(std::string filename, std::string header) const {
   csg::XYZWriter<csg::Topology> writer;
   writer.Open(filename, false);
-  writer.WriteHeader(header,size());
+  writer.WriteHeader(header, size());
   TopologyContainerConverter converter;
   csg::Topology csg_top = converter.Convert(*this);
-  //writer.Write(&csg_top);
+  // writer.Write(&csg_top);
   writer.Close();
   return;
 }
 
 void QMMolecule::LoadFromFile(std::string filename) {
   csg::XYZReader<csg::Topology> reader;
-  //reader.Open(filename);
+  // reader.Open(filename);
   csg::Topology csg_top;
-  reader.ReadTopology(filename,&csg_top);
+  reader.ReadTopology(filename, &csg_top);
   TopologyContainerConverter cont_converter;
   *this = cont_converter.Convert<QMMolecule>(csg_top);
-  //reader.Close();
+  // reader.Close();
 }
 }  // namespace xtp
 }  // namespace votca

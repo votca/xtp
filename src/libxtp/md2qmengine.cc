@@ -160,8 +160,8 @@ Topology Md2QmEngine::map(const csg::Topology& top) {
     int ResNumOffset = DetermineResNumOffset(mol, resnums_map);
     for (const csg::Bead* bead : mol.getBeads()) {
       Segment* seg =
-          segments[MolToSegMap[mol.getType()][bead->getResidueId() - ResNumOffset]
-                              [bead->getLabel()]];
+          segments[MolToSegMap[mol.getType()][bead->getResidueId() -
+                                              ResNumOffset][bead->getLabel()]];
 
       Atom atom(bead->getResidueId(), bead->getType(), atomid,
                 bead->getPos() * tools::conv::nm2bohr);
@@ -184,5 +184,5 @@ bool Md2QmEngine::SameValueForMultipleEntries(
   return adjacent_find(entries.begin(), entries.end()) != entries.end();
 }
 
-}
-}
+}  // namespace xtp
+}  // namespace votca
