@@ -23,6 +23,7 @@
 
 #include "votca/tools/application.h"
 #include "votca/xtp/statesaver.h"
+#include <votca/csg/topology.h>
 #include <votca/csg/topologyreader.h>
 #include <votca/csg/trajectoryreader.h>
 #include <votca/csg/trajectorywriter.h>
@@ -30,7 +31,6 @@
 #include <votca/xtp/md2qmengine.h>
 #include <votca/xtp/topology.h>
 #include <votca/xtp/version.h>
-#include <votca/csg/topology.h>
 
 using namespace std;
 
