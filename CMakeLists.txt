@@ -82,7 +82,7 @@ if(NOT TARGET manpages)
   add_custom_target(manpages ALL)
 endif()
 
-find_package(VOTCA_TOOLS REQUIRED NO_MODULE)
+find_package(VOTCA_TOOLS NO_MODULE REQUIRED)
 message(STATUS "Found VOTCA_TOOLS: ${VOTCA_TOOLS_DIR}")
 find_package(VOTCA_CSG REQUIRED NO_MODULE)
 message(STATUS "Found VOTCA_CSG: ${VOTCA_CSG_DIR}")
