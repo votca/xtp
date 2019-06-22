@@ -34,6 +34,9 @@ stages:
     - if [[ ( ${CI_COMMIT_REF_NAME} =~ ^for/electrostatics/.* ) ]]; then
         export CMAKE_BUILD_ARGS_EXTRA="-DBUILD_CTP=OFF";
       fi
+    - if [[ ( ${CI_COMMIT_REF_NAME} =~ ^for/development/.* ) ]]; then
+        export CMAKE_BUILD_ARGS_EXTRA="-DBUILD_CTP=OFF";
+      fi
     - git submodule update --recursive --init
     - git -C ${CI_PROJECT_NAME} fetch ${CI_PROJECT_DIR} commit_of_build_${CI_BUILD_ID}
     - git -C ${CI_PROJECT_DIR} branch -d commit_of_build_${CI_BUILD_ID}
