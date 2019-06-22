@@ -423,7 +423,6 @@ std::vector<std::string> AOBasis::ECPFill(const BasisSet& bs,
   std::vector<std::string> non_ecp_elements;
   for (QMAtom& atom : atoms) {
     std::string name = atom.getElement();
-    int atomfunc = 0;
     bool element_exists = true;
 
     try {
@@ -437,6 +436,7 @@ std::vector<std::string> AOBasis::ECPFill(const BasisSet& bs,
       }
     }
 
+    int atomfunc = 0;
     if (element_exists) {
       const Element& element = bs.getElement(name);
       atom._ecpcharge = element.getNcore();
