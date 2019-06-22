@@ -41,7 +41,7 @@ stages:
     - mkdir -p build
     - pushd build
     - echo "building ctp "${CMAKE_BUILD_ARGS_EXTRA}
-    - cmake .. ${CMAKE_BUILD_ARGS_EXTRA} -DENABLE_TESTING=ON -DBUILD_XTP=ON -DBUILD_XTP_MANUAL=ON
+    - cmake .. -DCMAKE_FIND_DEBUG_MODE=ON ${CMAKE_BUILD_ARGS_EXTRA} -DENABLE_TESTING=ON -DBUILD_XTP=ON -DBUILD_XTP_MANUAL=ON
       -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DMODULE_BUILD=${MODULE_BUILD} ${MODULE_BUILD:+-DCMAKE_INSTALL_PREFIX=/home/votca/votca.install}
     - make -O -k -j${j} -l${j} VERBOSE=1
