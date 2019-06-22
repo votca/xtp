@@ -73,6 +73,10 @@ void QMNBList::ReadFromCpt(CheckpointReader& r,
   std::vector<QMPair::data> dataVec(table.numRows());
   table.read(dataVec);
 
+  if(!table){
+    throw runtime_error("Problem reading from Check pointer file");
+  }
+
   for (std::size_t i = 0; i < dataVec.size(); ++i) {
     this->AddPair(new QMPair(dataVec[i], segments));
   }

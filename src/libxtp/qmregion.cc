@@ -56,12 +56,16 @@ void QMRegion::Initialize(const tools::Property& prop) {
 }
 
 bool QMRegion::Converged() const {
-  double Echange = std::abs(_E_hist.getDiff());
+  if (!_E_hist.filled()) {
+    return false;
+  }
+
+  double Echange = _E_hist.getDiff();
   double Dchange = _Dmat_hist.getDiff().norm();
-  double Dmax = _Dmat_hist.getDiff().maxCoeff();
+  double Dmax = _Dmat_hist.getDiff().cwiseAbs().maxCoeff();
   std::string info = "not converged";
   bool converged = false;
-  if (Dchange < _DeltaD && Dmax < _DeltaD && Echange < _DeltaE) {
+  if (Dchange < _DeltaD && Dmax < _DeltaD && std::abs(Echange) < _DeltaE) {
     info = "converged";
     converged = true;
   }
@@ -188,8 +192,7 @@ void QMRegion::ApplyQMFieldToClassicSegments(std::vector<T>& segments) const {
   for (int i = 0; i < int(segments.size()); ++i) {
     T& seg = segments[i];
     for (auto& site : seg) {
-      site.getField() += numint.IntegrateField(site.getPos());
-      site.getPotential() += numint.IntegratePotential(site.getPos());
+      site.V() += numint.IntegrateV(site.getPos());
     }
   }
 

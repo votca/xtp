@@ -60,30 +60,12 @@ void MolPol::Initialize(tools::Property& options) {
   _tolerance_pol = options.ifExistsReturnElseReturnDefault<double>(
       key + ".tolerance", _tolerance_pol);
 
-  _alpha =
-      options.ifExistsReturnElseReturnDefault<double>(key + ".alpha", _alpha);
-
   _max_iter = options.ifExistsReturnElseReturnDefault<int>(key + ".iterations",
                                                            _max_iter);
 }
 
-Eigen::Vector3d MolPol::Polarize(PolarRegion& pol,
+Eigen::Vector3d MolPol::Polarize(const PolarSegment& input,
                                  const Eigen::Vector3d& ext_field) const {
-  pol.Reset();
-  std::vector<std::unique_ptr<Region>> empty;
-  PolarSegment& workmol = pol[0];
-  for (PolarSite& site : workmol) {
-    site.getField() = ext_field;
-  }
-  pol.Evaluate(empty);
-  Eigen::Vector3d induced_dipole = Eigen::Vector3d::Zero();
-  for (const PolarSite& site : workmol) {
-    induced_dipole += site.getInduced_Dipole();
-  }
-  return induced_dipole;
-}
-
-Eigen::Matrix3d MolPol::CalcClassicalPol(const PolarSegment& input) const {
   Logger log;
   log.setMultithreading(false);
   log.setPreface(logINFO, (boost::format("\n ...")).str());
@@ -97,18 +79,34 @@ Eigen::Matrix3d MolPol::CalcClassicalPol(const PolarSegment& input) const {
   pol.Initialize(_polar_options);
   pol.push_back(input);
 
-  double eVnm_2_hrtbohr = tools::conv::ev2hrt / tools::conv::nm2bohr;
-  Eigen::Matrix3d polarisation = Eigen::Matrix3d::Zero();
-  Eigen::Vector3d zero = Polarize(pol, Eigen::Vector3d::Zero());
-  Eigen::Vector3d ext_field = 0.1 * eVnm_2_hrtbohr * Eigen::Vector3d::UnitX();
-  polarisation.col(0) = Polarize(pol, ext_field);
-  ext_field = 0.1 * eVnm_2_hrtbohr * Eigen::Vector3d::UnitY();
-  polarisation.col(1) = Polarize(pol, ext_field);
-  ext_field = 0.1 * eVnm_2_hrtbohr * Eigen::Vector3d::UnitZ();
-  polarisation.col(2) = Polarize(pol, ext_field);
-  polarisation.colwise() -= zero;
+  std::vector<std::unique_ptr<Region>> empty;
+  PolarSegment& workmol = pol[0];
+  for (PolarSite& site : workmol) {
+    site.V().segment<3>(1) = ext_field;
+  }
+  pol.Evaluate(empty);
+  Eigen::Vector3d induced_dipole = Eigen::Vector3d::Zero();
+  for (const PolarSite& site : workmol) {
+    induced_dipole += site.Induced_Dipole();
+  }
   std::cout << log;
-  return -polarisation / (0.1 * eVnm_2_hrtbohr);
+  return induced_dipole;
+}
+
+Eigen::Matrix3d MolPol::CalcClassicalPol(const PolarSegment& input) const {
+
+  double eVnm_2_hrtbohr = tools::conv::ev2hrt / tools::conv::nm2bohr;
+  double fieldstrength = (0.1 * eVnm_2_hrtbohr);
+  Eigen::Matrix3d polarisation = Eigen::Matrix3d::Zero();
+  Eigen::Vector3d zero = Polarize(input, Eigen::Vector3d::Zero());
+  Eigen::Vector3d ext_field = fieldstrength * Eigen::Vector3d::UnitX();
+  polarisation.col(0) = Polarize(input, ext_field);
+  ext_field = fieldstrength * Eigen::Vector3d::UnitY();
+  polarisation.col(1) = Polarize(input, ext_field);
+  ext_field = fieldstrength * Eigen::Vector3d::UnitZ();
+  polarisation.col(2) = Polarize(input, ext_field);
+  polarisation.colwise() -= zero;
+  return -polarisation / fieldstrength;
 }
 
 void MolPol::PrintPolarisation(const Eigen::Matrix3d& result) const {
@@ -117,6 +115,12 @@ void MolPol::PrintPolarisation(const Eigen::Matrix3d& result) const {
   std::cout << std::endl << _polarisation_target * conversion << std::flush;
   std::cout << std::endl << "Scaled classical polarisation [A^3]" << std::flush;
   std::cout << std::endl << result * conversion << std::flush;
+  std::cout << std::endl
+            << "EigenValues classical polarisation [A^3]" << std::flush;
+  Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es2;
+  es2.computeDirect(result, Eigen::EigenvaluesOnly);
+  Eigen::Matrix3d diag = es2.eigenvalues().asDiagonal();
+  std::cout << std::endl << diag * conversion << std::flush;
 }
 
 bool MolPol::Evaluate() {
@@ -134,7 +138,7 @@ bool MolPol::Evaluate() {
     const double pol_volume_iter =
         std::pow(es2.eigenvalues().prod(), 1.0 / 3.0);
     double scale = pol_volume_target / pol_volume_iter - 1;
-    std::cout << "Iteration " << iter + 1 << " of " << _max_iter
+    std::cout << "\nIteration " << iter + 1 << " of " << _max_iter
               << " target:" << pol_volume_target
               << " current:" << pol_volume_iter << std::endl;
 
@@ -159,7 +163,7 @@ bool MolPol::Evaluate() {
     for (int i = 0; i < polar.size(); i++) {
       PolarSite& site = polar[i];
       Eigen::Matrix3d local_pol = site.getPolarisation();
-      site.setPolarisation(local_pol * (1 + scale * _weights[i]));
+      site.setPolarisation(local_pol * std::pow(1 + scale * _weights[i], 2));
     }
   }
   return true;

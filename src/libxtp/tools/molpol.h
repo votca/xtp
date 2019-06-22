@@ -44,7 +44,7 @@ class MolPol : public QMTool {
   void PrintPolarisation(const Eigen::Matrix3d& result) const;
 
   Eigen::Matrix3d CalcClassicalPol(const PolarSegment& input) const;
-  Eigen::Vector3d Polarize(PolarRegion& pol,
+  Eigen::Vector3d Polarize(const PolarSegment& input,
                            const Eigen::Vector3d& ext_field) const;
   Logger _log;
 
@@ -58,7 +58,6 @@ class MolPol : public QMTool {
 
   double _tolerance_pol = 1e-4;
   int _max_iter = 1000;
-  double _alpha = 1.0;
 };
 
 }  // namespace xtp

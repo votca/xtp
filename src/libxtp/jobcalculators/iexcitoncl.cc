@@ -94,10 +94,8 @@ Job::JobResult IEXCITON::EvalJob(Topology& top, Job& job, QMThread& opThread) {
   Property job_input = job.getInput();
   vector<Property*> segment_list = job_input.Select("segment");
   int ID_A = segment_list.front()->getAttribute<int>("id");
-  string type_A = segment_list.front()->getAttribute<string>("type");
   string mps_fileA = segment_list.front()->getAttribute<string>("mps_file");
   int ID_B = segment_list.back()->getAttribute<int>("id");
-  string type_B = segment_list.back()->getAttribute<string>("type");
   string mps_fileB = segment_list.back()->getAttribute<string>("mps_file");
 
   Segment& seg_A = top.getSegment(ID_A);
@@ -118,7 +116,6 @@ Job::JobResult IEXCITON::EvalJob(Topology& top, Job& job, QMThread& opThread) {
   StaticSegment seg1 = map.map(*(pair->Seg1()), mps_fileA);
   StaticSegment seg2 = map.map(*(pair->Seg2PbCopy()), mps_fileB);
   eeInteractor actor;
-
   double JAB = actor.InteractStatic(seg1, seg2);
   _cutoff = 0;
   Property job_summary;
