@@ -37,6 +37,7 @@ stages:
     - git submodule update --recursive --init
     - git -C ${CI_PROJECT_NAME} fetch ${CI_PROJECT_DIR} commit_of_build_${CI_BUILD_ID}
     - git -C ${CI_PROJECT_DIR} branch -d commit_of_build_${CI_BUILD_ID}
+    - echo "CI PROJECT DIR ${CI_PROJECT_DIR} CI PROJECT NAME  ${CI_PROJECT_NAME} checkout commit " 
     - git -C ${CI_PROJECT_NAME} checkout -f ${CI_COMMIT_SHA}
     - mkdir -p build
     - pushd build
