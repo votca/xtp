@@ -68,9 +68,9 @@ class PolarSite : public StaticSite {
   const Eigen::Vector3d& Induced_Dipole() const { return _induced_dipole; }
   Eigen::Vector3d& Induced_Dipole() { return _induced_dipole; }
 
-  double Energy() const { return FieldEnergy() + InternalEnergy(); }
+  double Energy() const override { return FieldEnergy() + InternalEnergy(); }
 
-  double FieldEnergy() const;
+  double FieldEnergy() const override;
 
   double InternalEnergy() const;
 
