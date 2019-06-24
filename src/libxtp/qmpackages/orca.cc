@@ -683,7 +683,7 @@ bool Orca::ParseMOsFile(Orbitals& orbitals) {
   int op_read = *((int*)buffer.data());
   infile.seekg(offset + 4, ios::beg);
   infile.read(buffer.data(), 4);
-  if(!infile){
+  if (!infile) {
     throw runtime_error("Problem reading " + _mo_file_name + " file");
   }
   int dim_read = *((int*)buffer.data());
@@ -693,8 +693,9 @@ bool Orca::ParseMOsFile(Orbitals& orbitals) {
   int n = op_read * dim_read * dim_read;
   for (int i = 0; i < n; i++) {
     infile.read(buffer.data(), 8);
-    if(!infile){
-      throw runtime_error("Problem reading " + _mo_file_name + " file at i " + to_string(i));
+    if (!infile) {
+      throw runtime_error("Problem reading " + _mo_file_name + " file at i " +
+                          to_string(i));
     }
     double mocoeff = *((double*)buffer.data());
     coefficients.push_back(mocoeff);

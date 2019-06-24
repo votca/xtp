@@ -259,8 +259,8 @@ Job::JobResult EQM::EvalJob(Topology& top, Job& job, QMThread& opThread) {
           "MP_FILES/" + frame_dir + "/" + esp2multipole.GetStateString();
       esp2multipole.Extractingcharges(orbitals);
       std::string mps_file = (format("%1%_%2%_%3%.mps") % segType % segId %
-                  esp2multipole.GetStateString())
-                     .str();
+                              esp2multipole.GetStateString())
+                                 .str();
       boost::filesystem::create_directories(ESPDIR);
       esp2multipole.WritetoFile(ESPDIR + "/" + mps_file, orbitals);
       XTP_LOG_SAVE(logDEBUG, pLog)
