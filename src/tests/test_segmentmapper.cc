@@ -16,13 +16,15 @@
 #define BOOST_TEST_MAIN
 
 #define BOOST_TEST_MODULE segmentmapper_test
+#include "../../include/votca/xtp/segmentmapper.h"
 #include <boost/test/unit_test.hpp>
 #include <stdio.h>
 #include <stdlib.h>
-#include <votca/xtp/segmentmapper.h>
 
 using namespace votca::xtp;
 BOOST_AUTO_TEST_SUITE(segmentmapper_test)
 
-BOOST_AUTO_TEST_CASE(mapping_test) {}
+BOOST_AUTO_TEST_CASE(mapping_test) {
+  std::cout << "Test is Empty" << std::endl;
+}
 BOOST_AUTO_TEST_SUITE_END()
