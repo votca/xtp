@@ -110,7 +110,7 @@ class PolarSite : public StaticSite {
     double pyy;
     double pyz;
     double pzz;
-    
+
     double d_x_ind;
     double d_y_ind;
     double d_z_ind;
