@@ -281,7 +281,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_g
       // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
       const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
       Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
-      Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // lhs
+      Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // rhs
       Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target
       // Find best root
       double root_value_max =  0.0;
@@ -303,7 +303,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_g
           double root_score_cur;
           if (root_score_method == 0 ) { // Distance
             root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
-          } else if (root_score_method == 1) { // Spectral weight
+          } else if (root_score_method == 1) { // Pole/spectral/QP weight
             double dfdx = (fx_cur[ix + 1] - fx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
             root_score_cur = 1.0 / (1.0 - dfdx); // Should be in (0, 1)
             if (root_score_cur < 1e-5) { continue; } // Invalid root
