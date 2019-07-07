@@ -59,6 +59,10 @@ Eigen::MatrixXd Sigma_Spectral::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
+  
+  if (CustomOpts::SigmaCNoOffdiags()) {
+    return result;
+  }
 
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {

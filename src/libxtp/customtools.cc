@@ -72,7 +72,9 @@ void CustomOpts::Parse(tools::Property& options) {
       "customopts.gw_energies_import", _gw_energies_import);
   _gw_energies_export = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.gw_energies_export", _gw_energies_export);
-    _export_binary = options.ifExistsReturnElseReturnDefault<bool>(
+  _sigma_c_no_offdiags = options.ifExistsReturnElseReturnDefault<bool>(
+      "customopts.sigma_c_no_offdiags", _sigma_c_no_offdiags);
+   _export_binary = options.ifExistsReturnElseReturnDefault<bool>(
       "customopts.export_binary", _export_binary);
 }
 
@@ -88,6 +90,7 @@ void CustomOpts::Report() {
   std::cout << std::endl << "Sigm. mat. export: " << _sigma_matrix_export;
   std::cout << std::endl << "GW energies import: " << _gw_energies_import;
   std::cout << std::endl << "GW energies export: " << _gw_energies_export;
+  std::cout << std::endl << "Sigma C no off-diags: " << _sigma_c_no_offdiags;
   std::cout << std::endl << "Export binary: " << _export_binary;
 }
 

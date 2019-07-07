@@ -32,6 +32,8 @@ class CustomOpts {
   // GW Energies import/export
   bool _gw_energies_import = false;
   bool _gw_energies_export = false;
+  // Sigma_c off-diag
+  bool _sigma_c_no_offdiags = false;
   // Misc.
   bool _export_binary = false;
   
@@ -54,6 +56,8 @@ class CustomOpts {
   // RPA Energies import/export
   static bool GWEnergiesImport() { return _instance._gw_energies_import; }
   static bool GWEnergiesExport() { return _instance._gw_energies_export; }
+  // Sigma_c off-diag
+  static bool SigmaCNoOffdiags() { return _instance._sigma_c_no_offdiags; }
   // Misc.
   static bool ExportBinary() { return _instance._export_binary; }
 };
