@@ -172,7 +172,7 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
   return energies_converged;
 }
 
-Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_gw) {
+Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   const double alpha = 0.0; // TODO: Mixing parameter
   // TODO: Make "Update" function that updates members variables: _Sigma_c,
   // _gwa_energies after each iteration.
@@ -249,104 +249,118 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_g
     // Define constants
     const double rx0 = _opt.gw_sc_root_finder_range; // Range
     const int    nx  = _opt.gw_sc_root_finder_steps; // Steps
-    const double rf  = _opt.gw_sc_root_finder_refine; // Refinement factor
     const double inf = std::numeric_limits<double>::infinity();
     // Grid refinement
-    const double dx_min = _opt.g_sc_limit * (nx - 1.0) / (2.0 * rx0);
-    const int    nr_max = std::ceil(std::log(dx_min) / std::log(rf));
-    const double rx     = rx0 * std::pow(rf, std::min(nr_max, i_gw));
-    // Prepare vectors
-    const Eigen::VectorXd xx_off = Eigen::VectorXd::LinSpaced(nx, -rx, +rx);
-    const Eigen::VectorXd sx_vxc = _Sigma_x.diagonal() - _vxc.diagonal();
-    // Evaluate sigma_c on all grid points
-    Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(nx, _qptotal); // TODO: Do not cache this
-    Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(nx, _qptotal);
-    CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Evaluating sigma_c on grid:"
-        << " nx: " << nx << " rx: " << rx << std::flush;
-    // TODO: Is it faster to first fill the columns and then transpose the entire matrix?
-    for (int ix = 0; ix < nx; ix++) {
-      Eigen::VectorXd xx_cur = frequencies.array() + xx_off[ix];
-      xx.row(ix) = xx_cur;
-      fx.row(ix) = _sigma->CalcCorrelationDiag(xx_cur);
-    } // Grid point ix
-    // For each state, find best root
-    Eigen::VectorXd root_values = Eigen::VectorXd::Zero(_qptotal);
-    Eigen::VectorXd root_scores = Eigen::VectorXd::Zero(_qptotal);
-    CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Finding QP roots " << std::flush;
-    // TODO: Multi-thread?
-    for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
-      //    e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
-      // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
-      const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
-      Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
-      Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // rhs
-      Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target
-      // Find best root
-      double root_value_max =  0.0;
-      double root_score_max = -1.0;
-      int root_idx = 0;
-      for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
-        if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
-          // Estimate the root
-          double root_value_cur;
-          if (root_value_method == 0 ) { // Average
-            root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0;
-          } else if (root_value_method == 1) { // Fixed-point
-            double dgdx = (gx_cur[ix + 1] - gx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
-            root_value_cur = xx_cur[ix] - gx_cur[ix] / dgdx;
-          } else {
-            throw std::runtime_error("Grid root-finder: Invalid value method");
-          }
-          // Score the root
-          double root_score_cur;
-          if (root_score_method == 0 ) { // Distance
-            root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
-          } else if (root_score_method == 1) { // Pole/spectral/QP weight
-            double dfdx = (fx_cur[ix + 1] - fx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
-            root_score_cur = 1.0 / (1.0 - dfdx); // Should be in (0, 1)
-            if (root_score_cur < 1e-5) { continue; } // Invalid root
-          } else {
-            throw std::runtime_error("Grid root-finder: Invalid score method");
-          }
-          // Check if the root is better
-          if (root_score_cur > root_score_max) { // We found a closer root
-            root_value_max = root_value_cur;
-            root_score_max = root_score_cur;
-          }
-          // Display the root
-          if (tools::globals::verbose && i_qp <= _opt.homo) {
-            CTP_LOG(ctp::logINFO, _log)
-                << boost::format(
-                    "Level = %1$4d Index = %2$4d Value = %3$+1.6f Ha Score = %4$+1.6f") %
-                    i_qp % root_idx % root_value_cur % root_score_cur
-                << std::flush;
-          }
-          root_idx++;
-        }
+    const double f_refine     = _opt.gw_sc_root_finder_refine;
+    const bool   b_refine     = f_refine > 0.0 && f_refine < 1.0;
+    const double dx_min       = _opt.g_sc_limit * (nx - 1.0) / (2.0 * rx0);
+    const int    n_refine_max = std::ceil(std::log(dx_min) / std::log(f_refine));
+
+    int n_refine = 0; // Refinement number
+    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+      // Grid refinement
+      const double rx = rx0 * std::pow(f_refine, n_refine);//std::min(n_refine_max, n_refine));
+      const double dx = (2.0 * rx) / (nx - 1.0);
+      // Prepare vectors
+      const Eigen::VectorXd xx_off = Eigen::VectorXd::LinSpaced(nx, -rx, +rx);
+      const Eigen::VectorXd sx_vxc = _Sigma_x.diagonal() - _vxc.diagonal();
+      // Evaluate sigma_c on all grid points
+      Eigen::MatrixXd xx = Eigen::MatrixXd::Zero(nx, _qptotal); // TODO: Do not cache this
+      Eigen::MatrixXd fx = Eigen::MatrixXd::Zero(nx, _qptotal);
+      if (tools::globals::verbose) {
+        CTP_LOG(ctp::logDEBUG, _log)
+            << ctp::TimeStamp() << " Grid:"
+            << " nx: " << nx << " rx: " << rx << " dx: " << dx << std::flush;
+      }
+      // TODO: Is it faster to first fill the columns and then transpose the entire matrix?
+      for (int ix = 0; ix < nx; ix++) {
+        Eigen::VectorXd xx_cur = frequencies.array() + xx_off[ix];
+        xx.row(ix) = xx_cur;
+        fx.row(ix) = _sigma->CalcCorrelationDiag(xx_cur);
       } // Grid point ix
-      root_values[i_qp] = root_value_max;
-      root_scores[i_qp] = root_score_max;
-    } // State i_qp
-    // Display all roots
-    if (tools::globals::verbose) {
-      CTP_LOG(ctp::logDEBUG, _log)
-          << ctp::TimeStamp() << " QP roots " << std::flush;
+      // For each state, find best root
+      Eigen::VectorXd root_values = Eigen::VectorXd::Zero(_qptotal);
+      Eigen::VectorXd root_scores = Eigen::VectorXd::Zero(_qptotal);
+      // TODO: Multi-thread?
       for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
-        CTP_LOG(ctp::logINFO, _log)
-            << boost::format(
-                "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha Score = %4$+1.6f") %
-                i_qp % frequencies[i_qp] % root_values[i_qp] % root_scores[i_qp]
-            << std::flush;
+        //    e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
+        // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
+        const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
+        Eigen::VectorXd xx_cur = xx.col(i_qp);             // lhs
+        Eigen::VectorXd fx_cur = fx.col(i_qp).array() + c; // rhs
+        Eigen::VectorXd gx_cur = fx_cur - xx_cur;          // target
+        // Find best root
+        double root_value_max =  0.0;
+        double root_score_max = -1.0;
+        int root_idx = 0;
+        for (int ix = 0; ix < nx - 1; ix++) { // TODO: Loop only over sign-changes
+          if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) { // We have a sign change
+            // Estimate the root
+            double root_value_cur;
+            if (root_value_method == 0 ) { // Average
+              root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0;
+            } else if (root_value_method == 1) { // Fixed-point
+              double dgdx = (gx_cur[ix + 1] - gx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
+              root_value_cur = xx_cur[ix] - gx_cur[ix] / dgdx;
+            } else {
+              throw std::runtime_error("Grid root-finder: Invalid value method");
+            }
+            // Score the root
+            double root_score_cur;
+            if (root_score_method == 0 ) { // Distance
+              root_score_cur = rx - std::abs(root_value_cur - frequencies[i_qp]);
+            } else if (root_score_method == 1) { // Pole/spectral/QP weight
+              double dfdx = (fx_cur[ix + 1] - fx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
+              root_score_cur = 1.0 / (1.0 - dfdx); // Should be in (0, 1)
+              if (root_score_cur < 1e-5) { continue; } // Invalid root
+            } else {
+              throw std::runtime_error("Grid root-finder: Invalid score method");
+            }
+            // Check if the root is better
+            if (root_score_cur > root_score_max) { // We found a closer root
+              root_value_max = root_value_cur;
+              root_score_max = root_score_cur;
+            }
+            // Display the root
+            if (tools::globals::verbose && i_qp <= _opt.homo) {
+              CTP_LOG(ctp::logINFO, _log)
+                  << boost::format(
+                      "Level = %1$4d Index = %2$4d Value = %3$+1.6f Ha Score = %4$+1.6f") %
+                      i_qp % root_idx % root_value_cur % root_score_cur
+                  << std::flush;
+            }
+            root_idx++;
+          }
+        } // Grid point ix
+        root_values[i_qp] = root_value_max;
+        root_scores[i_qp] = root_score_max;
+      } // State i_qp
+      // Display all roots
+      if (tools::globals::verbose) {
+        CTP_LOG(ctp::logDEBUG, _log)
+            << ctp::TimeStamp() << " QP roots " << std::flush;
+        for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
+          CTP_LOG(ctp::logINFO, _log)
+              << boost::format(
+                  "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha Score = %4$+1.6f") %
+                  i_qp % frequencies[i_qp] % root_values[i_qp] % root_scores[i_qp]
+              << std::flush;
+        }
+      }
+      // Update member variables
+      _gwa_energies = (root_scores.array() >= 0).select(root_values, frequencies);
+      _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(_gwa_energies);
+      if (IterConverged(i_freq, frequencies)) {
+        break;
+      } else {
+        frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
+        if (b_refine) {
+          n_refine++;
+        } else {
+          break;
+        }
       }
     }
-    // Update member variables
-    _gwa_energies = (root_scores.array() >= 0).select(root_values, frequencies);
-    _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(_gwa_energies);
-    // TODO: Check convergence criteria?
-    // Update frequencies
-    frequencies = (1 - alpha) * _gwa_energies + alpha * frequencies;
 
   } else {
     throw std::runtime_error("Invalid GW SC root finder");
@@ -427,7 +441,7 @@ void GW::CalculateGWPerturbation() {
     _sigma->PrepareScreening();
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated screening via RPA  " << std::flush;
-    frequencies = CalculateExcitationFreq(frequencies, i_gw);
+    frequencies = CalculateExcitationFreq(frequencies);
     CTP_LOG(ctp::logDEBUG, _log)
         << ctp::TimeStamp() << " Calculated diagonal part of Sigma  "
         << std::flush;
@@ -468,16 +482,16 @@ void GW::CalculateGWPerturbation() {
   PrintGWA_Energies();
 
   if (CustomOpts::SigmaExportRange() > 0 && CustomOpts::SigmaExportConverged()) {
-    ExportCorrelationDiags(frequencies);
+    ExportCorrelationDiags(_gwa_energies);
   }
   if (CustomOpts::GWEnergiesExport() && !CustomOpts::GWEnergiesImport()) {
     CTP_LOG(ctp::logDEBUG, _log)
-        << ctp::TimeStamp() << " Exporting rpa energies (/frequencies) " << std::flush;
-    Eigen::VectorXd rpa_energies_vec = frequencies;
-    Eigen::MatrixXd rpa_energies_mat;
-    rpa_energies_mat.resize(rpa_energies_vec.size(), 1);
-    rpa_energies_mat << rpa_energies_vec;
-    CustomTools::ExportMatBinary("rpa_energies.bin", rpa_energies_mat);
+        << ctp::TimeStamp() << " Exporting gw energies (/frequencies) " << std::flush;
+    Eigen::VectorXd gw_energies_vec = _gwa_energies;
+    Eigen::MatrixXd gw_energies_mat;
+    gw_energies_mat.resize(gw_energies_vec.size(), 1);
+    gw_energies_mat << gw_energies_vec;
+    CustomTools::ExportMatBinary("gw_energies.bin", gw_energies_mat);
   }
 }
 

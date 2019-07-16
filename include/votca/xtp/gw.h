@@ -57,7 +57,7 @@ class GW {
     int    gw_sc_root_finder_method = 0;
     double gw_sc_root_finder_range  = 1.0;
     int    gw_sc_root_finder_steps  = 101;
-    double gw_sc_root_finder_refine = 0.1; // Grid refinement factor for each gw iter
+    double gw_sc_root_finder_refine = 1.0; // Grid refinement factor for each gw iter
   };
 
   void configure(const options& opt);
@@ -95,7 +95,7 @@ class GW {
 
   RPA _rpa;
 
-  Eigen::VectorXd CalculateExcitationFreq(Eigen::VectorXd frequencies, int i_gw);
+  Eigen::VectorXd CalculateExcitationFreq(Eigen::VectorXd frequencies);
   double CalcHomoLumoShift() const;
   Eigen::VectorXd ScissorShift_DFTlevel(
       const Eigen::VectorXd& dft_energies) const;
@@ -104,8 +104,8 @@ class GW {
   Eigen::VectorXd CalcDiagonalEnergies() const;
   bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                  double epsilon) const;
-  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
   bool IterConverged(int i_freq, const Eigen::MatrixXd& frequencies) const;
+  void ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const;
 };
 }  // namespace xtp
 }  // namespace votca
