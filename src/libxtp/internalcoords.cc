@@ -425,14 +425,12 @@ void InternalCoords::CalculateAnglesDihedrals() {
   }
 }
 
-inline int delta(const int& i, const int& j) {
+inline int delta(int i, int j) {
   if (i == j) return 1;
   return 0;
 }
 
-inline int zeta(const int& a, const int& m, const int& n) {
-  return (delta(a, m) - delta(a, n));
-}
+inline int zeta(int a, int m, int n) { return (delta(a, m) - delta(a, n)); }
 
 inline Eigen::Vector3d GetPerpTo(const Eigen::Vector3d& u,
                                  const Eigen::Vector3d& v) {
@@ -640,19 +638,19 @@ InternalCoords::InternalCoords(const Orbitals& orb, bool withAux)
   PopulateWilsonMatrix();
 }
 
-void InternalCoords::Increment(Eigen::VectorXd dx) { CoordBase::Increment(dx); }
+int InternalCoords::getNumBonds() const { return _numBonds; }
 
-int InternalCoords::getNumBonds() { return _numBonds; }
+int InternalCoords::getNumHBonds() const { return _numHBonds; }
 
-int InternalCoords::getNumHBonds() { return _numHBonds; }
+int InternalCoords::getNumAngles() const { return _numAngles; }
 
-int InternalCoords::getNumAngles() { return _numAngles; }
+int InternalCoords::getNumAuxBonds() const { return _numAuxBonds; }
 
-int InternalCoords::getNumAuxBonds() { return _numAuxBonds; }
+int InternalCoords::getNumDihedrals() const { return _numDihedrals; }
 
-int InternalCoords::getNumDihedrals() { return _numDihedrals; }
-
-Eigen::MatrixXd InternalCoords::getWilsonBMatrix() { return _wilsonBMatrix; }
+const Eigen::MatrixXd& InternalCoords::getWilsonBMatrix() const {
+  return _wilsonBMatrix;
+}
 
 std::ostream& operator<<(std::ostream& s, const InternalCoords& ic) {
   s << "Bonds " << std::endl;

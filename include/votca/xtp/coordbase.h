@@ -14,14 +14,14 @@ class CoordBase {
  public:
   CoordBase();
 
-  Eigen::VectorXd Vector();
-  Eigen::VectorXd operator()();
+  const Eigen::VectorXd& Vector() const;
+  const Eigen::VectorXd& operator()() const;
 
-  const Orbitals& System();
+  const Orbitals& System() const;
 
-  void Increment(Eigen::VectorXd dx);
-  int getNumAtoms();
-  bool isApprox(CoordBase& other, const double& tol);
+  void Increment(const Eigen::VectorXd& dx);
+  int getNumAtoms() const;
+  bool isApprox(CoordBase& other, const double& tol) const;
 
  protected:
   // CoordBase cannot be instantiated

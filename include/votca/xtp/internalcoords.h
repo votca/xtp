@@ -23,15 +23,12 @@ class InternalCoords : public CoordBase {
   InternalCoords(const Orbitals& orb, bool _withAuxiliary);
   InternalCoords(const Orbitals& orb);
 
-  int getPossibleNumMols();
-  int getNumBonds();
-  int getNumHBonds();
-  int getNumAngles();
-  int getNumAuxBonds();
-  int getNumDihedrals();
-  using CoordBase::Increment;
-  void Increment(Eigen::VectorXd dx);
-  Eigen::MatrixXd getWilsonBMatrix();
+  int getNumBonds() const;
+  int getNumHBonds() const;
+  int getNumAngles() const;
+  int getNumAuxBonds() const;
+  int getNumDihedrals() const;
+  const Eigen::MatrixXd& getWilsonBMatrix() const;
 
   friend std::ostream& operator<<(std::ostream& s, const InternalCoords& ic);
 

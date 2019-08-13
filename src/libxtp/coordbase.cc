@@ -9,13 +9,13 @@ CoordBase::CoordBase(const CoordType& type, const Orbitals& system)
       _numAtoms(_qmMolecule.size()),
       _system(system) {}
 
-Eigen::VectorXd CoordBase::Vector() { return _coords; }
+const Eigen::VectorXd& CoordBase::Vector() const { return _coords; }
 
-Eigen::VectorXd CoordBase::operator()() { return Vector(); }
+const Eigen::VectorXd& CoordBase::operator()() const { return Vector(); }
 
-const Orbitals& CoordBase::System() { return _system; }
+const Orbitals& CoordBase::System() const { return _system; }
 
-void CoordBase::Increment(Eigen::VectorXd dx) {
+void CoordBase::Increment(const Eigen::VectorXd& dx) {
   if (dx.size() != _coords.size()) {
     std::ostringstream stream;
     stream << "Dimensions do not match." << std::endl
@@ -28,9 +28,9 @@ void CoordBase::Increment(Eigen::VectorXd dx) {
   _coords += dx;
 }
 
-int CoordBase::getNumAtoms() { return _numAtoms; }
+int CoordBase::getNumAtoms() const { return _numAtoms; }
 
-bool CoordBase::isApprox(CoordBase& other, const double& tol) {
+bool CoordBase::isApprox(CoordBase& other, const double& tol) const {
   return _coords.isApprox(other.Vector(), tol);
 }
 
