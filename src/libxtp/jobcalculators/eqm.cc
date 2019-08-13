@@ -254,6 +254,7 @@ Job::JobResult EQM::EvalJob(const Topology& top, Job& job, QMThread& opThread) {
   if (_do_esp) {
     XTP_LOG_SAVE(logDEBUG, pLog) << "Running ESPFIT" << std::flush;
     try {
+      std::string mps_file;
       Esp2multipole esp2multipole = Esp2multipole(pLog);
       esp2multipole.Initialize(_esp_options);
       std::string ESPDIR =

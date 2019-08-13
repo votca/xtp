@@ -34,7 +34,7 @@ double MMRegion<T>::charge() const {
 }
 
 template <class T>
-void MMRegion<T>::WritePDB(csg::PDBWriter& writer) const {
+void MMRegion<T>::WritePDB(csg::PDBWriter<csg::Topology>& writer) const {
   for (const auto& seg : _segments) {
     writer.WriteContainer(seg);
   }

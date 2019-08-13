@@ -56,7 +56,7 @@ class Atom {
   Atom(data& d) { ReadData(d); }
 
   tools::StructureParameters getParameters() const;
-  static std::string GetElementFromMDName(const std::string& MDName);
+  static std::string GetElementFromString(const std::string& MDName);
 
   int getId() const { return _id; }
   const std::string& getName() const { return _name; }

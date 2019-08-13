@@ -70,9 +70,9 @@ void Md2QmEngine::CheckMappingFile(tools::Property& topology_map) const {
 }
 
 int Md2QmEngine::DetermineAtomNumOffset(
-    const csg::Molecule* mol, const std::vector<int>& atom_ids_map) const {
+    const csg::Molecule& mol, const std::vector<int>& atom_ids_map) const {
   std::vector<int> IDs;
-  IDs.reserve(mol->BeadCount());
+  IDs.reserve(mol.BeadCount());
   for (const csg::Bead* bead : mol.getBeads()) {
     IDs.push_back(bead->getId());
   }

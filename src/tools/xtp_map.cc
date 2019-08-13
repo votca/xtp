@@ -151,11 +151,11 @@ void XtpMap::Run() {
     std::map<std::string, const CSG::Molecule*> firstmolecule;
 
     std::map<std::string, int> molecule_names;
-    for (const CSG::Molecule* mol : mdtopol.Molecules()) {
-      if (!molecule_names.count(mol->getName())) {
-        firstmolecule[mol->getName()] = mol;
+    for (const CSG::Molecule& mol : mdtopol) {
+      if (!molecule_names.count(mol.getType())) {
+        firstmolecule[mol.getType()] = &mol;
       }
-      molecule_names[mol->getName()]++;
+      molecule_names[mol.getType()]++;
     }
     for (const auto& mol : molecule_names) {
       std::cout << "Found " << mol.second << " with name " << mol.first
@@ -179,7 +179,7 @@ void XtpMap::Run() {
       const CSG::Molecule* csgmol = firstmolecule[mol.first];
       std::vector<const CSG::Bead*> sortedbeads;
       sortedbeads.reserve(csgmol->BeadCount());
-      for (const CSG::Bead* bead : csgmol->Beads()) {
+      for (const CSG::Bead* bead : csgmol->getBeads()) {
         sortedbeads.push_back(bead);
       }
       std::sort(sortedbeads.begin(), sortedbeads.end(),
@@ -188,8 +188,8 @@ void XtpMap::Run() {
                 });
 
       for (const CSG::Bead* bead : sortedbeads) {
-        atomnames += " " + std::to_string(bead->getResnr()) + ":" +
-                     bead->getName() + ":" + std::to_string(bead->getId());
+        atomnames += " " + std::to_string(bead->getResidueId()) + ":" +
+                     bead->getElement() + ":" + std::to_string(bead->getId());
       }
       fragment.add("name", "UPTOYOU_BUTUNIQUE");
       fragment.add("mdatoms", atomnames);
@@ -202,14 +202,14 @@ void XtpMap::Run() {
       template_mapfile << mapfile_prop << std::flush;
       template_mapfile.close();
 
-      std::cout << "MOLECULETYPE " << csgmol->getName() << std::endl;
+      std::cout << "MOLECULETYPE " << csgmol->getType() << std::endl;
       std::cout << "SAMPLECOORDINATES" << std::endl;
       std::cout << "ID NAME COORDINATES[Angstroem] " << std::endl;
       for (const CSG::Bead* bead : sortedbeads) {
         Eigen::Vector3d pos = bead->getPos() * votca::tools::conv::nm2ang;
         std::string output =
             (boost::format("%1$i %2$s %3$+1.4f %4$+1.4f %5$+1.4f\n") %
-             bead->getId() % bead->getName() % pos[0] % pos[1] % pos[2])
+             bead->getId() % bead->getElement() % pos[0] % pos[1] % pos[2])
                 .str();
         std::cout << output;
       }
