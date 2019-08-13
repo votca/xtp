@@ -101,10 +101,9 @@ void InternalCoords::ConnectMolecules() {
 
   int numComponents =
       boost::connected_components(_bondGraph, idxInComponent.data());
-  _possibleNumMols = numComponents;
 
   if (numComponents > 1) {
-    std::vector<std::vector<int>> components(_possibleNumMols);
+    std::vector<std::vector<int>> components(numComponents);
 
     for (int atomIdx = 0; atomIdx < _numAtoms; ++atomIdx) {
       int componentIdx = idxInComponent[atomIdx];
@@ -372,8 +371,6 @@ void InternalCoords::CalculateAnglesDihedrals() {
     int checkCountMax = factorial(_numAtoms) / (factorial(4));
     do {
       DihedralIdx ind = RandomSelector();
-      std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
-                << ind[3] << ")" << std::endl;
       bool okay = true;
       for (int i = 0; i < 4; ++i) {
         for (int j = i + 1; i < 4; ++i) {
@@ -393,8 +390,6 @@ void InternalCoords::CalculateAnglesDihedrals() {
         const int atomBIdx = ind[1];
         const int atomCIdx = ind[2];
         const int atomDIdx = ind[3];
-        // std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
-        //           << ind[3] << ")"<< std::endl;
 
         Eigen::Vector3d BAVec =
             _qmMolecule[atomAIdx].getPos() - _qmMolecule[atomBIdx].getPos();
@@ -419,8 +414,6 @@ void InternalCoords::CalculateAnglesDihedrals() {
           auto index = DihedralIdx{atomAIdx, atomBIdx, atomCIdx, atomDIdx};
 
           if (!_dihedrals.Contains(index)) {
-            std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
-                      << ind[3] << ")" << std::endl;
             _dihedrals[index] = std::acos(cosPhi);
             _vector.emplace_back(std::acos(cosPhi));
             _numDihedrals += 1;
@@ -488,9 +481,7 @@ void InternalCoords::PopulateWilsonMatrix() {
     auto writeBondElem = [&](int a) -> void {
       double z_amn = zeta(a, atIdxM, atIdxN);
       a *= 3;
-      _wilsonBMatrix(b, a + 0) = z_amn * bondVec.x();
-      _wilsonBMatrix(b, a + 1) = z_amn * bondVec.y();
-      _wilsonBMatrix(b, a + 2) = z_amn * bondVec.z();
+      _wilsonBMatrix.row(b).segment<3>(a) = z_amn * bondVec;
     };
 
     writeBondElem(atIdxM);
@@ -543,9 +534,7 @@ void InternalCoords::PopulateWilsonMatrix() {
       Eigen::Vector3d t =
           zeta(a, atIdxM, atIdxO) * uw + zeta(a, atIdxN, atIdxO) * wv;
       a *= 3;
-      _wilsonBMatrix(idx, a + 0) = t.x();
-      _wilsonBMatrix(idx, a + 1) = t.y();
-      _wilsonBMatrix(idx, a + 2) = t.z();
+      _wilsonBMatrix.row(idx).segment<3>(a) = t;
     };
 
     writeAngleElem(atIdxM);
@@ -614,9 +603,7 @@ void InternalCoords::PopulateWilsonMatrix() {
           zeta(a, atIdxO, atIdxP) *
           (uw * cosPhiU / (lw * su2) - vw * cosPhiV / lw * sv2);
       a *= 3;
-      _wilsonBMatrix(idx, a + 0) = t1.x() - t2.x() - t3.x();
-      _wilsonBMatrix(idx, a + 1) = t1.y() - t2.y() - t3.y();
-      _wilsonBMatrix(idx, a + 2) = t1.z() - t2.z() - t3.z();
+      _wilsonBMatrix.row(idx).segment<3>(a) = t1 - t2 - t3;
     };
 
     writeDihedralElem(atIdxM);
@@ -629,15 +616,9 @@ void InternalCoords::PopulateWilsonMatrix() {
 InternalCoords::InternalCoords(const Orbitals& orb)
     : InternalCoords(orb, true){};
 
-InternalCoords::InternalCoords(const Orbitals& orb, const bool withAux)
+InternalCoords::InternalCoords(const Orbitals& orb, bool withAux)
     : CoordBase(INTERNAL, orb),
       _withAuxiliary(withAux),
-      _numBonds(0),
-      _numInterMolBonds(0),
-      _numHBonds(0),
-      _numAngles(0),
-      _numDihedrals(0),
-      _numAuxBonds(0),
       _bondGraph(_numAtoms),
       _cartCoords(orb) {
   // This code implements the algorithm described in
@@ -660,8 +641,6 @@ InternalCoords::InternalCoords(const Orbitals& orb, const bool withAux)
 }
 
 void InternalCoords::Increment(Eigen::VectorXd dx) { CoordBase::Increment(dx); }
-
-int InternalCoords::getPossibleNumMols() { return _possibleNumMols; }
 
 int InternalCoords::getNumBonds() { return _numBonds; }
 

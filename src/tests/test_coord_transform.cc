@@ -16,7 +16,6 @@ using namespace votca::tools;
 const double tol = 1e-6;
 
 BOOST_AUTO_TEST_CASE(single_bond) {
-  std::cout << "Single bond" << std::endl;
   std::ofstream single_bondXYZ("single_bond.xyz");
 
   single_bondXYZ << "2" << std::endl;
@@ -25,7 +24,7 @@ BOOST_AUTO_TEST_CASE(single_bond) {
                  << std::endl;
   single_bondXYZ << "C          1.00000        0.00000        0.00000"
                  << std::endl;
-
+  single_bondXYZ.close();
   Orbitals single_bond;
   QMMolecule mol("single_bond", 0);
   mol.LoadFromFile("single_bond.xyz");
@@ -38,7 +37,6 @@ BOOST_AUTO_TEST_CASE(single_bond) {
 
 BOOST_AUTO_TEST_CASE(single_angle) {
 
-  std::cout << "Single Angle - H2O" << std::endl;
   std::ofstream single_angleXYZ("single_angle.xyz");
 
   single_angleXYZ << "3" << std::endl;
@@ -49,7 +47,7 @@ BOOST_AUTO_TEST_CASE(single_angle) {
                   << std::endl;
   single_angleXYZ << "H          1.00000        1.00000        0.00000"
                   << std::endl;
-
+  single_angleXYZ.close();
   Orbitals single_angle;
   QMMolecule mol("single_angle", 0);
   mol.LoadFromFile("single_angle.xyz");
@@ -60,13 +58,9 @@ BOOST_AUTO_TEST_CASE(single_angle) {
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 2);
   BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 0);
-  double tol = 1e-6;
-
-  std::cout << ic << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(single_dihedral_two_angles_ic_test) {
-  std::cout << "single dihedral" << std::endl;
   std::ofstream single_dihedralXYZ("single_dihedral.xyz");
 
   single_dihedralXYZ << "4" << std::endl;
@@ -90,11 +84,9 @@ BOOST_AUTO_TEST_CASE(single_dihedral_two_angles_ic_test) {
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 3);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 2);
   BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 1);
-  std::cout << ic << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(linear_molecule) {
-  std::cout << "linear_molecule1 co2" << std::endl;
   std::ofstream co2XYZ("co2.xyz");
 
   co2XYZ << "3" << std::endl;
@@ -102,7 +94,7 @@ BOOST_AUTO_TEST_CASE(linear_molecule) {
   co2XYZ << "O         0.00000        0.00000        0.00000" << std::endl;
   co2XYZ << "C         1.42000        0.00000        0.00000" << std::endl;
   co2XYZ << "O         2.84000        0.00000        0.00000" << std::endl;
-
+  co2XYZ.close();
   Orbitals co2;
   QMMolecule mol("co2", 0);
   mol.LoadFromFile("co2.xyz");
@@ -113,20 +105,17 @@ BOOST_AUTO_TEST_CASE(linear_molecule) {
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 2);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
   BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 0);
-  std::cout << ic << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(no_dihedrals) {
-  std::cout << "no dihedrals - ethyne " << std::endl;
   std::ofstream ethyneXYZ("ethyne.xyz");
-
   ethyneXYZ << "4" << std::endl;
   ethyneXYZ << "" << std::endl;
   ethyneXYZ << "H         0.000000        0.00000        0.00000" << std::endl;
   ethyneXYZ << "C         1.000000        0.00000        0.00000" << std::endl;
   ethyneXYZ << "C         2.000000        0.00000        0.00000" << std::endl;
   ethyneXYZ << "H         3.000000        0.00000        0.00000" << std::endl;
-
+  ethyneXYZ.close();
   Orbitals ethyne;
   QMMolecule mol("ethyne.xyz", 0);
   mol.LoadFromFile("ethyne.xyz");
@@ -137,23 +126,18 @@ BOOST_AUTO_TEST_CASE(no_dihedrals) {
   BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 0);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 2);
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 3);
-
-  std::cout << ic << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(ammonia_internal_coords) {
-  std::cout << "ammonia" << std::endl;
 
   std::ofstream ammoniaXYZ("ammonia.xyz");
 
   ammoniaXYZ << " 4" << std::endl;
   ammoniaXYZ << " ammonia" << std::endl;
-
   ammoniaXYZ << " N       0.000059      0.450035      0.427708" << std::endl;
   ammoniaXYZ << " H      -0.813712     -0.019797      0.024059" << std::endl;
   ammoniaXYZ << " H       0.813749     -0.019930      0.024104" << std::endl;
   ammoniaXYZ << " H      -0.000096      1.389693      0.024103" << std::endl;
-
   ammoniaXYZ.close();
 
   Orbitals ammonia;
@@ -167,7 +151,6 @@ BOOST_AUTO_TEST_CASE(ammonia_internal_coords) {
   BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
   BOOST_CHECK_EQUAL(ammoniaIC.getNumAngles(), 3);
   BOOST_CHECK_EQUAL(ammoniaIC.getNumDihedrals(), 6);
-  std::cout << ammoniaIC << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

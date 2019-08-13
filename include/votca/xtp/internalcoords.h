@@ -20,7 +20,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>
 
 class InternalCoords : public CoordBase {
  public:
-  InternalCoords(const Orbitals& orb, const bool _withAuxiliary);
+  InternalCoords(const Orbitals& orb, bool _withAuxiliary);
   InternalCoords(const Orbitals& orb);
 
   int getPossibleNumMols();
@@ -36,30 +36,21 @@ class InternalCoords : public CoordBase {
   friend std::ostream& operator<<(std::ostream& s, const InternalCoords& ic);
 
  private:
-  int _numBonds;
-  int _numInterMolBonds;  // interFragmentBonds
-  int _numHBonds;
-  int _numAngles;
-  int _numAuxBonds;
-  int _numDihedrals;
-  int _possibleNumMols;
+  int _numBonds = 0;
+  int _numInterMolBonds = 0;  // interFragmentBonds
+  int _numHBonds = 0;
+  int _numAngles = 0;
+  int _numAuxBonds = 0;
+  int _numDihedrals = 0;
 
   const bool _withAuxiliary;
 
   Eigen::MatrixXd _wilsonBMatrix;
   BglGraph _bondGraph;
 
-  /* std::map< std::tuple<int, int>, double> _bonds; */
-  /* std::map< std::tuple<int, int, int> , double> _angles; */
-  /* std::map< std::tuple<int, int, int, int>, double> _dihedrals; */
-
   CoordContainer<BondIdx, double> _bonds;
   CoordContainer<AngleIdx, double> _angles;
   CoordContainer<DihedralIdx, double> _dihedrals;
-
-  /* std::vector<std::tuple<int, int>> _bondInsOrder; */
-  /* std::vector<std::tuple<int, int, int>> _angleInsOrder; */
-  /* std::vector<std::tuple<int, int, int,int >> _dihedralInsOrder; */
 
   CoordContainer<BondIdx, double> _auxBonds;
 
