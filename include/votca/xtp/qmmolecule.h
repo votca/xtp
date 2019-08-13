@@ -43,6 +43,9 @@ class QMMolecule : public AtomContainer<QMAtom> {
   QMMolecule(std::string name, int id) : AtomContainer<QMAtom>(name, id){};
 
   tools::StructureParameters getParameters() const;
+
+  QMMolecule(CheckpointReader& r) : AtomContainer<QMAtom>(r){};
+
   void LoadFromFile(std::string filename);
 
   void WriteXYZ(std::string filename, std::string header) const;

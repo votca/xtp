@@ -67,7 +67,7 @@ class Segment : public AtomContainer<Atom> {
     _U_xN_xX.setValue(dU, state);
   }
 
-  const Atom* getAtom(const MD_atom_id& id) const;
+  const Atom* getAtom(int id) const;
 
   double getU_xX_nN(QMStateType state) const {
     return _U_xX_nN.getValue(state);
@@ -119,10 +119,6 @@ class Segment : public AtomContainer<Atom> {
   QMStateCarrierStorage<double> _U_nX_nN;
   QMStateCarrierStorage<double> _U_xN_xX;
   QMStateCarrierStorage<double> _site_eng;
-
-  // using caching for approximate size
-  mutable double _approxsize = 0.0;
-  mutable bool _has_approxsize = false;
 };
 
 }  // namespace xtp

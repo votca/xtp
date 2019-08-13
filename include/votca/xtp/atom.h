@@ -33,13 +33,6 @@
 
 namespace votca {
 namespace xtp {
-typedef std::pair<int, std::string> MD_atom_id;
-/**
-    \brief information about an atom
-
-    The Atom class stores atom id, name, type,residue number
-
-*/
 class Atom {
  public:
   struct data {
@@ -53,9 +46,10 @@ class Atom {
   };
 
   Atom(tools::StructureParameters params);
-  Atom(int resnr, std::string md_atom_name, int atom_id, Eigen::Vector3d pos);
+  Atom(int resnr, std::string md_atom_name, int atom_id, Eigen::Vector3d pos,
+       std::string element);
 
-  Atom(int atom_id, std::string md_atom_name, Eigen::Vector3d pos);
+  Atom(int atom_id, std::string element, Eigen::Vector3d pos);
 
   Atom(CptTable table, const std::size_t& idx) { ReadFromCpt(table, idx); }
 

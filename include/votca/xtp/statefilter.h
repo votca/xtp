@@ -43,8 +43,13 @@ class Statefilter {
   void setLogger(Logger* log) { _log = log; }
   void setInitialState(const QMState& state) { _statehist.push_back(state); }
   void PrintInfo() const;
+  QMState InitialState() const { return _statehist[0]; }
   QMState CalcStateAndUpdate(const Orbitals& orbitals);
   QMState CalcState(const Orbitals& orbitals) const;
+
+  void WriteToCpt(CheckpointWriter& w) const;
+
+  void ReadFromCpt(CheckpointReader& r);
 
  private:
   std::vector<int> OscFilter(const Orbitals& orbitals) const;
@@ -66,29 +71,20 @@ class Statefilter {
 
   std::vector<QMState> _statehist;
 
-  Eigen::VectorXd _laststatecoeff;
-  mutable Eigen::MatrixXd _S_onehalf;  // only used in one iteration, do not
-                                       // want to introduce more function
-                                       // arguments
-
   bool _use_oscfilter = false;
-  double _oscthreshold;
+  double _oscthreshold = 0.0;
 
   bool _use_overlapfilter = false;
-  double _overlapthreshold;
+  Eigen::VectorXd _laststatecoeff;
+  double _overlapthreshold = 0.0;
 
   bool _use_localisationfilter = false;
-
-  mutable std::vector<QMFragment<BSE_Population> >
-      _fragment_loc;  // contain value and definition but between iterations it
-                      // does not change so mutalbe now
-  double _loc_threshold;
+  std::vector<QMFragment<BSE_Population> > _fragment_loc;
+  double _loc_threshold = 0.0;
 
   bool _use_dQfilter = false;
-  mutable std::vector<QMFragment<BSE_Population> > _fragment_dQ;  // contain
-                                                                  // value and
-                                                                  // definition
-  double _dQ_threshold;
+  std::vector<QMFragment<BSE_Population> > _fragment_dQ;
+  double _dQ_threshold = 0.0;
 };
 }  // namespace xtp
 }  // namespace votca

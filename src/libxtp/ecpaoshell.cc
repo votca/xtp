@@ -16,37 +16,25 @@
  * limitations under the License.
  *
  */
-
-#pragma once
-#ifndef _VOTCA_XTP_JOBWRITER_H
-#define _VOTCA_XTP_JOBWRITER_H
-
-#include <votca/xtp/qmcalculator.h>
-#include <votca/xtp/topology.h>
+#include "votca/xtp/ecpaoshell.h"
+#include "votca/xtp/ecpaobasis.h"
+#include <votca/xtp/aomatrix.h>
 
 namespace votca {
 namespace xtp {
 
-class JobWriter : public QMCalculator {
-
- public:
-  typedef void (JobWriter::*WriteFunct)(Topology &);
-
-  std::string Identify() { return "jobwriter"; }
-  void Initialize(tools::Property &options);
-  bool EvaluateFrame(Topology &top);
-
-  // NEED TO REGISTER ALL WRITE MEMBERS IN ::Initialize
-  void mps_dimer(Topology &top);
-  void mps_monomer(Topology &top);
-
- private:
-  std::vector<std::string> _keys;
-  tools::Property *_options;
-  std::map<std::string, WriteFunct> _key_funct;
-};
+std::ostream& operator<<(std::ostream& out, const ECPAOShell& shell) {
+  out << "AtomIndex:" << shell.getAtomIndex();
+  out << " Shelltype:" << shell.getType() << " L:" << shell.getL()
+      << " NonLocal:" << shell.isNonLocal() << " Func:" << shell.getNumFunc()
+      << "\n";
+  for (const auto& gaussian : shell) {
+    out << " Gaussian Decay: " << gaussian.getDecay();
+    out << " Power: " << gaussian.getPower();
+    out << " Contractions: " << gaussian.getContraction() << "\n";
+  }
+  return out;
+}
 
 }  // namespace xtp
 }  // namespace votca
-
-#endif

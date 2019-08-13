@@ -43,7 +43,6 @@ class Coupling : public QMTool {
  private:
   std::string _MOsA, _MOsB, _MOsAB;
   std::string _logA, _logB, _logAB;
-  double _degeneracy;
 
   std::string _package;
   tools::Property _package_options;
@@ -56,8 +55,6 @@ class Coupling : public QMTool {
 
 void Coupling::Initialize(tools::Property &options) {
   std::string key = "options." + Identify();
-
-  _degeneracy = options.get(key + ".degeneracy").as<double>();
 
   _MOsA = options.get(key + ".moleculeA.orbitals").as<std::string>();
   _MOsB = options.get(key + ".moleculeB.orbitals").as<std::string>();
@@ -79,7 +76,7 @@ void Coupling::Initialize(tools::Property &options) {
 }
 
 bool Coupling::Evaluate() {
-
+  OPENMP::setMaxThreads(_nThreads);
   _log.setReportLevel(logDEBUG);
   _log.setMultithreading(true);
 
@@ -151,7 +148,7 @@ bool Coupling::Evaluate() {
 
   tools::PropertyIOManipulator iomXML(tools::PropertyIOManipulator::XML, 1, "");
 
-  std::ofstream ofs(_output_file.c_str(), std::ofstream::out);
+  std::ofstream ofs(_output_file, std::ofstream::out);
   ofs << job_output;
   ofs.close();
 

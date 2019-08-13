@@ -62,18 +62,18 @@ class AtomContainer {
 
   void push_back(const T& atom) {
     _atomlist.push_back(atom);
-    _position_valid = false;
+    calcPos();
   }
   void push_back(T&& atom) {
     _atomlist.push_back(atom);
-    _position_valid = false;
+    calcPos();
   }
 
   void AddContainer(const AtomContainer<T>& container) {
     _name += "_" + container._name;
     _atomlist.insert(_atomlist.end(), container._atomlist.begin(),
                      container._atomlist.end());
-    _position_valid = false;
+    calcPos();
   }
 
   const T& at(int index) const { return _atomlist.at(index); }
@@ -92,12 +92,7 @@ class AtomContainer {
     return _atomlist.end();
   }
 
-  const Eigen::Vector3d& getPos() const {
-    if (!_position_valid) {
-      calcPos();
-    }
-    return _pos;
-  }
+  const Eigen::Vector3d& getPos() const { return _pos; }
 
   // calculates the lowest and highest point in the cube, sorrounding the
   // molecule
@@ -136,7 +131,7 @@ class AtomContainer {
     for (T& atom : _atomlist) {
       atom.Translate(shift);
     }
-    calcPos();
+    _pos += shift;
   }
 
   void Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& ref_pos) {
@@ -151,9 +146,8 @@ class AtomContainer {
     w(_id, "id");
     w(int(_atomlist.size()), "size");
     T element(0, "H", Eigen::Vector3d::Zero());
-    bool compact = true;
-    CptTable table = w.openTable(element.identify() + "s", element,
-                                 _atomlist.size(), compact);
+    CptTable table =
+        w.openTable(element.identify() + "s", element, _atomlist.size());
     std::vector<typename T::data> dataVec(_atomlist.size());
     for (std::size_t i = 0; i < _atomlist.size(); ++i) {
       _atomlist[i].WriteData(dataVec[i]);
@@ -171,14 +165,27 @@ class AtomContainer {
     }
     T element(0, "H", Eigen::Vector3d::Zero());  // dummy element to get
                                                  // .identify for type
-    CptTable table = r.openTable(element.identify() + "s", _atomlist[0]);
+    CptTable table = r.openTable(element.identify() + "s", element);
     _atomlist.clear();
     _atomlist.reserve(table.numRows());
     std::vector<typename T::data> dataVec(table.numRows());
     table.read(dataVec);
     for (std::size_t i = 0; i < table.numRows(); ++i) {
-      _atomlist.emplace_back(T(dataVec[i]));
+      _atomlist.push_back(T(dataVec[i]));
     }
+    calcPos();
+  }
+
+  void calcPos() {
+    tools::Elements element;
+    Eigen::Vector3d pos = Eigen::Vector3d::Zero();
+    double totalmass = 0.0;
+    for (const T& atom : _atomlist) {
+      double mass = element.getMass(atom.getElement());
+      totalmass += mass;
+      pos += mass * atom.getPos();
+    }
+    _pos = pos / totalmass;
   }
 
  protected:
@@ -186,24 +193,8 @@ class AtomContainer {
   std::string _name;
   int _id;
 
-  bool PosIsValid() const { return _position_valid; }
-
  private:
-  mutable bool _position_valid = false;
-  mutable Eigen::Vector3d _pos;
-
-  void calcPos() const {
-    tools::Elements element;
-    _pos = Eigen::Vector3d::Zero();
-    double totalmass = 0.0;
-    for (const T& atom : _atomlist) {
-      double mass = element.getMass(atom.getElement());
-      totalmass += mass;
-      _pos += mass * atom.getPos();
-    }
-    _pos /= totalmass;
-    _position_valid = true;
-  }
+  Eigen::Vector3d _pos = Eigen::Vector3d::Zero();
 };
 }  // namespace xtp
 }  // namespace votca

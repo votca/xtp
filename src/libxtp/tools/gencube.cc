@@ -148,19 +148,19 @@ void GenCube::calculateCube() {
 
   // load DFT basis set (element-wise information) from xml file
   BasisSet dftbs;
-  dftbs.LoadBasisSet(orbitals.getDFTbasisName());
+  dftbs.Load(orbitals.getDFTbasisName());
   XTP_LOG(logDEBUG, _log) << " Loaded DFT Basis Set "
                           << orbitals.getDFTbasisName() << flush;
 
   // fill DFT AO basis by going through all atoms
   AOBasis dftbasis;
-  dftbasis.AOBasisFill(dftbs, orbitals.QMAtoms());
+  dftbasis.Fill(dftbs, orbitals.QMAtoms());
 
   Eigen::MatrixXd mat =
       Eigen::MatrixXd::Zero(dftbasis.AOBasisSize(), dftbasis.AOBasisSize());
   if (_dostateonly) {
     if (_state.Type().isExciton()) {
-      std::vector<Eigen::MatrixXd> DMAT =
+      std::array<Eigen::MatrixXd, 2> DMAT =
           orbitals.DensityMatrixExcitedState(_state);
       mat = DMAT[1] - DMAT[0];
     }
@@ -173,7 +173,7 @@ void GenCube::calculateCube() {
       mat = orbitals.CalculateQParticleAORepresentation();
       amplitudeindex = _state.Index() - orbitals.getGWAmin();
     } else {
-      mat = orbitals.MOCoefficients();
+      mat = orbitals.MOs().eigenvectors();
       amplitudeindex = _state.Index();
     }
   }
@@ -428,7 +428,7 @@ void GenCube::subtractCubes() {
 }
 
 bool GenCube::Evaluate() {
-
+  OPENMP::setMaxThreads(_nThreads);
   _log.setReportLevel(logDEBUG);
   _log.setMultithreading(true);
 

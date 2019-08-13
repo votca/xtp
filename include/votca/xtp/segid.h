@@ -50,6 +50,7 @@ class SegId {
   SegId(int id, std::string geometry) : _id(id) {
     TestStringForQMState(geometry);
   }
+
   int Id() const { return _id; }
   bool hasFile() const { return _hasfilename; }
   std::string FileName() const { return _filename; }

@@ -18,6 +18,8 @@
  */
 
 #include <votca/xtp/ERIs.h>
+#include <votca/xtp/aobasis.h>
+#include <votca/xtp/multiarray.h>
 #include <votca/xtp/symmetric_matrix.h>
 
 namespace votca {
@@ -58,7 +60,8 @@ Mat_p_Energy ERIs::CalculateERIs(const Eigen::MatrixXd& DMAT) const {
   Eigen::MatrixXd ERIs =
       std::accumulate(ERIS_thread.begin(), ERIS_thread.end(),
                       Eigen::MatrixXd::Zero(DMAT.rows(), DMAT.cols()).eval());
-  ERIs += ERIs.triangularView<Eigen::StrictlyUpper>().transpose();
+  ERIs.triangularView<Eigen::StrictlyLower>() =
+      ERIs.triangularView<Eigen::StrictlyUpper>().transpose();
   double energy = CalculateEnergy(DMAT, ERIs);
   return Mat_p_Energy(energy, ERIs);
 }
@@ -305,7 +308,8 @@ Mat_p_Energy ERIs::CalculateERIs_4c_direct(const AOBasis& dftbasis,
     { ERIs += ERIs_thread; }
   }
 
-  ERIs += ERIs.triangularView<Eigen::StrictlyUpper>().transpose();
+  ERIs.triangularView<Eigen::StrictlyLower>() =
+      ERIs.triangularView<Eigen::StrictlyUpper>().transpose();
 
   double energy = CalculateEnergy(DMAT, ERIs);
   return Mat_p_Energy(energy, ERIs);

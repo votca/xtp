@@ -36,7 +36,7 @@ class MapChecker : public QMCalculator {
   ~MapChecker(){};
 
   std::string Identify() { return "mapchecker"; }
-
+  bool WriteToStateFile() const { return false; }
   void Initialize(tools::Property& opt);
   bool EvaluateFrame(Topology& top);
 
@@ -76,7 +76,7 @@ void MapChecker::Initialize(tools::Property& opt) {
   _mdstates = StringToStates(output_md);
   if (!(_qmstates.empty() && _mdstates.empty())) {
     _mapfile =
-        opt.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".mapfile");
+        opt.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".map_file");
   }
 }
 
@@ -113,10 +113,9 @@ bool MapChecker::EvaluateFrame(Topology& top) {
   log.setPreface(logDEBUG, "\n... ...");
 
   QMMapper map(log);
-  PolarMapper mp(log);
+
   for (QMState state : _qmstates) {
     map.LoadMappingFile(_mapfile);
-    mp.LoadMappingFile(_mapfile);
     std::string filename_qm = AddStatetoFilename(_qmfile, state);
 
     csg::PDBWriter<csg::Topology> qmwriter;
@@ -132,9 +131,12 @@ bool MapChecker::EvaluateFrame(Topology& top) {
       qmwriter.WriteContainer(mol);
     }
     qmwriter.Close();
+  }
 
+  PolarMapper mp(log);
+  for (QMState state : _mdstates) {
+    mp.LoadMappingFile(_mapfile);
     std::string filename_mp = AddStatetoFilename(_mpfile, state);
-
     csg::PDBWriter<csg::Topology> mpwriter;
     std::string filename_mp_state =
         AddSteptoFilename(filename_mp, top.getStep());
