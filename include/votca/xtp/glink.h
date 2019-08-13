@@ -15,6 +15,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_GLINK_H
 #define VOTCA_XTP_GLINK_H
 #include <votca/xtp/eigen.h>
@@ -27,15 +28,17 @@ class GLink {
 
  public:
   GLink(GNode* dest, double rate, const Eigen::Vector3d& dr)
-      : destination(dest), _rate(rate), _dr(dr), _decayevent(false){};
+      : destination(dest), _rate(rate), _dr(dr){};
 
   GLink(double rate) : _rate(rate), _decayevent(true){};
 
   double getValue() const { return _rate; }
   double getRate() const { return _rate; }
-  GNode* getDestination() const { return destination; }
+  GNode* getDestination() const {
+    assert(!_decayevent && "Decay event has no destination");
+    return destination;
+  }
   const Eigen::Vector3d& getDeltaR() const { return _dr; }
-
   bool isDecayEvent() const { return _decayevent; }
 
  private:

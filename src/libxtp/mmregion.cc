@@ -21,33 +21,53 @@
 
 namespace votca {
 namespace xtp {
+
 template <class T>
-std::string MMRegion<T>::identify() const {
-  return "";
+double MMRegion<T>::charge() const {
+  double charge = 0.0;
+  for (const auto& seg : _segments) {
+    for (const auto& site : seg) {
+      charge += site.getCharge();
+    }
+  }
+  return charge;
 }
 
-template <>
-std::string PolarRegion::identify() const {
-  return "PolarRegion";
-}
-
-template <>
-std::string StaticRegion::identify() const {
-  return "StaticRegion";
+template <class T>
+void MMRegion<T>::WritePDB(csg::PDBWriter& writer) const {
+  for (const auto& seg : _segments) {
+    writer.WriteContainer(seg);
+  }
 }
 
 template <class T>
 void MMRegion<T>::WriteToCpt(CheckpointWriter& w) const {
-  w(_name, "name");
   w(_id, "id");
   w(identify(), "type");
+  int size = _segments.size();
+  w(size, "size");
+  CheckpointWriter ww = w.openChild("segments");
   for (const auto& seg : _segments) {
-    w.openChild(seg.identify() + "_" + std::to_string(seg.getId()));
-    seg.WriteToCpt(w);
+    CheckpointWriter www =
+        ww.openChild(seg.identify() + "_" + std::to_string(seg.getId()));
+    seg.WriteToCpt(www);
   }
 }
 template <class T>
-void MMRegion<T>::ReadFromCpt(CheckpointReader& r) {}
+void MMRegion<T>::ReadFromCpt(CheckpointReader& r) {
+  r(_id, "id");
+  int size;
+  r(size, "size");
+  _segments.clear();
+  _segments.reserve(size);
+  T dummy("dummy", 0);
+  CheckpointReader rr = r.openChild("segments");
+  for (int i = 0; i < size; i++) {
+    CheckpointReader rrr =
+        rr.openChild(dummy.identify() + "_" + std::to_string(i));
+    _segments.push_back(T(rrr));
+  }
+}
 
 template class MMRegion<PolarSegment>;
 template class MMRegion<StaticSegment>;

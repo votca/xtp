@@ -17,12 +17,13 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_QMFRAGMENT_H
 #define VOTCA_XTP_QMFRAGMENT_H
 #include <boost/lexical_cast.hpp>
 #include <limits>
 #include <votca/tools/tokenizer.h>
-#include <votca/xtp/eigen.h>
+#include <votca/xtp/bse_population.h>
 
 /**
  * \brief Container to define fragments of QMmolecules, containing atomindices,
@@ -46,8 +47,12 @@ class QMFragment {
 
   QMFragment(){};
 
+  QMFragment(CheckpointReader& r) { ReadFromCpt(r); }
+
   void setName(std::string name) { _name = name; }
   void setId(int id) { _id = id; }
+  const std::string& getName() const { return _name; }
+  int getId() const { return _id; }
   void FillFromString(std::string atoms) { FillAtomIndices(atoms); }
 
   const T& value() const { return _value; }
@@ -76,18 +81,34 @@ class QMFragment {
 
   friend std::ostream& operator<<(std::ostream& out,
                                   const QMFragment& fragment) {
-    out << "Fragment name:" << fragment._name << " id:" << fragment._name
-        << std::endl;
+    out << "Fragment name:" << fragment._name << " id:" << fragment._id << "\n";
     out << "AtomIndices[" << fragment.size() << "]:";
     for (int id : fragment._atomindices) {
       out << id << " ";
     }
-    out << std::endl;
-    out << "Value:" << fragment._value;
+    out << "\nValue:" << fragment._value;
+    out << "\n";
     return out;
   };
 
+  void WriteToCpt(CheckpointWriter& w) const {
+    w(_atomindices, "indices");
+    w(_name, "name");
+    w(_id, "id");
+    WriteValue(w);
+  }
+
+  void ReadFromCpt(CheckpointReader& r) {
+    r(_atomindices, "indices");
+    r(_name, "name");
+    r(_id, "id");
+    ReadValue(r);
+  }
+
  private:
+  void WriteValue(CheckpointWriter& w) const;
+  void ReadValue(CheckpointReader& r);
+
   void FillAtomIndices(const std::string& atoms) {
     tools::Tokenizer tok(atoms, " ,\n\t");
     std::vector<std::string> results;
@@ -112,6 +133,27 @@ class QMFragment {
   int _id = -1;
   T _value;
 };
+
+template <class T>
+inline void QMFragment<T>::ReadValue(CheckpointReader& r) {
+  r(_value, "value");
+}
+template <class T>
+inline void QMFragment<T>::WriteValue(CheckpointWriter& w) const {
+  w(_value, "value");
+}
+
+template <>
+inline void QMFragment<BSE_Population>::ReadValue(CheckpointReader& r) {
+  CheckpointReader rr = r.openChild("BSE_pop");
+  _value.ReadFromCpt(rr);
+}
+
+template <>
+inline void QMFragment<BSE_Population>::WriteValue(CheckpointWriter& w) const {
+  CheckpointWriter ww = w.openChild("BSE_pop");
+  _value.WriteToCpt(ww);
+}
 
 }  // namespace xtp
 }  // namespace votca

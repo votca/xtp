@@ -17,6 +17,7 @@ nn * See the License for the specific language governing permissions and
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_STATICSITE_H
 #define __VOTCA_XTP_STATICSITE_H
 
@@ -43,21 +44,15 @@ class StaticSite {
 
     int rank;
 
-    double multipoleQ00;
-    double multipoleQ11c;
-    double multipoleQ11s;
-    double multipoleQ10;
-    double multipoleQ20;
-    double multipoleQ21c;
-    double multipoleQ21s;
-    double multipoleQ22c;
-    double multipoleQ22s;
-
-    double fieldX;
-    double fieldY;
-    double fieldZ;
-
-    double PhiP;
+    double Q00;
+    double Q11c;
+    double Q11s;
+    double Q10;
+    double Q20;
+    double Q21c;
+    double Q21s;
+    double Q22c;
+    double Q22s;
   };
   StaticSite(int id, std::string element, Eigen::Vector3d pos)
       : _id(id), _element(element), _pos(pos){};
@@ -71,6 +66,7 @@ class StaticSite {
       : StaticSite(atom.getId(), atom.getElement(), atom.getPos()) {
     setCharge(charge);
   }
+  virtual ~StaticSite(){};
 
  protected:
   StaticSite(){};
@@ -82,11 +78,14 @@ class StaticSite {
   const Eigen::Vector3d& getPos() const { return _pos; }
 
   void setMultipole(const Vector9d& multipole, int rank) {
-    _multipole = multipole;
+    _Q = multipole;
     _rank = rank;
   }
-
-  void setCharge(double q) { _multipole(0) = q; }
+  // sets rank to 0 as well
+  void setCharge(double q) {
+    _Q(0) = q;
+    _rank = 0;
+  }
 
   void setPos(const Eigen::Vector3d& position) { _pos = position; }
 
@@ -95,53 +94,44 @@ class StaticSite {
   virtual void Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& ref_pos);
 
   // MULTIPOLES DEFINITION
-
-  double getCharge() const { return _multipole(0); }
-  const Vector9d& getPermMultipole() const {
-    return _multipole;
+  double getCharge() const { return _Q(0); }
+  const Vector9d& Q() const {
+    return _Q;
   }  // Q00,Q11c,Q11s,Q10,Q20, Q21c, Q21s, Q22c, Q22s,...[NOT following Stone
      // order for dipoles]
 
-  virtual Eigen::Vector3d getDipole() const { return _multipole.segment<3>(1); }
+  virtual Eigen::Vector3d getDipole() const { return _Q.segment<3>(1); }
 
   Eigen::Matrix3d CalculateCartesianMultipole() const;
+
   static Eigen::VectorXd CalculateSphericalMultipole(
       const Eigen::Matrix3d& quadrupole_cartesian);
-
-  virtual Eigen::Vector3d getField() const { return _localpermanetField; }
-
-  virtual double getPotential() const { return PhiP; }
 
   std::string WriteMpsLine(std::string unit = "bohr") const;
 
   virtual void SetupCptTable(CptTable& table) const;
 
-  virtual void WriteData(data& d) const;
-  virtual void ReadData(data& d);
-  virtual void setPolarisation(const Eigen::Matrix3d pol) { return; }
+  void WriteData(data& d) const;
+  void ReadData(data& d);
+  virtual void setPolarisation(const Eigen::Matrix3d& pol) { return; }
 
   virtual std::string identify() const { return "staticsite"; }
 
   friend std::ostream& operator<<(std::ostream& out, const StaticSite& site) {
     out << site.getId() << " " << site.getElement() << " " << site.getRank();
-    out << " " << site.getPos().x() << "," << site.getPos().y() << ","
-        << site.getPos().z() << "\n";
+    out << " " << site.getPos().transpose() << "\n";
     return out;
   }
 
  protected:
-  virtual std::string writePolarisation() const { return "P 0.0 0.0 0.0"; };
+  virtual std::string writePolarisation() const;
 
   int _id = -1;
   std::string _element = "";
   Eigen::Vector3d _pos = Eigen::Vector3d::Zero();
   int _rank = 0;
 
-  Vector9d _multipole =
-      Vector9d::Zero();  // Q00,Q11c,Q11s,Q10,Q20, Q21c, Q21s, Q22c, Q22s
-
-  Eigen::Vector3d _localpermanetField = Eigen::Vector3d::Zero();
-  double PhiP = 0.0;  // Electric potential (due to perm.)
+  Vector9d _Q = Vector9d::Zero();  // Q00,Q11c,Q11s,Q10,Q20,Q21c,Q21s,Q22c,Q22s
 };
 }  // namespace xtp
 }  // namespace votca

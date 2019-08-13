@@ -18,24 +18,22 @@
  */
 
 #include <votca/xtp/aomatrix.h>
-
-#include <votca/xtp/aobasis.h>
-
-#include <vector>
+#include <votca/xtp/aotransform.h>
 
 namespace votca {
 namespace xtp {
 
 void AOOverlap::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                          const AOShell& shell_row, const AOShell& shell_col) {
+                          const AOShell& shell_row,
+                          const AOShell& shell_col) const {
 
   // shell info, only lmax tells how far to go
   int lmax_row = shell_row.getLmax();
   int lmax_col = shell_col.getLmax();
 
   // set size of internal block for recursion
-  int nrows = this->getBlockSize(lmax_row);
-  int ncols = this->getBlockSize(lmax_col);
+  int nrows = AOTransform::getBlockSize(lmax_row);
+  int ncols = AOTransform::getBlockSize(lmax_col);
 
   if (lmax_col > 6 || lmax_row > 6) {
     throw std::runtime_error(
@@ -630,21 +628,17 @@ void AOOverlap::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
       // cout << "Done with unnormalized matrix " << endl;
 
-      Eigen::MatrixXd ol_sph =
-          getTrafo(gaussian_row).transpose() * ol * getTrafo(gaussian_col);
+      Eigen::MatrixXd ol_sph = AOTransform::getTrafo(gaussian_row).transpose() *
+                               ol * AOTransform::getTrafo(gaussian_col);
       // save to matrix
 
-      for (unsigned i = 0; i < matrix.rows(); i++) {
-        for (unsigned j = 0; j < matrix.cols(); j++) {
-          matrix(i, j) +=
-              ol_sph(i + shell_row.getOffset(), j + shell_col.getOffset());
-        }
-      }
+      matrix += ol_sph.block(shell_row.getOffset(), shell_col.getOffset(),
+                             matrix.rows(), matrix.cols());
     }  // shell_col Gaussians
   }    // shell_row Gaussians
 }
 
-Eigen::MatrixXd AOOverlap::FillShell(const AOShell& shell) {
+Eigen::MatrixXd AOOverlap::FillShell(const AOShell& shell) const {
   Eigen::MatrixXd block =
       Eigen::MatrixXd::Zero(shell.getNumFunc(), shell.getNumFunc());
   Eigen::Block<Eigen::MatrixXd> submatrix =

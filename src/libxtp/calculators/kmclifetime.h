@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * author: Kordt
  */
 
+#pragma once
 #ifndef __VOTCA_KMC_LIFETIME_H
 #define __VOTCA_KMC_LIFETIME_H
 
@@ -29,14 +29,17 @@ class KMCLifetime : public KMCCalculator {
  public:
   KMCLifetime(){};
   ~KMCLifetime(){};
+  bool WriteToStateFile() const { return false; }
   std::string Identify() { return "kmclifetime"; }
-  void Initialize(tools::Property &options);
-  bool EvaluateFrame(Topology &top);
+  void Initialize(tools::Property& options);
+  bool EvaluateFrame(Topology& top);
 
  private:
   void WriteDecayProbability(std::string filename);
 
-  void RunVSSM(Topology &top);
+  void RunVSSM();
+  void WriteToTraj(fstream& traj, unsigned insertioncount, double simtime,
+                   const Chargecarrier& carrier) const;
 
   void ReadLifetimeFile(std::string filename);
   std::string _probfile;
@@ -46,11 +49,6 @@ class KMCLifetime : public KMCCalculator {
   unsigned _outputsteps;
   unsigned int _insertions;
   std::string _lifetimefile;
-  double _maxrealtime;
-  std::string _trajectoryfile;
-  std::string _outputfile;
-  std::string _filename;
-  std::string _occfile;
 };
 
 }  // namespace xtp

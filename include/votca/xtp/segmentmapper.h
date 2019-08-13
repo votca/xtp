@@ -15,6 +15,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_SEGMENTMAPPER_H
 #define VOTCA_XTP_SEGMENTMAPPER_H
 
@@ -24,6 +25,7 @@
 #include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/logger.h>
 #include <votca/xtp/qmmolecule.h>
+#include <votca/xtp/segid.h>
 #include <votca/xtp/topology.h>
 
 namespace votca {
@@ -35,31 +37,33 @@ class SegmentMapper {
 
   void LoadMappingFile(const std::string& mapfile);
 
+  AtomContainer map(const Segment& seg, const SegId& segid) const;
+
   AtomContainer map(const Segment& seg, QMState state) const;
 
-  AtomContainer map(const Segment& seg, std::string coordfilename) const;
+  AtomContainer map(const Segment& seg, const std::string& coordfilename) const;
 
  private:
   typedef typename std::iterator_traits<
       typename AtomContainer::iterator>::value_type mapAtom;
 
-  typedef std::pair<int, std::string> mapsite_id;
+  typedef std::pair<int, std::string> atom_id;
 
   struct FragInfo {
     std::vector<double> _weights;
-    std::vector<mapsite_id> _mapatom_ids;
-    std::vector<MD_atom_id> _mdatom_ids;
+    std::vector<atom_id> _mapatom_ids;
+    std::vector<atom_id> _mdatom_ids;
     std::vector<int> _map_local_frame;
   };
 
   struct Seginfo {
     std::pair<int, int> minmax;
-    std::vector<MD_atom_id> mdatoms;
+    std::vector<int> mdatoms;
     std::vector<FragInfo> fragments;
     bool map2md;
     std::string segname;
     std::vector<double> weights;
-    std::vector<mapsite_id> mapatoms;
+    std::vector<atom_id> mapatoms;
     std::map<std::string, std::string> coordfiles;
   };
   std::map<std::string, std::string> _mapatom_xml;
@@ -82,28 +86,22 @@ class SegmentMapper {
                       const std::vector<const Atom*>& fragment_mdatoms) const;
 
   Logger& _log;
-  std::pair<int, int> CalcResidueRange(const Segment& seg) const;
-  std::pair<int, int> CalcResidueRange(
-      const std::vector<MD_atom_id>& seg) const;
+  std::pair<int, int> CalcAtomIdRange(const Segment& seg) const;
+  std::pair<int, int> CalcAtomIdRange(const std::vector<int>& seg) const;
 
-  mapsite_id StringToMapIndex(const std::string& map_string) const;
+  atom_id StringToMapIndex(const std::string& map_string) const;
 
-  MD_atom_id StringToMDIndex(const std::string& md_string) const;
+  atom_id StringToMDIndex(const std::string& md_string) const;
 
   int getRank(const mapAtom& atom) const { return atom.getRank(); }
 
-  std::string getWeights(const tools::Property& frag) const {
-    if (frag.exists(_mapatom_xml.at("weights"))) {
-      return frag.get(_mapatom_xml.at("weights")).as<std::string>();
-    }
-    return frag.get("weights").as<std::string>();
-  }
+  std::vector<double> getWeights(const tools::Property& frag) const;
 
   std::string getFrame(const tools::Property& frag) const {
     if (frag.exists(_mapatom_xml.at("frame"))) {
-      return frag.get(_mapatom_xml.at("frame")).as<std::string>();
+      return frag.get(_mapatom_xml.at("frame")).template as<std::string>();
     }
-    return frag.get("localframe").as<std::string>();
+    return frag.get("localframe").template as<std::string>();
   }
 
   void FillMap() {

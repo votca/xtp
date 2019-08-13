@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef _CALC_XTP_EQM_H
 #define _CALC_XTP_EQM_H
 
@@ -41,10 +42,10 @@ class EQM : public ParallelXJobCalc<std::vector<Job> > {
  public:
   std::string Identify() { return "eqm"; }
   void Initialize(tools::Property &options);
-  Job::JobResult EvalJob(Topology &top, Job &job, QMThread &thread);
+  Job::JobResult EvalJob(const Topology &top, Job &job, QMThread &thread);
 
   void CleanUp() { ; }
-  void WriteJobFile(Topology &top);
+  void WriteJobFile(const Topology &top);
   void ReadJobFile(Topology &top) { return; }
 
  private:
@@ -54,12 +55,9 @@ class EQM : public ParallelXJobCalc<std::vector<Job> > {
                       const std::string &errormessage);
   void ParseOptionsXML(tools::Property &options);
 
-  std::string _package;
   tools::Property _package_options;
   tools::Property _gwbse_options;
   tools::Property _esp_options;
-
-  std::string _mapfile;
 
   // what to do
   bool _do_dft_input;

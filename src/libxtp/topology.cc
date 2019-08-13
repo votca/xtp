@@ -16,8 +16,6 @@
  * limitations under the License.
  *
  */
-/// For earlier commit history see ctp commit
-/// 77795ea591b29e664153f9404c8655ba28dc14e9
 
 #include <votca/xtp/atom.h>
 #include <votca/xtp/segment.h>
@@ -202,6 +200,7 @@ void Topology::ReadFromCpt(CheckpointReader &r) {
   CheckpointReader v = r.openChild("segments");
   _segments.clear();
   int count = v.getNumDataSets();
+  _segments.reserve(count);
   for (int i = 0; i < count; i++) {
     CheckpointReader w = v.openChild("segment" + std::to_string(i));
     _segments.push_back(Segment(w));

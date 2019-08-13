@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_GRIDBOX_H
 #define VOTCA_XTP_GRIDBOX_H
 
@@ -82,11 +83,6 @@ class GridBox {
   void AddtoBigMatrix(Eigen::MatrixXd& bigmatrix,
                       const Eigen::MatrixXd& smallmatrix) const;
 
-  void setIndexoffirstgridpoint(unsigned indexoffirstgridpoint) {
-    _indexoffirstgridpoint = indexoffirstgridpoint;
-  }
-  unsigned getIndexoffirstgridpoint() const { return _indexoffirstgridpoint; }
-
   static bool compareGridboxes(GridBox& box1, GridBox& box2) {
     if (box1.Matrixsize() != box2.Matrixsize()) {
       return false;
@@ -103,7 +99,6 @@ class GridBox {
   }
 
  private:
-  unsigned _indexoffirstgridpoint;
   unsigned matrix_size = 0;
   std::vector<GridboxRange> aoranges;
   std::vector<GridboxRange> ranges;

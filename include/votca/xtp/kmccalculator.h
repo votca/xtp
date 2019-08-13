@@ -16,6 +16,7 @@
  * author: Kordt
  */
 
+#pragma once
 #ifndef VOTCA_XTP_CALCULATOR_H
 #define VOTCA_XTP_CALCULATOR_H
 
@@ -30,19 +31,22 @@
 
 namespace votca {
 namespace xtp {
-
+class QMNBList;
 class KMCCalculator : public QMCalculator {
  public:
   virtual ~KMCCalculator(){};
 
   virtual std::string Identify() = 0;
+  virtual bool WriteToStateFile() const = 0;
   virtual void Initialize(tools::Property& options) = 0;
 
  protected:
   QMStateType _carriertype;
 
   void LoadGraph(Topology& top);
-  virtual void RunVSSM(Topology& top){};
+  virtual void RunVSSM() = 0;
+
+  void ParseCommonOptions(tools::Property& options);
 
   double Promotetime(double cumulated_rate);
   void ResetForbiddenlist(std::vector<GNode*>& forbiddenid) const;
@@ -54,7 +58,8 @@ class KMCCalculator : public QMCalculator {
   const GLink& ChooseHoppingDest(const GNode& node);
   Chargecarrier* ChooseAffectedCarrier(double cumulated_rate);
 
-  void WriteOccupationtoFile(double simtime, std::string filename);
+  void WriteOccupationtoFile(double simtime, std::string filename) const;
+  void WriteRatestoFile(std::string filename, const QMNBList& list) const;
 
   void RandomlyCreateCharges();
   void RandomlyAssignCarriertoSite(Chargecarrier& Charge);
@@ -65,8 +70,12 @@ class KMCCalculator : public QMCalculator {
   std::string _injection_name;
   std::string _injectionmethod;
   int _seed;
-  int _numberofcharges;
-  Eigen::Vector3d _field;
+  int _numberofcarriers;
+  Eigen::Vector3d _field = Eigen::Vector3d::Zero();
+  double _maxrealtime;
+  std::string _trajectoryfile = "trajectory.csv";
+  std::string _ratefile = "rates.dat";
+  std::string _occfile = "occupation.dat";
 
   double _temperature;
 };

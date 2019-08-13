@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_QMSTATE_H
 #define VOTCA_XTP_QMSTATE_H
 
@@ -30,7 +31,7 @@ namespace xtp {
 
 class QMStateType {
  public:
-  enum statetype {
+  enum statetype {  // never change the values
     Electron = 0,
     Hole = 1,
     Singlet = 2,
@@ -97,13 +98,7 @@ class QMStateType {
 template <class T>
 class QMStateCarrierStorage {
  public:
-  QMStateCarrierStorage() {
-    if (std::is_integral<T>::value) {
-      _content = {0, 0, 0, 0};
-    } else if (std::is_floating_point<T>::value) {
-      _content = {0.0, 0.0, 0.0, 0.0};
-    }
-  }
+  QMStateCarrierStorage() { _content = {0, 0, 0, 0}; }
 
   void setValue(T value, QMStateType t) {
     assert(t.isKMCState() &&

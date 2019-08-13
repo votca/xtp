@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_QMATOM_H
 #define VOTCA_XTP_QMATOM_H
 
@@ -32,7 +33,7 @@ namespace xtp {
  *    Stores atom type, coordinates, charge
  */
 class QMAtom {
-  friend class AOBasis;
+  friend class ECPAOBasis;
 
  public:
   struct data {

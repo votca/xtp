@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef _CALC_COUPLING_EXCL_H
 #define _CALC_COUPLING_EXCL_H
 
@@ -44,9 +45,9 @@ class IEXCITON : public ParallelXJobCalc<std::vector<Job> > {
 
   std::string Identify() { return "iexcitoncl"; }
 
-  Job::JobResult EvalJob(Topology &top, Job &job, QMThread &Thread);
+  Job::JobResult EvalJob(const Topology &top, Job &job, QMThread &Thread);
 
-  void WriteJobFile(Topology &top);
+  void WriteJobFile(const Topology &top);
   void ReadJobFile(Topology &top);
 
  private:
@@ -54,8 +55,6 @@ class IEXCITON : public ParallelXJobCalc<std::vector<Job> > {
   std::map<std::string, QMState> FillParseMaps(const std::string &Mapstring);
   double _cutoff;
   std::map<std::string, QMState> _statemap;
-  std::string _xml_file;
-  std::string _mapfile;
 };
 
 }  // namespace xtp

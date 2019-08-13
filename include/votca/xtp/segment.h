@@ -16,9 +16,8 @@
  * limitations under the License.
  *
  */
-/// For earlier commit history see ctp commit
-/// 77795ea591b29e664153f9404c8655ba28dc14e9
 
+#pragma once
 #ifndef VOTCA_XTP_SEGMENT_H
 #define VOTCA_XTP_SEGMENT_H
 
@@ -34,8 +33,11 @@ namespace xtp {
 class Segment : public AtomContainer<Atom> {
  public:
   Segment(std::string name, int id) : AtomContainer<Atom>(name, id){};
-
+  // cannot use standard AtomContainer constructor because ReadFromCpt is
+  // different.
   Segment(CheckpointReader& r) : AtomContainer<Atom>("", 0) { ReadFromCpt(r); }
+
+  ~Segment(){};
 
   /// Following notation can be observed in:
   /// [1. Victor, R. et al. Microscopic Simulations of Charge Transport in
@@ -57,7 +59,7 @@ class Segment : public AtomContainer<Atom> {
     _U_xN_xX.setValue(dU, state);
   }
 
-  const Atom* getAtom(const MD_atom_id& id) const;
+  const Atom* getAtom(int id) const;
 
   double getU_xX_nN(QMStateType state) const {
     return _U_xX_nN.getValue(state);
@@ -109,10 +111,6 @@ class Segment : public AtomContainer<Atom> {
   QMStateCarrierStorage<double> _U_nX_nN;
   QMStateCarrierStorage<double> _U_xN_xX;
   QMStateCarrierStorage<double> _site_eng;
-
-  // using caching for approximate size
-  mutable double _approxsize = 0.0;
-  mutable bool _has_approxsize = false;
 };
 
 }  // namespace xtp

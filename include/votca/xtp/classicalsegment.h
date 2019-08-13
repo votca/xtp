@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_CLASSICALSEGMENT_H
 #define VOTCA_XTP_CLASSICALSEGMENT_H
 
@@ -31,6 +32,8 @@ class ClassicalSegment : public AtomContainer<T> {
  public:
   ClassicalSegment(std::string name, int id) : AtomContainer<T>(name, id){};
 
+  ClassicalSegment(CheckpointReader& r) : AtomContainer<T>(r){};
+
   void LoadFromFile(std::string filename);
 
   void WriteMPS(std::string filename, std::string header) const;
@@ -43,7 +46,8 @@ class ClassicalSegment : public AtomContainer<T> {
 
   friend std::ostream& operator<<(std::ostream& out,
                                   const ClassicalSegment<T>& container) {
-    out << container.getId() << " " << container.getName() << "\n";
+    out << container.getId() << " " << container.identify() << " "
+        << container.getName() << "\n";
     for (const T& atom : container) {
       out << atom;
     }

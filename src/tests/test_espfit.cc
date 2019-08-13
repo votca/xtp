@@ -205,15 +205,16 @@ BOOST_AUTO_TEST_CASE(esp_charges) {
       -1.4513934569079558, 0.35380449165354727, 0.1762091332478184,
       0.7783793751383817;
 
-  orbitals.MOCoefficients() = MOs;
+  orbitals.MOs().eigenvectors() = MOs;
+  orbitals.MOs().eigenvalues() = Eigen::VectorXd::Ones(17);
   QMState gs = QMState("n");
   Logger log;
   Espfit esp = Espfit(log);
   esp.setUseSVD(1e-8);
-  esp.Fit2Density(orbitals, gs, "medium");
+  StaticSegment result = esp.Fit2Density(orbitals, gs, "medium");
   Eigen::VectorXd pcharges = Eigen::VectorXd::Zero(orbitals.QMAtoms().size());
   int index = 0;
-  for (const auto& site : orbitals.Multipoles()) {
+  for (const auto& site : result) {
     pcharges(index) = site.getCharge();
     index++;
   }
@@ -241,11 +242,10 @@ BOOST_AUTO_TEST_CASE(esp_charges) {
   Espfit esp2 = Espfit(log);
   esp2.setUseSVD(1e-8);
   esp2.setPairConstraint(pairconstraint);
-  esp2.Fit2Density(orbitals, gs, "medium");
-  Eigen::VectorXd pcharges_equal =
-      Eigen::VectorXd::Zero(orbitals.Multipoles().size());
+  StaticSegment result2 = esp2.Fit2Density(orbitals, gs, "medium");
+  Eigen::VectorXd pcharges_equal = Eigen::VectorXd::Zero(result2.size());
   index = 0;
-  for (const auto& site : orbitals.Multipoles()) {
+  for (const auto& site : result2) {
     pcharges_equal(index) = site.getCharge();
     index++;
   }
@@ -263,12 +263,12 @@ BOOST_AUTO_TEST_CASE(esp_charges) {
   Espfit esp3 = Espfit(log);
   esp3.setRegionConstraint(regionconstraint);
   esp3.setUseSVD(1e-8);
-  esp3.Fit2Density(orbitals, gs, "medium");
+  StaticSegment result3 = esp3.Fit2Density(orbitals, gs, "medium");
   Eigen::VectorXd pcharges_reg =
       Eigen::VectorXd::Zero(orbitals.QMAtoms().size());
   index = 0;
 
-  for (const auto& site : orbitals.Multipoles()) {
+  for (const auto& site : result3) {
     pcharges_reg(index) = site.getCharge();
     index++;
   }
@@ -280,99 +280,6 @@ BOOST_AUTO_TEST_CASE(esp_charges) {
               << pcharges_reg.segment(1, 3).sum() << std::endl;
   }
   BOOST_CHECK_EQUAL(check_reg, 1);
-}
-
-BOOST_AUTO_TEST_CASE(analytic_vs_numeric) {
-
-  ofstream xyzfile("molecule.xyz");
-  xyzfile << " 1" << endl;
-  xyzfile << " carbon" << endl;
-  xyzfile << " C            .000000     .000000     .000000" << endl;
-  xyzfile.close();
-
-  ofstream basisfile("3-21G.xml");
-  basisfile << "<basis name=\"3-21G\">" << endl;
-  basisfile << "  <element name=\"C\">" << endl;
-  basisfile << "    <shell scale=\"1.0\" type=\"S\">" << endl;
-  basisfile << "      <constant decay=\"1.722560e+02\">" << endl;
-  basisfile << "        <contractions factor=\"6.176690e-02\" type=\"S\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "      <constant decay=\"2.591090e+01\">" << endl;
-  basisfile << "        <contractions factor=\"3.587940e-01\" type=\"S\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "      <constant decay=\"5.533350e+00\">" << endl;
-  basisfile << "        <contractions factor=\"7.007130e-01\" type=\"S\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "    </shell>" << endl;
-  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
-  basisfile << "      <constant decay=\"3.664980e+00\">" << endl;
-  basisfile << "        <contractions factor=\"-3.958970e-01\" type=\"S\"/>"
-            << endl;
-  basisfile << "        <contractions factor=\"2.364600e-01\" type=\"P\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "      <constant decay=\"7.705450e-01\">" << endl;
-  basisfile << "        <contractions factor=\"1.215840e+00\" type=\"S\"/>"
-            << endl;
-  basisfile << "        <contractions factor=\"8.606190e-01\" type=\"P\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "    </shell>" << endl;
-  basisfile << "    <shell scale=\"1.0\" type=\"SP\">" << endl;
-  basisfile << "      <constant decay=\"1.958570e-01\">" << endl;
-  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"S\"/>"
-            << endl;
-  basisfile << "        <contractions factor=\"1.000000e+00\" type=\"P\"/>"
-            << endl;
-  basisfile << "      </constant>" << endl;
-  basisfile << "    </shell>" << endl;
-  basisfile << "  </element>" << endl;
-  basisfile << "</basis>" << endl;
-  basisfile.close();
-
-  Orbitals orbitals;
-  orbitals.setDFTbasisName("3-21G.xml");
-  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
-  QMState gs = QMState("n");
-  AOBasis basis = orbitals.SetupDftBasis();
-  orbitals.setBasisSetSize(8);
-  orbitals.setNumberOfOccupiedLevels(2);
-
-  orbitals.MOCoefficients() =
-      Eigen::MatrixXd::Zero(basis.AOBasisSize(), basis.AOBasisSize());
-  Logger log;
-
-  Espfit esp = Espfit(log);
-  esp.setUseSVD(1e-8);
-
-  esp.Fit2Density_analytic(orbitals, gs);
-  Eigen::VectorXd pcharges_anal =
-      Eigen::VectorXd::Zero(orbitals.QMAtoms().size());
-  int index = 0;
-  for (const StaticSite& atom : orbitals.Multipoles()) {
-    pcharges_anal(index) = atom.getCharge();
-    index++;
-  }
-
-  esp.Fit2Density(orbitals, gs, "medium");
-  Eigen::VectorXd pcharges = Eigen::VectorXd::Zero(orbitals.QMAtoms().size());
-  index = 0;
-  for (const StaticSite& atom : orbitals.Multipoles()) {
-    pcharges(index) = atom.getCharge();
-    index++;
-  }
-
-  bool check_esp_ana = pcharges.isApprox(pcharges_anal, 0.01);
-  if (!check_esp_ana) {
-    cout << "numeric" << endl;
-    cout << pcharges << endl;
-    cout << "analytic" << endl;
-    cout << pcharges_anal << endl;
-  }
-  BOOST_CHECK_EQUAL(check_esp_ana, 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

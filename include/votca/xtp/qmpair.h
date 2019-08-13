@@ -19,6 +19,7 @@
 /// For earlier commit history see ctp commit
 /// 77795ea591b29e664153f9404c8655ba28dc14e9
 
+#pragma once
 #ifndef VOTCA_XTP_QMPAIR_H
 #define VOTCA_XTP_QMPAIR_H
 
@@ -112,15 +113,13 @@ class QMPair {
   }
 
   double getdE12(QMStateType state) const {
-    return _segments.second->getSiteEnergy(state) -
-           _segments.first->getSiteEnergy(state);
+    return _segments.first->getSiteEnergy(state) -
+           _segments.second->getSiteEnergy(state);
   }
 
-  const Segment* Seg2PbCopy();
+  Segment Seg2PbCopy() const;
   const Segment* Seg1() const { return _segments.first; }
   const Segment* Seg2() const { return _segments.second; }
-
-  bool HasGhost() const { return _ghost != nullptr; }
 
   const Segment* first() { return _segments.first; }
   const Segment* second() { return _segments.second; }
@@ -139,7 +138,6 @@ class QMPair {
 
   Eigen::Vector3d _R = Eigen::Vector3d::Zero();
 
-  std::unique_ptr<Segment> _ghost = nullptr;
   PairType _pair_type = PairType::Hopping;
 
   QMStateCarrierStorage<double> _lambda0;

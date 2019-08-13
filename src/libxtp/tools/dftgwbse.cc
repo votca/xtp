@@ -16,7 +16,12 @@
  */
 
 #include "dftgwbse.h"
+#include <votca/tools/constants.h>
+#include <votca/xtp/geometry_optimization.h>
 #include <votca/xtp/gwbseengine.h>
+#include <votca/xtp/qmpackagefactory.h>
+#include <votca/xtp/segment.h>
+#include <votca/xtp/staticregion.h>
 
 using namespace std;
 
@@ -31,7 +36,6 @@ void DftGwBse::Initialize(tools::Property& options) {
   if (options.exists(key + ".mpsfile")) {
     _do_external = true;
     _mpsfile = options.get(key + ".mpsfile").as<string>();
-    _dipole_spacing = options.get(key + ".multipolespacing").as<double>();
   } else {
     _do_external = false;
   }
@@ -60,7 +64,7 @@ void DftGwBse::Initialize(tools::Property& options) {
 
   // options for dft package
   string _package_xml = options.get(key + ".dftpackage").as<string>();
-  load_property_from_xml(_package_options, _package_xml.c_str());
+  load_property_from_xml(_package_options, _package_xml);
   _package = _package_options.get("package.name").as<string>();
 
   // MOLECULE properties
@@ -80,7 +84,7 @@ void DftGwBse::Initialize(tools::Property& options) {
 }
 
 bool DftGwBse::Evaluate() {
-
+  OPENMP::setMaxThreads(_nThreads);
   if (_reporting == "silent")
     _log.setReportLevel(logERROR);  // only output ERRORS, GEOOPT info, and
                                     // excited state info for trial geometry
@@ -112,12 +116,11 @@ bool DftGwBse::Evaluate() {
   qmpackage->setRunDir(".");
 
   if (_do_external) {
-    StaticRegion region;
+    StaticRegion region(0, _log);
     StaticSegment seg = StaticSegment("", 0);
     seg.LoadFromFile(_mpsfile);
     region.push_back(seg);
     qmpackage->AddRegion(region);
-    qmpackage->setDipoleSpacing(_dipole_spacing);
   }
 
   GWBSEEngine gwbse_engine;
@@ -143,7 +146,7 @@ bool DftGwBse::Evaluate() {
     tools::PropertyIOManipulator iomXML(tools::PropertyIOManipulator::XML, 1,
                                         "");
     XTP_LOG(logDEBUG, _log) << "Writing output to " << _xml_output << flush;
-    std::ofstream ofout(_xml_output.c_str(), std::ofstream::out);
+    std::ofstream ofout(_xml_output, std::ofstream::out);
     ofout << (summary.get("output"));
     ofout.close();
   }

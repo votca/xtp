@@ -13,6 +13,7 @@
  * limitations under the License.
  *
  */
+#pragma once
 #ifndef VOTCA_XTP_CHECKPOINT_READER_H
 #define VOTCA_XTP_CHECKPOINT_READER_H
 
@@ -21,10 +22,10 @@
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-#include <votca/xtp/eigen.h>
-
+#include <votca/tools/linalg.h>
 #include <votca/xtp/checkpoint_utils.h>
 #include <votca/xtp/checkpointtable.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
@@ -206,6 +207,38 @@ class CheckpointReader {
     v.resize(dims[0]);
 
     dataset.read(&(v[0]), *dataType);
+  }
+
+  void ReadData(const CptLoc& loc, std::vector<std::string>& v,
+                const std::string& name) const {
+
+    H5::DataSet dataset = loc.openDataSet(name);
+    H5::DataSpace dp = dataset.getSpace();
+
+    const H5::DataType* dataType = InferDataType<std::string>::get();
+
+    hsize_t dims[2];
+    dp.getSimpleExtentDims(dims, NULL);
+
+    std::vector<char*> temp(dims[0]);
+    dataset.read(temp.data(), *dataType);
+    v.reserve(dims[0]);
+    for (char* s : temp) {
+      v.push_back(std::string(s));
+      free(s);
+    }
+  }
+
+  void ReadData(const CptLoc& loc, tools::EigenSystem& sys,
+                const std::string& name) const {
+
+    CptLoc parent = loc.openGroup(name);
+    ReadData(parent, sys.eigenvalues(), "eigenvalues");
+    ReadData(parent, sys.eigenvectors(), "eigenvectors");
+    ReadData(parent, sys.eigenvectors2(), "eigenvectors2");
+    int info;
+    ReadScalar(parent, info, "info");
+    sys.info() = static_cast<Eigen::ComputationInfo>(info);
   }
 
   void ReadData(const CptLoc& loc, std::vector<Eigen::Vector3d>& v,

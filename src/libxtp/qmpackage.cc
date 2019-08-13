@@ -18,40 +18,76 @@
  */
 
 #include "votca/xtp/qmpackage.h"
-
 #include <boost/algorithm/string.hpp>
+#include <votca/xtp/ecpaobasis.h>
+#include <votca/xtp/orbitals.h>
 
 namespace votca {
 namespace xtp {
 using std::flush;
 
-void QMPackage::ReorderOutput(Orbitals& orbitals) {
-  BasisSet dftbasisset;
-  dftbasisset.LoadBasisSet(_basisset_name);
+void QMPackage::ParseCommonOptions(tools::Property& options) {
+
+  std::string key = "package";
+  std::string name = options.get(key + ".name").as<std::string>();
+
+  if (name != getPackageName()) {
+    throw std::runtime_error("Tried to use " + name +
+                             " package. Wrong options file");
+  }
+
+  if (getPackageName() != "xtp") {
+    _executable = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+        key + ".executable");
+    _memory = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+        key + ".memory");
+    _options = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+        key + ".options");
+    _scratch_dir = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+        key + ".scratch");
+  }
+
+  _charge = options.ifExistsReturnElseThrowRuntimeError<int>(key + ".charge");
+  _spin = options.ifExistsReturnElseThrowRuntimeError<int>(key + ".spin");
+  _cleanup =
+      options.ifExistsReturnElseReturnDefault(key + ".cleanup", _cleanup);
+  _dpl_spacing = options.ifExistsReturnElseReturnDefault(
+      key + ".dipole_spacing", _dpl_spacing);
+
+  _write_guess = options.ifExistsReturnElseReturnDefault<bool>(
+      key + ".read_guess", _write_guess);
+
+  if (options.exists(key + ".basisset")) {
+    _basisset_name = options.get(key + ".basisset").as<std::string>();
+    _write_basis_set = true;
+  }
+  if (options.exists(key + ".auxbasisset")) {
+    _auxbasisset_name = options.get(key + ".auxbasisset").as<std::string>();
+    _write_auxbasis_set = true;
+  }
+
+  if (options.exists(key + ".ecp")) {
+    _write_pseudopotentials = true;
+    _ecp_name = options.get(key + ".ecp").as<std::string>();
+  }
+}
+
+void QMPackage::ReorderOutput(Orbitals& orbitals) const {
   if (!orbitals.hasQMAtoms()) {
     throw std::runtime_error("Orbitals object has no QMAtoms");
   }
 
-  AOBasis dftbasis;
-  dftbasis.AOBasisFill(dftbasisset, orbitals.QMAtoms());
+  AOBasis dftbasis = orbitals.SetupDftBasis();
   // necessary to update nuclear charges on qmatoms
-  if (_write_pseudopotentials) {
-    BasisSet ecps;
-    ecps.LoadPseudopotentialSet(_ecp_name);
-    AOBasis ecpbasis;
-    ecpbasis.ECPFill(ecps, orbitals.QMAtoms());
+  if (orbitals.hasECPName()) {
+    ECPBasisSet ecps;
+    ecps.Load(orbitals.getECPName());
+    ECPAOBasis ecpbasis;
+    ecpbasis.Fill(ecps, orbitals.QMAtoms());
   }
 
-  if (orbitals.hasAOOverlap()) {
-    dftbasis.ReorderMatrix(orbitals.AOOverlap(), getPackageName(), "xtp");
-    XTP_LOG(logDEBUG, *_pLog) << "Reordered Overlap matrix" << flush;
-  }
-  if (orbitals.hasAOVxc()) {
-    dftbasis.ReorderMatrix(orbitals.AOVxc(), getPackageName(), "xtp");
-    XTP_LOG(logDEBUG, *_pLog) << "Reordered VXC matrix" << flush;
-  }
-  if (orbitals.hasMOCoefficients()) {
-    dftbasis.ReorderMOs(orbitals.MOCoefficients(), getPackageName(), "xtp");
+  if (orbitals.hasMOs()) {
+    dftbasis.ReorderMOs(orbitals.MOs().eigenvectors(), getPackageName(), "xtp");
     XTP_LOG(logDEBUG, *_pLog) << "Reordered MOs" << flush;
   }
 
@@ -60,19 +96,19 @@ void QMPackage::ReorderOutput(Orbitals& orbitals) {
 
 Eigen::MatrixXd QMPackage::ReorderMOsBack(const Orbitals& orbitals) const {
   BasisSet dftbasisset;
-  dftbasisset.LoadBasisSet(_basisset_name);
+  dftbasisset.Load(_basisset_name);
   if (!orbitals.hasQMAtoms()) {
     throw std::runtime_error("Orbitals object has no QMAtoms");
   }
   AOBasis dftbasis;
-  dftbasis.AOBasisFill(dftbasisset, orbitals.QMAtoms());
-  Eigen::MatrixXd result = orbitals.MOCoefficients();
+  dftbasis.Fill(dftbasisset, orbitals.QMAtoms());
+  Eigen::MatrixXd result = orbitals.MOs().eigenvectors();
   dftbasis.ReorderMOs(result, "xtp", getPackageName());
   return result;
 }
 
 std::vector<QMPackage::MinimalMMCharge> QMPackage::SplitMultipoles(
-    const StaticSite& aps) {
+    const StaticSite& aps) const {
 
   std::vector<QMPackage::MinimalMMCharge> multipoles_split;
   // Calculate virtual charge positions
@@ -107,14 +143,12 @@ std::vector<QMPackage::MinimalMMCharge> QMPackage::SplitMultipoles(
 }
 
 std::vector<std::string> QMPackage::GetLineAndSplit(
-    std::ifstream& input_file, const std::string separators) {
+    std::ifstream& input_file, const std::string separators) const {
   std::string line;
   getline(input_file, line);
   boost::trim(line);
-  std::vector<std::string> row;
-  boost::algorithm::split(row, line, boost::is_any_of(separators),
-                          boost::algorithm::token_compress_on);
-  return row;
+  tools::Tokenizer tok(line, separators.c_str());
+  return tok.ToVector();
 }
 
 }  // namespace xtp

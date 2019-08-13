@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_FORCES_H
 #define VOTCA_XTP_FORCES_H
 
@@ -33,9 +34,7 @@ namespace xtp {
 class Forces {
  public:
   Forces(GWBSEEngine& gwbse_engine, const Statefilter& filter)
-      : _gwbse_engine(gwbse_engine),
-        _filter(filter),
-        _remove_total_force(false){};
+      : _gwbse_engine(gwbse_engine), _filter(filter){};
 
   void Initialize(tools::Property& options);
   void Calculate(const Orbitals& orbitals);
@@ -55,7 +54,7 @@ class Forces {
 
   GWBSEEngine& _gwbse_engine;
   const Statefilter& _filter;
-  bool _remove_total_force;
+  bool _remove_total_force = true;
 
   Eigen::MatrixX3d _forces;
   Logger* _pLog;

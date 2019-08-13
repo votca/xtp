@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef __VOTCA_XTP_POLARSITE_H
 #define __VOTCA_XTP_POLARSITE_H
 
@@ -29,29 +30,61 @@ namespace xtp {
 /**
 \brief Class to represent Atom/Site in electrostatic+polarisation
 
- The units are atomic units, e.g. Bohr, Hartree.By default a PolarSite cannot be
-polarised.
+ The units are atomic units, e.g. Bohr, Hartree.
 */
 class PolarSite : public StaticSite {
 
  public:
+  // delete these two functions because we do not want to be able to read
+  // StaticSite::data but PolarSite::data
+  void WriteData(StaticSite::data& d) const = delete;
+  void ReadData(StaticSite::data& d) = delete;
+
   PolarSite(int id, std::string element, Eigen::Vector3d pos);
   PolarSite(int id, std::string element)
       : PolarSite(id, element, Eigen::Vector3d::Zero()){};
 
-  void setPolarisation(const Eigen::Matrix3d pol);
-  void ResetInduction();
+  ~PolarSite(){};
+
+  void setPolarisation(const Eigen::Matrix3d& pol) override;
+
+  Eigen::Matrix3d getPolarisation() const { return _pinv.inverse(); }
+
+  const Eigen::Matrix3d& getPInv() const { return _pinv; }
 
   // MULTIPOLES DEFINITION
-  Eigen::Vector3d getDipole() const;
+  Eigen::Vector3d getDipole() const override;
 
-  void Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& ref_pos) {
+  double getSqrtInvEigenDamp() const { return _eigendamp_invsqrt; }
+
+  void Rotate(const Eigen::Matrix3d& R,
+              const Eigen::Vector3d& ref_pos) override {
     StaticSite::Rotate(R, ref_pos);
-    _Ps = R * _Ps * R.transpose();
+    _pinv = R.transpose() * _pinv * R;
   }
-  void Induce(double wSOR);
-  double InductionWork() const {
-    return -0.5 * _inducedDipole.transpose() * getField();
+
+  const Eigen::Vector3d& V() const { return _V; }
+
+  Eigen::Vector3d& V() { return _V; }
+
+  const Eigen::Vector3d& V_noE() const { return _V_noE; }
+
+  Eigen::Vector3d& V_noE() { return _V_noE; }
+
+  void Reset() {
+    _V.setZero();
+    _V_noE.setZero();
+  }
+
+  double deltaQ_V_ext() const { return _induced_dipole.dot(_V); }
+
+  double InternalEnergy() const {
+    return 0.5 * _induced_dipole.transpose() * _pinv * _induced_dipole;
+  }
+
+  const Eigen::Vector3d& Induced_Dipole() const { return _induced_dipole; }
+  void setInduced_Dipole(const Eigen::Vector3d& induced_dipole) {
+    _induced_dipole = induced_dipole;
   }
 
   struct data {
@@ -63,15 +96,23 @@ class PolarSite : public StaticSite {
 
     int rank;
 
-    double multipoleQ00;
-    double multipoleQ11c;
-    double multipoleQ11s;
-    double multipoleQ10;
-    double multipoleQ20;
-    double multipoleQ21c;
-    double multipoleQ21s;
-    double multipoleQ22c;
-    double multipoleQ22s;
+    double Q00;
+    double Q11c;
+    double Q11s;
+    double Q10;
+    double Q20;
+    double Q21c;
+    double Q21s;
+    double Q22c;
+    double Q22s;
+
+    double Vx;
+    double Vy;
+    double Vz;
+
+    double Vx_noE;
+    double Vy_noE;
+    double Vz_noE;
 
     double pxx;
     double pxy;
@@ -80,54 +121,43 @@ class PolarSite : public StaticSite {
     double pyz;
     double pzz;
 
-    double fieldX;
-    double fieldY;
-    double fieldZ;
-
-    double PhiP;
-
-    double fieldX_induced;
-    double fieldY_induced;
-    double fieldZ_induced;
-
-    double dipoleX;
-    double dipoleY;
-    double dipoleZ;
-
-    double dipoleXOld;
-    double dipoleYOld;
-    double dipoleZOld;
-
-    double eigendamp;
-    double phiU;
+    double d_x_ind;
+    double d_y_ind;
+    double d_z_ind;
   };
   // do not move up has to be below data definition
   PolarSite(data& d);
 
-  void SetupCptTable(CptTable& table) const;
+  double DipoleChange() const;
+
+  void SetupCptTable(CptTable& table) const override;
   void WriteData(data& d) const;
   void ReadData(data& d);
 
-  std::string identify() const { return "polarsite"; }
+  std::string identify() const override { return "polarsite"; }
 
   friend std::ostream& operator<<(std::ostream& out, const PolarSite& site) {
     out << site.getId() << " " << site.getElement() << " " << site.getRank();
-    out << " " << site.getPos().x() << "," << site.getPos().y() << ","
-        << site.getPos().z() << "\n";
+    out << " " << site.getPos().transpose() << " "
+        << site.Induced_Dipole().transpose() << "\n";
     return out;
   }
 
  private:
   std::string writePolarisation() const override;
 
-  Eigen::Matrix3d _Ps = Eigen::Matrix3d::Zero();
-  ;
-  Eigen::Vector3d _localinducedField = Eigen::Vector3d::Zero();
-  Eigen::Vector3d _inducedDipole = Eigen::Vector3d::Zero();
-  Eigen::Vector3d _inducedDipole_old = Eigen::Vector3d::Zero();
-  double _eigendamp = 0.0;
+  // PolarSite has two external fields,
+  // the first is used for interaction with regions, which are further out, i.e.
+  // the interaction energy with it is included in the polar region energy
+  Eigen::Vector3d _V = Eigen::Vector3d::Zero();
+  // the second is used for interaction with regions, which are further inside,
+  // i.e. the interaction energy with it is included in the other region's
+  // energy
+  Eigen::Vector3d _V_noE = Eigen::Vector3d::Zero();
 
-  double PhiU = 0.0;  // Electric potential (due to indu.)
+  Eigen::Vector3d _induced_dipole = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d _pinv = Eigen::Matrix3d::Zero();
+  double _eigendamp_invsqrt = 0.0;
 };
 
 }  // namespace xtp

@@ -30,12 +30,42 @@ using namespace std;
 namespace votca {
 namespace xtp {
 
+void KMCCalculator::ParseCommonOptions(tools::Property& options) {
+  std::string key = "options." + Identify();
+  _seed = options.ifExistsReturnElseThrowRuntimeError<int>(key + ".seed");
+  _numberofcarriers = options.ifExistsReturnElseThrowRuntimeError<int>(
+      key + ".numberofcarriers");
+  _injection_name = options.ifExistsReturnElseThrowRuntimeError<std::string>(
+      key + ".injectionpattern");
+  _maxrealtime = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".maxrealtime", 1E10);
+  _trajectoryfile = options.ifExistsReturnElseReturnDefault<std::string>(
+      key + ".trajectoryfile", _trajectoryfile);
+  _temperature = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".temperature", 300);
+  _temperature *= (tools::conv::kB * tools::conv::ev2hrt);
+  _occfile = options.ifExistsReturnElseReturnDefault<std::string>(
+      key + ".occfile", _occfile);
+  _ratefile = options.ifExistsReturnElseReturnDefault<std::string>(
+      key + ".ratefile", _ratefile);
+
+  _injectionmethod = options.ifExistsReturnElseReturnDefault<std::string>(
+      key + ".injectionmethod", "random");
+
+  if (_injectionmethod != "random") {
+    cout << "WARNING in kmcmultiple: Unknown injection method. It will be set "
+            "to random injection."
+         << endl;
+    _injectionmethod = "random";
+  }
+}
+
 void KMCCalculator::LoadGraph(Topology& top) {
 
   std::vector<Segment>& segs = top.Segments();
 
   if (segs.size() < 1) {
-    throw std::runtime_error("Your sql file contains no segments!");
+    throw std::runtime_error("Your state file contains no segments!");
   }
   _nodes.reserve(segs.size());
   for (Segment& seg : segs) {
@@ -53,11 +83,8 @@ void KMCCalculator::LoadGraph(Topology& top) {
 
   Rate_Engine rate_engine(_temperature, _field);
   cout << endl << "Calculating initial rates." << endl;
-  cout << "    Temperature T = " << _temperature << " K." << endl;
+  cout << rate_engine << endl;
   cout << "    carriertype: " << _carriertype.ToLongString() << endl;
-  cout << "    Rates for " << _nodes.size() << " sites are computed." << endl;
-  cout << "electric field[V/nm] =" << _field[0] << " " << _field[1] << " "
-       << _field[2] << endl;
 
   for (const QMPair* pair : nblist) {
     Rate_Engine::PairRates rates = rate_engine.Rate(*pair, _carriertype);
@@ -66,6 +93,8 @@ void KMCCalculator::LoadGraph(Topology& top) {
     _nodes[pair->Seg2()->getId()].AddEventfromQmPair(*pair, _nodes,
                                                      rates.rate21);
   }
+  cout << "    Rates for " << _nodes.size() << " sites are computed." << endl;
+  WriteRatestoFile(_ratefile, nblist);
 
   unsigned events = 0;
   unsigned max = std::numeric_limits<unsigned>::min();
@@ -107,12 +136,13 @@ void KMCCalculator::LoadGraph(Topology& top) {
   cout << "Nblist has " << nblist.size() << " pairs. Nodes contain " << events
        << " jump events" << endl;
   cout << "with avg=" << avg << " std=" << deviation << " max=" << max
-       << " min=" << min << endl;
-  cout << "Minimum jumpdistance =" << minlength
-       << " nm Maximum distance =" << maxlength << " nm" << endl;
-
-  cout << "spatial density: " << _numberofcharges / top.BoxVolume() << " nm^-3"
+       << " min=" << min << " jumps per site" << endl;
+  cout << "Minimum jumpdistance =" << minlength * tools::conv::bohr2nm
+       << " nm Maximum distance =" << maxlength * tools::conv::bohr2nm << " nm"
        << endl;
+  double conv = std::pow(tools::conv::bohr2nm, 3);
+  cout << "spatial carrier density: "
+       << _numberofcarriers / (top.BoxVolume() * conv) << " nm^-3" << endl;
 
   for (auto& node : _nodes) {
     node.InitEscapeRate();
@@ -167,7 +197,7 @@ bool KMCCalculator::CheckSurrounded(
 void KMCCalculator::RandomlyCreateCharges() {
 
   cout << "looking for injectable nodes..." << endl;
-  for (int i = 0; i < _numberofcharges; i++) {
+  for (int i = 0; i < _numberofcarriers; i++) {
     Chargecarrier newCharge(i);
     RandomlyAssignCarriertoSite(newCharge);
 
@@ -215,24 +245,47 @@ Chargecarrier* KMCCalculator::ChooseAffectedCarrier(double cumulated_rate) {
   }
   Chargecarrier* carrier = NULL;
   double u = 1 - _RandomVariable.rand_uniform();
-  for (int i = 0; i < _numberofcharges; i++) {
+  for (int i = 0; i < _numberofcarriers; i++) {
     u -= _carriers[i].getCurrentEscapeRate() / cumulated_rate;
-    if (u <= 0 || i == _numberofcharges - 1) {
+    if (u <= 0 || i == _numberofcarriers - 1) {
       carrier = &_carriers[i];
       break;
     }
   }
   return carrier;
 }
+void KMCCalculator::WriteRatestoFile(std::string filename,
+                                     const QMNBList& nblist) const {
+  cout << std::endl;
+  cout << "Rates are written to " << filename << std::endl;
+  fstream ratefs;
+  ratefs.open(filename, fstream::out);
+  ratefs << "#SiteID1,SiteID2, ,rate12[1/s],rate21[1/s] at "
+         << _temperature * tools::conv::hrt2ev / tools::conv::kB
+         << "K for carrier:" << _carriertype.ToString() << endl;
+
+  Rate_Engine rate_engine(_temperature, _field);
+  for (const QMPair* pair : nblist) {
+    Rate_Engine::PairRates rates = rate_engine.Rate(*pair, _carriertype);
+    ratefs << pair->getId() << " " << rates.rate12 << " " << rates.rate21
+           << "\n";
+  }
+  ratefs << std::flush;
+  ratefs.close();
+}
 
 void KMCCalculator::WriteOccupationtoFile(double simtime,
-                                          std::string filename) {
+                                          std::string filename) const {
+  cout << std::endl;
+  cout << "Occupations are written to " << filename << std::endl;
   fstream probs;
   probs.open(filename, fstream::out);
-  probs << "#SiteID, Occupation prob" << endl;
+  probs << "#SiteID, Occupation prob at "
+        << _temperature * tools::conv::hrt2ev / tools::conv::kB
+        << "K for carrier:" << _carriertype.ToString() << endl;
   for (const GNode& node : _nodes) {
     double occupationprobability = node.OccupationTime() / simtime;
-    probs << node.getId() << " " << occupationprobability << endl;
+    probs << node.getId() << "\t" << occupationprobability << endl;
   }
   probs.close();
 }

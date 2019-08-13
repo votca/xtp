@@ -14,6 +14,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_CHECKPOINT_WRITER_H
 #define VOTCA_XTP_CHECKPOINT_WRITER_H
 
@@ -23,10 +24,10 @@
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-#include <votca/xtp/eigen.h>
-
+#include <votca/tools/linalg.h>
 #include <votca/xtp/checkpoint_utils.h>
 #include <votca/xtp/checkpointtable.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
@@ -115,16 +116,6 @@ class CheckpointWriter {
       }
     }
   }
-
-  /* template<typename T> */
-  /*     CptTable createTable(const std::string& name, T& Obj, std::size_t
-   * nRows, bool compact=false){ */
-  /*     CptTable table(name, sizeof(typename T::data), nRows); */
-
-  /*     Obj.SetupCptTable(table); */
-  /*     table.initialize(_loc, compact); */
-  /*     return table; */
-  /* } */
 
   template <typename T>
   CptTable openTable(const std::string& name, const T& obj, std::size_t nRows,
@@ -243,7 +234,28 @@ class CheckpointWriter {
     } catch (H5::GroupIException& error) {
       dataset = loc.openDataSet(name.c_str());
     }
-    dataset.write(&(v[0]), *dataType);
+    dataset.write(v.data(), *dataType);
+  }
+
+  void WriteData(const CptLoc& loc, const std::vector<std::string>& v,
+                 const std::string& name) const {
+
+    hsize_t dims[1] = {(hsize_t)v.size()};
+
+    std::vector<const char*> c_str_copy;
+    c_str_copy.reserve(v.size());
+    for (unsigned i = 0; i < v.size(); i++) {
+      c_str_copy.push_back(v[i].c_str());
+    }
+    const H5::DataType* dataType = InferDataType<std::string>::get();
+    H5::DataSet dataset;
+    H5::DataSpace dp(1, dims);
+    try {
+      dataset = loc.createDataSet(name.c_str(), *dataType, dp);
+    } catch (H5::GroupIException& error) {
+      dataset = loc.openDataSet(name.c_str());
+    }
+    dataset.write(c_str_copy.data(), *dataType);
   }
 
   void WriteData(const CptLoc& loc, const std::vector<Eigen::Vector3d>& v,
@@ -262,6 +274,22 @@ class CheckpointWriter {
       WriteData(parent, x, "ind" + r);
       ++c;
     }
+  }
+
+  void WriteData(const CptLoc& loc, const tools::EigenSystem& sys,
+                 const std::string& name) const {
+
+    CptLoc parent;
+    try {
+      parent = loc.createGroup(name);
+    } catch (H5::GroupIException& error) {
+      parent = loc.openGroup(name);
+    }
+
+    WriteData(parent, sys.eigenvalues(), "eigenvalues");
+    WriteData(parent, sys.eigenvectors(), "eigenvectors");
+    WriteData(parent, sys.eigenvectors2(), "eigenvectors2");
+    WriteScalar(parent, int(sys.info()), "info");
   }
 
   template <typename T1, typename T2>

@@ -16,6 +16,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_GYRATION_H
 #define VOTCA_XTP_GYRATION_H
 
@@ -41,7 +42,6 @@ class Density2Gyration {
                       const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d>& es);
   void AnalyzeGeometry(const QMMolecule& atoms);
 
-  int _openmp_threads;
   QMState _state;
   bool _dostateonly;
   std::string _integrationmethod;

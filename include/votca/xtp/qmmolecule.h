@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_QMMOLECULE_H
 #define VOTCA_XTP_QMMOLECULE_H
 
@@ -30,6 +31,7 @@ class QMMolecule : public AtomContainer<QMAtom> {
  public:
   QMMolecule(std::string name, int id) : AtomContainer<QMAtom>(name, id){};
 
+  QMMolecule(CheckpointReader& r) : AtomContainer<QMAtom>(r){};
   void LoadFromFile(std::string filename);
 
   void WriteXYZ(std::string filename, std::string header) const;

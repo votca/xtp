@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_XTPAPPLICATION_H
 #define VOTCA_XTP_XTPAPPLICATION_H
 
@@ -32,7 +33,7 @@ class XtpApplication : public votca::tools::Application {
   virtual ~XtpApplication(){};
 
   void Initialize();
-  bool EvaluateOptions();
+  virtual bool EvaluateOptions() = 0;
   virtual void Run(void) = 0;
   void ShowHelpText(std::ostream &out);
 

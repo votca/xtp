@@ -16,9 +16,8 @@
  * limitations under the License.
  *
  */
-/// For an earlier history see ctp repo commit
-/// 77795ea591b29e664153f9404c8655ba28dc14e9
 
+#pragma once
 #ifndef VOTCA_XTP_QMCALCULATOR_H
 #define VOTCA_XTP_QMCALCULATOR_H
 
@@ -35,6 +34,8 @@ class QMCalculator : public tools::Calculator {
   virtual ~QMCalculator() {}
 
   virtual std::string Identify() = 0;
+
+  virtual bool WriteToStateFile() const = 0;
 
   virtual void Initialize(tools::Property &options) = 0;
   virtual bool EvaluateFrame(Topology &top) = 0;

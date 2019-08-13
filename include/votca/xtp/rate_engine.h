@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_RATE_ENGINE_H
 #define VOTCA_XTP_RATE_ENGINE_H
 #include <votca/xtp/eigen.h>
@@ -39,11 +40,14 @@ class Rate_Engine {
 
   PairRates Rate(const QMPair& pair, QMStateType carriertype) const;
 
- private:
-  double Markusrate(double Jeff2, double deltaG, double reorg) const;
+  friend std::ostream& operator<<(std::ostream& out,
+                                  const Rate_Engine& rate_engine);
 
-  double _temperature = 0.0;                         // K
-  Eigen::Vector3d _field = Eigen::Vector3d::Zero();  // units
+ private:
+  double Marcusrate(double Jeff2, double deltaG, double reorg) const;
+  std::string _ratetype = "marcus";
+  double _temperature = 0.0;                         // units:Hartree
+  Eigen::Vector3d _field = Eigen::Vector3d::Zero();  // units:Hartree/bohr
 };
 
 }  // namespace xtp

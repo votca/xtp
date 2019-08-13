@@ -17,6 +17,7 @@
  *
  */
 
+#pragma once
 #ifndef VOTCA_XTP_STATEAPPLICATION_H
 #define VOTCA_XTP_STATEAPPLICATION_H
 
@@ -32,7 +33,7 @@ class StateApplication : public XtpApplication {
  public:
   StateApplication();
 
-  ~StateApplication(){};
+  virtual ~StateApplication(){};
 
   void Initialize();
   bool EvaluateOptions();
@@ -41,10 +42,10 @@ class StateApplication : public XtpApplication {
   void BeginEvaluate(int nThreads);
   bool EvaluateFrame(Topology& top);
 
-  void AddCalculator(QMCalculator* calculator);
+  void SetCalculator(QMCalculator* calculator);
 
  protected:
-  std::vector<std::unique_ptr<QMCalculator> > _calculators;
+  std::unique_ptr<QMCalculator> _calculator;
 };
 
 }  // namespace xtp
