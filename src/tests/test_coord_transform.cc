@@ -2,17 +2,11 @@
 
 #define BOOST_TEST_MODULE coord_transform
 #include <boost/test/unit_test.hpp>
-#include <cassert>
-#include <cmath>
 #include <fstream>
 #include <iostream>
-#include <vector>
-#include <votca/tools/constants.h>
 #include <votca/xtp/coordtransform.h>
 #include <votca/xtp/internalcoords.h>
 #include <votca/xtp/orbitals.h>
-#include <votca/xtp/qmmolecule.h>
-#include <votca/xtp/qmatom.h>
 
 BOOST_AUTO_TEST_SUITE(test_coord_transform)
 

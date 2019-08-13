@@ -27,15 +27,7 @@ std::ostream& operator<<(std::ostream& s, const std::array<IND_TYPE, SIZE>& a) {
 
 template <std::size_t SIZE>
 std::array<IND_TYPE, SIZE> IdxReverse(std::array<IND_TYPE, SIZE> idx) {
-  /* std::array<IND_TYPE, SIZE> xdi; */
-  /* for (IND_TYPE i = 0; i < idx.size(); ++i){ */
-  /*     xdi[i] = idx[idx.size()-1-i]; */
-  /* } */
-  /* return xdi; */
-  std::cout << "reverse" << std::endl;
-  std::cout << idx << std::endl;
   std::reverse(idx.begin(), idx.end());
-  std::cout << idx << std::endl;
   return idx;
 }
 
@@ -90,6 +82,7 @@ struct CoordContainer {
     for (const auto& i : cc._indices) {
       stream << i << " = " << cc[i] << std::endl;
     }
+    return stream;
   }
 };
 

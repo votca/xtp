@@ -56,6 +56,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>../../include/votca/xtp/CoordContainer.h</itemPath>
       <itemPath>../../include/votca/xtp/ERIs.h</itemPath>
       <itemPath>../../include/votca/xtp/adiis.h</itemPath>
       <itemPath>../../include/votca/xtp/adiis_costfunction.h</itemPath>
@@ -81,6 +82,8 @@
       <itemPath>../../include/votca/xtp/checkpointwriter.h</itemPath>
       <itemPath>../../include/votca/xtp/classicalsegment.h</itemPath>
       <itemPath>../../include/votca/xtp/convergenceacc.h</itemPath>
+      <itemPath>../../include/votca/xtp/coordbase.h</itemPath>
+      <itemPath>../../include/votca/xtp/coordtransform.h</itemPath>
       <itemPath>../../include/votca/xtp/couplingbase.h</itemPath>
       <itemPath>../../include/votca/xtp/davidsonsolver.h</itemPath>
       <itemPath>../../include/votca/xtp/dftcoupling.h</itemPath>
@@ -263,8 +266,10 @@
       <itemPath>../../src/libxtp/basisset.cc</itemPath>
       <itemPath>../../src/libxtp/bfgs-trm.cc</itemPath>
       <itemPath>../../src/libxtp/bsecoupling.cc</itemPath>
+      <itemPath>../../src/libxtp/cartesiancoords.cc</itemPath>
       <itemPath>../../src/libxtp/checkpoint.cc</itemPath>
       <itemPath>../../src/libxtp/classicalsegment.cc</itemPath>
+      <itemPath>../../src/libxtp/coordbase.cc</itemPath>
       <itemPath>../../src/libxtp/davidsonsolver.cc</itemPath>
       <itemPath>../../src/libxtp/dftcoupling.cc</itemPath>
       <itemPath>../../src/libxtp/ecpaobasis.cc</itemPath>
@@ -275,6 +280,7 @@
       <itemPath>../../src/libxtp/espfit.cc</itemPath>
       <itemPath>../../src/libxtp/grid.cc</itemPath>
       <itemPath>../../src/libxtp/gyration.cc</itemPath>
+      <itemPath>../../src/libxtp/internalcoords.cc</itemPath>
       <itemPath>../../src/libxtp/job.cc</itemPath>
       <itemPath>../../src/libxtp/matrixfreeoperator.cc</itemPath>
       <itemPath>../../src/libxtp/md2qmengine.cc</itemPath>
@@ -317,6 +323,7 @@
       <itemPath>../../src/tests/test_bse_operator.cc</itemPath>
       <itemPath>../../src/tests/test_bsecoupling.cc</itemPath>
       <itemPath>../../src/tests/test_convergenceacc.cc</itemPath>
+      <itemPath>../../src/tests/test_coord_transform.cc</itemPath>
       <itemPath>../../src/tests/test_davidson.cc</itemPath>
       <itemPath>../../src/tests/test_dftcoupling.cc</itemPath>
       <itemPath>../../src/tests/test_dftengine.cc</itemPath>
@@ -3883,6 +3890,11 @@
           <output>../../src/libxtp/libxtp.a</output>
         </archiverTool>
       </compileType>
+      <item path="../../include/votca/xtp/CoordContainer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/ERIs.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/adiis.h" ex="false" tool="3" flavor2="0">
@@ -3977,6 +3989,16 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/convergenceacc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/coordbase.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/coordtransform.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4558,12 +4580,19 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/cartesiancoords.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/checkpoint.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/classicalsegment.cc"
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/libxtp/coordbase.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/davidsonsolver.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -4658,6 +4687,8 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/gyration.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/internalcoords.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/job.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -4946,6 +4977,11 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/tests/test_coord_transform.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_davidson.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_dftcoupling.cc"
@@ -5105,6 +5141,11 @@
         <archiverTool>
         </archiverTool>
       </compileType>
+      <item path="../../include/votca/xtp/CoordContainer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/ERIs.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/adiis.h" ex="false" tool="3" flavor2="0">
@@ -5199,6 +5240,16 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/convergenceacc.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/coordbase.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/coordtransform.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5780,12 +5831,19 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/cartesiancoords.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/libxtp/checkpoint.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/classicalsegment.cc"
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/libxtp/coordbase.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/davidsonsolver.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -5880,6 +5938,8 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/gyration.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/internalcoords.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/job.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -6164,6 +6224,11 @@
             flavor2="0">
       </item>
       <item path="../../src/tests/test_convergenceacc.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_coord_transform.cc"
             ex="false"
             tool="1"
             flavor2="0">

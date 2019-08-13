@@ -23,11 +23,11 @@ inline bool IsElectronegative(const std::string& type) {
   return VectorContains(type, electroNegElements);
 }
 
-inline std::tuple<int, int, double> ClosestAtoms(
-    const std::vector<int>& comp1, const std::vector<int>& comp2,
-    const QMMolecule& qmm) {
+inline std::tuple<int, int, double> ClosestAtoms(const std::vector<int>& comp1,
+                                                 const std::vector<int>& comp2,
+                                                 const QMMolecule& qmm) {
 
-  double min = std::numeric_limits<double>::infinity();
+  double min = std::numeric_limits<double>::max();
   std::pair<int, int> closest = std::make_pair(-1, -1);
 
   for (const auto& i : comp1) {
@@ -50,14 +50,14 @@ void InternalCoords::ConnectBonds() {
   const double threshFactor = 1.3;
   const double auxThreshFactor = 2.5;
 
-  int _numAtoms = _qmMolecule.size();
+  int numAtoms = _qmMolecule.size();
 
-  for (int i = 0; i < _numAtoms; ++i) {
+  for (int i = 0; i < numAtoms; ++i) {
     auto atomI = _qmMolecule[i];
 
     const double iCovRad = elements.getCovRad(atomI.getElement(), "bohr");
     const Eigen::Vector3d iPos = atomI.getPos();
-    for (int j = i + 1; j < _numAtoms; ++j) {
+    for (int j = i + 1; j < numAtoms; ++j) {
       auto atomJ = _qmMolecule[j];
 
       const double jCovRad = elements.getCovRad(atomJ.getElement(), "bohr");
@@ -143,8 +143,9 @@ void InternalCoords::ConnectMolecules() {
           // to different components
           for (const auto& iAtom : compIAtoms) {
             for (const auto& jAtom : compJAtoms) {
-              const double dist = (_qmMolecule[iAtom].getPos() -
-                                   _qmMolecule[jAtom].getPos()).norm();
+              const double dist =
+                  (_qmMolecule[iAtom].getPos() - _qmMolecule[jAtom].getPos())
+                      .norm();
               if (dist <= thresholdDist) {
                 boost::add_edge(iAtom, jAtom, _bondGraph);
                 _numInterMolBonds += 1;
@@ -210,9 +211,9 @@ void InternalCoords::ConnectHBonds() {
             const double dist = (HAtomPos - neighBPos).norm();
 
             double lowerBound =
-                0.9 *
-                (elements.getCovRad(_qmMolecule[neighBInd].getElement(), "bohr") +
-                 elements.getCovRad("H", "bohr"));
+                0.9 * (elements.getCovRad(_qmMolecule[neighBInd].getElement(),
+                                          "bohr") +
+                       elements.getCovRad("H", "bohr"));
 
             double upperBound =
                 tools::conv::ang2bohr *
@@ -326,12 +327,12 @@ void InternalCoords::CalculateAnglesDihedrals() {
             // abs(cosABC + 1) < tol
             if (std::abs(-1 - cosABC) > tol && std::abs(-1 - cosBCD) > tol) {
 
-                Eigen::Vector3d normPlaneB = CBVec.cross(CDVec);
+              Eigen::Vector3d normPlaneB = CBVec.cross(CDVec);
 
-                const double cosPhi = normPlaneA.dot(normPlaneB);
+              const double cosPhi = normPlaneA.dot(normPlaneB);
 
-                _dihedrals[index] = std::acos(cosPhi);
-                _vector.emplace_back(std::acos(cosPhi));
+              _dihedrals[index] = std::acos(cosPhi);
+              _vector.emplace_back(std::acos(cosPhi));
             }
           }
         }
@@ -395,14 +396,17 @@ void InternalCoords::CalculateAnglesDihedrals() {
         // std::cout << "(" << ind[0] << " " << ind[1] << " " << ind[2] << " "
         //           << ind[3] << ")"<< std::endl;
 
-        Eigen::Vector3d BAVec =_qmMolecule[atomAIdx].getPos() - _qmMolecule[atomBIdx].getPos();
+        Eigen::Vector3d BAVec =
+            _qmMolecule[atomAIdx].getPos() - _qmMolecule[atomBIdx].getPos();
         BAVec.normalize();
 
-        Eigen::Vector3d BCVec =_qmMolecule[atomCIdx].getPos() - _qmMolecule[atomBIdx].getPos();
+        Eigen::Vector3d BCVec =
+            _qmMolecule[atomCIdx].getPos() - _qmMolecule[atomBIdx].getPos();
         BCVec.normalize();
 
         Eigen::Vector3d CBVec = -BCVec;
-        Eigen::Vector3d CDVec =_qmMolecule[atomDIdx].getPos() - _qmMolecule[atomCIdx].getPos();
+        Eigen::Vector3d CDVec =
+            _qmMolecule[atomDIdx].getPos() - _qmMolecule[atomCIdx].getPos();
         CDVec.normalize();
 
         const double cosABC = BAVec.dot(BCVec);
@@ -437,7 +441,8 @@ inline int zeta(const int& a, const int& m, const int& n) {
   return (delta(a, m) - delta(a, n));
 }
 
-inline Eigen::Vector3d GetPerpTo(const Eigen::Vector3d& u, const Eigen::Vector3d& v) {
+inline Eigen::Vector3d GetPerpTo(const Eigen::Vector3d& u,
+                                 const Eigen::Vector3d& v) {
   double tol = 1e-6;
   if (std::abs(1 - u.norm()) > tol || std::abs(1 - v.norm()) > tol)
     throw std::runtime_error("GetPerpTo only accepts normalized vectors.");
@@ -446,16 +451,17 @@ inline Eigen::Vector3d GetPerpTo(const Eigen::Vector3d& u, const Eigen::Vector3d
   Eigen::Vector3d y(-1, 1, 1);
   Eigen::Vector3d ret;
 
-  auto AreParallel = [](const Eigen::Vector3d& a, const Eigen::Vector3d& b) -> bool {
-      return (1 - std::abs(a.dot(b)) < 1e-3);
+  auto AreParallel = [](const Eigen::Vector3d& a,
+                        const Eigen::Vector3d& b) -> bool {
+    return (1 - std::abs(a.dot(b)) < 1e-3);
   };
 
   if (!AreParallel(u, v))
-      ret = u.cross(v);
+    ret = u.cross(v);
   else if (!AreParallel(u, x) && !AreParallel(v, x))
-      ret = u.cross(x);
+    ret = u.cross(x);
   else
-      ret = u.cross(y);
+    ret = u.cross(y);
 
   ret.normalize();
 
@@ -475,7 +481,8 @@ void InternalCoords::PopulateWilsonMatrix() {
     atIdxM = bondIdx[0];
     atIdxN = bondIdx[1];
 
-    Eigen::Vector3d bondVec =_qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxN].getPos();
+    Eigen::Vector3d bondVec =
+        _qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxN].getPos();
     bondVec.normalize();
 
     auto writeBondElem = [&](int a) -> void {
@@ -526,7 +533,7 @@ void InternalCoords::PopulateWilsonMatrix() {
     v.normalize();
 
     Eigen::Vector3d w = GetPerpTo(u, v);  // w = u^v
-                                     // UNLESS u is parallel to v
+                                          // UNLESS u is parallel to v
 
     Eigen::Vector3d uw = (u.cross(w)) / lu;
 
@@ -603,8 +610,9 @@ void InternalCoords::PopulateWilsonMatrix() {
     auto writeDihedralElem = [&](int a) -> void {
       Eigen::Vector3d t1 = (zeta(a, atIdxM, atIdxO) / (lu * su2)) * uw;
       Eigen::Vector3d t2 = (zeta(a, atIdxP, atIdxN) / (lv * sv2)) * vw;
-      Eigen::Vector3d t3 = zeta(a, atIdxO, atIdxP) *
-                      (uw * cosPhiU / (lw * su2) - vw * cosPhiV / lw * sv2);
+      Eigen::Vector3d t3 =
+          zeta(a, atIdxO, atIdxP) *
+          (uw * cosPhiU / (lw * su2) - vw * cosPhiV / lw * sv2);
       a *= 3;
       _wilsonBMatrix(idx, a + 0) = t1.x() - t2.x() - t3.x();
       _wilsonBMatrix(idx, a + 1) = t1.y() - t2.y() - t3.y();
