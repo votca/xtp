@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(fragment_pop) {
   QMState s1("s1");
   low.CalcChargeperFragment(frags, orb, s1.Type());
 
-  BOOST_CHECK_CLOSE(frags[0].value().Gs, 0.5164649, 1e-5);
+  BOOST_CHECK_CLOSE(frags[0].value().Gs, 0.5164649, 1e-4);
   BOOST_CHECK_CLOSE(frags[1].value().Gs, -0.5164628, 1e-5);
 
   Eigen::VectorXd f1E_ref = Eigen::VectorXd::Zero(3);

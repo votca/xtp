@@ -61,12 +61,16 @@ void QMMolecule::WriteXYZ(std::string filename, std::string header) const {
 
 void QMMolecule::LoadFromFile(std::string filename) {
   csg::XYZReader<csg::Topology> reader;
-  // reader.Open(filename);
   csg::Topology csg_top;
   reader.ReadTopology(filename, &csg_top);
   TopologyContainerConverter cont_converter;
+
+  // Preserve name and id
+  int temp_id = _id;
+  string temp_name = _name;
   *this = cont_converter.Convert<QMMolecule>(csg_top);
-  // reader.Close();
+  _id = temp_id;
+  _name = temp_name;
 }
 }  // namespace xtp
 }  // namespace votca
