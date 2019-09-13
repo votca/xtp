@@ -21,7 +21,7 @@
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/rpa.h>
-#include <votca/xtp/sigma_spectral.h>
+#include <votca/xtp/sigma_exact.h>
 #include <votca/xtp/threecenter.h>
 
 using namespace votca::xtp;
@@ -174,8 +174,8 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   rpa.setRPAInputEnergies(mo_energy);
   rpa.configure(4, 0, 16);
 
-  Sigma_Spectral sigma = Sigma_Spectral(Mmn, rpa);
-  Sigma_Spectral::options opt;
+  Sigma_Exact sigma = Sigma_Exact(Mmn, rpa);
+  Sigma_Exact::options opt;
   opt.homo = 4;
   opt.qpmin = 0;
   opt.qpmax = 16;

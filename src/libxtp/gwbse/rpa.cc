@@ -48,7 +48,8 @@ void RPA::UpdateRPAInputEnergies(const Eigen::VectorXd& dftenergies,
 template <bool imag>
 Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
   const int size = _Mmn.auxsize();
-  Eigen::MatrixXd result = Eigen::MatrixXd::Identity(size, size);
+  std::vector<Eigen::MatrixXd> thread_result = std::vector<Eigen::MatrixXd>(
+      OPENMP::getMaxThreads(), Eigen::MatrixXd::Zero(size, size));
   const int lumo = _homo + 1;
   const int n_occ = lumo - _rpamin;
   const int n_unocc = _rpamax - lumo + 1;
@@ -60,6 +61,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 
     const Eigen::MatrixXd Mmn_RPA =
         _Mmn[m_level].block(n_occ, 0, n_unocc, size);
+
     const Eigen::ArrayXd deltaE =
         _energies.segment(n_occ, n_unocc).array() - qp_energy_m;
     Eigen::VectorXd denom;
@@ -74,9 +76,11 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
     }
     auto temp = Mmn_RPA.transpose() * denom.asDiagonal();
     Eigen::MatrixXd tempresult = temp * Mmn_RPA;
-
-#pragma omp critical
-    { result += tempresult; }
+    thread_result[OPENMP::getThreadId()] += tempresult;
+  }
+  Eigen::MatrixXd result = Eigen::MatrixXd::Identity(size, size);
+  for (const auto& mat : thread_result) {
+    result += mat;
   }
   return result;
 }
@@ -146,17 +150,17 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   const int rpasize = n_occup * n_unocc;
   rpa_eigensolution sol;
 
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Diagonalizing RPA Hamiltonian " << flush;
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Diagonalizing RPA Hamiltonian " << flush;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C); // Uses lower triangle
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Diagonalization done " << flush;
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Diagonalization done " << flush;
 
   double mc = es.eigenvalues().minCoeff();
   if (mc <= 0.0) {
     std::string msg =
         (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
-    CTP_LOG(ctp::logDEBUG, _log) << ctp::TimeStamp() << " " << msg << flush;
+    XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " " << msg << flush;
     throw std::runtime_error(msg);
   }
 
@@ -164,8 +168,8 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   sol._Omega = Eigen::VectorXd::Zero(rpasize);
   sol._Omega = es.eigenvalues().cwiseSqrt();
   
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Lowest neutral excitation energy (eV): " 
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Lowest neutral excitation energy (eV): " 
       << tools::conv::hrt2ev * sol._Omega.minCoeff() << flush;
   
   // X     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] * Z
