@@ -237,7 +237,7 @@ void QMMM::WriteJobFile(const Topology& top) {
     for (const QMState& state : _states) {
 
       std::string marker = std::to_string(seg.getId()) + ":" + state.ToString();
-      std::string tag = seg.getName() + "_" + marker;
+      std::string tag = seg.getType() + "_" + marker;
 
       tools::Property Input;
       tools::Property& pInput = Input.add("input", "");
@@ -277,7 +277,7 @@ void QMMM::ReadJobFile(Topology& top) {
       Eigen::Matrix<int, Eigen::Dynamic, 5>::Zero(top.Segments().size(), 5);
 
   tools::Property xml;
-  load_property_from_xml(xml, _jobfile);
+  xml.LoadFromXML(_jobfile);
   std::vector<tools::Property*> jobProps = xml.Select("jobs.job");
   for (tools::Property* job : jobProps) {
 
@@ -322,6 +322,7 @@ void QMMM::ReadJobFile(Topology& top) {
   }
 
   Eigen::Matrix<int, 1, 5> found_states = found.colwise().sum();
+  std::cout << std::endl;
   for (int i = 0; i < 5; i++) {
     if (found_states(i) > 0) {
       QMStateType type(static_cast<QMStateType::statetype>(i));

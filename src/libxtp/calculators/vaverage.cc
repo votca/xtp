@@ -84,8 +84,9 @@ std::vector<Rate_Engine::PairRates> VAverage::ReadRatefile(
     if (!split.size() || split[0] == "#" || split[0].substr(0, 1) == "#") {
       continue;
     }
-    if (split.size() != 3) {
-      throw std::runtime_error("Row should only contain pairid, rate12,rate21");
+    if (split.size() != 5) {
+      throw std::runtime_error(
+          "Row should only contain pairid,segid1,segid2 ,rate12,rate21");
     }
 
     int id_readin = std::stoi(split[0]);
@@ -94,8 +95,8 @@ std::vector<Rate_Engine::PairRates> VAverage::ReadRatefile(
     }
     id++;
     Rate_Engine::PairRates pair;
-    pair.rate12 = std::stod(split[1]);
-    pair.rate21 = std::stod(split[2]);
+    pair.rate12 = std::stod(split[3]);
+    pair.rate21 = std::stod(split[4]);
     result.push_back(pair);
   }
   return result;
@@ -149,7 +150,7 @@ bool VAverage::EvaluateFrame(Topology& top) {
     const Eigen::Vector3d v = velocities[seg.getId()] * tools::conv::bohr2nm;
     ofs << (boost::format("%1$4d %2$-10s %3$+1.7e %4$+1.7e "
                           "%5$+1.7e %6$+1.7e %7$+1.7e %8$+1.7e") %
-            seg.getId() % seg.getName() % r.x() % r.y() % r.z() % v.x() %
+            seg.getId() % seg.getType() % r.x() % r.y() % r.z() % v.x() %
             v.y() % v.z())
         << std::endl;
   }

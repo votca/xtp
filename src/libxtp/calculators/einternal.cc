@@ -38,7 +38,7 @@ void EInternal::ParseEnergies() {
             << std::flush;
 
   tools::Property alloc;
-  tools::load_property_from_xml(alloc, _energiesXML);
+  alloc.LoadFromXML(_energiesXML);
 
   std::string key = "topology.molecules.molecule";
   std::vector<tools::Property *> mols = alloc.Select(key);
@@ -90,7 +90,7 @@ bool EInternal::EvaluateFrame(Topology &top) {
   int count = 0;
   for (Segment &seg : top.Segments()) {
 
-    std::string segName = seg.getName();
+    std::string segName = seg.getType();
 
     if (!_has_seg.count(segName)) {
       std::cout << std::endl

@@ -43,7 +43,7 @@ class CheckpointReader {
       T& var, const std::string& name) const {
     try {
       ReadData(_loc, var, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
 
       message << "Could not read " << name << " from " << _loc.getFileName()
@@ -59,7 +59,7 @@ class CheckpointReader {
       operator()(T& var, const std::string& name) const {
     try {
       ReadScalar(_loc, var, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not read " << name << " from " << _loc.getFileName()
               << ":" << _path << "/" << std::endl;
@@ -72,7 +72,7 @@ class CheckpointReader {
     int temp = int(v);
     try {
       ReadScalar(_loc, temp, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not read " << name << " from " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -85,7 +85,7 @@ class CheckpointReader {
   void operator()(std::string& var, const std::string& name) const {
     try {
       ReadScalar(_loc, var, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not read " << name << " from " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -98,7 +98,7 @@ class CheckpointReader {
     try {
       return CheckpointReader(_loc.openGroup(childName),
                               _path + "/" + childName);
-    } catch (H5::Exception& e) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not open " << _loc.getFileName() << ":/" << _path << "/"
               << childName << std::endl;
@@ -117,7 +117,7 @@ class CheckpointReader {
       CptTable table = CptTable(name, sizeof(typename T::data), _loc);
       obj.SetupCptTable(table);
       return table;
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not open table " << name << " in " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -205,8 +205,14 @@ class CheckpointReader {
     dp.getSimpleExtentDims(dims, NULL);
 
     v.resize(dims[0]);
-
-    dataset.read(&(v[0]), *dataType);
+    try {
+      dataset.read(&(v[0]), *dataType);
+    } catch (H5::Exception&) {
+      std::stringstream message;
+      message << "Could not read " << name << " from " << _loc.getFileName()
+              << ":" << _path << std::endl;
+      throw std::runtime_error(message.str());
+    }
   }
 
   void ReadData(const CptLoc& loc, std::vector<std::string>& v,
@@ -221,7 +227,14 @@ class CheckpointReader {
     dp.getSimpleExtentDims(dims, NULL);
 
     std::vector<char*> temp(dims[0]);
-    dataset.read(temp.data(), *dataType);
+    try {
+      dataset.read(temp.data(), *dataType);
+    } catch (H5::Exception&) {
+      std::stringstream message;
+      message << "Could not read " << name << " from " << _loc.getFileName()
+              << ":" << _path << std::endl;
+      throw std::runtime_error(message.str());
+    }
     v.reserve(dims[0]);
     for (char* s : temp) {
       v.push_back(std::string(s));

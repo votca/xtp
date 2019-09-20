@@ -35,7 +35,8 @@ BOOST_AUTO_TEST_CASE(constructor) {
             << std::endl;
   jobstream << "			<regions>" << std::endl;
   jobstream << "				<region>" << std::endl;
-  jobstream << "					<id>0</id>" << std::endl;
+  jobstream << "					<id>0</id>"
+            << std::endl;
   jobstream
       << "					<segments>0:n</segments>"
       << std::endl;
@@ -46,7 +47,7 @@ BOOST_AUTO_TEST_CASE(constructor) {
   jobstream << "	</job>" << std::endl;
 
   votca::tools::Property prop;
-  votca::tools::load_property_from_xml(prop, "job.xml");
+  prop.LoadFromXML("job.xml");
   std::string workdir = ".";
   Logger log;
   Job job(prop.get("job"));

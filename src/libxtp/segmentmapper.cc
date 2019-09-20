@@ -35,7 +35,7 @@ AtomContainer SegmentMapper<AtomContainer>::map(const Segment& seg,
     filename = std::regex_replace(filename, std::regex("\\$SEGID"),
                                   std::to_string(seg.getId()));
     filename =
-        std::regex_replace(filename, std::regex("\\$SEGNAME"), seg.getName());
+        std::regex_replace(filename, std::regex("\\$SEGNAME"), seg.getType());
     return map(seg, filename);
   } else {
     QMState state = segid.getQMState();
@@ -101,7 +101,7 @@ template <class AtomContainer>
 void SegmentMapper<AtomContainer>::ParseFragment(Seginfo& seginfo,
                                                  const tools::Property& frag) {
   tools::Tokenizer tok_map_atoms(
-      frag.get(_mapatom_xml["atoms"]).as<std::string>(), " \t\n");
+      frag.get(_mapatom_xml["atoms"]).template as<std::string>(), " \t\n");
   std::vector<std::string> map_atoms = tok_map_atoms.ToVector();
   tools::Tokenizer tok_md_atoms(frag.get("mdatoms").as<std::string>(), " \t\n");
   std::vector<std::string> md_atoms = tok_md_atoms.ToVector();
@@ -182,7 +182,7 @@ void SegmentMapper<AtomContainer>::ParseFragment(Seginfo& seginfo,
 template <class AtomContainer>
 void SegmentMapper<AtomContainer>::LoadMappingFile(const std::string& mapfile) {
   tools::Property topology_map;
-  tools::load_property_from_xml(topology_map, mapfile);
+  topology_map.LoadFromXML(mapfile);
 
   std::string molkey = "topology.molecules.molecule";
   std::vector<tools::Property*> molecules = topology_map.Select(molkey);
@@ -251,7 +251,7 @@ std::pair<int, std::string> SegmentMapper<AtomContainer>::StringToMDIndex(
   int atomid = 0;
   try {
     atomid = std::stoi(result[2]);
-  } catch (std::invalid_argument& e) {
+  } catch (std::invalid_argument&) {
     throw std::runtime_error("Atom entry " + md_string +
                              " is not well formatted");
   }
@@ -389,16 +389,16 @@ void SegmentMapper<AtomContainer>::MapMapAtomonMD(
 template <class AtomContainer>
 AtomContainer SegmentMapper<AtomContainer>::map(const Segment& seg,
                                                 QMState state) const {
-  if (_segment_info.count(seg.getName()) == 0) {
+  if (_segment_info.count(seg.getType()) == 0) {
     throw std::runtime_error(
-        "Could not find a Segment of name: " + seg.getName() + " in mapfile.");
+        "Could not find a Segment of name: " + seg.getType() + " in mapfile.");
   }
-  Seginfo seginfo = _segment_info.at(seg.getName());
+  Seginfo seginfo = _segment_info.at(seg.getType());
   std::string coordsfiletag =
       _mapatom_xml.at("coords") + "_" + state.Type().ToString();
   if (seginfo.coordfiles.count(coordsfiletag) == 0) {
     throw std::runtime_error("Could not find a coordinate file for " +
-                             seg.getName() +
+                             seg.getType() +
                              " id:" + std::to_string(seg.getId()) +
                              " segment/state: " + coordsfiletag);
   }
@@ -410,14 +410,14 @@ template <class AtomContainer>
 AtomContainer SegmentMapper<AtomContainer>::map(
     const Segment& seg, const std::string& coordfilename) const {
 
-  if (_segment_info.count(seg.getName()) == 0) {
+  if (_segment_info.count(seg.getType()) == 0) {
     throw std::runtime_error(
-        "Could not find a Segment of name: " + seg.getName() + " in mapfile.");
+        "Could not find a Segment of name: " + seg.getType() + " in mapfile.");
   }
-  Seginfo seginfo = _segment_info.at(seg.getName());
+  Seginfo seginfo = _segment_info.at(seg.getType());
   if (int(seginfo.mdatoms.size()) != seg.size()) {
     throw std::runtime_error(
-        "Segment '" + seg.getName() +
+        "Segment '" + seg.getType() +
         "' does not contain the same number of atoms as mapping file: " +
         std::to_string(seginfo.mdatoms.size()) + " vs. " +
         std::to_string(seg.size()));
@@ -428,7 +428,7 @@ AtomContainer SegmentMapper<AtomContainer>::map(
 
   if ((minmax_map.first - minmax_map.second) !=
       (minmax.first - minmax.second)) {
-    throw std::runtime_error("AtomId range for segment " + seg.getName() + ":" +
+    throw std::runtime_error("AtomId range for segment " + seg.getType() + ":" +
                              std::to_string(seg.getId()) +
                              " and the mapping do not agree: Segment[" +
                              std::to_string(minmax.first) + "," +
@@ -439,12 +439,12 @@ AtomContainer SegmentMapper<AtomContainer>::map(
 
   int atomidoffset = minmax.first - minmax_map.first;
 
-  AtomContainer Result(seg.getName(), seg.getId());
+  AtomContainer Result(seg.getType(), seg.getId());
   Result.LoadFromFile(coordfilename);
 
   if (int(seginfo.mapatoms.size()) != Result.size()) {
     throw std::runtime_error(
-        _mapatom_xml.at("tag") + "Segment '" + seg.getName() +
+        _mapatom_xml.at("tag") + "Segment '" + seg.getType() +
         "' does not contain the same number of atoms as mapping file: " +
         std::to_string(seginfo.mapatoms.size()) + " vs. " +
         std::to_string(Result.size()));
@@ -471,7 +471,7 @@ AtomContainer SegmentMapper<AtomContainer>::map(
       if (atom == nullptr) {
         throw std::runtime_error(
             "Could not find an atom with name:" + id.second + "id" +
-            std::to_string(id.first) + " in segment " + seg.getName());
+            std::to_string(id.first) + " in segment " + seg.getType());
       }
       fragment_mdatoms.push_back(atom);
     }

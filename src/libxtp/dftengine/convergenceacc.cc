@@ -31,7 +31,6 @@ void ConvergenceAcc::setOverlap(AOOverlap& S, double etol) {
                            << _S->Removedfunctions()
                            << " basisfunction from inverse overlap matrix"
                            << std::flush;
-  Sonehalf = S.Sqrt();
   return;
 }
 
@@ -52,7 +51,7 @@ Eigen::MatrixXd ConvergenceAcc::Iterate(const Eigen::MatrixXd& dmat,
         MOs.eigenvalues()(_nocclevels) - MOs.eigenvalues()(_nocclevels - 1);
     if ((_diiserror > _opt.levelshiftend && _opt.levelshift > 0.0) ||
         gap < 1e-6) {
-      Levelshift(H);
+      Levelshift(H, MOs.eigenvectors());
     }
   }
   const Eigen::MatrixXd& S = _S->Matrix();
@@ -160,7 +159,8 @@ void ConvergenceAcc::PrintConfigOptions() const {
                            << _opt.mixingparameter << std::flush;
 }
 
-tools::EigenSystem ConvergenceAcc::SolveFockmatrix(const Eigen::MatrixXd& H) {
+tools::EigenSystem ConvergenceAcc::SolveFockmatrix(
+    const Eigen::MatrixXd& H) const {
   // transform to orthogonal for
   Eigen::MatrixXd H_ortho = Sminusahalf.transpose() * H * Sminusahalf;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(H_ortho);
@@ -170,7 +170,6 @@ tools::EigenSystem ConvergenceAcc::SolveFockmatrix(const Eigen::MatrixXd& H) {
                              std::to_string(es.info()));
   }
 
-  MOsinv = es.eigenvectors().transpose() * Sonehalf;
   tools::EigenSystem result;
   result.eigenvalues() = es.eigenvalues();
 
@@ -178,24 +177,21 @@ tools::EigenSystem ConvergenceAcc::SolveFockmatrix(const Eigen::MatrixXd& H) {
   return result;
 }
 
-void ConvergenceAcc::Levelshift(Eigen::MatrixXd& H) const {
+void ConvergenceAcc::Levelshift(Eigen::MatrixXd& H,
+                                const Eigen::MatrixXd& MOs_old) const {
   if (_opt.levelshift < 1e-9) {
     return;
   }
-  if (MOsinv.rows() < 1) {
-    throw std::runtime_error(
-        "ConvergenceAcc::Levelshift: Call SolveFockmatrix before Levelshift, "
-        "MOsinv not initialized");
-  }
-  Eigen::MatrixXd virt = Eigen::MatrixXd::Zero(H.rows(), H.cols());
+  Eigen::VectorXd virt = Eigen::VectorXd::Zero(H.rows());
   for (int i = _nocclevels; i < H.rows(); i++) {
-    virt(i, i) = _opt.levelshift;
+    virt(i) = _opt.levelshift;
   }
 
   XTP_LOG(logDEBUG, *_log) << TimeStamp()
                            << " Using levelshift:" << _opt.levelshift
                            << " Hartree" << std::flush;
-  Eigen::MatrixXd vir = MOsinv.transpose() * virt * MOsinv;
+  Eigen::MatrixXd vir = _S->Matrix() * MOs_old * virt.asDiagonal() *
+                        MOs_old.transpose() * _S->Matrix();
   H += vir;
   return;
 }
@@ -236,9 +232,8 @@ Eigen::MatrixXd ConvergenceAcc::DensityMatrixGroundState_frac(
     return Eigen::MatrixXd::Zero(MOs.eigenvectors().rows(),
                                  MOs.eigenvectors().rows());
   }
-  int numofelec = _opt.numberofelectrons;
-  Eigen::VectorXd occupation = Eigen::VectorXd::Zero(MOs.eigenvalues().size());
 
+  Eigen::VectorXd occupation = Eigen::VectorXd::Zero(MOs.eigenvalues().size());
   std::vector<std::vector<int> > degeneracies;
   double buffer = 1e-4;
   degeneracies.push_back(std::vector<int>{0});
@@ -250,16 +245,17 @@ Eigen::MatrixXd ConvergenceAcc::DensityMatrixGroundState_frac(
       degeneracies.push_back(std::vector<int>{i});
     }
   }
+  int numofelec = _opt.numberofelectrons;
   for (const std::vector<int>& deglevel : degeneracies) {
     int numofpossibleelectrons = 2 * deglevel.size();
     if (numofpossibleelectrons <= numofelec) {
-      for (const int& i : deglevel) {
+      for (int i : deglevel) {
         occupation(i) = 2;
       }
       numofelec -= numofpossibleelectrons;
     } else if (numofpossibleelectrons > numofelec) {
       double occ = double(numofelec) / double(deglevel.size());
-      for (const int& i : deglevel) {
+      for (int i : deglevel) {
         occupation(i) = occ;
       }
       break;

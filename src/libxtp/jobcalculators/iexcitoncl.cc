@@ -94,7 +94,17 @@ Job::JobResult IEXCITON::EvalJob(const Topology& top, Job& job,
   string mps_fileB = segment_list.back()->getAttribute<string>("mps_file");
 
   const Segment& seg_A = top.getSegment(ID_A);
+  if (type_A != seg_A.getType()) {
+    throw runtime_error("SegmentA: type " + seg_A.getType() +
+                        " and type in jobfile " + type_A +
+                        " do not agree for ID:" + std::to_string(ID_A));
+  }
   const Segment& seg_B = top.getSegment(ID_B);
+  if (type_B != seg_B.getType()) {
+    throw runtime_error("SegmentB: type " + seg_B.getType() +
+                        " and type in jobfile " + type_B +
+                        " do not agree for ID:" + std::to_string(ID_B));
+  }
   const QMNBList& nblist = top.NBList();
   const QMPair* pair = nblist.FindPair(&seg_A, &seg_B);
   if (pair == nullptr) {
@@ -116,8 +126,8 @@ Job::JobResult IEXCITON::EvalJob(const Topology& top, Job& job,
   Property job_summary;
   Property& job_output = job_summary.add("output", "");
   Property& pair_summary = job_output.add("pair", "");
-  string nameA = seg_A.getName();
-  string nameB = seg_B.getName();
+  string nameA = seg_A.getType();
+  string nameB = seg_B.getType();
   pair_summary.setAttribute("idA", ID_A);
   pair_summary.setAttribute("idB", ID_B);
   pair_summary.setAttribute("typeA", nameA);
@@ -135,7 +145,7 @@ QMState IEXCITON::GetElementFromMap(const std::string& elementname) const {
   QMState state;
   try {
     state = _statemap.at(elementname);
-  } catch (std::out_of_range& error) {
+  } catch (std::out_of_range&) {
     std::string errormessage =
         "Map does not have segment of type: " + elementname;
     errormessage += "\n segments in map are:";
@@ -167,9 +177,9 @@ void IEXCITON::WriteJobFile(const Topology& top) {
   for (const QMPair* pair : nblist) {
     if (pair->getType() == QMPair::PairType::Excitoncl) {
       int id1 = pair->Seg1()->getId();
-      string name1 = pair->Seg1()->getName();
+      string name1 = pair->Seg1()->getType();
       int id2 = pair->Seg2()->getId();
-      string name2 = pair->Seg2()->getName();
+      string name2 = pair->Seg2()->getType();
       int id = jobCount;
       QMState state1 = GetElementFromMap(name1);
       QMState state2 = GetElementFromMap(name2);
@@ -219,7 +229,7 @@ void IEXCITON::ReadJobFile(Topology& top) {
   log.setReportLevel(logINFO);
 
   // load the QC results in a vector indexed by the pair ID
-  load_property_from_xml(xml, _jobfile);
+  xml.LoadFromXML(_jobfile);
   vector<Property*> jobProps = xml.Select("jobs.job");
   records.resize(number_of_pairs + 1);
 

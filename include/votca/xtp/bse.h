@@ -28,7 +28,7 @@
 
 namespace votca {
 namespace xtp {
-class BSE_Population;
+struct BSE_Population;
 template <int cqp, int cx, int cd, int cd2>
 class BSE_OPERATOR;
 typedef BSE_OPERATOR<1, 2, 1, 0> SingletOperator_TDA;
@@ -70,9 +70,9 @@ class BSE {
   SingletOperator_TDA getSingletOperator_TDA() const;
   TripletOperator_TDA getTripletOperator_TDA() const;
 
-  void Analyze_singlets(std::vector<QMFragment<BSE_Population> >& singlets,
+  void Analyze_singlets(std::vector<QMFragment<BSE_Population> > fragments,
                         const Orbitals& orb) const;
-  void Analyze_triplets(std::vector<QMFragment<BSE_Population> >& triplets,
+  void Analyze_triplets(std::vector<QMFragment<BSE_Population> > fragments,
                         const Orbitals& orb) const;
 
  private:
