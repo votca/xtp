@@ -72,7 +72,7 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
     for (int i = 0; i < rpatotal; ++i) {
       double delta = shiftedenergies(i) - shiftedfrequencies(m);
       double value = 0;
-      std::cout << " " << std::endl;
+      /* std::cout << " " << std::endl;
       std::cout << "energies" << std::endl;
       std::cout << " " << std::endl;
       std::cout << shiftedenergies << std::endl;
@@ -80,17 +80,17 @@ Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
       std::cout << "frequencies" << std::endl;
       std::cout << " " << std::endl;
       std::cout << shiftedfrequencies << std::endl;
-      std::cout << " " << std::endl;
+      std::cout << " " << std::endl;*/
 
       if (delta > 0 && i < lumo) {
-        value = -1;  // CalcDiagContributionValue(Imx.row(i), _eta, delta);
+        value = CalcDiagContributionValue(Imx.row(i), _eta, delta);
       } else if (delta < 0 && i > homo) {
-        value = -1;  // CalcDiagContributionValue(Imx.row(i), -_eta, delta);
+        value = - CalcDiagContributionValue(Imx.row(i), -_eta, delta);
       }
       result(m) -= value;
     }
   }
-  // result += _gq.SigmaGQDiag(frequencies, _rpa);
+   result += _gq.SigmaGQDiag(frequencies, _rpa);
   return result;
 }
 

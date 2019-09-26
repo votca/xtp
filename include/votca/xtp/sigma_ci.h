@@ -20,7 +20,7 @@
 #ifndef _VOTCA_XTP_SIGMA_CI_H
 #define _VOTCA_XTP_SIGMA_CI_H
 #include <complex>
-#include <votca/ctp/logger.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/rpa.h>

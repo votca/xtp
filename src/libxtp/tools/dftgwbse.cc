@@ -17,6 +17,7 @@
 
 #include "dftgwbse.h"
 #include <votca/tools/constants.h>
+#include <votca/xtp/customtools.h>
 #include <votca/xtp/geometry_optimization.h>
 #include <votca/xtp/gwbseengine.h>
 #include <votca/xtp/qmpackagefactory.h>

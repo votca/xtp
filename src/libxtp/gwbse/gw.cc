@@ -39,8 +39,8 @@ void GW::configure(const options& opt) {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_Spectral(_Mmn, _rpa));
   }
 
-  CTP_LOG(ctp::logINFO, _log)
-      << ctp::TimeStamp() << " Using " << _opt.sigma_integration
+  XTP_LOG_SAVE(logINFO, _log)
+      << TimeStamp() << " Using " << _opt.sigma_integration
       << " for Sigma_c." << std::flush;
   Sigma_base::options sigma_opt;
   sigma_opt.order = _opt.order;
@@ -292,8 +292,8 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
   const int range = CustomOpts::SigmaExportRange();
   const double delta = CustomOpts::SigmaExportDelta();
   const int size = 2 * range + 1;
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Writing SigmaC log "
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Writing SigmaC log "
       << "(" << size << ", " << _qptotal << ")" << std::flush;
   Eigen::VectorXd offsets =
       Eigen::VectorXd::LinSpaced(size, -range * delta, range * delta);

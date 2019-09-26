@@ -179,8 +179,8 @@ rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
   const int rpasize = n_occup * n_unocc;
   rpa_eigensolution sol;
 
-  CTP_LOG(ctp::logDEBUG, _log)
-      << ctp::TimeStamp() << " Solving for RPA eigenvalues " << flush;
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Solving for RPA eigenvalues " << flush;
 
   // Note: Eigen's SelfAdjointEigenSolver only uses the lower triangular part of
   // C

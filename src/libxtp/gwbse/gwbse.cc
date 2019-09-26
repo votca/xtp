@@ -317,10 +317,10 @@ void GWBSE::Initialize(tools::Property& options) {
   _gwopt.sigma_integration =
       options.ifExistsReturnElseReturnDefault<std::string>(
           key + ".sigma_integrator", _gwopt.sigma_integration);
-  CTP_LOG(ctp::logDEBUG, *_pLog)
+  XTP_LOG_SAVE(logDEBUG, *_pLog)
       << " Sigma Integration: " << _gwopt.sigma_integration << flush;
   if (_gwopt.sigma_integration == "exact") {
-    CTP_LOG(ctp::logDEBUG, *_pLog)
+    XTP_LOG_SAVE(logDEBUG, *_pLog)
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
 
@@ -598,6 +598,7 @@ bool GWBSE::Evaluate() {
     // E_qp)
     _orbitals.QPpertEnergies() = gw.getGWAResults();
 
+    exit(0);
     XTP_LOG(logDEBUG, *_pLog)
         << TimeStamp() << " Calculating offdiagonal part of Sigma  " << flush;
     gw.CalculateHQP();

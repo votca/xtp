@@ -58,7 +58,7 @@ CustomOpts CustomOpts::_instance;
 void CustomOpts::Load() {
   tools::Property options;
   try {
-    load_property_from_xml(options, "customopts.xml");
+    options.LoadFromXML("customopts.xml");
   } catch (...) {
     return;
   }

@@ -22,7 +22,7 @@
 #define _VOTCA_XTP_RPA_H
 #include <complex>
 #include <vector>
-#include <votca/ctp/logger.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/eigen.h>
 
 namespace votca {
@@ -36,7 +36,7 @@ struct rpa_eigensolution {
 
 class RPA {
  public:
-  RPA(ctp::Logger& log, const TCMatrix_gwbse& Mmn) : _log(log), _Mmn(Mmn){};
+  RPA(Logger& log, const TCMatrix_gwbse& Mmn) : _log(log), _Mmn(Mmn){};
 
   void configure(int homo, int rpamin, int rpamax) {
     _homo = homo;
@@ -80,7 +80,7 @@ class RPA {
 
   const TCMatrix_gwbse& _Mmn;
 
-  ctp::Logger& _log;
+  Logger& _log;
 
   // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
   // atoms, molecules, and clusters. Computer Physics Communications 208,
