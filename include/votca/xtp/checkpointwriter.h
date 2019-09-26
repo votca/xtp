@@ -14,8 +14,9 @@
  *
  */
 
-#ifndef _VOTCA_XTP_CHECKPOINT_WRITER_H
-#define _VOTCA_XTP_CHECKPOINT_WRITER_H
+#pragma once
+#ifndef VOTCA_XTP_CHECKPOINT_WRITER_H
+#define VOTCA_XTP_CHECKPOINT_WRITER_H
 
 #include <H5Cpp.h>
 #include <map>
@@ -23,10 +24,10 @@
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-#include <votca/tools/vec.h>
-#include <votca/xtp/eigen.h>
-
+#include <votca/tools/linalg.h>
 #include <votca/xtp/checkpoint_utils.h>
+#include <votca/xtp/checkpointtable.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
@@ -44,10 +45,10 @@ class CheckpointWriter {
   // https://stackoverflow.com/a/8671617/1186564
   template <typename T>
   typename std::enable_if<!std::is_fundamental<T>::value>::type operator()(
-      const T& data, const std::string& name) {
+      const T& data, const std::string& name) const {
     try {
       WriteData(_loc, data, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not write " << name << " to " << _loc.getFileName()
               << ":" << _path;
@@ -56,15 +57,15 @@ class CheckpointWriter {
     }
   }
 
-  // Use this overload iff T is a fundamental type
+  // Use this overload if T is a fundamental type
   // int, double, unsigned int, etc, but not bool
   template <typename T>
   typename std::enable_if<std::is_fundamental<T>::value &&
                           !std::is_same<T, bool>::value>::type
-      operator()(const T& v, const std::string& name) {
+      operator()(const T& v, const std::string& name) const {
     try {
       WriteScalar(_loc, v, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not write " << name << " to " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -73,11 +74,11 @@ class CheckpointWriter {
     }
   }
 
-  void operator()(const bool& v, const std::string& name) {
+  void operator()(const bool& v, const std::string& name) const {
     int temp = static_cast<int>(v);
     try {
       WriteScalar(_loc, temp, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not write " << name << " to " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -86,10 +87,10 @@ class CheckpointWriter {
     }
   }
 
-  void operator()(const std::string& v, const std::string& name) {
+  void operator()(const std::string& v, const std::string& name) const {
     try {
       WriteScalar(_loc, v, name);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not write " << name << " to " << _loc.getFileName()
               << ":" << _path << std::endl;
@@ -98,15 +99,15 @@ class CheckpointWriter {
     }
   }
 
-  CheckpointWriter openChild(const std::string& childName) {
+  CheckpointWriter openChild(const std::string& childName) const {
     try {
       return CheckpointWriter(_loc.openGroup(childName),
                               _path + "/" + childName);
-    } catch (H5::Exception& e) {
+    } catch (H5::Exception&) {
       try {
         return CheckpointWriter(_loc.createGroup(childName),
                                 _path + "/" + childName);
-      } catch (H5::Exception& e) {
+      } catch (H5::Exception&) {
         std::stringstream message;
         message << "Could not open or create" << _loc.getFileName() << ":/"
                 << _path << "/" << childName << std::endl;
@@ -116,11 +117,35 @@ class CheckpointWriter {
     }
   }
 
+  template <typename T>
+  CptTable openTable(const std::string& name, const T& obj, std::size_t nRows,
+                     bool compact = false) {
+    CptTable table;
+    try {
+      table = CptTable(name, sizeof(typename T::data), _loc);
+      obj.SetupCptTable(table);
+    } catch (H5::Exception&) {
+      try {
+        table = CptTable(name, sizeof(typename T::data), nRows);
+        obj.SetupCptTable(table);
+        table.initialize(_loc, compact);
+      } catch (H5::Exception&) {
+        std::stringstream message;
+        message << "Could not open table " << name << " in "
+                << _loc.getFileName() << ":" << _path << std::endl;
+        throw std::runtime_error(message.str());
+      }
+    }
+
+    return table;
+  }
+
  private:
-  CptLoc _loc;
+  const CptLoc _loc;
   const std::string _path;
   template <typename T>
-  void WriteScalar(const CptLoc& loc, const T& value, const std::string& name) {
+  void WriteScalar(const CptLoc& loc, const T& value,
+                   const std::string& name) const {
 
     hsize_t dims[1] = {1};
     H5::DataSpace dp(1, dims);
@@ -128,14 +153,14 @@ class CheckpointWriter {
     H5::Attribute attr;
     try {
       attr = loc.createAttribute(name, *dataType, dp);
-    } catch (H5::AttributeIException& error) {
+    } catch (H5::AttributeIException&) {
       attr = loc.openAttribute(name);
     }
     attr.write(*dataType, &value);
   }
 
   void WriteScalar(const CptLoc& loc, const std::string& value,
-                   const std::string& name) {
+                   const std::string& name) const {
 
     hsize_t dims[1] = {1};
     H5::DataSpace dp(1, dims);
@@ -145,7 +170,7 @@ class CheckpointWriter {
 
     try {
       attr = loc.createAttribute(name, *strType, dp);
-    } catch (H5::AttributeIException& error) {
+    } catch (H5::AttributeIException&) {
       attr = loc.openAttribute(name);
     }
     attr.write(*strType, &value);
@@ -153,7 +178,7 @@ class CheckpointWriter {
 
   template <typename T>
   void WriteData(const CptLoc& loc, const Eigen::MatrixBase<T>& matrix,
-                 const std::string& name) {
+                 const std::string& name) const {
 
     hsize_t matRows = hsize_t(matrix.rows());
     hsize_t matCols = hsize_t(matrix.cols());
@@ -167,7 +192,7 @@ class CheckpointWriter {
     H5::DataSet dataset;
     try {
       dataset = loc.createDataSet(name.c_str(), *dataType, dp);
-    } catch (H5::GroupIException& error) {
+    } catch (H5::GroupIException&) {
       dataset = loc.openDataSet(name.c_str());
     }
 
@@ -197,7 +222,8 @@ class CheckpointWriter {
 
   template <typename T>
   typename std::enable_if<std::is_fundamental<T>::value>::type WriteData(
-      const CptLoc& loc, const std::vector<T> v, const std::string& name) {
+      const CptLoc& loc, const std::vector<T> v,
+      const std::string& name) const {
     hsize_t dims[2] = {(hsize_t)v.size(), 1};
 
     const H5::DataType* dataType = InferDataType<T>::get();
@@ -205,29 +231,42 @@ class CheckpointWriter {
     H5::DataSpace dp(2, dims);
     try {
       dataset = loc.createDataSet(name.c_str(), *dataType, dp);
-    } catch (H5::GroupIException& error) {
+    } catch (H5::GroupIException&) {
       dataset = loc.openDataSet(name.c_str());
     }
-    dataset.write(&(v[0]), *dataType);
+    dataset.write(v.data(), *dataType);
   }
 
-  void WriteData(const CptLoc& loc, const votca::tools::vec& v,
-                 const std::string& name) {
+  void WriteData(const CptLoc& loc, const std::vector<std::string>& v,
+                 const std::string& name) const {
 
-    // store tools::vec as n vector of three elements
-    std::vector<double> data = {v.getX(), v.getY(), v.getZ()};
-    WriteData(loc, data, name);
+    hsize_t dims[1] = {(hsize_t)v.size()};
+
+    std::vector<const char*> c_str_copy;
+    c_str_copy.reserve(v.size());
+    for (unsigned i = 0; i < v.size(); i++) {
+      c_str_copy.push_back(v[i].c_str());
+    }
+    const H5::DataType* dataType = InferDataType<std::string>::get();
+    H5::DataSet dataset;
+    H5::DataSpace dp(1, dims);
+    try {
+      dataset = loc.createDataSet(name.c_str(), *dataType, dp);
+    } catch (H5::GroupIException&) {
+      dataset = loc.openDataSet(name.c_str());
+    }
+    dataset.write(c_str_copy.data(), *dataType);
   }
 
-  void WriteData(const CptLoc& loc, const std::vector<votca::tools::vec>& v,
-                 const std::string& name) {
+  void WriteData(const CptLoc& loc, const std::vector<Eigen::Vector3d>& v,
+                 const std::string& name) const {
 
     size_t c = 0;
     std::string r;
     CptLoc parent;
     try {
       parent = loc.createGroup(name);
-    } catch (H5::GroupIException& error) {
+    } catch (H5::GroupIException&) {
       parent = loc.openGroup(name);
     }
     for (auto const& x : v) {
@@ -237,9 +276,25 @@ class CheckpointWriter {
     }
   }
 
+  void WriteData(const CptLoc& loc, const tools::EigenSystem& sys,
+                 const std::string& name) const {
+
+    CptLoc parent;
+    try {
+      parent = loc.createGroup(name);
+    } catch (H5::GroupIException&) {
+      parent = loc.openGroup(name);
+    }
+
+    WriteData(parent, sys.eigenvalues(), "eigenvalues");
+    WriteData(parent, sys.eigenvectors(), "eigenvectors");
+    WriteData(parent, sys.eigenvectors2(), "eigenvectors2");
+    WriteScalar(parent, int(sys.info()), "info");
+  }
+
   template <typename T1, typename T2>
   void WriteData(const CptLoc& loc, const std::map<T1, std::vector<T2>> map,
-                 const std::string& name) {
+                 const std::string& name) const {
 
     size_t c = 0;
     std::string r;
@@ -250,7 +305,7 @@ class CheckpointWriter {
       CptLoc tempGr;
       try {
         tempGr = loc.createGroup(name);
-      } catch (H5::GroupIException& error) {
+      } catch (H5::GroupIException&) {
         tempGr = loc.openGroup(name);
       }
       WriteData(tempGr, x.second, "index" + r);
@@ -260,4 +315,4 @@ class CheckpointWriter {
 };
 }  // namespace xtp
 }  // namespace votca
-#endif  // _VOTCA_XTP_CHECKPOINT_WRITER_H
+#endif  // VOTCA_XTP_CHECKPOINT_WRITER_H

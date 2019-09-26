@@ -27,9 +27,7 @@
 #include <type_traits>
 #include <typeinfo>
 #include <vector>
-#include <votca/tools/vec.h>
 #include <votca/xtp/checkpoint.h>
-#include <votca/xtp/checkpoint_utils.h>
 #include <votca/xtp/checkpointreader.h>
 #include <votca/xtp/checkpointwriter.h>
 namespace votca {
@@ -65,22 +63,23 @@ CheckpointFile::CheckpointFile(std::string fN, CheckpointAccessLevel access)
 
   try {
     H5::Exception::dontPrint();
-
+    hid_t fcpl_id = H5Pcreate(H5P_FILE_CREATE);
+    H5::FileCreatPropList fcpList(fcpl_id);
     switch (_accessLevel) {
       case CheckpointAccessLevel::READ:
         _fileHandle = H5::H5File(_fileName, H5F_ACC_RDONLY);
         break;
       case CheckpointAccessLevel::CREATE:
-        _fileHandle = H5::H5File(_fileName, H5F_ACC_TRUNC);
+        _fileHandle = H5::H5File(_fileName, H5F_ACC_TRUNC, fcpList);
         break;
       case CheckpointAccessLevel::MODIFY:
         if (!FileExists(_fileName))
-          _fileHandle = H5::H5File(_fileName, H5F_ACC_TRUNC);
+          _fileHandle = H5::H5File(_fileName, H5F_ACC_TRUNC, fcpList);
         else
-          _fileHandle = H5::H5File(_fileName, H5F_ACC_RDWR);
+          _fileHandle = H5::H5File(_fileName, H5F_ACC_RDWR, fcpList);
     }
 
-  } catch (H5::Exception& error) {
+  } catch (H5::Exception&) {
     std::stringstream message;
     message << "Could not access file " << _fileName;
     message << " with permission to " << _accessLevel << "." << std::endl;
@@ -100,10 +99,10 @@ CheckpointWriter CheckpointFile::getWriter(const std::string _path) {
 
   try {
     return CheckpointWriter(_fileHandle.createGroup(_path), _path);
-  } catch (H5::Exception& error) {
+  } catch (H5::Exception&) {
     try {
       return CheckpointWriter(_fileHandle.openGroup(_path), _path);
-    } catch (H5::Exception& error) {
+    } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not create or open " << _fileName << ":" << _path
               << std::endl;
@@ -118,7 +117,7 @@ CheckpointWriter CheckpointFile::getWriter() { return getWriter("/"); };
 CheckpointReader CheckpointFile::getReader(const std::string _path) {
   try {
     return CheckpointReader(_fileHandle.openGroup(_path), _path);
-  } catch (H5::Exception& error) {
+  } catch (H5::Exception&) {
     std::stringstream message;
     message << "Could not open " << _fileName << ":" << _path << std::endl;
 

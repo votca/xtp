@@ -72,7 +72,7 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   find_package(Git)
 endif(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
-find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options filesystem system timer)
+find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options serialization filesystem system timer)
 find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 message(STATUS "Found Eigen3: ${Eigen3_DIR}")
 
@@ -86,7 +86,6 @@ find_package(VOTCA_TOOLS REQUIRED NO_MODULE)
 message(STATUS "Found VOTCA_TOOLS: ${VOTCA_TOOLS_DIR}")
 find_package(VOTCA_CSG REQUIRED NO_MODULE)
 message(STATUS "Found VOTCA_CSG: ${VOTCA_CSG_DIR}")
-find_package(VOTCA_CTP REQUIRED)
 ########################################################################
 # Checks what linear algebra packages are installed                    #
 ########################################################################
@@ -130,7 +129,3 @@ add_subdirectory(scripts)
 add_subdirectory(src)
 add_subdirectory(share)
 
-option(BUILD_XTP_MANUAL "Build xtp-manual" OFF)
-if(BUILD_XTP_MANUAL)
-  add_subdirectory(manual)
-endif()
