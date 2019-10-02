@@ -42,7 +42,7 @@ class Forces {
 
   void setLog(Logger* pLog) { _pLog = pLog; }
 
-  const Eigen::MatrixX3d& GetForces() const { return _forces; };
+  const Eigen::Matrix3Xd& GetForces() const { return _forces; };
   void Report() const;
 
  private:
@@ -57,7 +57,7 @@ class Forces {
   const StateTracker& _tracker;
   bool _remove_total_force = true;
 
-  Eigen::MatrixX3d _forces;
+  Eigen::Matrix3Xd _forces;
   Logger* _pLog;
 };
 

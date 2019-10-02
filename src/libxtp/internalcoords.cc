@@ -1,3 +1,22 @@
+/*
+ *            Copyright 2009-2019 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include <algorithm>
 #include <boost/graph/connected_components.hpp>
 #include <cmath>
@@ -611,14 +630,14 @@ void InternalCoords::PopulateWilsonMatrix() {
   }
 }
 
-InternalCoords::InternalCoords(const Orbitals& orb)
-    : InternalCoords(orb, true){};
+InternalCoords::InternalCoords(const QMMolecule& mol)
+    : InternalCoords(mol, true){};
 
-InternalCoords::InternalCoords(const Orbitals& orb, bool withAux)
-    : CoordBase(INTERNAL, orb),
+InternalCoords::InternalCoords(const QMMolecule& mol, bool withAux)
+    : CoordBase(INTERNAL, mol),
       _withAuxiliary(withAux),
       _bondGraph(_numAtoms),
-      _cartCoords(orb) {
+      _cartCoords(mol) {
   // This code implements the algorithm described in
   // https://doi.org/10.1063/1.1515483
 

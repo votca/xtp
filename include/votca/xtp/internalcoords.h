@@ -1,3 +1,23 @@
+/*
+ *            Copyright 2009-2019 The VOTCA Development Team
+ *                       (http://www.votca.org)
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License")
+ *
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *              http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#pragma once
 #ifndef _VOTCA_XTP_INTERNAL_COORDS_H
 #define _VOTCA_XTP_INTERNAL_COORDS_H
 #include <boost/graph/adjacency_list.hpp>
@@ -20,8 +40,8 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>
 
 class InternalCoords : public CoordBase {
  public:
-  InternalCoords(const Orbitals& orb, bool _withAuxiliary);
-  InternalCoords(const Orbitals& orb);
+  InternalCoords(const QMMolecule& mol, bool withAuxiliary);
+  InternalCoords(const QMMolecule& mol);
 
   int getNumBonds() const;
   int getNumHBonds() const;
@@ -29,6 +49,26 @@ class InternalCoords : public CoordBase {
   int getNumAuxBonds() const;
   int getNumDihedrals() const;
   const Eigen::MatrixXd& getWilsonBMatrix() const;
+
+  Eigen::MatrixXd CalculatePseudoInverseB() const {
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd;
+    // svd.setThreshold(1e-9);
+    svd.compute(_wilsonBMatrix, Eigen::DecompositionOptions::ComputeThinU |
+                                    Eigen::DecompositionOptions::ComputeThinV);
+    return svd.matrixV() *
+           svd.singularValues().head(svd.nonzeroSingularValues()) *
+           svd.matrixU().transpose();
+  }
+
+  Eigen::VectorXd CalcInternalForces(
+      const Eigen::VectorXd& cartesianForces) const {
+    return CalculateP() * CalculatePseudoInverseB().transpose() *
+           cartesianForces;
+  }
+
+  Eigen::MatrixXd CalculateP() const {
+    return _wilsonBMatrix * CalculatePseudoInverseB();
+  }
 
   friend std::ostream& operator<<(std::ostream& s, const InternalCoords& ic);
 

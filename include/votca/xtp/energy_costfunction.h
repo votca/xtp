@@ -70,7 +70,7 @@ class Energy_costfunction : public Optimiser_costfunction {
   void Report(const conv_paras& val);
   static void Vector2QMAtoms(const Eigen::VectorXd& pos, QMMolecule& atoms);
   static Eigen::VectorXd QMAtoms2Vector(QMMolecule& atoms);
-  static Eigen::VectorXd Write3XMatrixToVector(const Eigen::MatrixX3d& matrix);
+  static Eigen::VectorXd Write3XMatrixToVector(Eigen::Matrix3Xd matrix);
 
  private:
   static std::string Converged(double val, double limit);

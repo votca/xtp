@@ -25,11 +25,9 @@ BOOST_AUTO_TEST_CASE(single_bond) {
   single_bondXYZ << "C          1.00000        0.00000        0.00000"
                  << std::endl;
   single_bondXYZ.close();
-  Orbitals single_bond;
   QMMolecule mol("single_bond", 0);
   mol.LoadFromFile("single_bond.xyz");
-  single_bond.QMAtoms() = mol;
-  InternalCoords ic(single_bond);
+  InternalCoords ic(mol);
 
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 1);
   BOOST_CHECK_EQUAL(ic.getNumAtoms(), 2);
@@ -48,12 +46,9 @@ BOOST_AUTO_TEST_CASE(single_angle) {
   single_angleXYZ << "H          1.00000        1.00000        0.00000"
                   << std::endl;
   single_angleXYZ.close();
-  Orbitals single_angle;
   QMMolecule mol("single_angle", 0);
   mol.LoadFromFile("single_angle.xyz");
-  single_angle.QMAtoms() = mol;
-
-  InternalCoords ic(single_angle);
+  InternalCoords ic(mol);
   BOOST_CHECK_EQUAL(ic.getNumAtoms(), 3);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 2);
@@ -75,11 +70,9 @@ BOOST_AUTO_TEST_CASE(single_dihedral_two_angles_ic_test) {
                      << std::endl;
   single_dihedralXYZ.close();
 
-  Orbitals single_dihedral;
   QMMolecule mol("single_dihedral", 0);
   mol.LoadFromFile("single_dihedral.xyz");
-  single_dihedral.QMAtoms() = mol;
-  InternalCoords ic(single_dihedral, true);
+  InternalCoords ic(mol, true);
 
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 3);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 2);
@@ -95,12 +88,10 @@ BOOST_AUTO_TEST_CASE(linear_molecule) {
   co2XYZ << "C         1.42000        0.00000        0.00000" << std::endl;
   co2XYZ << "O         2.84000        0.00000        0.00000" << std::endl;
   co2XYZ.close();
-  Orbitals co2;
   QMMolecule mol("co2", 0);
   mol.LoadFromFile("co2.xyz");
-  co2.QMAtoms() = mol;
 
-  InternalCoords ic(co2);
+  InternalCoords ic(mol);
 
   BOOST_CHECK_EQUAL(ic.getNumBonds(), 2);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 1);
@@ -116,12 +107,9 @@ BOOST_AUTO_TEST_CASE(no_dihedrals) {
   ethyneXYZ << "C         2.000000        0.00000        0.00000" << std::endl;
   ethyneXYZ << "H         3.000000        0.00000        0.00000" << std::endl;
   ethyneXYZ.close();
-  Orbitals ethyne;
   QMMolecule mol("ethyne.xyz", 0);
   mol.LoadFromFile("ethyne.xyz");
-  ethyne.QMAtoms() = mol;
-
-  InternalCoords ic(ethyne);
+  InternalCoords ic(mol);
 
   BOOST_CHECK_EQUAL(ic.getNumDihedrals(), 0);
   BOOST_CHECK_EQUAL(ic.getNumAngles(), 2);
@@ -140,17 +128,46 @@ BOOST_AUTO_TEST_CASE(ammonia_internal_coords) {
   ammoniaXYZ << " H      -0.000096      1.389693      0.024103" << std::endl;
   ammoniaXYZ.close();
 
-  Orbitals ammonia;
   QMMolecule mol("ammonia", 0);
-
   mol.LoadFromFile("ammonia.xyz");
-  ammonia.QMAtoms() = mol;
-
-  InternalCoords ammoniaIC(ammonia);
+  InternalCoords ammoniaIC(mol);
 
   BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
   BOOST_CHECK_EQUAL(ammoniaIC.getNumAngles(), 3);
   BOOST_CHECK_EQUAL(ammoniaIC.getNumDihedrals(), 6);
+  std::cout << "wilson" << std::endl;
+  std::cout << ammoniaIC.getWilsonBMatrix() << std::endl;
+  std::cout << "pinv" << std::endl;
+  std::cout << ammoniaIC.CalculatePseudoInverseB() << std::endl;
+  std::cout << "P" << std::endl;
+  std::cout << ammoniaIC.CalculateP() << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(ammonia_transformation) {
+
+  std::ofstream ammoniaXYZ("ammonia.xyz");
+
+  ammoniaXYZ << " 4" << std::endl;
+  ammoniaXYZ << " ammonia" << std::endl;
+  ammoniaXYZ << " N       0.000059      0.450035      0.427708" << std::endl;
+  ammoniaXYZ << " H      -0.813712     -0.019797      0.024059" << std::endl;
+  ammoniaXYZ << " H       0.813749     -0.019930      0.024104" << std::endl;
+  ammoniaXYZ << " H      -0.000096      1.389693      0.024103" << std::endl;
+  ammoniaXYZ.close();
+
+  QMMolecule mol("ammonia", 0);
+  mol.LoadFromFile("ammonia.xyz");
+  InternalCoords ammoniaIC(mol);
+
+  BOOST_CHECK_EQUAL(ammoniaIC.getNumBonds(), 3);
+  BOOST_CHECK_EQUAL(ammoniaIC.getNumAngles(), 3);
+  BOOST_CHECK_EQUAL(ammoniaIC.getNumDihedrals(), 6);
+  std::cout << "wilson" << std::endl;
+  std::cout << ammoniaIC.getWilsonBMatrix() << std::endl;
+  std::cout << "pinv" << std::endl;
+  std::cout << ammoniaIC.CalculatePseudoInverseB() << std::endl;
+  std::cout << "P" << std::endl;
+  std::cout << ammoniaIC.CalculateP() << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

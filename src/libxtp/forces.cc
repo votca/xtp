@@ -48,7 +48,7 @@ void Forces::Initialize(tools::Property& options) {
 void Forces::Calculate(const Orbitals& orbitals) {
 
   int natoms = orbitals.QMAtoms().size();
-  _forces = Eigen::MatrixX3d::Zero(natoms, 3);
+  _forces = Eigen::Matrix3Xd::Zero(3, natoms);
 
   TLogLevel ReportLevel = _pLog->getReportLevel();  // backup report level
   if (!tools::globals::verbose) {
@@ -65,7 +65,7 @@ void Forces::Calculate(const Orbitals& orbitals) {
       atom_force = NumForceForward(orbitals, atom_index);
     if (_force_method == "central")
       atom_force = NumForceCentral(orbitals, atom_index);
-    _forces.row(atom_index) = atom_force.transpose();
+    _forces.col(atom_index) = atom_force;
   }
   _pLog->setReportLevel(ReportLevel);  //
   if (_remove_total_force) RemoveTotalForce();
@@ -151,9 +151,9 @@ Eigen::Vector3d Forces::NumForceCentral(Orbitals orbitals, int atom_index) {
 
 void Forces::RemoveTotalForce() {
   Eigen::Vector3d avgtotal_force =
-      _forces.colwise().sum() / double(_forces.rows());
-  for (unsigned i_atom = 0; i_atom < _forces.rows(); i_atom++) {
-    _forces.row(i_atom) -= avgtotal_force;
+      _forces.rowwise().sum() / double(_forces.cols());
+  for (unsigned i_atom = 0; i_atom < _forces.cols(); i_atom++) {
+    _forces.col(i_atom) -= avgtotal_force;
   }
   return;
 }
