@@ -82,6 +82,7 @@
       <itemPath>../../include/votca/xtp/classicalsegment.h</itemPath>
       <itemPath>../../include/votca/xtp/convergenceacc.h</itemPath>
       <itemPath>../../include/votca/xtp/couplingbase.h</itemPath>
+      <itemPath>../../include/votca/xtp/customtools.h</itemPath>
       <itemPath>../../include/votca/xtp/davidsonsolver.h</itemPath>
       <itemPath>../../include/votca/xtp/dftcoupling.h</itemPath>
       <itemPath>../../include/votca/xtp/dftengine.h</itemPath>
@@ -149,6 +150,7 @@
       <itemPath>../../include/votca/xtp/segid.h</itemPath>
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
       <itemPath>../../include/votca/xtp/segmentmapper.h</itemPath>
+      <itemPath>../../include/votca/xtp/sigma_exact.h</itemPath>
       <itemPath>../../include/votca/xtp/sphere_lebedev_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/stateapplication.h</itemPath>
       <itemPath>../../include/votca/xtp/statesaver.h</itemPath>
@@ -241,6 +243,7 @@
         <itemPath>../../src/libxtp/gwbse/ppm.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/rpa.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_base.cc</itemPath>
+        <itemPath>../../src/libxtp/gwbse/sigma_exact.cc</itemPath>
         <itemPath>../../src/libxtp/gwbse/sigma_ppm.cc</itemPath>
       </logicalFolder>
       <logicalFolder name="f6" displayName="NumInt" projectFiles="true">
@@ -264,6 +267,7 @@
       <itemPath>../../src/libxtp/bsecoupling.cc</itemPath>
       <itemPath>../../src/libxtp/checkpoint.cc</itemPath>
       <itemPath>../../src/libxtp/classicalsegment.cc</itemPath>
+      <itemPath>../../src/libxtp/customtools.cc</itemPath>
       <itemPath>../../src/libxtp/davidsonsolver.cc</itemPath>
       <itemPath>../../src/libxtp/dftcoupling.cc</itemPath>
       <itemPath>../../src/libxtp/ecpaobasis.cc</itemPath>
@@ -350,11 +354,14 @@
       <itemPath>../../src/tests/test_radial_euler_maclaurin_rule.cc</itemPath>
       <itemPath>../../src/tests/test_rate_engine.cc</itemPath>
       <itemPath>../../src/tests/test_rpa.cc</itemPath>
+      <itemPath>../../src/tests/test_rpa_eigenvalues.cc</itemPath>
       <itemPath>../../src/tests/test_segment.cc</itemPath>
       <itemPath>../../src/tests/test_segmentmapper.cc</itemPath>
+      <itemPath>../../src/tests/test_sigma_exact.cc</itemPath>
       <itemPath>../../src/tests/test_sigma_ppm.cc</itemPath>
       <itemPath>../../src/tests/test_sphere_lebedev_rule.cc</itemPath>
       <itemPath>../../src/tests/test_statetracker.cc</itemPath>
+      <itemPath>../../src/tests/test_staticsite.cc</itemPath>
       <itemPath>../../src/tests/test_symmetric_matrix.cc</itemPath>
       <itemPath>../../src/tests/test_threecenter.cc</itemPath>
       <itemPath>../../src/tests/test_topology.cc</itemPath>
@@ -3985,6 +3992,11 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/customtools.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/davidsonsolver.h"
             ex="false"
             tool="3"
@@ -4232,6 +4244,11 @@
       <item path="../../include/votca/xtp/segment.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segmentmapper.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_exact.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4559,6 +4576,8 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/customtools.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/davidsonsolver.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/dftcoupling.cc" ex="false" tool="1" flavor2="0">
@@ -4642,6 +4661,11 @@
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_base.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gwbse/sigma_exact.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -5035,9 +5059,19 @@
       </item>
       <item path="../../src/tests/test_rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/tests/test_rpa_eigenvalues.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_segment.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_segmentmapper.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_sigma_exact.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -5053,6 +5087,8 @@
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/tests/test_staticsite.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_symmetric_matrix.cc"
             ex="false"
@@ -5198,6 +5234,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/couplingbase.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/customtools.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5449,6 +5490,11 @@
       <item path="../../include/votca/xtp/segment.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segmentmapper.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_exact.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5776,6 +5822,8 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/customtools.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/davidsonsolver.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/dftcoupling.cc" ex="false" tool="1" flavor2="0">
@@ -5859,6 +5907,11 @@
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/sigma_base.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/libxtp/gwbse/sigma_exact.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -6252,9 +6305,19 @@
       </item>
       <item path="../../src/tests/test_rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="../../src/tests/test_rpa_eigenvalues.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_segment.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_segmentmapper.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_sigma_exact.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -6270,6 +6333,8 @@
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/tests/test_staticsite.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_symmetric_matrix.cc"
             ex="false"
