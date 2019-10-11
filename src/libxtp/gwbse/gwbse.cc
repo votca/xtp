@@ -318,36 +318,37 @@ void GWBSE::Initialize(tools::Property& options) {
     XTP_LOG(logDEBUG, *_pLog)
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
-  
+
   _gwopt.sigma_eta = options.ifExistsReturnElseReturnDefault<double>(
-      key + ".sigma_eta",
-      _gwopt.sigma_eta);
+      key + ".sigma_eta", _gwopt.sigma_eta);
   if (_gwopt.sigma_integration == "exact") {
-    XTP_LOG(logDEBUG, *_pLog)
-        << " eta: " << _gwopt.sigma_eta << flush;
+    XTP_LOG(logDEBUG, *_pLog) << " eta: " << _gwopt.sigma_eta << flush;
   }
-  
+
   // TODO: Allow string input
-  std::vector<std::string> root_finder_choice =
-      {"fixed point", "bisection", "regula falsi", "grid"};
+  std::vector<std::string> root_finder_choice = {"fixed point", "bisection",
+                                                 "regula falsi", "grid"};
   _gwopt.gw_sc_root_finder_method =
       options.ifExistsReturnElseReturnDefault<int>(
           key + ".gw_sc_root_finder_method", _gwopt.gw_sc_root_finder_method);
-  if (_gwopt.gw_sc_root_finder_method < 0 || _gwopt.gw_sc_root_finder_method >= root_finder_choice.size()) {
+  if (_gwopt.gw_sc_root_finder_method < 0 ||
+      _gwopt.gw_sc_root_finder_method >= root_finder_choice.size()) {
     throw std::runtime_error(
-        (boost::format("Root finder must be within [0, %d]") % (root_finder_choice.size() - 1)).str());
+        (boost::format("Root finder must be within [0, %d]") %
+         (root_finder_choice.size() - 1))
+            .str());
   }
-  _gwopt.gw_sc_root_finder_range = options.ifExistsReturnElseReturnDefault<double>(
-      key + ".gw_sc_root_finder_range",
-      _gwopt.gw_sc_root_finder_range); 
+  _gwopt.gw_sc_root_finder_range =
+      options.ifExistsReturnElseReturnDefault<double>(
+          key + ".gw_sc_root_finder_range", _gwopt.gw_sc_root_finder_range);
   _gwopt.gw_sc_root_finder_steps = options.ifExistsReturnElseReturnDefault<int>(
-      key + ".gw_sc_root_finder_steps",
-      _gwopt.gw_sc_root_finder_steps);
-  _gwopt.gw_sc_root_finder_refine = options.ifExistsReturnElseReturnDefault<double>(
-      key + ".gw_sc_root_finder_refine",
-      _gwopt.gw_sc_root_finder_refine); 
+      key + ".gw_sc_root_finder_steps", _gwopt.gw_sc_root_finder_steps);
+  _gwopt.gw_sc_root_finder_refine =
+      options.ifExistsReturnElseReturnDefault<double>(
+          key + ".gw_sc_root_finder_refine", _gwopt.gw_sc_root_finder_refine);
   XTP_LOG(logDEBUG, *_pLog)
-      << " Root finder method: " << root_finder_choice[_gwopt.gw_sc_root_finder_method] << flush;
+      << " Root finder method: "
+      << root_finder_choice[_gwopt.gw_sc_root_finder_method] << flush;
   if (_gwopt.gw_sc_root_finder_method == 3) {
     XTP_LOG(logDEBUG, *_pLog)
         << " Root finder range: " << _gwopt.gw_sc_root_finder_range << flush;

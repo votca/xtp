@@ -36,18 +36,18 @@ void Sigma_Exact::PrepareScreening() {
 
 Eigen::VectorXd Sigma_Exact::CalcCorrelationDiag(
     const Eigen::VectorXd& frequencies) const {
-  const int rpasize = _EigenSol._Omega.size();
+  const int number_eigenvectors = _EigenSol._Omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
-  
+
 #pragma omp parallel for
   for (int m = 0; m < _qptotal; m++) {
     double res = 0.0;
     const Eigen::MatrixXd& rm = _residues[m];
-    for (int s = 0; s < rpasize; s++) {
+    for (int s = 0; s < number_eigenvectors; s++) {
       const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
       double eigenvalue = _EigenSol._Omega(s);
       res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
-    }  // Eigenvalue s
+    }
     // Multiply with factor 2.0 to sum over both (identical) spin states
     result(m) = 2.0 * res;
   }  // State m
@@ -59,7 +59,7 @@ Eigen::MatrixXd Sigma_Exact::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   const int rpasize = _EigenSol._Omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-  
+
   if (CustomOpts::SigmaCNoOffdiags()) {
     return result;
   }
@@ -71,8 +71,7 @@ Eigen::MatrixXd Sigma_Exact::CalcCorrelationOffDiag(
       double res = 0.0;
       const Eigen::MatrixXd& rn = _residues[n];
       for (int s = 0; s < rpasize; s++) {
-        Eigen::VectorXd rm_x_rn =
-            rm.col(s).cwiseProduct(rn.col(s));
+        Eigen::VectorXd rm_x_rn = rm.col(s).cwiseProduct(rn.col(s));
         double eigenvalue = _EigenSol._Omega(s);
         double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
         double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
@@ -95,35 +94,33 @@ std::vector<Eigen::MatrixXd> Sigma_Exact::CalcResidues() const {
   const int qpoffset = _opt.qpmin - _opt.rpamin;
   const int auxsize = _Mmn.auxsize();
   vc2index vc = vc2index(0, 0, n_unocc);
+  std::vector<Eigen::MatrixXd> residues(_qptotal);
 
-  // Initialize residues object m*n*s
-  std::vector<Eigen::MatrixXd> residues;
-  residues.resize(_qptotal);
-  
   // To do the 4c integrals (mn|vc) efficiently, loop over m, v first
 #pragma omp parallel for
-  for (int m = 0; m < _qptotal; m++ ) {
-    const Eigen::MatrixXd Mmn_mT =
-        _Mmn[m + qpoffset].transpose();
+  for (int m = 0; m < _qptotal; m++) {
+    const Eigen::MatrixXd Mmn_mT = _Mmn[m + qpoffset].transpose();
     Eigen::MatrixXd res = Eigen::MatrixXd::Zero(_rpatotal, rpasize);
-    for (int v = 0; v < n_occup; v++ ) { // Sum over v
-      const Eigen::MatrixXd fc = _Mmn[v].block(n_occup, 0, n_unocc, auxsize) * Mmn_mT; // Sum over chi
-      res += fc.transpose() * _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc, rpasize); // Sum over c
+    for (int v = 0; v < n_occup; v++) {  // Sum over v
+      const Eigen::MatrixXd fc =
+          _Mmn[v].block(n_occup, 0, n_unocc, auxsize) * Mmn_mT;  // Sum over chi
+      res += fc.transpose() * _EigenSol._XpY.block(vc.I(v, 0), 0, n_unocc,
+                                                   rpasize);  // Sum over c
     }
     residues[m] = res;
   }
-  
+
   return residues;
 }
 
-double Sigma_Exact::Equation47(const Eigen::VectorXd& A12,
-                                  double eigenvalue, double freq) const {
+double Sigma_Exact::Equation47(const Eigen::VectorXd& A12, double eigenvalue,
+                               double freq) const {
   const double eta = _opt.eta;
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
   Eigen::ArrayXd B12 = -_rpa.getRPAInputEnergies().array() + freq;
-  B12.segment(0,       n_occup) += eigenvalue;
+  B12.segment(0, n_occup) += eigenvalue;
   B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
   const Eigen::ArrayXd denom = B12.abs2() + eta * eta;
@@ -131,13 +128,14 @@ double Sigma_Exact::Equation47(const Eigen::VectorXd& A12,
 }
 
 double Sigma_Exact::Equation48(const Eigen::VectorXd& A12,
-                                  double eigenvalue) const {
+                               double eigenvalue) const {
   const double eta = _opt.eta;
   const int lumo = _opt.homo + 1;
   const int n_occup = lumo - _opt.rpamin;
   const int n_unocc = _opt.rpamax - _opt.homo;
-  Eigen::ArrayXd B12 = Eigen::VectorXd::Zero(_rpatotal); // eigenvalue >> |freq - energy|
-  B12.segment(0,       n_occup) += eigenvalue;
+  Eigen::ArrayXd B12 =
+      Eigen::VectorXd::Zero(_rpatotal);  // eigenvalue >> |freq - energy|
+  B12.segment(0, n_occup) += eigenvalue;
   B12.segment(n_occup, n_unocc) -= eigenvalue;
   const Eigen::ArrayXd numer = A12.array() * B12;
   const Eigen::ArrayXd denom = B12.abs2() + eta * eta;

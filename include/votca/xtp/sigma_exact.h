@@ -46,9 +46,9 @@ class Sigma_Exact : public Sigma_base {
       const Eigen::VectorXd& frequencies) const;
 
  private:
-  bool _COHSEX = false; // COHSEX approximation
+  bool _COHSEX = false;  // COHSEX approximation
 
-  rpa_eigensolution _EigenSol;             // Eigenvalues, eigenvectors from RPA
+  RPA::rpa_eigensolution _EigenSol;        // Eigenvalues, eigenvectors from RPA
   std::vector<Eigen::MatrixXd> _residues;  // Residues
 
   // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
@@ -56,7 +56,8 @@ class Sigma_Exact : public Sigma_base {
   // 149–161 (2016).
   // Eq. 45, 47, 48
   std::vector<Eigen::MatrixXd> CalcResidues() const;
-  double Equation47(const Eigen::VectorXd& A12, double eigenvalue, double freq) const;
+  double Equation47(const Eigen::VectorXd& A12, double eigenvalue,
+                    double freq) const;
   double Equation48(const Eigen::VectorXd& A12, double eigenvalue) const;
   // A12 = residues[m, :] .* residues[n, :]
 };

@@ -20,30 +20,28 @@
 #pragma once
 #ifndef _VOTCA_XTP_RPA_H
 #define _VOTCA_XTP_RPA_H
-#include <vector>
 #include "votca/xtp/logger.h"
+#include <vector>
 #include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {
 class TCMatrix_gwbse;
 
-struct rpa_eigensolution {
-  Eigen::VectorXd _Omega;  // Eigenvalues
-  Eigen::MatrixXd _XpY;    // Eigenvector components (X + Y)
-};
-
 class RPA {
  public:
-  RPA(Logger& log, const TCMatrix_gwbse& Mmn)
-      : _log(log),
-        _Mmn(Mmn){};
+  RPA(Logger& log, const TCMatrix_gwbse& Mmn) : _log(log), _Mmn(Mmn){};
 
   void configure(int homo, int rpamin, int rpamax) {
     _homo = homo;
     _rpamin = rpamin;
     _rpamax = rpamax;
   }
+
+  struct rpa_eigensolution {
+    Eigen::VectorXd _Omega;  // Eigenvalues
+    Eigen::MatrixXd _XpY;    // Eigenvector components (X + Y)
+  };
 
   rpa_eigensolution calculate_eigenvalues() const;
 
@@ -76,7 +74,7 @@ class RPA {
   Eigen::VectorXd _energies;
 
   const TCMatrix_gwbse& _Mmn;
-  
+
   Logger& _log;
 
   // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
