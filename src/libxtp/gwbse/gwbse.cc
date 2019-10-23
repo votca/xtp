@@ -136,15 +136,29 @@ void GWBSE::Initialize(tools::Property& options) {
   }
 
   // check maximum and minimum sizes
-  if (rpamax > num_of_levels) rpamax = num_of_levels - 1;
-  if (qpmax > num_of_levels) qpmax = num_of_levels - 1;
-  if (bse_cmax > num_of_levels) bse_cmax = num_of_levels - 1;
-  if (bse_vmin < 0) bse_vmin = 0;
-  if (qpmin < 0) qpmin = 0;
+  if (rpamax > num_of_levels) {
+    rpamax = num_of_levels - 1;
+  }
+  if (qpmax > num_of_levels) {
+    qpmax = num_of_levels - 1;
+  }
+  if (bse_cmax > num_of_levels) {
+    bse_cmax = num_of_levels - 1;
+  }
+  if (bse_vmin < 0) {
+    bse_vmin = 0;
+  }
+  if (qpmin < 0) {
+    qpmin = 0;
+  }
 
   // some QP - BSE consistency checks are required
-  if (bse_vmin < qpmin) qpmin = bse_vmin;
-  if (bse_cmax > qpmax) qpmax = bse_cmax;
+  if (bse_vmin < qpmin) {
+    qpmin = bse_vmin;
+  }
+  if (bse_cmax > qpmax) {
+    qpmax = bse_cmax;
+  }
 
   _gwopt.homo = homo;
   _gwopt.qpmin = qpmin;
@@ -184,7 +198,9 @@ void GWBSE::Initialize(tools::Property& options) {
 
   _bseopt.nmax = options.ifExistsReturnElseReturnDefault<int>(key + ".exctotal",
                                                               _bseopt.nmax);
-  if (_bseopt.nmax > bse_size || _bseopt.nmax < 0) _bseopt.nmax = bse_size;
+  if (_bseopt.nmax > bse_size || _bseopt.nmax < 0) {
+    _bseopt.nmax = bse_size;
+  }
 
   // eigensolver options
   if (options.exists(key + ".eigensolver")) {
@@ -318,11 +334,15 @@ void GWBSE::Initialize(tools::Property& options) {
     _do_bse_singlets = true;
     _do_bse_triplets = true;
   }
-  if (tasks_string.find("gw") != std::string::npos) _do_gw = true;
-  if (tasks_string.find("singlets") != std::string::npos)
+  if (tasks_string.find("gw") != std::string::npos) {
+    _do_gw = true;
+  }
+  if (tasks_string.find("singlets") != std::string::npos) {
     _do_bse_singlets = true;
-  if (tasks_string.find("triplets") != std::string::npos)
+  }
+  if (tasks_string.find("triplets") != std::string::npos) {
     _do_bse_triplets = true;
+  }
 
   XTP_LOG(logDEBUG, *_pLog) << " Tasks: " << flush;
   if (_do_gw) {
@@ -370,14 +390,15 @@ void GWBSE::addoutput(tools::Property& summary) {
     for (int state = 0; state < _gwopt.qpmax + 1 - _gwopt.qpmin; state++) {
       tools::Property& level_summary = dft_summary.add("level", "");
       level_summary.setAttribute("number", state + _gwopt.qpmin);
-      level_summary.add("dft_energy",
-                        (format("%1$+1.6f ") %
-                         (_orbitals.QPpertEnergies().col(0)(state) * hrt2ev))
-                            .str());
-      level_summary.add("gw_energy",
-                        (format("%1$+1.6f ") %
-                         (_orbitals.QPpertEnergies().col(4)(state) * hrt2ev))
-                            .str());
+      level_summary.add(
+          "dft_energy",
+          (format("%1$+1.6f ") %
+           (_orbitals.MOs().eigenvalues()(state + _gwopt.qpmin) * hrt2ev))
+              .str());
+      level_summary.add(
+          "gw_energy",
+          (format("%1$+1.6f ") % (_orbitals.QPpertEnergies()(state) * hrt2ev))
+              .str());
 
       level_summary.add("qp_energy",
                         (format("%1$+1.6f ") %
@@ -555,7 +576,7 @@ bool GWBSE::Evaluate() {
         "You want no GW calculation but the orb file has no QPcoefficients for "
         "BSE");
   }
-  TCMatrix_gwbse Mmn;
+  TCMatrix_gwbse Mmn(*_pLog);
   // rpamin here, because RPA needs till rpamin
   Mmn.Initialize(auxbasis.AOBasisSize(), _gwopt.rpamin, _gwopt.qpmax,
                  _gwopt.rpamin, _gwopt.rpamax);
@@ -600,6 +621,14 @@ bool GWBSE::Evaluate() {
     _orbitals.QPdiag().eigenvectors() = es.eigenvectors();
     _orbitals.QPdiag().eigenvalues() = es.eigenvalues();
   } else {
+    if (_orbitals.getGWAmax() != _gwopt.qpmax ||
+        _orbitals.getGWAmin() != _gwopt.qpmin ||
+        _orbitals.getRPAmax() != _gwopt.rpamax ||
+        _orbitals.getRPAmin() != _gwopt.rpamin) {
+      throw std::runtime_error(
+          "The ranges for GW and RPA do not agree with the ranges from the "
+          ".orb file, rerun your GW calculation");
+    }
     const Eigen::MatrixXd& qpcoeff = _orbitals.QPdiag().eigenvectors();
     Hqp = qpcoeff * _orbitals.QPdiag().eigenvalues().asDiagonal() *
           qpcoeff.transpose();

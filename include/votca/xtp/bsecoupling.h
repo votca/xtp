@@ -37,18 +37,11 @@ namespace xtp {
 
 class BSECoupling : public CouplingBase {
  public:
-  void Initialize(tools::Property& options);
+  void Initialize(tools::Property& options) override;
   std::string Identify() const { return "bsecoupling"; }
 
-  Eigen::MatrixXd getJAB_singletstorage() const {
-    return (_output_perturbation ? JAB_singlet[0] : JAB_singlet[1]);
-  }
-
-  Eigen::MatrixXd getJAB_tripletstorage() const {
-    return (_output_perturbation ? JAB_triplet[0] : JAB_triplet[1]);
-  }
   void Addoutput(tools::Property& type_summary, const Orbitals& orbitalsA,
-                 const Orbitals& orbitalsB) const;
+                 const Orbitals& orbitalsB) const override;
 
   /**
    * \brief evaluates electronic couplings
@@ -58,7 +51,7 @@ class BSECoupling : public CouplingBase {
    * @param _orbitalsAB molecular orbitals of the dimer AB
    */
   void CalculateCouplings(const Orbitals& orbitalsA, const Orbitals& orbitalsB,
-                          const Orbitals& orbitalsAB);
+                          const Orbitals& orbitalsAB) override;
 
  private:
   void WriteToProperty(tools::Property& summary, const QMState& stateA,

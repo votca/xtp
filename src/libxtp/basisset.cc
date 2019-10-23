@@ -252,8 +252,9 @@ void BasisSet::Load(const std::string& name) {
   } else {
     // get the path to the shared folders with xml files
     char* votca_share = getenv("VOTCASHARE");
-    if (votca_share == NULL)
+    if (votca_share == nullptr) {
       throw std::runtime_error("VOTCASHARE not set, cannot open help files.");
+    }
     xmlFile = std::string(getenv("VOTCASHARE")) +
               std::string("/xtp/basis_sets/") + name + std::string(".xml");
   }
@@ -281,21 +282,21 @@ void BasisSet::Load(const std::string& name) {
         for (tools::Property* contrProp : contrProps) {
           std::string contrType = contrProp->getAttribute<std::string>("type");
           double contrFactor = contrProp->getAttribute<double>("factor");
-          if (contrType == "S")
+          if (contrType == "S") {
             contraction[0] = contrFactor;
-          else if (contrType == "P")
+          } else if (contrType == "P") {
             contraction[1] = contrFactor;
-          else if (contrType == "D")
+          } else if (contrType == "D") {
             contraction[2] = contrFactor;
-          else if (contrType == "F")
+          } else if (contrType == "F") {
             contraction[3] = contrFactor;
-          else if (contrType == "G")
+          } else if (contrType == "G") {
             contraction[4] = contrFactor;
-          else if (contrType == "H")
+          } else if (contrType == "H") {
             contraction[5] = contrFactor;
-          else if (contrType == "I")
+          } else if (contrType == "I") {
             contraction[6] = contrFactor;
-          else {
+          } else {
             throw std::runtime_error("LoadBasiset:Contractiontype not known");
           }
         }
@@ -308,23 +309,21 @@ void BasisSet::Load(const std::string& name) {
 
 // adding an Element to a Basis Set
 Element& BasisSet::addElement(std::string elementType) {
-  auto e = _elements.insert(
-      {elementType, std::unique_ptr<Element>(new Element(elementType))});
+  auto e = _elements.insert({elementType, Element(elementType)});
   if (!e.second) {
     throw std::runtime_error("Inserting element into basisset failed!");
   }
-  return *(e.first->second.get());
+  return e.first->second;
 };
 
 const Element& BasisSet::getElement(std::string element_type) const {
-  std::map<std::string, std::unique_ptr<Element> >::const_iterator itm =
+  std::map<std::string, Element>::const_iterator itm =
       _elements.find(element_type);
   if (itm == _elements.end()) {
     throw std::runtime_error("Basis set " + _name +
                              " does not have element of type " + element_type);
   }
-  const Element& element = *((*itm).second);
-  return element;
+  return itm->second;
 }
 
 std::ostream& operator<<(std::ostream& out, const Shell& shell) {
@@ -332,9 +331,9 @@ std::ostream& operator<<(std::ostream& out, const Shell& shell) {
   out << "Type:" << shell.getType() << " Scale:" << shell.getScale()
       << " Func: " << shell.getnumofFunc() << "\n";
   for (const auto& gaussian : shell._gaussians) {
-    out << " Gaussian Decay: " << gaussian._decay;
+    out << " Gaussian Decay: " << gaussian.decay();
     out << " Contractions:";
-    for (const double& contraction : gaussian._contraction) {
+    for (const double& contraction : gaussian.Contractions()) {
       out << " " << contraction;
     }
     out << "\n";
@@ -353,7 +352,7 @@ std::ostream& operator<<(std::ostream& out, const Element& element) {
 std::ostream& operator<<(std::ostream& out, const BasisSet& basis) {
   out << "BasisSet:" << basis._name << "\n";
   for (const auto& element : basis) {
-    out << (*element.second);
+    out << element.second;
   }
   out << std::flush;
   return out;

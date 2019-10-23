@@ -140,7 +140,9 @@ bool NWChem::WriteGuess(const Orbitals& orbitals) {
     }
     column++;
   }
-  if (column != 1) orb_file << endl;
+  if (column != 1) {
+    orb_file << endl;
+  }
 
   // write coefficients in same format
   for (int i = 0; i < MOs.cols(); ++i) {
@@ -155,7 +157,9 @@ bool NWChem::WriteGuess(const Orbitals& orbitals) {
       column++;
     }
     level++;
-    if (column != 1) orb_file << endl;
+    if (column != 1) {
+      orb_file << endl;
+    }
   }
   orb_file << " 0.0000   0.0000" << endl;
   orb_file.close();
@@ -292,7 +296,7 @@ bool NWChem::Run() {
 
   XTP_LOG(logDEBUG, *_pLog) << "Running NWChem job" << flush;
 
-  if (std::system(NULL)) {
+  if (std::system(nullptr)) {
 
     // NWChem overrides input information, if *.db and *.movecs files are
     // present better trash the old version
@@ -688,7 +692,9 @@ bool NWChem::ParseLogFile(Orbitals& orbitals) {
   XTP_LOG(logDEBUG, *_pLog) << "Parsing " << _log_file_name << flush;
   std::string log_file_name_full = _run_dir + "/" + _log_file_name;
   // check if LOG file is complete
-  if (!CheckLogFile()) return false;
+  if (!CheckLogFile()) {
+    return false;
+  }
 
   // save qmpackage name
   orbitals.setQMpackage(getPackageName());
@@ -800,24 +806,25 @@ void NWChem::WriteBasisset(ofstream& nw_file, const QMMolecule& qmatoms) {
         nw_file << element_name << " "
                 << boost::algorithm::to_lower_copy(shell.getType()) << endl;
         for (const GaussianPrimitive& gaussian : shell) {
-          for (unsigned _icontr = 0; _icontr < gaussian._contraction.size();
+          for (unsigned _icontr = 0; _icontr < gaussian.Contractions().size();
                _icontr++) {
-            if (gaussian._contraction[_icontr] != 0.0) {
-              nw_file << FortranFormat(gaussian._decay) << " "
-                      << FortranFormat(gaussian._contraction[_icontr]) << endl;
+            if (gaussian.Contractions()[_icontr] != 0.0) {
+              nw_file << FortranFormat(gaussian.decay()) << " "
+                      << FortranFormat(gaussian.Contractions()[_icontr])
+                      << endl;
             }
           }
         }
       } else {
-        string type = shell.getType();
-        for (unsigned i = 0; i < type.size(); ++i) {
-          string subtype = string(type, i, 1);
+        for (const char& subtype : shell.getType()) {
           nw_file << element_name << " "
-                  << boost::algorithm::to_lower_copy(subtype) << endl;
+                  << boost::algorithm::to_lower_copy(std::string(1, subtype))
+                  << endl;
 
           for (const GaussianPrimitive& gaussian : shell) {
-            nw_file << FortranFormat(gaussian._decay) << " "
-                    << FortranFormat(gaussian._contraction[FindLmax(subtype)])
+            nw_file << FortranFormat(gaussian.decay()) << " "
+                    << FortranFormat(gaussian.Contractions()[FindLmax(
+                           std::string(1, subtype))])
                     << endl;
           }
         }

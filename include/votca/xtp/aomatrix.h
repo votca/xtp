@@ -43,7 +43,8 @@ class AOMatrix {
 class AOKinetic : public AOMatrix {
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 };
 
 // derived class for atomic orbital overlap
@@ -56,9 +57,14 @@ class AOOverlap : public AOMatrix {
   Eigen::MatrixXd Pseudo_InvSqrt(double etol);
   Eigen::MatrixXd Sqrt();
 
+  Eigen::MatrixXd Primitive_Overlap(const AOGaussianPrimitive& g_row,
+                                    const AOGaussianPrimitive& g_col,
+                                    int l_offset = 0) const;
+
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
   int removedfunctions;
@@ -75,7 +81,8 @@ class AOCoulomb : public AOMatrix {
 
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
   int removedfunctions;

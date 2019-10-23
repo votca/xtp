@@ -51,7 +51,7 @@ class CoordBase {
   std::vector<double> _vector;
   Eigen::VectorXd _coords;
 };
-typedef CoordBase CoordSystem;
+using CoordSystem = CoordBase;
 }  // namespace xtp
 }  // namespace votca
 

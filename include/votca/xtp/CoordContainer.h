@@ -38,7 +38,8 @@ bool IdxContains(const IND_TYPE i, const std::array<IND_TYPE, SIZE> a) {
 
 template <typename IdxType, typename ValType>
 struct CoordContainer {
-  CoordContainer(){};
+  CoordContainer() = default;
+  ;
 
   std::vector<IdxType> _indices;
   std::map<IdxType, ValType> _values;

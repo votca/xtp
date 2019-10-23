@@ -95,7 +95,6 @@ void NumericalIntegration::setXCfunctional(const std::string& functional) {
     cfunc_id = map.getID(strs[1]);
     _use_separate = true;
   } else {
-    std::cout << "LIBXC " << strs.size() << std::endl;
     throw std::runtime_error(
         "LIBXC. Please specify one combined or an exchange and a correlation "
         "functionals");
@@ -165,10 +164,10 @@ double NumericalIntegration::IntegratePotential(
 
   double result = 0.0;
   assert(_density_set && "Density not calculated");
-  for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
-    const std::vector<double>& weights = _grid_boxes[i].getGridWeights();
-    const std::vector<double>& densities = _grid_boxes[i].getGridDensities();
+  for (const auto& box : _grid_boxes) {
+    const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
+    const std::vector<double>& weights = box.getGridWeights();
+    const std::vector<double>& densities = box.getGridDensities();
     for (unsigned j = 0; j < points.size(); j++) {
       double charge = -weights[j] * densities[j];
       double dist = (points[j] - rvector).norm();
@@ -183,10 +182,10 @@ Eigen::Vector3d NumericalIntegration::IntegrateField(
 
   Eigen::Vector3d result = Eigen::Vector3d::Zero();
   assert(_density_set && "Density not calculated");
-  for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
-    const std::vector<double>& weights = _grid_boxes[i].getGridWeights();
-    const std::vector<double>& densities = _grid_boxes[i].getGridDensities();
+  for (const auto& box : _grid_boxes) {
+    const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
+    const std::vector<double>& weights = box.getGridWeights();
+    const std::vector<double>& densities = box.getGridDensities();
     for (unsigned j = 0; j < points.size(); j++) {
       double charge = -weights[j] * densities[j];
       Eigen::Vector3d r = points[j] - rvector;
@@ -262,7 +261,6 @@ void NumericalIntegration::SortGridpointsintoBlocks(
       boxes[i_x][i_y][i_z].push_back(&gridpoint);
     }
   }
-
   for (auto& boxes_xy : boxes) {
     for (auto& boxes_z : boxes_xy) {
       for (auto& box : boxes_z) {
@@ -270,7 +268,6 @@ void NumericalIntegration::SortGridpointsintoBlocks(
           continue;
         }
         GridBox gridbox;
-
         for (const auto& point : box) {
           gridbox.addGridPoint(*point);
         }
@@ -282,8 +279,7 @@ void NumericalIntegration::SortGridpointsintoBlocks(
 }
 
 void NumericalIntegration::FindSignificantShells(const AOBasis& basis) {
-  for (unsigned i = 0; i < _grid_boxes.size(); ++i) {
-    GridBox& box = _grid_boxes[i];
+  for (GridBox& box : _grid_boxes) {
     for (const AOShell& store : basis) {
       const double decay = store.getMinDecay();
       const Eigen::Vector3d& shellpos = store.getPos();
@@ -323,8 +319,10 @@ void NumericalIntegration::FindSignificantShells(const AOBasis& basis) {
     grid_boxes_copy.push_back(box);
   }
 
+  _totalgridsize = 0;
   _grid_boxes = grid_boxes_copy;
   for (auto& box : _grid_boxes) {
+    _totalgridsize += box.size();
     box.PrepareForIntegration();
   }
 }
@@ -378,8 +376,9 @@ Mat_p_Energy NumericalIntegration::IntegrateVXC(
       Eigen::VectorXd ao = CalcAOValue_and_Grad(ao_grad, box, points[p]);
       const double rho = 0.5 * (ao.transpose() * DMAT_symm * ao).value();
       const double weight = weights[p];
-      if (rho * weight < 1.e-20)
+      if (rho * weight < 1.e-20) {
         continue;  // skip the rest, if density is very small
+      }
       const Eigen::Vector3d rho_grad = ao.transpose() * DMAT_symm * ao_grad;
       const double sigma = (rho_grad.transpose() * rho_grad).value();
       const Eigen::VectorXd grad = ao_grad * rho_grad;
@@ -501,10 +500,10 @@ std::vector<const Eigen::Vector3d*> NumericalIntegration::getGridpoints()
     const {
   std::vector<const Eigen::Vector3d*> gridpoints;
   gridpoints.reserve(this->getGridSize());
-  for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
-    for (unsigned j = 0; j < points.size(); j++) {
-      gridpoints.push_back(&points[j]);
+  for (const auto& box : _grid_boxes) {
+    const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
+    for (const Eigen::Vector3d& point : points) {
+      gridpoints.push_back(&point);
     }
   }
   return gridpoints;
@@ -516,10 +515,10 @@ Eigen::MatrixXd NumericalIntegration::IntegratePotential(
       externalbasis.AOBasisSize(), externalbasis.AOBasisSize());
 
   assert(_density_set && "Density not calculated");
-  for (unsigned i = 0; i < _grid_boxes.size(); i++) {
-    const std::vector<Eigen::Vector3d>& points = _grid_boxes[i].getGridPoints();
-    const std::vector<double>& weights = _grid_boxes[i].getGridWeights();
-    const std::vector<double>& densities = _grid_boxes[i].getGridDensities();
+  for (const auto& box : _grid_boxes) {
+    const std::vector<Eigen::Vector3d>& points = box.getGridPoints();
+    const std::vector<double>& weights = box.getGridWeights();
+    const std::vector<double>& densities = box.getGridDensities();
     for (unsigned j = 0; j < points.size(); j++) {
       double weighteddensity = weights[j] * densities[j];
       if (weighteddensity < 1e-12) {
@@ -654,7 +653,6 @@ void NumericalIntegration::GridSetup(const std::string& type,
   // for the partitioning, we need all inter-center distances later, stored in
   // matrix
   Eigen::MatrixXd Rij = CalcInverseAtomDist(atoms);
-  _totalgridsize = 0;
   std::vector<std::vector<GridContainers::Cartesian_gridpoint> > grid;
 
   for (int i_atom = 0; i_atom < atoms.size(); ++i_atom) {
@@ -703,8 +701,6 @@ void NumericalIntegration::GridSetup(const std::string& type,
         atomgrid_cleanedup.push_back(point);
       }
     }
-
-    _totalgridsize += atomgrid_cleanedup.size();
     grid.push_back(atomgrid_cleanedup);
   }  // atoms
   SortGridpointsintoBlocks(grid);
@@ -737,7 +733,9 @@ Eigen::VectorXd NumericalIntegration::SSWpartition(
           } else {
             sk = erf1c(mu);
           }
-          if (mu > 0.0) sk = 1.0 - sk;
+          if (mu > 0.0) {
+            sk = 1.0 - sk;
+          }
           p[j] = p[j] * sk;
           p[i] = p[i] * (1.0 - sk);
         }

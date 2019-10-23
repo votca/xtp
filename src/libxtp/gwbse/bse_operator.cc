@@ -24,11 +24,20 @@ namespace votca {
 namespace xtp {
 
 template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::row(int index) const {
+void BSE_OPERATOR<cqp, cx, cd, cd2>::configure(BSEOperator_Options opt) {
+  _opt = opt;
+  int bse_vmax = _opt.homo;
+  _bse_cmin = _opt.homo + 1;
+  _bse_vtotal = bse_vmax - _opt.vmin + 1;
+  _bse_ctotal = _opt.cmax - _bse_cmin + 1;
+  _bse_size = _bse_vtotal * _bse_ctotal;
+  this->set_size(_bse_size);
+}
+
+template <int cqp, int cx, int cd, int cd2>
+Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::OperatorRow(
+    int index) const {
   Eigen::RowVectorXd row = Eigen::RowVectorXd::Zero(_bse_size);
-  if (cx != 0) {
-    row += cx * Hx_row(index);
-  }
   if (cd != 0) {
     row += cd * Hd_row(index);
   }
@@ -42,33 +51,21 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::row(int index) const {
 }
 
 template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hx_row(int index) const {
-  int thread_id = OPENMP::getThreadId();
-  if (_Hx_cache[thread_id].hasValue(index)) {
-    return _Hx_cache[thread_id].getValue(index);
-  }
-  int auxsize = _Mmn.auxsize();
-  vc2index vc = vc2index(0, 0, _bse_ctotal);
+Eigen::MatrixXd BSE_OPERATOR<cqp, cx, cd, cd2>::OperatorBlock(int row,
+                                                              int col) const {
+  return cx * HxBlock(row, col);
+}
 
+template <int cqp, int cx, int cd, int cd2>
+Eigen::MatrixXd BSE_OPERATOR<cqp, cx, cd, cd2>::HxBlock(int row,
+                                                        int col) const {
+  int auxsize = _Mmn.auxsize();
   const int vmin = _opt.vmin - _opt.rpamin;
   const int cmin = _bse_cmin - _opt.rpamin;
-  int v1 = vc.v(index);
-  int c1 = vc.c(index);
-  int cache_size = 50;
-  if ((_bse_ctotal - c1) < cache_size) {
-    cache_size = _bse_ctotal - c1;
-  }
-  Eigen::MatrixXd H_cache = Eigen::MatrixXd::Zero(_bse_size, cache_size);
-  const Eigen::MatrixXd Mmn1T =
-      _Mmn[v1 + vmin].block(c1 + cmin, 0, cache_size, auxsize).transpose();
-  for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-    const Eigen::MatrixXd& Mmn2 = _Mmn[v2 + vmin];
-    int i2 = vc.I(v2, 0);
-    H_cache.block(i2, 0, _bse_ctotal, cache_size) =
-        Mmn2.block(cmin, 0, _bse_ctotal, auxsize) * Mmn1T;
-  }
-  _Hx_cache[thread_id].FillCache(H_cache, index);
-  return H_cache.col(0).transpose();
+  int v1 = row + vmin;
+  int v2 = col + vmin;
+  return _Mmn[v1].block(cmin, 0, _bse_ctotal, auxsize) *
+         _Mmn[v2].block(cmin, 0, _bse_ctotal, auxsize).transpose();
 }
 
 template <int cqp, int cx, int cd, int cd2>
@@ -88,10 +85,7 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd_row(int index) const {
   const Eigen::MatrixXd& Mmn2 = _Mmn[c1 + cmin];
   Eigen::MatrixXd Mmn2xMmn1T =
       Mmn2.block(cmin, 0, _bse_ctotal, auxsize) * Mmn1T;
-
-  Eigen::RowVectorXd Hrow =
-      Eigen::Map<Eigen::RowVectorXd>(Mmn2xMmn1T.data(), Mmn2xMmn1T.size());
-  return Hrow;
+  return Eigen::Map<Eigen::RowVectorXd>(Mmn2xMmn1T.data(), Mmn2xMmn1T.size());
 }
 
 template <int cqp, int cx, int cd, int cd2>
@@ -107,7 +101,6 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hqp_row(int index) const {
   int vmin = _opt.vmin - _opt.qpmin;
   Result.row(c1) -= _Hqp.col(v1 + vmin).segment(vmin, _bse_vtotal);
   return Eigen::Map<Eigen::RowVectorXd>(Result.data(), Result.size());
-  ;
 }
 
 template <int cqp, int cx, int cd, int cd2>
@@ -127,9 +120,7 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd2_row(int index) const {
   const Eigen::MatrixXd& Mmn1 = _Mmn[v1 + vmin];
   Eigen::MatrixXd Mmn1xMmn2T =
       Mmn1.block(cmin, 0, _bse_ctotal, auxsize) * Mmn2T;
-  Eigen::RowVectorXd Hrow =
-      Eigen::Map<Eigen::RowVectorXd>(Mmn1xMmn2T.data(), Mmn1xMmn2T.size());
-  return Hrow;
+  return Eigen::Map<Eigen::RowVectorXd>(Mmn1xMmn2T.data(), Mmn1xMmn2T.size());
 }
 
 template class BSE_OPERATOR<1, 2, 1, 0>;
@@ -143,6 +134,8 @@ template class BSE_OPERATOR<1, 0, 0, 0>;
 template class BSE_OPERATOR<0, 1, 0, 0>;
 template class BSE_OPERATOR<0, 0, 1, 0>;
 template class BSE_OPERATOR<0, 0, 0, 1>;
+
+template class BSE_OPERATOR<0, 2, 0, 1>;
 
 }  // namespace xtp
 }  // namespace votca
