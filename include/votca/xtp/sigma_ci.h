@@ -38,16 +38,17 @@ class RPA;
 class Sigma_CI : public Sigma_base {
 
  public:
-  Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
+  Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa, Eigen::MatrixXd vxc)
       : Sigma_base(Mmn, rpa),
         _gq(rpa.getRPAInputEnergies(), Mmn),
-        _eta(rpa.getEta()){};
+        _eta(rpa.getEta()),_vxc(vxc){};
 
   ~Sigma_CI(){};
 
   void PrepareScreening();
 
   Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
+
 
   Eigen::VectorXd ExactCorrelationDiag(
       const Eigen::VectorXd& frequencies) const;
@@ -57,6 +58,8 @@ class Sigma_CI : public Sigma_base {
 
   Eigen::MatrixXd ExactCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const;
+  
+  void SetSigmaX(Eigen::MatrixXd sigmax) {_sigmaX = sigmax;};
 
  private:
   double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
@@ -72,6 +75,8 @@ class Sigma_CI : public Sigma_base {
   GaussianQuadrature _gq;
 
   double _eta;
+  Eigen::MatrixXd _vxc;
+  Eigen::MatrixXd _sigmaX;
 };
 
 }  // namespace xtp

@@ -34,7 +34,7 @@ void GW::configure(const options& opt) {
   if (_opt.sigma_integration == "ppm") {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn, _rpa));
   } else if (_opt.sigma_integration == "ci") {
-    _sigma = std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn, _rpa));
+    _sigma = std::unique_ptr<Sigma_base>(new Sigma_CI(_Mmn, _rpa, _vxc));
   } else if (_opt.sigma_integration == "exact") {
     _sigma = std::unique_ptr<Sigma_base>(new Sigma_Spectral(_Mmn, _rpa));
   }
@@ -178,7 +178,22 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
-
+      if (_opt.sigma_integration == "ci" ){
+          if ( i_freq == 0 ){         
+          std::cout << "I am opening the gap with 0.001 \n " << std::endl;
+    for (int i = 0; i < _opt.rpamax; ++i){
+      if (i < frequencies(_opt.homo+1)){
+          frequencies(i) -= 0.0;
+      }
+      else {
+          frequencies(i) += 0.0;
+      }
+  }
+      }
+       std::cout << "Iteration \t " << i_freq << "\n" << std::endl;            
+      }
+      
+      
     _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
     _gwa_energies = CalcDiagonalEnergies();
 
@@ -232,7 +247,7 @@ void GW::CalculateGWPerturbation() {
       dft_shifted_energies.segment(_opt.rpamin, _opt.rpamax - _opt.rpamin + 1);
   _rpa.setRPAInputEnergies(rpa_energies);
   Eigen::VectorXd frequencies =
-      dft_shifted_energies.segment(_opt.qpmin, _qptotal);
+      dft_shifted_energies.segment(_opt.qpmin, _qptotal);// + _Sigma_x.diagonal() -_vxc.diagonal();
   for (int i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
 
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
@@ -241,11 +256,19 @@ void GW::CalculateGWPerturbation() {
           << TimeStamp() << " Rebuilding 3c integrals" << std::flush;
     }
     _sigma->PrepareScreening();
+    
     XTP_LOG_SAVE(logDEBUG, _log)
         << TimeStamp() << " Calculated screening via RPA  " << std::flush;
+    
+    // qp updates (calls sigma_c diag, gets QP, linear mixing 
     frequencies = CalculateExcitationFreq(frequencies);
+    
+    
+    
     XTP_LOG_SAVE(logDEBUG, _log)
         << TimeStamp() << " Calculated diagonal part of Sigma  " << std::flush;
+    
+    
     Eigen::VectorXd rpa_energies_old = _rpa.getRPAInputEnergies();
     _rpa.UpdateRPAInputEnergies(_dft_energies, frequencies, _opt.qpmin);
 
@@ -299,15 +322,28 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
       Eigen::VectorXd::LinSpaced(size, -range * delta, range * delta);
   Eigen::MatrixXd results = Eigen::MatrixXd::Zero(size, _qptotal);
   _sigma->PrepareScreening();
+  
   for (int i = 0; i < size; i++) {
-    results.row(i) = _sigma->CalcCorrelationDiag(
-        frequencies + Eigen::VectorXd::Constant(_qptotal, offsets[i]));
+      results.row(i) = _sigma->CalcCorrelationDiag(
+      frequencies + Eigen::VectorXd::Constant(_qptotal, offsets[i]));
   }
+
+  
   Eigen::MatrixXd table = Eigen::MatrixXd::Zero(size + 1, _qptotal + 1);
+  std::cout << _qptotal + 1 << "  " << size + 1 << std::endl;
   table.block(0, 1, 1, _qptotal) = frequencies.transpose();
   table.block(1, 0, size, 1) = offsets;
   table.block(1, 1, size, _qptotal) = results;
   CustomTools::ExportMat("sigma_c.txt", table);
+
+//for (int j = 0; j < _qptotal; j++){
+//if (j%7 == 0){
+//    std::string name = "sigma_c_" + std::to_string(j) + ".txt";
+//  Eigen::MatrixXd table2 = Eigen::MatrixXd::Zero(_qptotal,2);
+//  table2.block(0,0,_qptotal,1) = x_mat.row(j);
+//  table2.block(1,1,_qptotal,1) = results.col(j);
+//  CustomTools::ExportMat(name, table2);
+//}  }
 }
 
 }  // namespace xtp

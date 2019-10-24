@@ -598,7 +598,8 @@ bool GWBSE::Evaluate() {
     // E_qp)
     _orbitals.QPpertEnergies() = gw.getGWAResults();
 
-    exit(0);
+    std::exit(0);
+    
     XTP_LOG(logDEBUG, *_pLog)
         << TimeStamp() << " Calculating offdiagonal part of Sigma  " << flush;
     gw.CalculateHQP();

@@ -23,6 +23,7 @@
 #include <votca/xtp/customtools.h>
 #include <votca/xtp/gw.h>
 #include <votca/xtp/sigma_ci.h>
+#include <time.h>
 
 namespace votca {
 namespace xtp {
@@ -40,8 +41,22 @@ void Sigma_CI::PrepareScreening() {
 double Sigma_CI::CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
                                            double eta, double delta) const {
   std::complex<double> omega(delta, eta);
+  
+  
+  Eigen::MatrixXcd EPSQ = _gq.EpsilonGQ(omega, _rpa);
+  
+ 
+  
+  
   Eigen::MatrixXcd DielMxInvC = (_rpa.calculate_epsilon(omega)).inverse();
-  return ((Imx_row * DielMxInvC.real() - Imx_row).cwiseProduct(Imx_row)).sum();
+  //// Wouter's implementation
+  double value = (( Imx_row * DielMxInvC.real() - Imx_row).cwiseProduct(Imx_row)).sum();
+  
+  /// Gianluca's implementation
+  //Eigen::MatrixXcd M = DielMxInvC - Eigen::MatrixXd::Identity(DielMxInvC.rows(),DielMxInvC.cols()); 
+  //double value = (Imx_row * M.real() * Imx_row.transpose()).trace();
+    
+  return value;
 }
 
 double Sigma_CI::CalcOffDiagContributionValue(
@@ -49,50 +64,78 @@ double Sigma_CI::CalcOffDiagContributionValue(
     double eta, double delta) const {
   std::complex<double> omega(delta, eta);
   Eigen::MatrixXcd DielMxInvC = (_rpa.calculate_epsilon(omega)).inverse();
-  return ((Imx_row1 * DielMxInvC.real() - Imx_row1).cwiseProduct(Imx_row2))
-      .sum();
+  return ((Imx_row1 * DielMxInvC.real() - Imx_row1).cwiseProduct(Imx_row2)).sum();
 }
+
 
 Eigen::VectorXd Sigma_CI::CalcCorrelationDiag(
-    const Eigen::VectorXd& frequencies) const {
-  Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+    const Eigen::VectorXd& E) const {
+ 
   int homo = _opt.homo - _opt.rpamin;
   int lumo = homo + 1;
-  const Eigen::VectorXd& energies = _rpa.getRPAInputEnergies();
-  double middle_of_gap_energy = (energies(lumo) + energies(homo)) / 2;
-  const Eigen::VectorXd shiftedenergies =
-      energies.array() - middle_of_gap_energy;
-  const Eigen::VectorXd shiftedfrequencies =
-      frequencies.array() - middle_of_gap_energy;
-  int rpatotal = energies.size();
-  int auxsize = _Mmn.auxsize();
-#pragma omp parallel for
-  for (int m = 0; m < _qptotal; ++m) {
-    const Eigen::MatrixXd& Imx = _Mmn[m];
-    for (int i = 0; i < rpatotal; ++i) {
-      double delta = shiftedenergies(i) - shiftedfrequencies(m);
-      double value = 0;
-      /* std::cout << " " << std::endl;
-      std::cout << "energies" << std::endl;
-      std::cout << " " << std::endl;
-      std::cout << shiftedenergies << std::endl;
-      std::cout << " " << std::endl;
-      std::cout << "frequencies" << std::endl;
-      std::cout << " " << std::endl;
-      std::cout << shiftedfrequencies << std::endl;
-      std::cout << " " << std::endl;*/
+  std::cout << " Using eta " << std::setprecision(10) << _eta << std::endl;
+  
+  const Eigen::VectorXd& RPAenergies = _rpa.getRPAInputEnergies();
+  double fermi = (RPAenergies(lumo) + RPAenergies(homo)) / 2;
+  
+  int rpatotal = RPAenergies.size();
+  
+  // const Eigen::VectorXd shiftedenergies = energies.array(); // - middle_of_gap_energy;
+  Eigen::VectorXd shiftedE =  E.array() ; 
+  
+  // Open the gap for iteration 0
+  
+ 
+  Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
+                result = Eigen::VectorXd::Zero(_qptotal);
+                Eigen::VectorXd res0p = Eigen::VectorXd::Zero(_qptotal);
+                Eigen::VectorXd res0m = Eigen::VectorXd::Zero(_qptotal);
 
-      if (delta > 0 && i < lumo) {
-        value = CalcDiagContributionValue(Imx.row(i), _eta, delta);
-      } else if (delta < 0 && i > homo) {
-        value = - CalcDiagContributionValue(Imx.row(i), -_eta, delta);
-      }
-      result(m) -= value;
-    }
-  }
-   result += _gq.SigmaGQDiag(frequencies, _rpa);
-  return result;
+std::cout << " INTO RESIDUE Calculations" << std::endl;
+#pragma omp parallel for
+                for (int m = 0; m < _qptotal; ++m) {
+                    if ( m%10 == 0 ){
+                        std::cout << " Level \t " << m << "Correction " << std::endl; 
+                    }
+                    const Eigen::MatrixXd& Imx = _Mmn[m];
+                    for (int i = 0; i < rpatotal; ++i) {
+                        double delta = RPAenergies(i) - shiftedE(m);
+			//double abs_delta = std::abs(delta);
+                        double value = 0;
+                        double value_res0p = 0;
+                        double value_res0m = 0;
+
+                        if (delta > 0 && RPAenergies(i) < fermi) {
+                            // This is for occupied levels
+                            value = CalcDiagContributionValue(Imx.row(i), _eta, delta);
+                        } else if (delta == 0 && RPAenergies(i) < fermi) {
+                            // This is for occupied levels
+                            value_res0p = 0.5 * CalcDiagContributionValue(Imx.row(i), _eta, delta);
+                            //std::cout << " I should not be in this p0 case!" << std::endl;
+                        } else if (delta < 0 && RPAenergies(i) > fermi) {
+                            value = -CalcDiagContributionValue(Imx.row(i), -_eta, delta);
+                        } else if (delta == 0 && RPAenergies(i) > fermi) {
+                            value_res0m = 0.5 * CalcDiagContributionValue(Imx.row(i), -_eta, delta);
+                            //std::cout << " I should not be in this m0 case!" << std::endl;
+                        }
+                        res0p(m) -= value_res0p;
+                        res0m(m) -= value_res0m;
+                        result(m) -= value;
+                    }
+                }
+
+                std::cout << " INTO GAUSSQ Calculation" << std::endl;
+                Eigen::VectorXd GAUSSQ = _gq.SigmaGQDiag(shiftedE, _rpa);
+                
+                result += GAUSSQ + res0p + res0m;
+
+                // update shiftedE 
+                shiftedE = E + result;
+
+
+            return result;
 }
+
 
 Eigen::MatrixXd Sigma_CI::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
