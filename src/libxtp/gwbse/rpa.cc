@@ -85,101 +85,101 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency) const;
 template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency) const;
 
-RPA::rpa_eigensolution RPA::calculate_eigenvalues() const {
-  Eigen::VectorXd AmB = calculate_spectral_AmB();
-  return diag_C(AmB, calculate_spectral_C(AmB, calculate_spectral_ApB()));
+RPA::rpa_eigensolution RPA::diagonalize_H2p() const {
+  const Index lumo = _homo + 1;
+  const Index n_occ = lumo - _rpamin;
+  const Index n_unocc = _rpamax - lumo + 1;
+  const Index rpasize = n_occ * n_unocc;
+  
+  // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
+  // atoms, molecules, and clusters. Computer Physics Communications 208,
+  // 149–161 (2016).
+  
+  // Equation 37
+  Eigen::VectorXd AmB = Calculate_H2p_AmB();
+  Eigen::MatrixXd ApB = Calculate_H2p_ApB();
+  
+  // Equation 41
+  Eigen::MatrixXd C = AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
+  tools::EigenSystem result = Solve_C(C);
+  
+  // Omega has to have correct size otherwise MKL does not rescale for Sqrt
+  Eigen::VectorXd omega;
+  omega = Eigen::VectorXd::Zero(rpasize);
+  omega = result.eigenvalues().cwiseSqrt();
+  
+  XTP_LOG_SAVE(logDEBUG, _log)
+      << TimeStamp() << " Lowest neutral excitation energy (eV): "
+      << tools::conv::hrt2ev * omega.minCoeff() << flush;
+
+  // Equation 42
+  //     X = (1/2) * [(A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] * Z
+  //     Y = (1/2) * [(A-B)^(+1/2) - Omega^(+1/2) * (A-B)^(-1/2)] * Z
+  // X + Y = (A-B)^(+1/2) * Z
+  Eigen::MatrixXd XpY = AmB.cwiseSqrt().asDiagonal() * result.eigenvectors();
+  
+  RPA::rpa_eigensolution sol;
+  sol._omega = omega;
+  sol._XpY = XpY;
+  
+  return sol;
 }
 
-Eigen::VectorXd RPA::calculate_spectral_AmB() const {
-  const int lumo = _homo + 1;
-  const int n_occup = lumo - _rpamin;
-  const int n_unocc = _rpamax - _homo;
-  const int rpasize = n_occup * n_unocc;
+Eigen::VectorXd RPA::Calculate_H2p_AmB() const {
+  const Index lumo = _homo + 1;
+  const Index n_occ = lumo - _rpamin;
+  const Index n_unocc = _rpamax - lumo + 1;
+  const Index rpasize = n_occ * n_unocc;
   vc2index vc = vc2index(0, 0, n_unocc);
   Eigen::VectorXd AmB = Eigen::VectorXd::Zero(rpasize);
-
-  for (int v = 0; v < n_occup; v++) {
-    int i = vc.I(v, 0);
+  for (Index v = 0; v < n_occ; v++) {
+    Index i = vc.I(v, 0);
     AmB.segment(i, n_unocc) =
-        _energies.segment(n_occup, n_unocc).array() - _energies(v);
+        _energies.segment(n_occ, n_unocc).array() - _energies(v);
   }
-
   return AmB;
 }
 
-Eigen::MatrixXd RPA::calculate_spectral_ApB() const {
-  const int lumo = _homo + 1;
-  const int n_occup = lumo - _rpamin;
-  const int n_unocc = _rpamax - _homo;
-  const int rpasize = n_occup * n_unocc;
-  const int auxsize = _Mmn.auxsize();
+Eigen::MatrixXd RPA::Calculate_H2p_ApB() const {
+  const Index lumo = _homo + 1;
+  const Index n_occ = lumo - _rpamin;
+  const Index n_unocc = _rpamax - lumo + 1;
+  const Index rpasize = n_occ * n_unocc;
+  const Index auxsize = _Mmn.auxsize();
   vc2index vc = vc2index(0, 0, n_unocc);
   Eigen::MatrixXd ApB = Eigen::MatrixXd::Zero(rpasize, rpasize);
-
 #pragma omp parallel for schedule(guided)
-  for (int v2 = 0; v2 < n_occup; v2++) {
-    int i2 = vc.I(v2, 0);
+  for (Index v2 = 0; v2 < n_occ; v2++) {
+    Index i2 = vc.I(v2, 0);
     const Eigen::MatrixXd Mmn_v2T =
-        _Mmn[v2].block(n_occup, 0, n_unocc, auxsize).transpose();
-    for (int v1 = v2; v1 < n_occup; v1++) {
-      int i1 = vc.I(v1, 0);
+        _Mmn[v2].block(n_occ, 0, n_unocc, auxsize).transpose();
+    for (Index v1 = v2; v1 < n_occ; v1++) {
+      Index i1 = vc.I(v1, 0);
       // Multiply with factor 2 to sum over both (identical) spin states
       ApB.block(i1, i2, n_unocc, n_unocc) =
-          2 * 2 * _Mmn[v1].block(n_occup, 0, n_unocc, auxsize) * Mmn_v2T;
+          2 * 2 * _Mmn[v1].block(n_occ, 0, n_unocc, auxsize) * Mmn_v2T;
     }
   }
-
-  ApB.diagonal() += calculate_spectral_AmB();
-
+  ApB.diagonal() += Calculate_H2p_AmB();
   return ApB;
 }
 
-Eigen::MatrixXd RPA::calculate_spectral_C(const Eigen::VectorXd& AmB,
-                                          const Eigen::MatrixXd& ApB) const {
-  return AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
-}
-
-RPA::rpa_eigensolution RPA::diag_C(const Eigen::VectorXd& AmB,
-                                   const Eigen::MatrixXd& C) const {
-  const int lumo = _homo + 1;
-  const int n_occup = lumo - _rpamin;
-  const int n_unocc = _rpamax - _homo;
-  const int rpasize = n_occup * n_unocc;
-
+tools::EigenSystem RPA::Solve_C(const Eigen::MatrixXd& C) const {
   XTP_LOG_SAVE(logDEBUG, _log)
-      << TimeStamp() << " Diagonalizing RPA Hamiltonian " << flush;
+      << TimeStamp() << " Diagonalizing two-particle Hamiltonian " << flush;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);  // Uses lower triangle
   XTP_LOG_SAVE(logDEBUG, _log)
       << TimeStamp() << " Diagonalization done " << flush;
-
-  double mc = es.eigenvalues().minCoeff();
-  if (mc <= 0.0) {
-    std::string msg =
-        (boost::format("Detected non-positive eigenvalue: %s") % mc).str();
+  double minCoeff = es.eigenvalues().minCoeff();
+  if (minCoeff <= 0.0) {
+    std::string msg = (boost::format("Detected non-positive eigenvalue: %s") % minCoeff).str();
     XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " " << msg << flush;
     throw std::runtime_error(msg);
   }
-  rpa_eigensolution sol;
-  // Omega has to have correct size otherwise MKL does not rescale for Sqrt
-  sol._Omega = Eigen::VectorXd::Zero(rpasize);
-  sol._Omega = es.eigenvalues().cwiseSqrt();
-
-  XTP_LOG_SAVE(logDEBUG, _log)
-      << TimeStamp() << " Lowest neutral excitation energy (eV): "
-      << tools::conv::hrt2ev * sol._Omega.minCoeff() << flush;
-
-  // X     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] *
-  // Z Y     = 0.5 * [Omega^(-1/2) * (A-B)^(+1/2) - Omega^(+1/2) * (A-B)^(-1/2)]
-  // * Z X + Y =       [Omega^(-1/2) * (A-B)^(+1/2) ] * Z
-  sol._XpY = Eigen::MatrixXd(rpasize, rpasize);
-  Eigen::VectorXd AmB_sqrt = AmB.cwiseSqrt();
-  Eigen::VectorXd Omega_sqrt_inv = sol._Omega.cwiseSqrt().cwiseInverse();
-  for (int s = 0; s < rpasize; s++) {
-    sol._XpY.col(s) =
-        Omega_sqrt_inv(s) * AmB_sqrt.cwiseProduct(es.eigenvectors().col(s));
-  }
-
-  return sol;
+  tools::EigenSystem result;
+  result.eigenvalues() = es.eigenvalues();
+  result.eigenvectors() = es.eigenvectors();
+  return result;
 }
 
 }  // namespace xtp

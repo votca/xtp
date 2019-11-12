@@ -28,7 +28,7 @@ namespace xtp {
 
 void Sigma_Exact::PrepareScreening() {
   // Solve eigenvalue problem
-  _EigenSol = _rpa.calculate_eigenvalues();
+  _EigenSol = _rpa.diagonalize_H2p();
   // Cache residues
   _residues = CalcResidues();
   return;
@@ -36,7 +36,7 @@ void Sigma_Exact::PrepareScreening() {
 
 Eigen::VectorXd Sigma_Exact::CalcCorrelationDiag(
     const Eigen::VectorXd& frequencies) const {
-  const int number_eigenvectors = _EigenSol._Omega.size();
+  const int number_eigenvectors = _EigenSol._omega.size();
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_qptotal);
 
 #pragma omp parallel for
@@ -45,7 +45,7 @@ Eigen::VectorXd Sigma_Exact::CalcCorrelationDiag(
     const Eigen::MatrixXd& rm = _residues[m];
     for (int s = 0; s < number_eigenvectors; s++) {
       const Eigen::VectorXd rm_x_rm = rm.col(s).cwiseAbs2();
-      double eigenvalue = _EigenSol._Omega(s);
+      double eigenvalue = _EigenSol._omega(s);
       res += Equation47(rm_x_rm, eigenvalue, frequencies(m));
     }
     // Multiply with factor 2.0 to sum over both (identical) spin states
@@ -57,7 +57,7 @@ Eigen::VectorXd Sigma_Exact::CalcCorrelationDiag(
 
 Eigen::MatrixXd Sigma_Exact::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
-  const int rpasize = _EigenSol._Omega.size();
+  const int rpasize = _EigenSol._omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
 
   if (CustomOpts::SigmaCNoOffdiags()) {
@@ -72,7 +72,7 @@ Eigen::MatrixXd Sigma_Exact::CalcCorrelationOffDiag(
       const Eigen::MatrixXd& rn = _residues[n];
       for (int s = 0; s < rpasize; s++) {
         Eigen::VectorXd rm_x_rn = rm.col(s).cwiseProduct(rn.col(s));
-        double eigenvalue = _EigenSol._Omega(s);
+        double eigenvalue = _EigenSol._omega(s);
         double res_m = Equation47(rm_x_rn, eigenvalue, frequencies(m));
         double res_n = Equation47(rm_x_rn, eigenvalue, frequencies(n));
         res += res_m + res_n;
