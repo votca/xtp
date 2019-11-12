@@ -29,14 +29,14 @@ namespace votca {
 namespace xtp {
 
 struct BSEOperator_Options {
-  int homo;
-  int rpamin;
-  int qpmin;
-  int vmin;
-  int cmax;
+  Index homo;
+  Index rpamin;
+  Index qpmin;
+  Index vmin;
+  Index cmax;
 };
 
-template <int cqp, int cx, int cd, int cd2>
+template <Index cqp, Index cx, Index cd, Index cd2>
 class BSE_OPERATOR : public MatrixFreeOperator {
 
  public:
@@ -46,38 +46,25 @@ class BSE_OPERATOR : public MatrixFreeOperator {
 
   void configure(BSEOperator_Options opt);
 
-  Eigen::RowVectorXd row(int index) const;
+  Eigen::RowVectorXd OperatorRow(Index index) const override;
+
+  bool useBlock() const override { return cx != 0; }
+
+  Index getBlocksize() const override { return Index(_bse_ctotal); }
+
+  Eigen::MatrixXd OperatorBlock(Index row, Index col) const override;
 
  private:
-  Eigen::RowVectorXd Hqp_row(int index) const;
-  Eigen::RowVectorXd Hx_row(int index) const;
-  Eigen::RowVectorXd Hd_row(int index) const;
-  Eigen::RowVectorXd Hd2_row(int index) const;
-
-  class cache_block {
-
-   public:
-    bool hasValue(int index) const;
-
-    Eigen::RowVectorXd getValue(int index) {
-      return std::move(_values[index - _index]);
-    }
-
-    void FillCache(const Eigen::MatrixXd& matrix, int index);
-
-   private:
-    std::vector<Eigen::RowVectorXd> _values;
-    int _index = -1;
-    int _size = -1;
-  };
+  Eigen::RowVectorXd Hqp_row(Index index) const;
+  Eigen::RowVectorXd Hd_row(Index index) const;
+  Eigen::RowVectorXd Hd2_row(Index index) const;
+  Eigen::MatrixXd HxBlock(Index row, Index col) const;
 
   BSEOperator_Options _opt;
-  int _bse_size;
-  int _bse_vtotal;
-  int _bse_ctotal;
-  int _bse_cmin;
-
-  mutable std::vector<cache_block> _Hx_cache;
+  Index _bse_size;
+  Index _bse_vtotal;
+  Index _bse_ctotal;
+  Index _bse_cmin;
 
   const Eigen::VectorXd& _epsilon_0_inv;
   const TCMatrix_gwbse& _Mmn;
@@ -91,6 +78,8 @@ typedef BSE_OPERATOR<1, 0, 1, 0> TripletOperator_TDA;
 typedef BSE_OPERATOR<1, 4, 1, 1> SingletOperator_BTDA_ApB;
 typedef BSE_OPERATOR<1, 0, 1, 1> TripletOperator_BTDA_ApB;
 typedef BSE_OPERATOR<1, 0, 1, -1> Operator_BTDA_AmB;
+
+typedef BSE_OPERATOR<0, 2, 0, 1> SingletOperator_BTDA_B;
 
 typedef BSE_OPERATOR<1, 0, 0, 0> HqpOperator;
 typedef BSE_OPERATOR<0, 1, 0, 0> HxOperator;

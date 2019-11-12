@@ -98,7 +98,6 @@ class LogBuffer : public std::stringbuf {
  private:
   // Log Level (WARNING, INFO, etc)
   TLogLevel _LogLevel = TLogLevel::logDEBUG;
-  ;
 
   // temporary buffer to store messages
   std::ostringstream _stringStream;
@@ -113,7 +112,7 @@ class LogBuffer : public std::stringbuf {
   bool _writePreface = true;
 
  protected:
-  virtual int sync() {
+  int sync() override {
 
     std::ostringstream _message;
 
@@ -167,9 +166,9 @@ class LogBuffer : public std::stringbuf {
  */
 class Logger : public std::ostream {
 
-  friend std::ostream &operator<<(std::ostream &out, Logger &logger) {
-    out << logger.Messages();
-    return out;
+  friend std::ostream &operator<<(std::ostream &log_out, Logger &logger) {
+    log_out << logger.Messages();
+    return log_out;
   }
 
  public:
@@ -177,14 +176,12 @@ class Logger : public std::ostream {
   Logger(TLogLevel ReportLevel)
       : std::ostream(new LogBuffer()), _ReportLevel(ReportLevel) {}
 
-  ~Logger() {
-    // dynamic_cast<LogBuffer *>( rdbuf())->FlushBuffer();
+  ~Logger() override {
     delete rdbuf();
-    rdbuf(NULL);
+    rdbuf(nullptr);
   }
 
   Logger &operator()(TLogLevel LogLevel) {
-    // rdbuf()->pubsync();
     dynamic_cast<LogBuffer *>(rdbuf())->setLogLevel(LogLevel);
     return *this;
   }
@@ -226,7 +223,7 @@ class Logger : public std::ostream {
  */
 class TimeStamp {
  public:
-  friend std::ostream &operator<<(std::ostream &os, const TimeStamp &ts) {
+  friend std::ostream &operator<<(std::ostream &os, const TimeStamp &) {
     std::time_t now_time =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::tm *timeinfo = std::localtime(&now_time);
@@ -236,7 +233,7 @@ class TimeStamp {
     return os;
   }
 
-  explicit TimeStamp(){};
+  explicit TimeStamp() = default;
 };
 
 }  // namespace xtp

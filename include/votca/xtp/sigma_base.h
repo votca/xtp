@@ -32,15 +32,15 @@ class Sigma_base {
  public:
   Sigma_base(TCMatrix_gwbse& Mmn, const RPA& rpa) : _Mmn(Mmn), _rpa(rpa){};
 
-  virtual ~Sigma_base(){};
+  virtual ~Sigma_base() = default;
 
   struct options {
-    int homo;
-    int qpmin;
-    int qpmax;
-    int rpamin;
-    int rpamax;
-    double eta;
+    Index homo = 0;
+    Index qpmin = 0;
+    Index qpmax = 0;
+    Index rpamin = 0;
+    Index rpamax = 0;
+    double eta = 1e-3;
   };
 
   void configure(options opt) {
@@ -66,8 +66,8 @@ class Sigma_base {
   TCMatrix_gwbse& _Mmn;
   const RPA& _rpa;
 
-  int _qptotal;
-  int _rpatotal;
+  Index _qptotal = 0;
+  Index _rpatotal = 0;
 };
 }  // namespace xtp
 }  // namespace votca

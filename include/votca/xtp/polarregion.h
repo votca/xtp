@@ -41,29 +41,29 @@ class StaticRegion;
 
 class PolarRegion : public MMRegion<PolarSegment> {
  public:
-  PolarRegion(int id, Logger& log) : MMRegion<PolarSegment>(id, log) {}
+  PolarRegion(Index id, Logger& log) : MMRegion<PolarSegment>(id, log) {}
 
-  std::string identify() const { return "polar"; }
+  std::string identify() const override { return "polar"; }
 
-  void Initialize(const tools::Property& prop);
+  void Initialize(const tools::Property& prop) override;
 
-  bool Converged() const;
+  bool Converged() const override;
 
-  void Evaluate(std::vector<std::unique_ptr<Region> >& regions);
+  void Evaluate(std::vector<std::unique_ptr<Region> >& regions) override;
 
-  void Reset();
+  void Reset() override;
 
-  double Etotal() const { return _E_hist.back().Etotal(); }
+  double Etotal() const override { return _E_hist.back().Etotal(); }
 
-  void WriteToCpt(CheckpointWriter& w) const;
+  void WriteToCpt(CheckpointWriter& w) const override;
 
-  void ReadFromCpt(CheckpointReader& r);
+  void ReadFromCpt(CheckpointReader& r) override;
 
  protected:
-  void AppendResult(tools::Property& prop) const;
-  double InteractwithQMRegion(const QMRegion& region);
-  double InteractwithPolarRegion(const PolarRegion& region);
-  double InteractwithStaticRegion(const StaticRegion& region);
+  void AppendResult(tools::Property& prop) const override;
+  double InteractwithQMRegion(const QMRegion& region) override;
+  double InteractwithPolarRegion(const PolarRegion& region) override;
+  double InteractwithStaticRegion(const StaticRegion& region) override;
 
  private:
   void CalcInducedDipoles();
@@ -76,7 +76,7 @@ class PolarRegion : public MMRegion<PolarSegment> {
   hist<Energy_terms> _E_hist;
   double _deltaE = 1e-5;
   double _deltaD = 1e-5;
-  int _max_iter = 100;
+  Index _max_iter = 100;
   double _exp_damp = 0.39;
 };
 

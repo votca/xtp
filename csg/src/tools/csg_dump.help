@@ -1,0 +1,29 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_dump, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Print atoms that are read from topology file to help debugging atom naming.
+
+
+Allowed options:
+  -h [ --help ]            display this help and exit
+  -v [ --verbose ]         be loud and noisy
+  --top arg                atomistic topology file
+
+Mapping options:
+  --cg arg                 [OPTIONAL] coarse graining mapping and bond 
+                         definitions
+                           (xml-file). If no file is given, program acts on 
+                         original trajectory
+  --map-ignore arg         list of molecules to ignore if mapping is done 
+                         separated by ;
+
+Specific options:
+  --excl                   display exclusion list instead of molecule list
+

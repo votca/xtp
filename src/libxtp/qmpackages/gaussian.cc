@@ -130,8 +130,8 @@ void Gaussian::WriteBasisset(std::ofstream& com_file,
         el_file << shell.getType() << " " << shell.getSize() << " "
                 << FortranFormat(shell.getScale()) << endl;
         for (const GaussianPrimitive& gaussian : shell) {
-          el_file << FortranFormat(gaussian._decay);
-          for (const double& contraction : gaussian._contraction) {
+          el_file << FortranFormat(gaussian.decay());
+          for (const double& contraction : gaussian.Contractions()) {
             if (contraction != 0.0) {
               el_file << " " << FortranFormat(contraction);
             }
@@ -139,16 +139,15 @@ void Gaussian::WriteBasisset(std::ofstream& com_file,
           el_file << endl;
         }
       } else {
-        string type = shell.getType();
-        for (unsigned i = 0; i < type.size(); ++i) {
-          string subtype = string(type, i, 1);
+        for (const char& subtype : shell.getType()) {
           el_file << subtype << " " << shell.getSize() << " "
                   << FortranFormat(shell.getScale()) << endl;
 
           for (const GaussianPrimitive& gaussian : shell) {
-            el_file << FortranFormat(gaussian._decay);
+            el_file << FortranFormat(gaussian.decay());
             el_file << " "
-                    << FortranFormat(gaussian._contraction[FindLmax(subtype)]);
+                    << FortranFormat(gaussian.Contractions()[FindLmax(
+                           std::string(1, subtype))]);
           }
           el_file << endl;
         }
@@ -216,13 +215,15 @@ void Gaussian::WriteBackgroundCharges(std::ofstream& com_file) {
     Eigen::Vector3d pos = site->getPos() * tools::conv::bohr2ang;
     string sitestring =
         boost::str(fmt % pos.x() % pos.y() % pos.z() % site->getCharge());
-    if (site->getCharge() != 0.0) com_file << sitestring << endl;
+    if (site->getCharge() != 0.0) {
+      com_file << sitestring << endl;
+    }
 
     std::vector<MinimalMMCharge> split_multipoles = SplitMultipoles(*site);
     for (const auto& mpoles : split_multipoles) {
-      Eigen::Vector3d pos = mpoles._pos * tools::conv::bohr2ang;
+      Eigen::Vector3d pos2 = mpoles._pos * tools::conv::bohr2ang;
       string multipole =
-          boost::str(fmt % pos.x() % pos.y() % pos.z() % mpoles._q);
+          boost::str(fmt % pos2.x() % pos2.y() % pos2.z() % mpoles._q);
       com_file << multipole << endl;
     }
   }
@@ -241,13 +242,13 @@ void Gaussian::WriteGuess(const Orbitals& orbitals_guess,
                           std::ofstream& com_file) {
   Eigen::MatrixXd MOs = ReorderMOsBack(orbitals_guess);
   com_file << "(5D15.8)" << endl;
-  int level = 1;
-  int ncolumns = 5;
-  for (int i = 0; i < MOs.cols(); ++i) {
+  Index level = 1;
+  Index ncolumns = 5;
+  for (Index i = 0; i < MOs.cols(); ++i) {
     com_file << setw(5) << level << endl;
     Eigen::VectorXd mr = MOs.col(i);
-    int column = 1;
-    for (unsigned j = 0; j < mr.size(); ++j) {
+    Index column = 1;
+    for (Index j = 0; j < mr.size(); ++j) {
       com_file << FortranFormat(mr[j]);
       if (column == ncolumns) {
         com_file << std::endl;
@@ -256,7 +257,9 @@ void Gaussian::WriteGuess(const Orbitals& orbitals_guess,
       column++;
     }
     level++;
-    if (column != 1) com_file << endl;
+    if (column != 1) {
+      com_file << endl;
+    }
   }
   com_file << 0 << endl;
   return;
@@ -284,11 +287,17 @@ void Gaussian::WriteCoordinates(std::ofstream& com_file,
  * relevant keywords, charge, and spin information.
  */
 void Gaussian::WriteHeader(std::ofstream& com_file) {
-  if (_memory.size()) com_file << "%mem=" << _memory << endl;
+  if (_memory.size()) {
+    com_file << "%mem=" << _memory << endl;
+  }
 
-  int threads = OPENMP::getMaxThreads();
-  if (threads > 0) com_file << "%nprocshared=" << threads << endl;
-  if (_options.size()) com_file << _options << endl;
+  Index threads = OPENMP::getMaxThreads();
+  if (threads > 0) {
+    com_file << "%nprocshared=" << threads << endl;
+  }
+  if (_options.size()) {
+    com_file << _options << endl;
+  }
 
   com_file << endl;
   com_file << "TITLE ";
@@ -325,13 +334,19 @@ bool Gaussian::WriteInputFile(const Orbitals& orbitals) {
   if (_executable == "g03") {
 
     // if we need to write basis sets, do it now
-    if (_write_basis_set) WriteBasisset(com_file, qmatoms);
+    if (_write_basis_set) {
+      WriteBasisset(com_file, qmatoms);
+    }
 
     // write ECPs
-    if (_write_pseudopotentials) WriteECP(com_file, qmatoms);
+    if (_write_pseudopotentials) {
+      WriteECP(com_file, qmatoms);
+    }
 
     // write the background charges
-    if (_write_charges) WriteBackgroundCharges(com_file);
+    if (_write_charges) {
+      WriteBackgroundCharges(com_file);
+    }
 
     // write inital guess
     if (_write_guess) {
@@ -342,12 +357,18 @@ bool Gaussian::WriteInputFile(const Orbitals& orbitals) {
 
     // write the background charges
     // if (_write_charges) WriteBackgroundCharges(_com_file, qmatoms);
-    if (_write_charges) WriteBackgroundCharges(com_file);
+    if (_write_charges) {
+      WriteBackgroundCharges(com_file);
+    }
     // if we need to write basis sets, do it now
-    if (_write_basis_set) WriteBasisset(com_file, qmatoms);
+    if (_write_basis_set) {
+      WriteBasisset(com_file, qmatoms);
+    }
 
     // write ECPs
-    if (_write_pseudopotentials) WriteECP(com_file, qmatoms);
+    if (_write_pseudopotentials) {
+      WriteECP(com_file, qmatoms);
+    }
 
     // write inital guess
     if (_write_guess) {
@@ -402,7 +423,7 @@ bool Gaussian::Run() {
   XTP_LOG(logDEBUG, *_pLog) << "GAUSSIAN: running [" << _executable << " "
                             << _input_file_name << "]" << flush;
 
-  if (std::system(NULL)) {
+  if (std::system(nullptr)) {
     // if scratch is provided, run the shell script;
     // otherwise run gaussian directly and rely on global variables
     std::string command;
@@ -414,7 +435,7 @@ bool Gaussian::Run() {
       command = "cd " + _run_dir + "; mkdir -p $GAUSS_SCRDIR; " + _executable +
                 " " + _input_file_name;
     }
-    int check = std::system(command.c_str());
+    Index check = std::system(command.c_str());
     if (check == -1) {
       XTP_LOG(logERROR, *_pLog)
           << _input_file_name << " failed to start" << flush;
@@ -474,8 +495,9 @@ void Gaussian::CleanUp() {
         boost::filesystem::recursive_directory_iterator endit;
         while (fit != endit) {
           if (boost::filesystem::is_regular_file(*fit) &&
-              fit->path().extension() == substring)
+              fit->path().extension() == substring) {
             fileswithfileending.push_back(fit->path().filename().string());
+          }
           ++fit;
         }
         for (const auto filename : fileswithfileending) {
@@ -492,16 +514,18 @@ void Gaussian::CleanUp() {
  * Reads in the MO coefficients from a GAUSSIAN fort.7 file
  */
 bool Gaussian::ParseMOsFile(Orbitals& orbitals) {
-  std::map<int, std::vector<double> > coefficients;
-  std::map<int, double> energies;
+  std::map<long, std::vector<double> > coefficients;
+  std::map<long, double> energies;
 
   std::string line;
-  unsigned levels = 0;
-  unsigned level = 0;
-  unsigned basis_size = 0;
+  Index levels = 0;
+  Index level = 0;
+  Index basis_size = 0;
 
   std::string orb_file_name_full = _mo_file_name;
-  if (_run_dir != "") orb_file_name_full = _run_dir + "/" + _mo_file_name;
+  if (_run_dir != "") {
+    orb_file_name_full = _run_dir + "/" + _mo_file_name;
+  }
   std::ifstream input_file(orb_file_name_full);
 
   if (input_file.fail()) {
@@ -530,7 +554,7 @@ bool Gaussian::ParseMOsFile(Orbitals& orbitals) {
       boost::trim(line);
       tools::Tokenizer tok(line, "\t =");
       std::vector<std::string> results = tok.ToVector();
-      level = boost::lexical_cast<int>(results.front());
+      level = boost::lexical_cast<Index>(results.front());
       boost::replace_first(results.back(), "D", "e");
       energies[level] = boost::lexical_cast<double>(results.back());
       levels++;
@@ -551,11 +575,11 @@ bool Gaussian::ParseMOsFile(Orbitals& orbitals) {
 
   // some sanity checks
   XTP_LOG(logDEBUG, *_pLog) << "Energy levels: " << levels << flush;
-  std::map<int, std::vector<double> >::iterator iter = coefficients.begin();
-  basis_size = iter->second.size();
+  std::map<long, std::vector<double> >::iterator iter = coefficients.begin();
+  basis_size = Index(iter->second.size());
 
-  for (iter = coefficients.begin()++; iter != coefficients.end(); iter++) {
-    if (iter->second.size() != basis_size) {
+  for (const auto& row : coefficients) {
+    if (int(row.second.size()) != basis_size) {
       XTP_LOG(logERROR, *_pLog)
           << "Error reading " << _mo_file_name
           << ". Basis set size change from level to level." << flush;
@@ -571,13 +595,15 @@ bool Gaussian::ParseMOsFile(Orbitals& orbitals) {
   // copying energies to the orbitals object
   Eigen::VectorXd& mo_energies = orbitals.MOs().eigenvalues();
   mo_energies.resize(levels);
-  for (int i = 0; i < mo_energies.size(); i++) mo_energies[i] = energies[i + 1];
+  for (Index i = 0; i < mo_energies.size(); i++) {
+    mo_energies[i] = energies[i + 1];
+  }
 
   // copying mo coefficients to the orbitals object
   Eigen::MatrixXd& mo_coefficients = orbitals.MOs().eigenvectors();
   mo_coefficients.resize(levels, basis_size);
-  for (int i = 0; i < mo_coefficients.rows(); i++) {
-    for (int j = 0; j < mo_coefficients.cols(); j++) {
+  for (Index i = 0; i < mo_coefficients.rows(); i++) {
+    for (Index j = 0; j < mo_coefficients.cols(); j++) {
       mo_coefficients(j, i) = coefficients[i + 1][j];
     }
   }
@@ -610,13 +636,13 @@ bool Gaussian::CheckLogFile() const {
     input_file.seekg(-2, ios_base::cur);
     input_file.get(ch);
   } while (ch == '\n' || ch == ' ' || ch == '\t' ||
-           (int)input_file.tellg() == -1);
+           (Index)input_file.tellg() == -1);
 
   // get the beginning of the line or the file
   do {
     input_file.seekg(-2, ios_base::cur);
     input_file.get(ch);
-  } while (ch != '\n' && (int)input_file.tellg() != -1);
+  } while (ch != '\n' && (Index)input_file.tellg() != -1);
 
   std::string line;
   getline(input_file, line);
@@ -637,10 +663,14 @@ StaticSegment Gaussian::GetCharges() const {
 
   StaticSegment result("charges", 0);
   std::string log_file_name_full = _log_file_name;
-  if (_run_dir != "") log_file_name_full = _run_dir + "/" + _log_file_name;
+  if (_run_dir != "") {
+    log_file_name_full = _run_dir + "/" + _log_file_name;
+  }
 
   // check if LOG file is complete
-  if (!CheckLogFile()) throw std::runtime_error("logfile is not complete");
+  if (!CheckLogFile()) {
+    throw std::runtime_error("logfile is not complete");
+  }
   std::string line;
   ifstream input_file(log_file_name_full);
   bool has_charges = false;
@@ -659,14 +689,14 @@ StaticSegment Gaussian::GetCharges() const {
       getline(input_file, line);
 
       std::vector<std::string> row = GetLineAndSplit(input_file, "\t ");
-      int nfields = row.size();
+      Index nfields = Index(row.size());
 
       while (nfields == 3) {
-        int atom_id = boost::lexical_cast<int>(row.at(0)) - 1;
+        Index atom_id = boost::lexical_cast<Index>(row.at(0)) - 1;
         std::string atom_type = row.at(1);
         double atom_charge = boost::lexical_cast<double>(row.at(2));
         row = GetLineAndSplit(input_file, "\t ");
-        nfields = row.size();
+        nfields = Index(row.size());
 
         StaticSite temp =
             StaticSite(atom_id, atom_type, Eigen::Vector3d::Zero());
@@ -713,7 +743,7 @@ Eigen::Matrix3d Gaussian::GetPolarizability() const {
       getline(input_file, line);
       getline(input_file, line);
       getline(input_file, line);
-      for (int i = 0; i < 6; i++) {
+      for (Index i = 0; i < 6; i++) {
         getline(input_file, line);
         tools::Tokenizer tok2(line, " ");
         std::vector<std::string> values = tok2.ToVector();
@@ -779,16 +809,16 @@ double Gaussian::GetQMEnergy(const std::vector<std::string>& archive) const {
 template <class T>
 void Gaussian::GetCoordinates(T& mol,
                               const std::vector<std::string>& archive) const {
-  typedef typename std::iterator_traits<typename T::iterator>::value_type Atom;
+  using Atom = typename std::iterator_traits<typename T::iterator>::value_type;
   XTP_LOG(logDEBUG, *_pLog) << "Getting the coordinates" << flush;
   bool has_atoms = mol.size() > 0;
   tools::Tokenizer tok(archive[3], "\\");
   std::vector<std::string> atom_block = tok.ToVector();
-  for (unsigned i = 0; i < atom_block.size() - 1; i++) {
+  for (Index i = 0; i < Index(atom_block.size()) - 1; i++) {
     tools::Tokenizer tok2(atom_block[i + 1], ",");
     std::vector<std::string> atom = tok2.ToVector();
     std::string atom_type = atom[0];
-    int endindex = atom.size() - 1;
+    Index endindex = Index(atom.size()) - 1;
     double x = boost::lexical_cast<double>(atom[endindex - 2]);
     double y = boost::lexical_cast<double>(atom[endindex - 1]);
     double z = boost::lexical_cast<double>(atom[endindex]);
@@ -812,18 +842,22 @@ bool Gaussian::ParseLogFile(Orbitals& orbitals) {
   bool has_occupied_levels = false;
   bool has_unoccupied_levels = false;
 
-  int occupied_levels = 0;
-  int unoccupied_levels = 0;
-  int number_of_electrons = 0;
-  int basis_set_size = 0;
+  Index occupied_levels = 0;
+  Index unoccupied_levels = 0;
+  Index number_of_electrons = 0;
+  Index basis_set_size = 0;
 
   XTP_LOG(logDEBUG, *_pLog) << "GAUSSIAN: parsing " << _log_file_name << flush;
 
   std::string log_file_name_full = _log_file_name;
-  if (_run_dir != "") log_file_name_full = _run_dir + "/" + _log_file_name;
+  if (_run_dir != "") {
+    log_file_name_full = _run_dir + "/" + _log_file_name;
+  }
 
   // check if LOG file is complete
-  if (!CheckLogFile()) return false;
+  if (!CheckLogFile()) {
+    return false;
+  }
 
   // save qmpackage name
   orbitals.setQMpackage(getPackageName());
@@ -864,7 +898,7 @@ bool Gaussian::ParseLogFile(Orbitals& orbitals) {
     if (electrons_pos != std::string::npos) {
       tools::Tokenizer tok(line, "\t ");
       std::vector<std::string> line_split = tok.ToVector();
-      number_of_electrons = boost::lexical_cast<int>(line_split.front());
+      number_of_electrons = boost::lexical_cast<Index>(line_split.front());
       orbitals.setNumberOfAlphaElectrons(number_of_electrons);
       XTP_LOG(logDEBUG, *_pLog)
           << "Alpha electrons: " << number_of_electrons << flush;
@@ -878,7 +912,7 @@ bool Gaussian::ParseLogFile(Orbitals& orbitals) {
     if (basis_pos != std::string::npos) {
       tools::Tokenizer tok(line, "\t ");
       std::vector<std::string> line_split = tok.ToVector();
-      basis_set_size = boost::lexical_cast<int>(line_split.front());
+      basis_set_size = boost::lexical_cast<Index>(line_split.front());
       orbitals.setBasisSetSize(basis_set_size);
       XTP_LOG(logDEBUG, *_pLog)
           << "Basis functions: " << basis_set_size << flush;
@@ -900,11 +934,11 @@ bool Gaussian::ParseLogFile(Orbitals& orbitals) {
         std::vector<std::string> energies = tok.ToVector();
 
         if (stringList.front().find("virt.") != std::string::npos) {
-          unoccupied_levels += energies.size();
+          unoccupied_levels += Index(energies.size());
           energies.clear();
         }
         if (stringList.front().find("occ.") != std::string::npos) {
-          occupied_levels += energies.size();
+          occupied_levels += Index(energies.size());
           energies.clear();
         }
         getline(input_file, line);
@@ -971,7 +1005,9 @@ bool Gaussian::ParseLogFile(Orbitals& orbitals) {
 
 std::string Gaussian::FortranFormat(double number) {
   std::stringstream ssnumber;
-  if (number >= 0) ssnumber << " ";
+  if (number >= 0) {
+    ssnumber << " ";
+  }
   ssnumber << setiosflags(ios::fixed) << setprecision(8) << std::scientific
            << number;
   std::string snumber = ssnumber.str();

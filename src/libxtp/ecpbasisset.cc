@@ -34,8 +34,9 @@ void ECPBasisSet::Load(const std::string& name) {
   } else {
     // get the path to the shared folders with xml files
     char* votca_share = getenv("VOTCASHARE");
-    if (votca_share == NULL)
+    if (votca_share == nullptr) {
       throw std::runtime_error("VOTCASHARE not set, cannot open help files.");
+    }
     xmlFile = std::string(getenv("VOTCASHARE")) + std::string("/xtp/ecps/") +
               name + std::string(".xml");
   }
@@ -46,8 +47,8 @@ void ECPBasisSet::Load(const std::string& name) {
 
   for (tools::Property* elementProp : elementProps) {
     std::string elementName = elementProp->getAttribute<std::string>("name");
-    int lmax = elementProp->getAttribute<int>("lmax");
-    int ncore = elementProp->getAttribute<int>("ncore");
+    Index lmax = elementProp->getAttribute<Index>("lmax");
+    Index ncore = elementProp->getAttribute<Index>("ncore");
 
     ECPElement& element = addElement(elementName, lmax, ncore);
 
@@ -61,7 +62,7 @@ void ECPBasisSet::Load(const std::string& name) {
       ECPShell& shell = element.addShell(shellType);
       std::vector<tools::Property*> constProps = shellProp->Select("constant");
       for (tools::Property* constProp : constProps) {
-        int power = constProp->getAttribute<int>("power");
+        Index power = constProp->getAttribute<Index>("power");
         double decay = constProp->getAttribute<double>("decay");
         double contraction = constProp->getAttribute<double>("contraction");
         shell.addGaussian(power, decay, contraction);
@@ -72,12 +73,12 @@ void ECPBasisSet::Load(const std::string& name) {
 }
 
 // adding an Element to a Pseudopotential Library
-ECPElement& ECPBasisSet::addElement(std::string elementType, int lmax,
-                                    int ncore) {
+ECPElement& ECPBasisSet::addElement(std::string elementType, Index lmax,
+                                    Index ncore) {
   std::shared_ptr<ECPElement> element(new ECPElement(elementType, lmax, ncore));
   _elements[elementType] = element;
   return *element;
-};
+}
 
 const ECPElement& ECPBasisSet::getElement(std::string element_type) const {
   std::map<std::string, std::shared_ptr<ECPElement> >::const_iterator itm =
@@ -120,7 +121,7 @@ std::ostream& operator<<(std::ostream& out, const ECPBasisSet& basis) {
 }
 
 // adds a Gaussian of a pseudopotential
-ECPGaussianPrimitive& ECPShell::addGaussian(int power, double decay,
+ECPGaussianPrimitive& ECPShell::addGaussian(Index power, double decay,
                                             double contraction) {
   _gaussians.push_back(ECPGaussianPrimitive(power, decay, contraction));
   return _gaussians.back();

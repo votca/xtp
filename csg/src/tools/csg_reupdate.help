@@ -1,0 +1,41 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_reupdate, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+computes relative entropy update.
+
+
+Allowed options:
+  -h [ --help ]                       display this help and exit
+  -v [ --verbose ]                    be loud and noisy
+  --top arg                           atomistic topology file (only needed for 
+                                    RE update)
+
+RE Specific options:
+  --options arg                       options file for coarse graining
+  --gentable arg (=0)                 only generate potential tables from given
+                                    parameters,   NO RE update!
+  --interaction arg                  [OPTIONAL] generate potential tables only 
+                                    for the specified interactions, 
+                                     only valid when 'gentable' is true
+  --param-in-ext arg (=param.cur)     Extension of the input parameter tables
+  --param-out-ext arg (=param.new)    Extension of the output parameter tables
+  --pot-out-ext arg (=pot.new)        Extension of the output potential tables
+  --hessian-check arg (=1)            Extension of the output potential tables
+
+Threading options:
+  --nt arg (=1)                       number of threads
+
+Trajectory options:
+  --trj arg                           atomistic trajectory file
+  --begin arg (=0)                    skip frames before this time (only works 
+                                    for Gromacs files)
+  --first-frame arg (=0)              start with this frame
+  --nframes arg                       process the given number of frames
+

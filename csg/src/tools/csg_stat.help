@@ -1,0 +1,46 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_stat, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Calculate all distributions (bonded and non-bonded) specified in options file.
+Optionally calculates update Eigen::Matrix3d for invere Monte Carlo. This program
+is called inside the inverse scripts. Unlike csg_boltzmann, big systems
+can be treated as well as non-bonded interactions can be evaluated.
+
+
+Allowed options:
+  -h [ --help ]             display this help and exit
+  -v [ --verbose ]          be loud and noisy
+  --top arg                 atomistic topology file
+
+Mapping options:
+  --cg arg                  [OPTIONAL] coarse graining mapping and bond 
+                          definitions
+                            (xml-file). If no file is given, program acts on 
+                          original trajectory
+  --map-ignore arg          list of molecules to ignore if mapping is done 
+                          separated by ;
+
+Specific options:
+  --options arg             options file for coarse graining
+  --do-imc                  write out additional Inverse Monte Carlo data
+  --block-length arg        write blocks of this length, the averages are 
+                          cleared after every write
+  --ext arg (=dist.new)   Extension of the output
+
+Threading options:
+  --nt arg (=1)             number of threads
+
+Trajectory options:
+  --trj arg                 atomistic trajectory file
+  --begin arg (=0)          skip frames before this time (only works for 
+                          Gromacs files)
+  --first-frame arg (=0)    start with this frame
+  --nframes arg             process the given number of frames
+

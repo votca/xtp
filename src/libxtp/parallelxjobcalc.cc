@@ -46,30 +46,32 @@ bool ParallelXJobCalc<JobContainer>::EvaluateFrame(const Topology &top) {
   // CREATE + EXECUTE THREADS (XJOB HANDLERS)
   std::vector<std::unique_ptr<JobOperator>> jobOps;
 
-  for (unsigned int id = 0; id < _nThreads; id++) {
+  for (Index id = 0; id < _nThreads; id++) {
     jobOps.push_back(std::unique_ptr<JobOperator>(
         new JobOperator(id, top, *this, _openmp_threads)));
   }
 
-  for (unsigned int id = 0; id < _nThreads; ++id) {
+  for (Index id = 0; id < _nThreads; ++id) {
     CustomizeLogger(*jobOps[id]);
   }
 
-  if (!_maverick)
+  if (!_maverick) {
     std::cout << std::endl;  // REQUIRED FOR PROGRESS BAR IN OBSERVER
+  }
 
-  for (unsigned int id = 0; id < _nThreads; id++) {
+  for (Index id = 0; id < _nThreads; id++) {
     jobOps[id]->Start();
   }
 
-  for (unsigned int id = 0; id < _nThreads; id++) {
+  for (Index id = 0; id < _nThreads; id++) {
     jobOps[id]->WaitDone();
   }
 
-  if (!_maverick)
-    for (unsigned int id = 0; id < _nThreads; id++) {
+  if (!_maverick) {
+    for (Index id = 0; id < _nThreads; id++) {
       std::cout << std::endl << (jobOps[id]->getLogger()) << std::flush;
     }
+  }
 
   jobOps.clear();
 
@@ -104,7 +106,7 @@ void ParallelXJobCalc<JobContainer>::ParseCommonOptions(
   _maverick = (_nThreads == 1) ? true : false;
 
   std::string key = "options." + Identify();
-  _openmp_threads = options.ifExistsReturnElseReturnDefault<int>(
+  _openmp_threads = options.ifExistsReturnElseReturnDefault<Index>(
       key + ".openmp_threads", _openmp_threads);
   std::cout << std::endl
             << "... ... Using " << _openmp_threads << " openmp threads for "

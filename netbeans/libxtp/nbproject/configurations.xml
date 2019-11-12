@@ -70,8 +70,10 @@
       <itemPath>../../include/votca/xtp/basisset.h</itemPath>
       <itemPath>../../include/votca/xtp/bfgs-trm.h</itemPath>
       <itemPath>../../include/votca/xtp/bse.h</itemPath>
+      <itemPath>../../include/votca/xtp/bse_operator.h</itemPath>
       <itemPath>../../include/votca/xtp/bse_population.h</itemPath>
       <itemPath>../../include/votca/xtp/bsecoupling.h</itemPath>
+      <itemPath>../../include/votca/xtp/bseoperator_btda.h</itemPath>
       <itemPath>../../include/votca/xtp/calculatorfactory.h</itemPath>
       <itemPath>../../include/votca/xtp/chargecarrier.h</itemPath>
       <itemPath>../../include/votca/xtp/checkpoint.h</itemPath>
@@ -82,6 +84,8 @@
       <itemPath>../../include/votca/xtp/classicalsegment.h</itemPath>
       <itemPath>../../include/votca/xtp/convergenceacc.h</itemPath>
       <itemPath>../../include/votca/xtp/couplingbase.h</itemPath>
+      <itemPath>../../include/votca/xtp/cudamatrix.h</itemPath>
+      <itemPath>../../include/votca/xtp/cudapipeline.h</itemPath>
       <itemPath>../../include/votca/xtp/customtools.h</itemPath>
       <itemPath>../../include/votca/xtp/davidsonsolver.h</itemPath>
       <itemPath>../../include/votca/xtp/dftcoupling.h</itemPath>
@@ -106,6 +110,7 @@
       <itemPath>../../include/votca/xtp/grid.h</itemPath>
       <itemPath>../../include/votca/xtp/grid_containers.h</itemPath>
       <itemPath>../../include/votca/xtp/gridbox.h</itemPath>
+      <itemPath>../../include/votca/xtp/gw.h</itemPath>
       <itemPath>../../include/votca/xtp/gwbse.h</itemPath>
       <itemPath>../../include/votca/xtp/gwbseengine.h</itemPath>
       <itemPath>../../include/votca/xtp/gyration.h</itemPath>
@@ -118,6 +123,7 @@
       <itemPath>../../include/votca/xtp/jobtopology.h</itemPath>
       <itemPath>../../include/votca/xtp/kmccalculator.h</itemPath>
       <itemPath>../../include/votca/xtp/logger.h</itemPath>
+      <itemPath>../../include/votca/xtp/matrixfreeoperator.h</itemPath>
       <itemPath>../../include/votca/xtp/md2qmengine.h</itemPath>
       <itemPath>../../include/votca/xtp/mmregion.h</itemPath>
       <itemPath>../../include/votca/xtp/nbo.h</itemPath>
@@ -150,7 +156,9 @@
       <itemPath>../../include/votca/xtp/segid.h</itemPath>
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
       <itemPath>../../include/votca/xtp/segmentmapper.h</itemPath>
+      <itemPath>../../include/votca/xtp/sigma_base.h</itemPath>
       <itemPath>../../include/votca/xtp/sigma_exact.h</itemPath>
+      <itemPath>../../include/votca/xtp/sigma_ppm.h</itemPath>
       <itemPath>../../include/votca/xtp/sphere_lebedev_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/stateapplication.h</itemPath>
       <itemPath>../../include/votca/xtp/statesaver.h</itemPath>
@@ -210,6 +218,9 @@
         <itemPath>../../src/libxtp/jobapplication.cc</itemPath>
         <itemPath>../../src/libxtp/stateapplication.cc</itemPath>
         <itemPath>../../src/libxtp/xtpapplication.cc</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f11" displayName="CUDA" projectFiles="true">
+        <itemPath>../../src/libxtp/cudapipeline.cc</itemPath>
       </logicalFolder>
       <logicalFolder name="f7" displayName="dftengine" projectFiles="true">
         <itemPath>../../src/libxtp/dftengine/ERIs.cc</itemPath>
@@ -320,6 +331,7 @@
       <itemPath>../../src/tests/test_bse_operator.cc</itemPath>
       <itemPath>../../src/tests/test_bsecoupling.cc</itemPath>
       <itemPath>../../src/tests/test_convergenceacc.cc</itemPath>
+      <itemPath>../../src/tests/test_cudapipeline.cc</itemPath>
       <itemPath>../../src/tests/test_davidson.cc</itemPath>
       <itemPath>../../src/tests/test_dftcoupling.cc</itemPath>
       <itemPath>../../src/tests/test_dftengine.cc</itemPath>
@@ -329,6 +341,7 @@
       <itemPath>../../src/tests/test_eigen.cc</itemPath>
       <itemPath>../../src/tests/test_eris.cc</itemPath>
       <itemPath>../../src/tests/test_espfit.cc</itemPath>
+      <itemPath>../../src/tests/test_fourcenter.cc</itemPath>
       <itemPath>../../src/tests/test_gaussian.cc</itemPath>
       <itemPath>../../src/tests/test_glink.cc</itemPath>
       <itemPath>../../src/tests/test_gnode.cc</itemPath>
@@ -360,10 +373,13 @@
       <itemPath>../../src/tests/test_sigma_exact.cc</itemPath>
       <itemPath>../../src/tests/test_sigma_ppm.cc</itemPath>
       <itemPath>../../src/tests/test_sphere_lebedev_rule.cc</itemPath>
+      <itemPath>../../src/tests/test_sphere_lebedev_rule_fine.cc</itemPath>
+      <itemPath>../../src/tests/test_sphere_lebedev_rule_xfine.cc</itemPath>
       <itemPath>../../src/tests/test_statetracker.cc</itemPath>
       <itemPath>../../src/tests/test_staticsite.cc</itemPath>
       <itemPath>../../src/tests/test_symmetric_matrix.cc</itemPath>
-      <itemPath>../../src/tests/test_threecenter.cc</itemPath>
+      <itemPath>../../src/tests/test_threecenter_dft.cc</itemPath>
+      <itemPath>../../src/tests/test_threecenter_gwbse.cc</itemPath>
       <itemPath>../../src/tests/test_topology.cc</itemPath>
       <itemPath>../../src/tests/test_trustregion.cc</itemPath>
       <itemPath>../../src/tests/test_vc2index.cc</itemPath>
@@ -3864,6 +3880,7 @@
     <Elem>../../../../include</Elem>
     <Elem>../../include</Elem>
     <Elem>../../../../include</Elem>
+    <Elem>../../src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -3932,12 +3949,22 @@
       </item>
       <item path="../../include/votca/xtp/bse.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/bse_operator.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/bse_population.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/bsecoupling.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/bseoperator_btda.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3988,6 +4015,16 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/couplingbase.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/cudamatrix.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/cudapipeline.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4088,6 +4125,8 @@
       </item>
       <item path="../../include/votca/xtp/gridbox.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gw.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gwbse.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gwbseengine.h"
@@ -4132,6 +4171,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/matrixfreeoperator.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/md2qmengine.h"
             ex="false"
@@ -4248,7 +4292,17 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/sigma_base.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/sigma_exact.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -4575,6 +4629,8 @@
             ex="false"
             tool="1"
             flavor2="0">
+      </item>
+      <item path="../../src/libxtp/cudapipeline.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/customtools.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -4964,6 +5020,11 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/tests/test_cudapipeline.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_davidson.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_dftcoupling.cc"
@@ -4990,6 +5051,8 @@
       <item path="../../src/tests/test_eris.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_espfit.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/tests/test_fourcenter.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_gaussian.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -5083,6 +5146,16 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/tests/test_sphere_lebedev_rule_fine.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_sphere_lebedev_rule_xfine.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_statetracker.cc"
             ex="false"
             tool="1"
@@ -5095,7 +5168,12 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/tests/test_threecenter.cc"
+      <item path="../../src/tests/test_threecenter_dft.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_threecenter_gwbse.cc"
             ex="false"
             tool="1"
             flavor2="0">
@@ -5178,12 +5256,22 @@
       </item>
       <item path="../../include/votca/xtp/bse.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/bse_operator.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/bse_population.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/bsecoupling.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/bseoperator_btda.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5234,6 +5322,16 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/couplingbase.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/cudamatrix.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/cudapipeline.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5334,6 +5432,8 @@
       </item>
       <item path="../../include/votca/xtp/gridbox.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/gw.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/gwbse.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/gwbseengine.h"
@@ -5378,6 +5478,11 @@
             flavor2="0">
       </item>
       <item path="../../include/votca/xtp/logger.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/matrixfreeoperator.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="../../include/votca/xtp/md2qmengine.h"
             ex="false"
@@ -5494,7 +5599,17 @@
             tool="3"
             flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/sigma_base.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/sigma_exact.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/sigma_ppm.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -5822,6 +5937,8 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/libxtp/cudapipeline.cc" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="../../src/libxtp/customtools.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/davidsonsolver.cc" ex="false" tool="1" flavor2="0">
@@ -6210,6 +6327,11 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/tests/test_cudapipeline.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_davidson.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_dftcoupling.cc"
@@ -6236,6 +6358,8 @@
       <item path="../../src/tests/test_eris.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_espfit.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/tests/test_fourcenter.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/tests/test_gaussian.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -6329,6 +6453,16 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="../../src/tests/test_sphere_lebedev_rule_fine.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_sphere_lebedev_rule_xfine.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="../../src/tests/test_statetracker.cc"
             ex="false"
             tool="1"
@@ -6341,7 +6475,12 @@
             tool="1"
             flavor2="0">
       </item>
-      <item path="../../src/tests/test_threecenter.cc"
+      <item path="../../src/tests/test_threecenter_dft.cc"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="../../src/tests/test_threecenter_gwbse.cc"
             ex="false"
             tool="1"
             flavor2="0">

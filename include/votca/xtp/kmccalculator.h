@@ -33,11 +33,11 @@ namespace xtp {
 class QMNBList;
 class KMCCalculator : public QMCalculator {
  public:
-  virtual ~KMCCalculator(){};
+  ~KMCCalculator() override = default;
 
-  virtual std::string Identify() = 0;
-  virtual bool WriteToStateFile() const = 0;
-  virtual void Initialize(tools::Property& options) = 0;
+  std::string Identify() override = 0;
+  bool WriteToStateFile() const override = 0;
+  void Initialize(tools::Property& options) override = 0;
 
  protected:
   QMStateType _carriertype;
@@ -68,8 +68,8 @@ class KMCCalculator : public QMCalculator {
   tools::Random _RandomVariable;
   std::string _injection_name;
   std::string _injectionmethod;
-  int _seed;
-  int _numberofcarriers;
+  Index _seed;
+  Index _numberofcarriers;
   Eigen::Vector3d _field = Eigen::Vector3d::Zero();
   double _maxrealtime;
   std::string _trajectoryfile = "trajectory.csv";

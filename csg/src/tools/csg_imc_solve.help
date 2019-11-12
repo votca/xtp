@@ -1,0 +1,21 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_imc_solve, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Solves the linear system for IMCs
+
+
+Allowed options:
+  -h [ --help ]                       display this help and exit
+  -v [ --verbose ]                    be loud and noisy
+  -r [ --regularization ] arg (=0)  regularization factor
+  -i [ --imcfile ] arg              imc statefile
+  -g [ --gmcfile ] arg              gmc statefile
+  -n [ --idxfile ] arg              idx statefile
+

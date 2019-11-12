@@ -1,0 +1,47 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_density, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Calculates the mass density distribution along a box axis or radial density profile from reference point
+
+
+Allowed options:
+  -h [ --help ]             display this help and exit
+  -v [ --verbose ]          be loud and noisy
+  --top arg                 atomistic topology file
+
+Mapping options:
+  --cg arg                  [OPTIONAL] coarse graining mapping and bond 
+                          definitions
+                            (xml-file). If no file is given, program acts on 
+                          original trajectory
+  --map-ignore arg          list of molecules to ignore if mapping is done 
+                          separated by ;
+
+Specific options::
+  --type arg (=mass)      density type: mass or number
+  --axis arg (=r)         [x|y|z|r] density axis (r=spherical)
+  --step arg (=0.01)      spacing of density
+  --block-length arg        write blocks of this length, the averages are 
+                          cleared after every write
+  --out arg               Output file
+  --rmax arg              rmax (default for [r] =min of all box vectors/2, else
+                          l )
+  --scale arg (=1)        scale factor for the density
+  --molname arg (=*)      molname
+  --filter arg (=*)       filter bead names
+  --ref arg               reference zero point
+
+Trajectory options:
+  --trj arg                 atomistic trajectory file
+  --begin arg (=0)          skip frames before this time (only works for 
+                          Gromacs files)
+  --first-frame arg (=0)    start with this frame
+  --nframes arg             process the given number of frames
+

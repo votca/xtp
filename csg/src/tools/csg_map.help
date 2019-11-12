@@ -1,0 +1,45 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_map, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Convert a reference atomistic trajectory or configuration into a coarse-grained one 
+based on a mapping xml-file. The mapping can be applied to either an entire trajectory 
+or a selected set of frames only (see options).
+Examples:
+* csg_map --top FA-topol.tpr --trj FA-traj.trr --out CG-traj.xtc --cg cg-map.xml
+* csg_map --top FA-topol.tpr --trj FA-conf.gro --out CG-conf.gro --cg cg-map.xml
+* csg_map --top FA-topol.tpr --trj FA-traj.xtc --out FA-history.dlph --no-map
+* csg_map --top FA-field.dlpf --trj FA-history.dlph --out CG-history.dlph --cg cg-map.xml
+* csg_map --top .dlpf --trj .dlph --out .dlph --cg cg-map.xml  convert HISTORY to HISTORY_CGV
+
+
+
+Allowed options:
+  -h [ --help ]             display this help and exit
+  -v [ --verbose ]          be loud and noisy
+  --top arg                 atomistic topology file
+  --out arg                 output file for coarse-grained trajectory
+  --vel                     Write mapped velocities (if available)
+  --force                   Write mapped forces (if available)
+  --hybrid                  Create hybrid trajectory containing both atomistic 
+                          and coarse-grained
+
+Mapping options:
+  --cg arg                  coarse graining mapping and bond definitions 
+                          (xml-file)
+  --map-ignore arg          list of molecules to ignore separated by ;
+  --no-map                  disable mapping and act on original trajectory
+
+Trajectory options:
+  --trj arg                 atomistic trajectory file
+  --begin arg (=0)          skip frames before this time (only works for 
+                          Gromacs files)
+  --first-frame arg (=0)    start with this frame
+  --nframes arg             process the given number of frames
+

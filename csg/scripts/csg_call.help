@@ -1,0 +1,34 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_call, version 1.6-dev gitid: 6a013c6 (dirty)
+
+This script calls scripts and functions for the iterative framework.
+Function can be executed or shows if key1='function'.
+
+Usage: csg_call [OPTIONS] key1 key2 [SCRIPT OPTIONS]
+
+Allowed options:
+-l, --list           Show list of all script
+    --cat            Show the content of the script
+    --show           Show the path to the script
+    --show-share     Shows the used VOTCASHARE dir and exits
+    --scriptdir DIR  Set the user script dir
+                     (Used if no options xml file is given)
+                     Default: empty
+    --options FILE   Specify the options xml file to use
+    --log FILE       Specify the log file to use
+                     Default: stdout
+    --ia-type type   Specify the interaction type to use
+    --ia-name name   Specify the interaction name to use
+    --nocolor        Disable colors
+    --sloppy-tables  Allow tables without flags
+    --debug          Enable debug mode with a lot of information
+-h, --help           Show this help
+
+Examples:
+* csg_call table smooth [ARGUMENTS]
+* csg_call --show run gromacs

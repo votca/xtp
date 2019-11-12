@@ -1,0 +1,62 @@
+csg_property
+Version: 1.6-dev gitid: 6a013c6 (dirty)
+2019-11-11 18:11:01
+
+= NAME =
+
+csg_property - Part of the VOTCA package
+
+= SYNOPSIS =
+
+**csg_property** ""[""//OPTION//""]"" ""[""//OPTIONPARAMETERS//""]""
+
+
+= DESCRIPTION =
+
+Helper program called by inverse scripts to parse xml file.
+
+Please visit the program site at __http://www.votca.org__.
+
+
+= OPTIONS =
+
+Allowed options:
+: **--help**
+produce this help message
+: **--path arg**
+list option values that match given criteria
+: **--filter arg**
+list option values that match given criteria
+: **--print arg (=.)**
+list option values that match given criteria
+: **--file arg**
+xml file to parse
+: **--short**
+short version of output
+: **--with-path**
+include path of node in output
+
+
+= AUTHORS =
+
+Written and maintained by the VOTCA Development Team <devs@votca.org>
+
+This Manual Page was converted from t2t format to the this format by [txt2tags http://txt2tags.org] !
+The t2t file was extracted from 'csg_property --help' by help2t2t (version 1.6-dev gitid: 6a013c6 (dirty))
+
+
+= COPYRIGHT =
+
+Copyright 2009-2011 The VOTCA Development Team (http://www.votca.org)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

@@ -33,14 +33,14 @@ class Orbitals;
 
 class Spectrum : public QMTool {
  public:
-  Spectrum(){};
+  Spectrum() = default;
 
-  ~Spectrum(){};
+  ~Spectrum() override = default;
 
-  std::string Identify() { return "spectrum"; }
+  std::string Identify() override { return "spectrum"; }
 
-  void Initialize(tools::Property& options);
-  bool Evaluate();
+  void Initialize(tools::Property& options) override;
+  bool Evaluate() override;
 
  private:
   std::string _orbfile;
@@ -58,10 +58,10 @@ class Spectrum : public QMTool {
 
   double _lower = 0.0;  // in eV
   double _upper;        // in eV
-  int _n_pt = 100;
+  Index _n_pt = 100;
 
-  int _minexc = 0;
-  int _maxexc = std::numeric_limits<int>::max();
+  Index _minexc = 0;
+  Index _maxexc = std::numeric_limits<Index>::max();
 
   double _fwhm;  // in eV
   double _shiftby = 0.0;

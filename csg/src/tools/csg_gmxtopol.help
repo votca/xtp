@@ -1,0 +1,27 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_gmxtopol, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Create skeleton for gromacs topology based on atomistic topology
+and a mapping file. File still needs to be modified by the user.
+
+
+Allowed options:
+  -h [ --help ]            display this help and exit
+  -v [ --verbose ]         be loud and noisy
+  --top arg                atomistic topology file
+  --out arg              output topology (will create .top and in future also 
+                         .itp)
+
+Mapping options:
+  --cg arg                 coarse graining mapping and bond definitions 
+                         (xml-file)
+  --map-ignore arg         list of molecules to ignore separated by ;
+  --no-map                 disable mapping and act on original trajectory
+

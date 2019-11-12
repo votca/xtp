@@ -58,7 +58,9 @@ void DftGwBse::Initialize(tools::Property& options) {
   std::vector<string> choices = {"optimize", "energy"};
   string mode = options.ifExistsAndinListReturnElseThrowRuntimeError<string>(
       key + ".mode", choices);
-  if (mode == "optimize") _do_optimize = true;
+  if (mode == "optimize") {
+    _do_optimize = true;
+  }
 
   // GWBSEENGINE options
   _gwbseengine_options = options.get(key + ".gwbse_engine");
@@ -77,8 +79,9 @@ void DftGwBse::Initialize(tools::Property& options) {
       key + ".output", "dftgwbse.out.xml");
 
   // if optimization is chosen, get options for geometry_optimizer
-  if (_do_optimize)
+  if (_do_optimize) {
     _geoopt_options = options.get(key + ".geometry_optimization");
+  }
 
   // register all QM packages (Gaussian, NWCHEM, etc)
   QMPackageFactory::RegisterAll();
@@ -87,12 +90,16 @@ void DftGwBse::Initialize(tools::Property& options) {
 bool DftGwBse::Evaluate() {
   CustomOpts::Load();
   OPENMP::setMaxThreads(_nThreads);
-  if (_reporting == "silent")
+  if (_reporting == "silent") {
     _log.setReportLevel(logERROR);  // only output ERRORS, GEOOPT info, and
-                                    // excited state info for trial geometry
-  if (_reporting == "noisy")
+  }
+  // excited state info for trial geometry
+  if (_reporting == "noisy") {
     _log.setReportLevel(logDEBUG);  // OUTPUT ALL THE THINGS
-  if (_reporting == "default") _log.setReportLevel(logINFO);  //
+  }
+  if (_reporting == "default") {
+    _log.setReportLevel(logINFO);  //
+  }
 
   _log.setMultithreading(true);
   _log.setPreface(logINFO, "\n... ...");

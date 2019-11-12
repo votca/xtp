@@ -30,7 +30,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
   const double pi = boost::math::constants::pi<double>();
 
-  int rank = _site->getRank();
+  Index rank = _site->getRank();
   if (rank < 1 && _site->getDipole().norm() > 1e-12) {
     rank = 1;
   }
@@ -39,37 +39,20 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
   // factor 1.5 I am not sure about but then 6 monopoles and this tensor agree
   const Eigen::Matrix3d quadrupole = 1.5 * _site->CalculateCartesianMultipole();
   // shell info, only lmax tells how far to go
-  int lmax_row = shell_row.getLmax();
-  int lmax_col = shell_col.getLmax();
-  int lsum = lmax_row + lmax_col;
+  Index lmax_row = shell_row.getLmax();
+  Index lmax_col = shell_col.getLmax();
+  Index lsum = lmax_row + lmax_col;
   // set size of internal block for recursion
-  int nrows = AOTransform::getBlockSize(lmax_row);
-  int ncols = AOTransform::getBlockSize(lmax_col);
+  Index nrows = AOTransform::getBlockSize(lmax_row);
+  Index ncols = AOTransform::getBlockSize(lmax_col);
 
-  // initialize local matrix block for unnormalized cartesians
-
-  int n_orbitals[] = {1, 4, 10, 20, 35, 56, 84};
-
-  int nx[] = {0, 1, 0, 0, 2, 1, 1, 0, 0, 0, 3, 2, 2, 1, 1, 1, 0, 0,
-              0, 0, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0};
-
-  int ny[] = {0, 0, 1, 0, 0, 1, 0, 2, 1, 0, 0, 1, 0, 2, 1, 0, 3, 2,
-              1, 0, 0, 1, 0, 2, 1, 0, 3, 2, 1, 0, 4, 3, 2, 1, 0};
-
-  int nz[] = {0, 0, 0, 1, 0, 0, 1, 0, 1, 2, 0, 0, 1, 0, 1, 2, 0, 1,
-              2, 3, 0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 1, 2, 3, 4};
-
-  int i_less_x[] = {0,  0,  0,  0,  1,  2,  3, 0, 0,  0,  4,  5,
-                    6,  7,  8,  9,  0,  0,  0, 0, 10, 11, 12, 13,
-                    14, 15, 16, 17, 18, 19, 0, 0, 0,  0,  0};
-
-  int i_less_y[] = {0,  0, 0,  0,  0,  1, 0,  2,  3,  0,  0, 4,
-                    0,  5, 6,  0,  7,  8, 9,  0,  0,  10, 0, 11,
-                    12, 0, 13, 14, 15, 0, 16, 17, 18, 19, 0};
-
-  int i_less_z[] = {0,  0,  0, 0,  0,  0,  1, 0,  2,  3,  0,  0,
-                    4,  0,  5, 6,  0,  7,  8, 9,  0,  0,  10, 0,
-                    11, 12, 0, 13, 14, 15, 0, 16, 17, 18, 19};
+  std::array<int, 9> n_orbitals = AOTransform::n_orbitals();
+  std::array<int, 165> nx = AOTransform::nx();
+  std::array<int, 165> ny = AOTransform::ny();
+  std::array<int, 165> nz = AOTransform::nz();
+  std::array<int, 165> i_less_x = AOTransform::i_less_x();
+  std::array<int, 165> i_less_y = AOTransform::i_less_y();
+  std::array<int, 165> i_less_z = AOTransform::i_less_z();
 
   // get shell positions
   const Eigen::Vector3d& pos_row = shell_row.getPos();
@@ -118,14 +101,14 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
       // (s-s element normiert )
       double prefactor = 4. * sqrt(2. / pi) * pow(decay_row * decay_col, .75) *
                          fak2 * exp(-exparg);
-      for (int m = 0; m < lsum + 1; m++) {
+      for (Index m = 0; m < lsum + 1; m++) {
         nuc3(0, 0, m) = prefactor * FmU[m];
       }
       //------------------------------------------------------
 
       // Integrals     p - s
       if (lmax_row > 0) {
-        for (int m = 0; m < lsum; m++) {
+        for (Index m = 0; m < lsum; m++) {
           nuc3(Cart::x, 0, m) =
               PmA(0) * nuc3(0, 0, m) - PmC(0) * nuc3(0, 0, m + 1);
           nuc3(Cart::y, 0, m) =
@@ -138,7 +121,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
       // Integrals     d - s
       if (lmax_row > 1) {
-        for (int m = 0; m < lsum - 1; m++) {
+        for (Index m = 0; m < lsum - 1; m++) {
           double term = fak * (nuc3(0, 0, m) - nuc3(0, 0, m + 1));
           nuc3(Cart::xx, 0, m) = PmA(0) * nuc3(Cart::x, 0, m) -
                                  PmC(0) * nuc3(Cart::x, 0, m + 1) + term;
@@ -158,7 +141,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
       // Integrals     f - s
       if (lmax_row > 2) {
-        for (int m = 0; m < lsum - 2; m++) {
+        for (Index m = 0; m < lsum - 2; m++) {
           nuc3(Cart::xxx, 0, m) =
               PmA(0) * nuc3(Cart::xx, 0, m) -
               PmC(0) * nuc3(Cart::xx, 0, m + 1) +
@@ -191,7 +174,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
       // Integrals     g - s
       if (lmax_row > 3) {
-        for (int m = 0; m < lsum - 3; m++) {
+        for (Index m = 0; m < lsum - 3; m++) {
           double term_xx =
               fak * (nuc3(Cart::xx, 0, m) - nuc3(Cart::xx, 0, m + 1));
           double term_yy =
@@ -238,7 +221,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
       if (lmax_col > 0) {
 
         // Integrals     s - p
-        for (int m = 0; m < lmax_col; m++) {
+        for (Index m = 0; m < lmax_col; m++) {
           nuc3(0, Cart::x, m) =
               PmB(0) * nuc3(0, 0, m) - PmC(0) * nuc3(0, 0, m + 1);
           nuc3(0, Cart::y, m) =
@@ -250,9 +233,9 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // Integrals     p - p
         if (lmax_row > 0) {
-          for (int m = 0; m < lmax_col; m++) {
+          for (Index m = 0; m < lmax_col; m++) {
             double term = fak * (nuc3(0, 0, m) - nuc3(0, 0, m + 1));
-            for (int i = 1; i < 4; i++) {
+            for (Index i = 1; i < 4; i++) {
               nuc3(i, Cart::x, m) = PmB(0) * nuc3(i, 0, m) -
                                     PmC(0) * nuc3(i, 0, m + 1) + nx[i] * term;
               nuc3(i, Cart::y, m) = PmB(1) * nuc3(i, 0, m) -
@@ -265,8 +248,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     d - p     f - p     g - p
-        for (int m = 0; m < lmax_col; m++) {
-          for (int i = 4; i < n_orbitals[lmax_row]; i++) {
+        for (Index m = 0; m < lmax_col; m++) {
+          for (Index i = 4; i < n_orbitals[lmax_row]; i++) {
             int nx_i = nx[i];
             int ny_i = ny[i];
             int nz_i = nz[i];
@@ -291,7 +274,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
       if (lmax_col > 1) {
 
         // Integrals     s - d
-        for (int m = 0; m < lmax_col - 1; m++) {
+        for (Index m = 0; m < lmax_col - 1; m++) {
           double term = fak * (nuc3(0, 0, m) - nuc3(0, 0, m + 1));
           nuc3(0, Cart::xx, m) = PmB(0) * nuc3(0, Cart::x, m) -
                                  PmC(0) * nuc3(0, Cart::x, m + 1) + term;
@@ -309,8 +292,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - d     d - d     f - d     g - d
-        for (int m = 0; m < lmax_col - 1; m++) {
-          for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+        for (Index m = 0; m < lmax_col - 1; m++) {
+          for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
             int nx_i = nx[i];
             int ny_i = ny[i];
             int nz_i = nz[i];
@@ -360,7 +343,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
       if (lmax_col > 2) {
 
         // Integrals     s - f
-        for (int m = 0; m < lmax_col - 2; m++) {
+        for (Index m = 0; m < lmax_col - 2; m++) {
           nuc3(0, Cart::xxx, m) =
               PmB(0) * nuc3(0, Cart::xx, m) -
               PmC(0) * nuc3(0, Cart::xx, m + 1) +
@@ -391,8 +374,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - f     d - f     f - f     g - f
-        for (int m = 0; m < lmax_col - 2; m++) {
-          for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+        for (Index m = 0; m < lmax_col - 2; m++) {
+          for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
             int nx_i = nx[i];
             int ny_i = ny[i];
             int nz_i = nz[i];
@@ -467,7 +450,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
       if (lmax_col > 3) {
 
         // Integrals     s - g
-        for (int m = 0; m < lmax_col - 3; m++) {
+        for (Index m = 0; m < lmax_col - 3; m++) {
           double term_xx =
               fak * (nuc3(0, Cart::xx, m) - nuc3(0, Cart::xx, m + 1));
           double term_yy =
@@ -511,8 +494,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - g     d - g     f - g     g - g
-        for (int m = 0; m < lmax_col - 3; m++) {
-          for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+        for (Index m = 0; m < lmax_col - 3; m++) {
+          for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
             int nx_i = nx[i];
             int ny_i = ny[i];
             int nz_i = nz[i];
@@ -611,12 +594,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
       }  // end if (lmax_col > 3)
 
-      Eigen::MatrixXd multipole = Eigen::MatrixXd::Zero(nrows, ncols);
-      for (int i = 0; i < nrows; i++) {
-        for (int j = 0; j < ncols; j++) {
-          multipole(i, j) = charge * nuc3(i, j, 0);
-        }
-      }
+      Eigen::MatrixXd multipole =
+          charge * Eigen::Map<Eigen::MatrixXd>(nuc3.data(), nrows, ncols);
 
       if (rank > 0) {
         Eigen::Tensor<double, 4> dip4(nrows, ncols, 3, lsum + 1);
@@ -624,7 +603,7 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // (s-s element normiert )
         double _prefactor_dip = 2. * zeta * prefactor;
-        for (int m = 0; m < lsum + 1; m++) {
+        for (Index m = 0; m < lsum + 1; m++) {
           dip4(0, 0, 0, m) = PmC(0) * _prefactor_dip * FmU[m + 1];
           dip4(0, 0, 1, m) = PmC(1) * _prefactor_dip * FmU[m + 1];
           dip4(0, 0, 2, m) = PmC(2) * _prefactor_dip * FmU[m + 1];
@@ -633,8 +612,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // Integrals     p - s
         if (lmax_row > 0) {
-          for (int m = 0; m < lsum; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lsum; m++) {
+            for (Index k = 0; k < 3; k++) {
               dip4(Cart::x, 0, k, m) = PmA(0) * dip4(0, 0, k, m) -
                                        PmC(0) * dip4(0, 0, k, m + 1) +
                                        (k == 0) * nuc3(0, 0, m + 1);
@@ -651,8 +630,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // Integrals     d - s
         if (lmax_row > 1) {
-          for (int m = 0; m < lsum - 1; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lsum - 1; m++) {
+            for (Index k = 0; k < 3; k++) {
               double term = fak * (dip4(0, 0, k, m) - dip4(0, 0, k, m + 1));
               dip4(Cart::xx, 0, k, m) = PmA(0) * dip4(Cart::x, 0, k, m) -
                                         PmC(0) * dip4(Cart::x, 0, k, m + 1) +
@@ -682,8 +661,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // Integrals     f - s
         if (lmax_row > 2) {
-          for (int m = 0; m < lsum - 2; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lsum - 2; m++) {
+            for (Index k = 0; k < 3; k++) {
               dip4(Cart::xxx, 0, k, m) =
                   PmA(0) * dip4(Cart::xx, 0, k, m) -
                   PmC(0) * dip4(Cart::xx, 0, k, m + 1) +
@@ -730,8 +709,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         // Integrals     g - s
         if (lmax_row > 3) {
-          for (int m = 0; m < lsum - 3; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lsum - 3; m++) {
+            for (Index k = 0; k < 3; k++) {
               double term_xx =
                   fak * (dip4(Cart::xx, 0, k, m) - dip4(Cart::xx, 0, k, m + 1));
               double term_yy =
@@ -806,8 +785,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         if (lmax_col > 0) {
 
           // Integrals     s - p
-          for (int m = 0; m < lmax_col; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lmax_col; m++) {
+            for (Index k = 0; k < 3; k++) {
               dip4(0, Cart::x, k, m) = PmB(0) * dip4(0, 0, k, m) -
                                        PmC(0) * dip4(0, 0, k, m + 1) +
                                        (k == 0) * nuc3(0, 0, m + 1);
@@ -823,9 +802,9 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
           // Integrals     p - p
           if (lmax_row > 0) {
-            for (int m = 0; m < lmax_col; m++) {
-              for (int i = 1; i < 4; i++) {
-                for (int k = 0; k < 3; k++) {
+            for (Index m = 0; m < lmax_col; m++) {
+              for (Index i = 1; i < 4; i++) {
+                for (Index k = 0; k < 3; k++) {
                   double term = fak * (dip4(0, 0, k, m) - dip4(0, 0, k, m + 1));
                   dip4(i, Cart::x, k, m) = PmB(0) * dip4(i, 0, k, m) -
                                            PmC(0) * dip4(i, 0, k, m + 1) +
@@ -846,15 +825,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           //------------------------------------------------------
 
           // Integrals     d - p     f - p     g - p
-          for (int m = 0; m < lmax_col; m++) {
-            for (int i = 4; i < n_orbitals[lmax_row]; i++) {
+          for (Index m = 0; m < lmax_col; m++) {
+            for (Index i = 4; i < n_orbitals[lmax_row]; i++) {
               int nx_i = nx[i];
               int ny_i = ny[i];
               int nz_i = nz[i];
               int ilx_i = i_less_x[i];
               int ily_i = i_less_y[i];
               int ilz_i = i_less_z[i];
-              for (int k = 0; k < 3; k++) {
+              for (Index k = 0; k < 3; k++) {
                 dip4(i, Cart::x, k, m) =
                     PmB(0) * dip4(i, 0, k, m) - PmC(0) * dip4(i, 0, k, m + 1) +
                     (k == 0) * nuc3(i, 0, m + 1) +
@@ -880,8 +859,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         if (lmax_col > 1) {
 
           // Integrals     s - d
-          for (int m = 0; m < lmax_col - 1; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lmax_col - 1; m++) {
+            for (Index k = 0; k < 3; k++) {
               double term = fak * (dip4(0, 0, k, m) - dip4(0, 0, k, m + 1));
               dip4(0, Cart::xx, k, m) = PmB(0) * dip4(0, Cart::x, k, m) -
                                         PmC(0) * dip4(0, Cart::x, k, m + 1) +
@@ -909,15 +888,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           //------------------------------------------------------
 
           // Integrals     p - d     d - d     f - d     g - d
-          for (int m = 0; m < lmax_col - 1; m++) {
-            for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+          for (Index m = 0; m < lmax_col - 1; m++) {
+            for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
               int nx_i = nx[i];
               int ny_i = ny[i];
               int nz_i = nz[i];
               int ilx_i = i_less_x[i];
               int ily_i = i_less_y[i];
               int ilz_i = i_less_z[i];
-              for (int k = 0; k < 3; k++) {
+              for (Index k = 0; k < 3; k++) {
                 double term = fak * (dip4(i, 0, k, m) - dip4(i, 0, k, m + 1));
                 dip4(i, Cart::xx, k, m) = PmB(0) * dip4(i, Cart::x, k, m) -
                                           PmC(0) * dip4(i, Cart::x, k, m + 1) +
@@ -968,8 +947,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         if (lmax_col > 2) {
 
           // Integrals     s - f
-          for (int m = 0; m < lmax_col - 2; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lmax_col - 2; m++) {
+            for (Index k = 0; k < 3; k++) {
               dip4(0, Cart::xxx, k, m) =
                   PmB(0) * dip4(0, Cart::xx, k, m) -
                   PmC(0) * dip4(0, Cart::xx, k, m + 1) +
@@ -1014,15 +993,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           //------------------------------------------------------
 
           // Integrals     p - f     d - f     f - f     g - f
-          for (int m = 0; m < lmax_col - 2; m++) {
-            for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+          for (Index m = 0; m < lmax_col - 2; m++) {
+            for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
               int nx_i = nx[i];
               int ny_i = ny[i];
               int nz_i = nz[i];
               int ilx_i = i_less_x[i];
               int ily_i = i_less_y[i];
               int ilz_i = i_less_z[i];
-              for (int k = 0; k < 3; k++) {
+              for (Index k = 0; k < 3; k++) {
                 double term_x =
                     2 * fak *
                     (dip4(i, Cart::x, k, m) - dip4(i, Cart::x, k, m + 1));
@@ -1115,8 +1094,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         if (lmax_col > 3) {
 
           // Integrals     s - g
-          for (int m = 0; m < lmax_col - 3; m++) {
-            for (int k = 0; k < 3; k++) {
+          for (Index m = 0; m < lmax_col - 3; m++) {
+            for (Index k = 0; k < 3; k++) {
               double term_xx =
                   fak * (dip4(0, Cart::xx, k, m) - dip4(0, Cart::xx, k, m + 1));
               double term_yy =
@@ -1188,15 +1167,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           //------------------------------------------------------
 
           // Integrals     p - g     d - g     f - g     g - g
-          for (int m = 0; m < lmax_col - 3; m++) {
-            for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+          for (Index m = 0; m < lmax_col - 3; m++) {
+            for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
               int nx_i = nx[i];
               int ny_i = ny[i];
               int nz_i = nz[i];
               int ilx_i = i_less_x[i];
               int ily_i = i_less_y[i];
               int ilz_i = i_less_z[i];
-              for (int k = 0; k < 3; k++) {
+              for (Index k = 0; k < 3; k++) {
                 double term_xx = fak * (dip4(i, Cart::xx, k, m) -
                                         dip4(i, Cart::xx, k, m + 1));
                 double term_yy = fak * (dip4(i, Cart::yy, k, m) -
@@ -1321,44 +1300,44 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
         }  // end if (lmax_col > 3)
 
-        for (int i = 0; i < nrows; i++) {
-          for (int j = 0; j < ncols; j++) {
-            multipole(i, j) += dipole.x() * dip4(i, j, 0, 0) +
-                               dipole.y() * dip4(i, j, 1, 0) +
-                               dipole.z() * dip4(i, j, 2, 0);
-          }
-        }
+        multipole +=
+            dipole.x() * Eigen::Map<Eigen::MatrixXd>(dip4.data(), nrows, ncols);
+        size_t offset = nrows * ncols;
+        multipole += dipole.y() * Eigen::Map<Eigen::MatrixXd>(
+                                      dip4.data() + offset, nrows, ncols);
+        multipole += dipole.z() * Eigen::Map<Eigen::MatrixXd>(
+                                      dip4.data() + 2 * offset, nrows, ncols);
 
         if (rank > 1) {
           Eigen::Tensor<double, 4> quad4(nrows, ncols, 5, lsum + 1);
           quad4.setZero();
 
           double fact = 1. / 3.;
-          double fac0[] = {fact, fact, 0., 2. * fact, 0.};
-          double fac1[] = {fact, 0., fact, 0., 2. * fact};
-          double fac2[] = {0., fact, fact, -2. * fact, -2. * fact};
+          std::array<double, 5> fac0 = {fact, fact, 0., 2. * fact, 0.};
+          std::array<double, 5> fac1 = {fact, 0., fact, 0., 2. * fact};
+          std::array<double, 5> fac2 = {0., fact, fact, -2. * fact, -2. * fact};
 
-          int ind0[] = {1, 2, 0, 0, 0};
-          int ind1[] = {0, 0, 2, 0, 1};
-          int ind2[] = {0, 0, 1, 2, 2};
+          std::array<int, 5> ind0 = {1, 2, 0, 0, 0};
+          std::array<int, 5> ind1 = {0, 0, 2, 0, 1};
+          std::array<int, 5> ind2 = {0, 0, 1, 2, 2};
 
           // (s-s element normiert )
-          double _prefactor_quad = (4. * zeta * zeta * prefactor) / 3.;
-          for (int m = 0; m < lsum + 1; m++) {
-            quad4(0, 0, 0, m) = PmC(0) * PmC(1) * _prefactor_quad * FmU[m + 2];
-            quad4(0, 0, 1, m) = PmC(0) * PmC(2) * _prefactor_quad * FmU[m + 2];
-            quad4(0, 0, 2, m) = PmC(1) * PmC(2) * _prefactor_quad * FmU[m + 2];
+          double prefactor_quad = (4. * zeta * zeta * prefactor) / 3.;
+          for (Index m = 0; m < lsum + 1; m++) {
+            quad4(0, 0, 0, m) = PmC(0) * PmC(1) * prefactor_quad * FmU[m + 2];
+            quad4(0, 0, 1, m) = PmC(0) * PmC(2) * prefactor_quad * FmU[m + 2];
+            quad4(0, 0, 2, m) = PmC(1) * PmC(2) * prefactor_quad * FmU[m + 2];
             quad4(0, 0, 3, m) = (PmC(0) * PmC(0) - PmC(2) * PmC(2)) *
-                                _prefactor_quad * FmU[m + 2];
+                                prefactor_quad * FmU[m + 2];
             quad4(0, 0, 4, m) = (PmC(1) * PmC(1) - PmC(2) * PmC(2)) *
-                                _prefactor_quad * FmU[m + 2];
+                                prefactor_quad * FmU[m + 2];
           }
           //------------------------------------------------------
 
           // Integrals     p - s
           if (lmax_row > 0) {
-            for (int m = 0; m < lsum; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lsum; m++) {
+              for (Index k = 0; k < 5; k++) {
                 quad4(Cart::x, 0, k, m) = PmA(0) * quad4(0, 0, k, m) -
                                           PmC(0) * quad4(0, 0, k, m + 1) +
                                           fac0[k] * dip4(0, 0, ind0[k], m + 1);
@@ -1375,8 +1354,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
           // Integrals     d - s
           if (lmax_row > 1) {
-            for (int m = 0; m < lsum - 1; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lsum - 1; m++) {
+              for (Index k = 0; k < 5; k++) {
                 double term = fak * (quad4(0, 0, k, m) - quad4(0, 0, k, m + 1));
                 quad4(Cart::xx, 0, k, m) =
                     PmA(0) * quad4(Cart::x, 0, k, m) -
@@ -1409,8 +1388,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
           // Integrals     f - s
           if (lmax_row > 2) {
-            for (int m = 0; m < lsum - 2; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lsum - 2; m++) {
+              for (Index k = 0; k < 5; k++) {
                 quad4(Cart::xxx, 0, k, m) =
                     PmA(0) * quad4(Cart::xx, 0, k, m) -
                     PmC(0) * quad4(Cart::xx, 0, k, m + 1) +
@@ -1464,8 +1443,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
           // Integrals     g - s
           if (lmax_row > 3) {
-            for (int m = 0; m < lsum - 3; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lsum - 3; m++) {
+              for (Index k = 0; k < 5; k++) {
                 double term_xx = fak * (quad4(Cart::xx, 0, k, m) -
                                         quad4(Cart::xx, 0, k, m + 1));
                 double term_yy = fak * (quad4(Cart::yy, 0, k, m) -
@@ -1540,8 +1519,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           if (lmax_col > 0) {
 
             // Integrals     s - p
-            for (int m = 0; m < lmax_col; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lmax_col; m++) {
+              for (Index k = 0; k < 5; k++) {
                 quad4(0, Cart::x, k, m) = PmB(0) * quad4(0, 0, k, m) -
                                           PmC(0) * quad4(0, 0, k, m + 1) +
                                           fac0[k] * dip4(0, 0, ind0[k], m + 1);
@@ -1557,9 +1536,9 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
             // Integrals     p - p
             if (lmax_row > 0) {
-              for (int m = 0; m < lmax_col; m++) {
-                for (int i = 1; i < 4; i++) {
-                  for (int k = 0; k < 5; k++) {
+              for (Index m = 0; m < lmax_col; m++) {
+                for (Index i = 1; i < 4; i++) {
+                  for (Index k = 0; k < 5; k++) {
                     double term =
                         fak * (quad4(0, 0, k, m) - quad4(0, 0, k, m + 1));
                     quad4(i, Cart::x, k, m) =
@@ -1581,15 +1560,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
             //------------------------------------------------------
 
             // Integrals     d - p     f - p     g - p
-            for (int m = 0; m < lmax_col; m++) {
-              for (int i = 4; i < n_orbitals[lmax_row]; i++) {
+            for (Index m = 0; m < lmax_col; m++) {
+              for (Index i = 4; i < n_orbitals[lmax_row]; i++) {
                 int nx_i = nx[i];
                 int ny_i = ny[i];
                 int nz_i = nz[i];
                 int ilx_i = i_less_x[i];
                 int ily_i = i_less_y[i];
                 int ilz_i = i_less_z[i];
-                for (int k = 0; k < 5; k++) {
+                for (Index k = 0; k < 5; k++) {
                   quad4(i, Cart::x, k, m) =
                       PmB(0) * quad4(i, 0, k, m) -
                       PmC(0) * quad4(i, 0, k, m + 1) +
@@ -1618,8 +1597,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           if (lmax_col > 1) {
 
             // Integrals     s - d
-            for (int m = 0; m < lmax_col - 1; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lmax_col - 1; m++) {
+              for (Index k = 0; k < 5; k++) {
                 double term = fak * (quad4(0, 0, k, m) - quad4(0, 0, k, m + 1));
                 quad4(0, Cart::xx, k, m) =
                     PmB(0) * quad4(0, Cart::x, k, m) -
@@ -1650,15 +1629,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
             //------------------------------------------------------
 
             // Integrals     p - d     d - d     f - d     g - d
-            for (int m = 0; m < lmax_col - 1; m++) {
-              for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+            for (Index m = 0; m < lmax_col - 1; m++) {
+              for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
                 int nx_i = nx[i];
                 int ny_i = ny[i];
                 int nz_i = nz[i];
                 int ilx_i = i_less_x[i];
                 int ily_i = i_less_y[i];
                 int ilz_i = i_less_z[i];
-                for (int k = 0; k < 5; k++) {
+                for (Index k = 0; k < 5; k++) {
                   double term =
                       fak * (quad4(i, 0, k, m) - quad4(i, 0, k, m + 1));
                   quad4(i, Cart::xx, k, m) =
@@ -1716,8 +1695,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           if (lmax_col > 2) {
 
             // Integrals     s - f
-            for (int m = 0; m < lmax_col - 2; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lmax_col - 2; m++) {
+              for (Index k = 0; k < 5; k++) {
                 quad4(0, Cart::xxx, k, m) =
                     PmB(0) * quad4(0, Cart::xx, k, m) -
                     PmC(0) * quad4(0, Cart::xx, k, m + 1) +
@@ -1769,15 +1748,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
             //------------------------------------------------------
 
             // Integrals     p - f     d - f     f - f     g - f
-            for (int m = 0; m < lmax_col - 2; m++) {
-              for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+            for (Index m = 0; m < lmax_col - 2; m++) {
+              for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
                 int nx_i = nx[i];
                 int ny_i = ny[i];
                 int nz_i = nz[i];
                 int ilx_i = i_less_x[i];
                 int ily_i = i_less_y[i];
                 int ilz_i = i_less_z[i];
-                for (int k = 0; k < 5; k++) {
+                for (Index k = 0; k < 5; k++) {
                   double term_x =
                       2 * fak *
                       (quad4(i, Cart::x, k, m) - quad4(i, Cart::x, k, m + 1));
@@ -1870,8 +1849,8 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
           if (lmax_col > 3) {
 
             // Integrals     s - g
-            for (int m = 0; m < lmax_col - 3; m++) {
-              for (int k = 0; k < 5; k++) {
+            for (Index m = 0; m < lmax_col - 3; m++) {
+              for (Index k = 0; k < 5; k++) {
                 double term_xx = fak * (quad4(0, Cart::xx, k, m) -
                                         quad4(0, Cart::xx, k, m + 1));
                 double term_yy = fak * (quad4(0, Cart::yy, k, m) -
@@ -1943,15 +1922,15 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
             //------------------------------------------------------
 
             // Integrals     p - g     d - g     f - g     g - g
-            for (int m = 0; m < lmax_col - 3; m++) {
-              for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+            for (Index m = 0; m < lmax_col - 3; m++) {
+              for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
                 int nx_i = nx[i];
                 int ny_i = ny[i];
                 int nz_i = nz[i];
                 int ilx_i = i_less_x[i];
                 int ily_i = i_less_y[i];
                 int ilz_i = i_less_z[i];
-                for (int k = 0; k < 5; k++) {
+                for (Index k = 0; k < 5; k++) {
                   double term_xx = fak * (quad4(i, Cart::xx, k, m) -
                                           quad4(i, Cart::xx, k, m + 1));
                   double term_yy = fak * (quad4(i, Cart::yy, k, m) -
@@ -2076,26 +2055,31 @@ void AOMultipole::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
 
           }  // end if (lmax_col > 3)
 
-          for (int i = 0; i < nrows; i++) {
-            for (int j = 0; j < ncols; j++) {
-              multipole(i, j) += quadrupole(0, 1) * quad4(i, j, 0, 0) +
-                                 quadrupole(0, 2) * quad4(i, j, 1, 0) +
-                                 quadrupole(1, 2) * quad4(i, j, 2, 0) +
-                                 .5 * (quadrupole(0, 0) * quad4(i, j, 3, 0) +
-                                       quadrupole(1, 1) * quad4(i, j, 4, 0));
-            }
-          }
+          multipole += quadrupole(0, 1) *
+                       Eigen::Map<Eigen::MatrixXd>(quad4.data(), nrows, ncols);
+          multipole +=
+              quadrupole(0, 2) *
+              Eigen::Map<Eigen::MatrixXd>(quad4.data() + offset, nrows, ncols);
+          multipole +=
+              quadrupole(1, 2) * Eigen::Map<Eigen::MatrixXd>(
+                                     quad4.data() + 2 * offset, nrows, ncols);
+          multipole += 0.5 * quadrupole(0, 0) *
+                       Eigen::Map<Eigen::MatrixXd>(quad4.data() + 3 * offset,
+                                                   nrows, ncols);
+          multipole += 0.5 * quadrupole(1, 1) *
+                       Eigen::Map<Eigen::MatrixXd>(quad4.data() + 4 * offset,
+                                                   nrows, ncols);
         }
       }
 
       Eigen::MatrixXd multipole_sph =
-          AOTransform::getTrafo(gaussian_row).transpose() * multipole *
+          AOTransform::getTrafo(gaussian_row).transpose() *
+          multipole.bottomRightCorner(shell_row.getCartesianNumFunc(),
+                                      shell_col.getCartesianNumFunc()) *
           AOTransform::getTrafo(gaussian_col);
       // save to matrix
 
-      matrix +=
-          multipole_sph.block(shell_row.getOffset(), shell_col.getOffset(),
-                              matrix.rows(), matrix.cols());
+      matrix += multipole_sph;
 
     }  // shell_col Gaussians
   }    // shell_row Gaussians
@@ -2114,7 +2098,7 @@ void AOMultipole::FillPotential(const AOBasis& aobasis,
   _aopotential =
       Eigen::MatrixXd::Zero(aobasis.AOBasisSize(), aobasis.AOBasisSize());
   for (const auto& atom : atoms) {
-    StaticSite s = StaticSite(atom, atom.getNuccharge());
+    StaticSite s = StaticSite(atom, double(atom.getNuccharge()));
     setSite(&s);
     _aopotential -= Fill(aobasis);
   }

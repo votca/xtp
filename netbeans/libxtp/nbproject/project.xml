@@ -3467,6 +3467,7 @@
                 <sourceRootElem>../../../../include</sourceRootElem>
                 <sourceRootElem>../../include</sourceRootElem>
                 <sourceRootElem>../../../../include</sourceRootElem>
+                <sourceRootElem>../../src</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>

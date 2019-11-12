@@ -33,9 +33,9 @@ void GW::configure(const options& opt) {
   _qptotal = _opt.qpmax - _opt.qpmin + 1;
   _rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
   if (_opt.sigma_integration == "ppm") {
-    _sigma = std::unique_ptr<Sigma_base>(new Sigma_PPM(_Mmn, _rpa));
+    _sigma = std::make_unique<Sigma_PPM>(Sigma_PPM(_Mmn, _rpa));
   } else if (_opt.sigma_integration == "exact") {
-    _sigma = std::unique_ptr<Sigma_base>(new Sigma_Exact(_Mmn, _rpa));
+    _sigma = std::make_unique<Sigma_Exact>(Sigma_Exact(_Mmn, _rpa));
   }
   Sigma_base::options sigma_opt;
   sigma_opt.homo = _opt.homo;
@@ -77,15 +77,6 @@ Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> GW::DiagonalizeQPHamiltonian()
   return qpdiag;
 }
 
-Eigen::MatrixXd GW::getGWAResults() const {
-  Eigen::MatrixXd qp_energies_store = Eigen::MatrixXd::Zero(_qptotal, 5);
-  qp_energies_store.col(0) = _dft_energies.segment(_opt.qpmin, _qptotal);
-  qp_energies_store.col(1) = _Sigma_x.diagonal();
-  qp_energies_store.col(2) = _Sigma_c.diagonal();
-  qp_energies_store.col(3) = _vxc.diagonal();
-  qp_energies_store.col(4) = _gwa_energies;
-  return qp_energies_store;
-}
 void GW::PrintGWA_Energies() const {
 
   double shift = CalcHomoLumoShift();
@@ -99,7 +90,7 @@ void GW::PrintGWA_Energies() const {
       << (boost::format("   DeltaHLGap = %1$+1.6f Hartree") % shift).str()
       << std::flush;
 
-  for (int i = 0; i < _qptotal; i++) {
+  for (Index i = 0; i < _qptotal; i++) {
     std::string level = "  Level";
     if ((i + _opt.qpmin) == _opt.homo) {
       level = "  HOMO ";
@@ -128,7 +119,7 @@ void GW::PrintQP_Energies(const Eigen::VectorXd& qp_diag_energies) const {
               "====== "))
              .str()
       << std::flush;
-  for (int i = 0; i < _qptotal; i++) {
+  for (Index i = 0; i < _qptotal; i++) {
     std::string level = "  Level";
     if ((i + _opt.qpmin) == _opt.homo) {
       level = "  HOMO ";
@@ -158,7 +149,7 @@ Eigen::VectorXd GW::ScissorShift_DFTlevel(
 
 bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                    double epsilon) const {
-  int state = 0;
+  Index state = 0;
   bool energies_converged = true;
   double diff_max = (e1 - e2).cwiseAbs().maxCoeff(&state);
   if (diff_max > epsilon) {
@@ -173,13 +164,11 @@ bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
 
 Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
   const double alpha = 0.0;  // TODO: Mixing parameter
-  // TODO: Make "Update" function that updates members variables: _Sigma_c,
-  // _gwa_energies after each iteration.
 
   if (_opt.gw_sc_root_finder_method == 0) {
     // Fixed Point Method
 
-    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+    for (Index i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
       _gwa_energies = CalcDiagonalEnergies();
       if (IterConverged(i_freq, frequencies)) {
@@ -207,7 +196,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     // Check whether a root is bounded
     Eigen::Array<bool, Eigen::Dynamic, 1> bounded =
         (func_1.cwiseProduct(func_2).array() <= 0);
-    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+    for (Index i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       // Compute next guess
       Eigen::VectorXd freq_3;
       if (regulaFalsi) {
@@ -265,7 +254,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
     const int n_refine_max = std::ceil(std::log(dx_min) / std::log(f_refine));
 
     int n_refine = 0;  // Refinement number
-    for (int i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
+    for (Index i_freq = 0; i_freq < _opt.g_sc_max_iterations; ++i_freq) {
       // Grid refinement
       const double rx =
           rx0 * std::pow(f_refine, n_refine);  // std::min(n_refine_max,
@@ -285,16 +274,16 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       }
       // TODO: Is it faster to first fill the columns and then transpose the
       // entire matrix?
-      for (int ix = 0; ix < nx; ix++) {
-        Eigen::VectorXd xx_cur = frequencies.array() + xx_off[ix];
-        xx.row(ix) = xx_cur;
-        fx.row(ix) = _sigma->CalcCorrelationDiag(xx_cur);
-      }  // Grid point ix
+      for (Index i_x = 0; i_x < nx; ++i_x) {
+        Eigen::VectorXd xx_cur = frequencies.array() + xx_off[i_x];
+        xx.row(i_x) = xx_cur;
+        fx.row(i_x) = _sigma->CalcCorrelationDiag(xx_cur);
+      }  // Grid point i_x
       // For each state, find best root
       Eigen::VectorXd root_values = Eigen::VectorXd::Zero(_qptotal);
       Eigen::VectorXd root_scores = Eigen::VectorXd::Zero(_qptotal);
       // TODO: Multi-thread?
-      for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
+      for (Index i_qp = 0; i_qp < _qptotal; ++i_qp) {
         //    e_GW = sigma_c(e_GW) + sigma_x - v_xc + e_DFT
         // =>    0 = sigma_c(e_GW) + sigma_x - v_xc + e_DFT - e_GW = f(e_GW)
         const double c = sx_vxc[i_qp] + _dft_energies[_opt.qpmin + i_qp];
@@ -305,17 +294,16 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
         double root_value_max = 0.0;
         double root_score_max = -1.0;
         int root_idx = 0;
-        for (int ix = 0; ix < nx - 1;
-             ix++) {  // TODO: Loop only over sign-changes
-          if (gx_cur[ix] * gx_cur[ix + 1] < 0.0) {  // We have a sign change
+        for (Index i_x = 0; i_x < nx - 1; ++i_x) {  // TODO: Loop only over sign-changes
+          if (gx_cur[i_x] * gx_cur[i_x + 1] < 0.0) {  // We have a sign change
             // Estimate the root
             double root_value_cur;
             if (root_value_method == 0) {  // Average
-              root_value_cur = (xx_cur[ix] + xx_cur[ix + 1]) / 2.0;
+              root_value_cur = (xx_cur[i_x] + xx_cur[i_x + 1]) / 2.0;
             } else if (root_value_method == 1) {  // Fixed-point
               double dgdx =
-                  (gx_cur[ix + 1] - gx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
-              root_value_cur = xx_cur[ix] - gx_cur[ix] / dgdx;
+                  (gx_cur[i_x + 1] - gx_cur[i_x]) / (xx_cur[i_x + 1] - xx_cur[i_x]);
+              root_value_cur = xx_cur[i_x] - gx_cur[i_x] / dgdx;
             } else {
               throw std::runtime_error(
                   "Grid root-finder: Invalid value method");
@@ -327,7 +315,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
                   rx - std::abs(root_value_cur - frequencies[i_qp]);
             } else if (root_score_method == 1) {  // Pole/spectral/QP weight
               double dfdx =
-                  (fx_cur[ix + 1] - fx_cur[ix]) / (xx_cur[ix + 1] - xx_cur[ix]);
+                  (fx_cur[i_x + 1] - fx_cur[i_x]) / (xx_cur[i_x + 1] - xx_cur[i_x]);
               root_score_cur = 1.0 / (1.0 - dfdx);  // Should be in (0, 1)
               if (root_score_cur < 1e-5) {
                 continue;
@@ -352,7 +340,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
             }
             root_idx++;
           }
-        }  // Grid point ix
+        }  // Grid point i_x
         root_values[i_qp] = root_value_max;
         root_scores[i_qp] = root_score_max;
       }  // State i_qp
@@ -360,7 +348,7 @@ Eigen::VectorXd GW::CalculateExcitationFreq(Eigen::VectorXd frequencies) {
       if (tools::globals::verbose) {
         XTP_LOG_SAVE(logDEBUG, _log)
             << TimeStamp() << " QP roots " << std::flush;
-        for (int i_qp = 0; i_qp < _qptotal; i_qp++) {
+        for (Index i_qp = 0; i_qp < _qptotal; ++i_qp) {
           XTP_LOG_SAVE(logINFO, _log)
               << boost::format(
                      "Level = %1$4d E_0 = %2$+1.6f Ha E_GW = %3$+1.6f Ha Score "
@@ -457,7 +445,7 @@ void GW::CalculateGWPerturbation() {
     ExportCorrelationDiags(frequencies);
   }
 
-  for (int i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
+  for (Index i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
 
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
       _Mmn.Rebuild();
@@ -574,4 +562,4 @@ void GW::ExportCorrelationDiags(const Eigen::VectorXd& frequencies) const {
 }
 
 }  // namespace xtp
-};  // namespace votca
+}  // namespace votca

@@ -39,30 +39,31 @@ class DFTcoupling : public CouplingBase {
   std::string Identify() const { return "dftcoupling"; }
 
   void CalculateCouplings(const Orbitals& orbitalsA, const Orbitals& orbitalsB,
-                          const Orbitals& orbitalsAB);
+                          const Orbitals& orbitalsAB) override;
 
-  void Initialize(tools::Property&);
+  void Initialize(tools::Property&) override;
 
   void Addoutput(tools::Property& type_summary, const Orbitals& orbitalsA,
-                 const Orbitals& orbitalsB) const;
+                 const Orbitals& orbitalsB) const override;
 
  private:
   void WriteToProperty(tools::Property& type_summary, const Orbitals& orbitalsA,
-                       const Orbitals& orbitalsB, int a, int b) const;
-  double getCouplingElement(int levelA, int levelB, const Orbitals& orbitalsA,
+                       const Orbitals& orbitalsB, Index a, Index b) const;
+  double getCouplingElement(Index levelA, Index levelB,
+                            const Orbitals& orbitalsA,
                             const Orbitals& orbitalsB) const;
 
-  std::pair<int, int> DetermineRangeOfStates(const Orbitals& orbital,
-                                             int numberofstates) const;
+  std::pair<int, Index> DetermineRangeOfStates(const Orbitals& orbital,
+                                               Index numberofstates) const;
 
   Eigen::MatrixXd JAB;
 
   double _degeneracy = 0.0;
-  int _numberofstatesA = 1;
-  int _numberofstatesB = 1;
+  Index _numberofstatesA = 1;
+  Index _numberofstatesB = 1;
 
-  std::pair<int, int> Range_orbA;
-  std::pair<int, int> Range_orbB;
+  std::pair<int, Index> Range_orbA;
+  std::pair<int, Index> Range_orbB;
 };
 
 }  // namespace xtp

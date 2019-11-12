@@ -1,0 +1,17 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_inverse, version 1.6-dev gitid: 6a013c6 (dirty)
+
+Start the script (inverse.sh) to run IBM, IMC, etc.
+
+Usage: csg_inverse [OPTIONS] --options settings.xml
+
+Allowed options:
+-h, --help     Show this help
+
+NOTE: this is a short help, please source VOTCARC.bash or VOTCARC.csh
+      or export VOTCASHARE to get the full help.

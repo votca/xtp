@@ -47,8 +47,8 @@ void QMPackage::ParseCommonOptions(tools::Property& options) {
         key + ".scratch");
   }
 
-  _charge = options.ifExistsReturnElseThrowRuntimeError<int>(key + ".charge");
-  _spin = options.ifExistsReturnElseThrowRuntimeError<int>(key + ".spin");
+  _charge = options.ifExistsReturnElseThrowRuntimeError<Index>(key + ".charge");
+  _spin = options.ifExistsReturnElseThrowRuntimeError<Index>(key + ".spin");
   _cleanup =
       options.ifExistsReturnElseReturnDefault(key + ".cleanup", _cleanup);
   _dpl_spacing = options.ifExistsReturnElseReturnDefault(
@@ -128,13 +128,13 @@ std::vector<QMPackage::MinimalMMCharge> QMPackage::SplitMultipoles(
     const Eigen::Matrix3d components = aps.CalculateCartesianMultipole();
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
     es.computeDirect(components);
-    double a = 2 * _dpl_spacing;
-    for (int i = 0; i < 3; i++) {
-      double q = es.eigenvalues()[i] / (a * a);
+    double a2 = 2 * _dpl_spacing;
+    for (Index i = 0; i < 3; i++) {
+      double q = es.eigenvalues()[i] / (a2 * a2);
       const Eigen::Vector3d vec1 =
-          aps.getPos() + 0.5 * a * es.eigenvectors().col(i);
+          aps.getPos() + 0.5 * a2 * es.eigenvectors().col(i);
       const Eigen::Vector3d vec2 =
-          aps.getPos() - 0.5 * a * es.eigenvectors().col(i);
+          aps.getPos() - 0.5 * a2 * es.eigenvectors().col(i);
       multipoles_split.push_back(MinimalMMCharge(vec1, q));
       multipoles_split.push_back(MinimalMMCharge(vec2, q));
     }

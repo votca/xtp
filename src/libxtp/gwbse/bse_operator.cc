@@ -23,47 +23,21 @@
 namespace votca {
 namespace xtp {
 
-template <int cqp, int cx, int cd, int cd2>
+template <Index cqp, Index cx, Index cd, Index cd2>
 void BSE_OPERATOR<cqp, cx, cd, cd2>::configure(BSEOperator_Options opt) {
   _opt = opt;
-  int bse_vmax = _opt.homo;
+  Index bse_vmax = _opt.homo;
   _bse_cmin = _opt.homo + 1;
   _bse_vtotal = bse_vmax - _opt.vmin + 1;
   _bse_ctotal = _opt.cmax - _bse_cmin + 1;
   _bse_size = _bse_vtotal * _bse_ctotal;
   this->set_size(_bse_size);
-
-  if (cx != 0) {
-    _Hx_cache = std::vector<cache_block>(OPENMP::getMaxThreads());
-  }
 }
 
-template <int cqp, int cx, int cd, int cd2>
-void BSE_OPERATOR<cqp, cx, cd, cd2>::cache_block::FillCache(
-    const Eigen::MatrixXd& matrix, int index) {
-  _index = index + 1;
-  _size = matrix.cols() - 1;
-  _values.resize(_size);
-  for (int i = 0; i < _size; i++) {
-    _values[i] = matrix.col(i + 1).transpose();
-  }
-}
-
-template <int cqp, int cx, int cd, int cd2>
-bool BSE_OPERATOR<cqp, cx, cd, cd2>::cache_block::hasValue(int index) const {
-  if (index >= _index && index < (_index + _size)) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::row(int index) const {
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::OperatorRow(
+    Index index) const {
   Eigen::RowVectorXd row = Eigen::RowVectorXd::Zero(_bse_size);
-  if (cx != 0) {
-    row += cx * Hx_row(index);
-  }
   if (cd != 0) {
     row += cd * Hd_row(index);
   }
@@ -76,45 +50,33 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::row(int index) const {
   return row;
 }
 
-template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hx_row(int index) const {
-  int thread_id = OPENMP::getThreadId();
-  if (_Hx_cache[thread_id].hasValue(index)) {
-    return _Hx_cache[thread_id].getValue(index);
-  }
-  int auxsize = _Mmn.auxsize();
-  vc2index vc = vc2index(0, 0, _bse_ctotal);
-
-  const int vmin = _opt.vmin - _opt.rpamin;
-  const int cmin = _bse_cmin - _opt.rpamin;
-  int v1 = vc.v(index);
-  int c1 = vc.c(index);
-  int cache_size = 50;
-  if ((_bse_ctotal - c1) < cache_size) {
-    cache_size = _bse_ctotal - c1;
-  }
-  Eigen::MatrixXd H_cache = Eigen::MatrixXd::Zero(_bse_size, cache_size);
-  const Eigen::MatrixXd Mmn1T =
-      _Mmn[v1 + vmin].block(c1 + cmin, 0, cache_size, auxsize).transpose();
-  for (int v2 = 0; v2 < _bse_vtotal; v2++) {
-    const Eigen::MatrixXd& Mmn2 = _Mmn[v2 + vmin];
-    int i2 = vc.I(v2, 0);
-    H_cache.block(i2, 0, _bse_ctotal, cache_size) =
-        Mmn2.block(cmin, 0, _bse_ctotal, auxsize) * Mmn1T;
-  }
-  _Hx_cache[thread_id].FillCache(H_cache, index);
-  return H_cache.col(0).transpose();
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::MatrixXd BSE_OPERATOR<cqp, cx, cd, cd2>::OperatorBlock(Index row,
+                                                              Index col) const {
+  return cx * HxBlock(row, col);
 }
 
-template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd_row(int index) const {
-  int auxsize = _Mmn.auxsize();
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::MatrixXd BSE_OPERATOR<cqp, cx, cd, cd2>::HxBlock(Index row,
+                                                        Index col) const {
+  Index auxsize = _Mmn.auxsize();
+  const Index vmin = _opt.vmin - _opt.rpamin;
+  const Index cmin = _bse_cmin - _opt.rpamin;
+  Index v1 = Index(row) + vmin;
+  Index v2 = Index(col) + vmin;
+  return _Mmn[v1].block(cmin, 0, _bse_ctotal, auxsize) *
+         _Mmn[v2].block(cmin, 0, _bse_ctotal, auxsize).transpose();
+}
+
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd_row(Index index) const {
+  Index auxsize = _Mmn.auxsize();
   vc2index vc = vc2index(0, 0, _bse_ctotal);
 
-  const int vmin = _opt.vmin - _opt.rpamin;
-  const int cmin = _bse_cmin - _opt.rpamin;
-  int v1 = vc.v(index);
-  int c1 = vc.c(index);
+  const Index vmin = _opt.vmin - _opt.rpamin;
+  const Index cmin = _bse_cmin - _opt.rpamin;
+  Index v1 = vc.v(index);
+  Index c1 = vc.c(index);
 
   const Eigen::MatrixXd Mmn1T =
       -(_Mmn[v1 + vmin].block(vmin, 0, _bse_vtotal, auxsize) *
@@ -126,30 +88,30 @@ Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd_row(int index) const {
   return Eigen::Map<Eigen::RowVectorXd>(Mmn2xMmn1T.data(), Mmn2xMmn1T.size());
 }
 
-template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hqp_row(int index) const {
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hqp_row(Index index) const {
   vc2index vc = vc2index(0, 0, _bse_ctotal);
-  int v1 = vc.v(index);
-  int c1 = vc.c(index);
+  Index v1 = vc.v(index);
+  Index c1 = vc.c(index);
   Eigen::MatrixXd Result = Eigen::MatrixXd::Zero(_bse_ctotal, _bse_vtotal);
-  int cmin = _bse_cmin - _opt.qpmin;
+  Index cmin = _bse_cmin - _opt.qpmin;
   // v->c
   Result.col(v1) = _Hqp.col(c1 + cmin).segment(cmin, _bse_ctotal);
   // c-> v
-  int vmin = _opt.vmin - _opt.qpmin;
+  Index vmin = _opt.vmin - _opt.qpmin;
   Result.row(c1) -= _Hqp.col(v1 + vmin).segment(vmin, _bse_vtotal);
   return Eigen::Map<Eigen::RowVectorXd>(Result.data(), Result.size());
 }
 
-template <int cqp, int cx, int cd, int cd2>
-Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd2_row(int index) const {
+template <Index cqp, Index cx, Index cd, Index cd2>
+Eigen::RowVectorXd BSE_OPERATOR<cqp, cx, cd, cd2>::Hd2_row(Index index) const {
 
-  int auxsize = _Mmn.auxsize();
+  Index auxsize = _Mmn.auxsize();
   vc2index vc = vc2index(0, 0, _bse_ctotal);
-  const int vmin = _opt.vmin - _opt.rpamin;
-  const int cmin = _bse_cmin - _opt.rpamin;
-  int v1 = vc.v(index);
-  int c1 = vc.c(index);
+  const Index vmin = _opt.vmin - _opt.rpamin;
+  const Index cmin = _bse_cmin - _opt.rpamin;
+  Index v1 = vc.v(index);
+  Index c1 = vc.c(index);
 
   const Eigen::MatrixXd Mmn2T =
       -(_Mmn[c1 + cmin].block(vmin, 0, _bse_vtotal, auxsize) *
@@ -172,6 +134,8 @@ template class BSE_OPERATOR<1, 0, 0, 0>;
 template class BSE_OPERATOR<0, 1, 0, 0>;
 template class BSE_OPERATOR<0, 0, 1, 0>;
 template class BSE_OPERATOR<0, 0, 0, 1>;
+
+template class BSE_OPERATOR<0, 2, 0, 1>;
 
 }  // namespace xtp
 }  // namespace votca

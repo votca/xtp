@@ -1,0 +1,21 @@
+==================================================
+========   VOTCA (http://www.votca.org)   ========
+==================================================
+
+please submit bugs to bugs@votca.org
+
+csg_property, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 10:12:44)
+votca_tools, version 1.6-dev gitid: 6a013c6 (dirty) (compiled Nov 11 2019, 09:03:28)
+
+
+Helper program called by inverse scripts to parse xml file.
+
+Allowed options:
+  --help                produce this help message
+  --path arg            list option values that match given criteria
+  --filter arg          list option values that match given criteria
+  --print arg (=.)      list option values that match given criteria
+  --file arg            xml file to parse
+  --short               short version of output
+  --with-path           include path of node in output
+

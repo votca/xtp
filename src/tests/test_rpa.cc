@@ -19,26 +19,28 @@
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/aomatrix.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/threecenter.h>
 
 using namespace votca::xtp;
+using namespace votca;
 using namespace std;
 
 BOOST_AUTO_TEST_SUITE(rpa_test)
 
 BOOST_AUTO_TEST_CASE(rpa_calcenergies) {
-  TCMatrix_gwbse Mmn;
-  Eigen::VectorXd eigenvals;
   Logger log;
+  TCMatrix_gwbse Mmn{log};
+  Eigen::VectorXd eigenvals;
   RPA rpa(log, Mmn);
   rpa.configure(4, 0, 9);
   Eigen::VectorXd dftenergies = Eigen::VectorXd::Zero(10);
   dftenergies << -0.5, -0.4, -0.3, -0.2, -0.2, -0.1, 0, 0.1, 0.2, 0.3;
   Eigen::VectorXd gwenergies = Eigen::VectorXd::Zero(7);
   gwenergies << -0.15, -0.05, 0.05, 0.15, 0.45, 0.55, 0.65;
-  int qpmin = 1;
+  votca::Index qpmin = 1;
   rpa.UpdateRPAInputEnergies(dftenergies, gwenergies, qpmin);
   Eigen::VectorXd rpaenergies = rpa.getRPAInputEnergies();
   Eigen::VectorXd rpaenergies_ref = Eigen::VectorXd::Zero(10);
@@ -189,11 +191,11 @@ BOOST_AUTO_TEST_CASE(rpa_full) {
       4.15572e-17, -1.84233e-16, 0.0105378, -0.148396, -1.63792e-16,
       -4.6499e-16, 0.351571, 0.00210309;
 
-  TCMatrix_gwbse Mmn;
+  Logger log;
+  TCMatrix_gwbse Mmn{log};
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, eigenvectors);
 
-  Logger log;
   RPA rpa(log, Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(eigenvals);

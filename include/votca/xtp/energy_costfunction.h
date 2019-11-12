@@ -37,8 +37,8 @@ class Energy_costfunction : public Optimiser_costfunction {
     double MaxForce;
     double RMSStep;
     double MaxStep;
-    int maxforceindex = 0;
-    int maxstepindex = 0;
+    Index maxforceindex = 0;
+    Index maxstepindex = 0;
   };
 
   Energy_costfunction(GWBSEEngine& gwbse_engine, StateTracker& tracker,
@@ -48,14 +48,16 @@ class Energy_costfunction : public Optimiser_costfunction {
         _orbitals(orbitals),
         _force_engine(force_engine){};
 
-  double EvaluateCost(const Eigen::VectorXd& parameters);
+  double EvaluateCost(const Eigen::VectorXd& parameters) override;
 
-  Eigen::VectorXd EvaluateGradient(const Eigen::VectorXd& parameters);
+  Eigen::VectorXd EvaluateGradient(const Eigen::VectorXd& parameters) override;
 
-  int NumParameters() const { return _orbitals.QMAtoms().size() * 3; };
+  Index NumParameters() const override {
+    return Index(_orbitals.QMAtoms().size() * 3);
+  };
 
   bool Converged(const Eigen::VectorXd& delta_parameters, double delta_cost,
-                 const Eigen::VectorXd& gradient);
+                 const Eigen::VectorXd& gradient) override;
 
   void ForcesReport() const { return _force_engine.Report(); }
 
@@ -78,7 +80,7 @@ class Energy_costfunction : public Optimiser_costfunction {
   StateTracker& _tracker;
   Orbitals& _orbitals;
   Forces& _force_engine;
-  int _iteration = 0;
+  Index _iteration = 0;
   double _energy;
 
   conv_paras _convpara;

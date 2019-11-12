@@ -19,6 +19,7 @@
 #include <boost/test/unit_test.hpp>
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/aopotential.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/ppm.h>
 #include <votca/xtp/threecenter.h>
@@ -121,11 +122,11 @@ BOOST_AUTO_TEST_CASE(ppm_full) {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(kinetic.Matrix() +
                                                     esp.Matrix());
 
-  TCMatrix_gwbse Mmn;
+  Logger log;
+  TCMatrix_gwbse Mmn{log};
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, es.eigenvectors());
 
-  Logger log;
   RPA rpa = RPA(log, Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(es.eigenvalues());

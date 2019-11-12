@@ -43,18 +43,19 @@ void Esp2multipole::Initialize(tools::Property& options) {
   _method = options.ifExistsAndinListReturnElseThrowRuntimeError(
       key + ".method", choices);
 
-  if (_method == "mulliken")
+  if (_method == "mulliken") {
     _use_mulliken = true;
-  else if (_method == "loewdin")
+  } else if (_method == "loewdin") {
     _use_lowdin = true;
-  else if (_method == "CHELPG")
+  } else if (_method == "CHELPG") {
     _use_CHELPG = true;
+  }
 
   if (options.exists(key + ".constraints")) {
     if (options.exists(key + ".constraints.regions")) {
       std::vector<tools::Property*> prop_region =
           options.Select(key + ".constraints.regions.region");
-      int index = 0;
+      Index index = 0;
       for (tools::Property* prop : prop_region) {
         std::string indices = prop->get("indices").as<std::string>();
         QMFragment<double> reg = QMFragment<double>(index, indices);
@@ -71,9 +72,9 @@ void Esp2multipole::Initialize(tools::Property& options) {
       for (tools::Property* prop : prop_pair) {
         std::string pairstring = prop->as<std::string>();
         tools::Tokenizer tok(pairstring, "\n\t ,");
-        std::vector<int> pairvec;
-        tok.ConvertToVector<int>(pairvec);
-        std::pair<int, int> pair;
+        std::vector<Index> pairvec;
+        tok.ConvertToVector<Index>(pairvec);
+        std::pair<Index, Index> pair;
         pair.first = pairvec[0];
         pair.second = pairvec[1];
         _pairconstraint.push_back(pair);

@@ -163,11 +163,11 @@ BOOST_AUTO_TEST_CASE(rpa_eigenvalues) {
       4.15572e-17, -1.84233e-16, 0.0105378, -0.148396, -1.63792e-16,
       -4.6499e-16, 0.351571, 0.00210309;
 
-  TCMatrix_gwbse Mmn;
+  Logger log;
+  TCMatrix_gwbse Mmn{log};
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, eigenvectors);
 
-  Logger log;
   RPA rpa(log, Mmn);
   rpa.setRPAInputEnergies(eigenvals);
   rpa.configure(4, 0, 16);
