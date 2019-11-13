@@ -34,9 +34,6 @@ class Sigma_Exact : public Sigma_base {
  public:
   Sigma_Exact(TCMatrix_gwbse& Mmn, RPA& rpa) : Sigma_base(Mmn, rpa){};
 
-  bool get_COHSEX() { return _COHSEX; }
-  void set_COHSEX(bool value) { _COHSEX = value; }
-
   // Sets up the screening parametrisation
   void PrepareScreening();
   // Calculates Sigma_c diag elements
@@ -46,20 +43,11 @@ class Sigma_Exact : public Sigma_base {
       const Eigen::VectorXd& frequencies) const;
 
  private:
-  bool _COHSEX = false;  // COHSEX approximation
-
-  RPA::rpa_eigensolution _EigenSol;        // Eigenvalues, eigenvectors from RPA
+  RPA::rpa_eigensolution _rpa_solution;    // Eigenvalues, eigenvectors from RPA
   std::vector<Eigen::MatrixXd> _residues;  // Residues
 
-  // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
-  // atoms, molecules, and clusters. Computer Physics Communications 208,
-  // 149–161 (2016).
-  // Eq. 45, 47, 48
   std::vector<Eigen::MatrixXd> CalcResidues() const;
-  double Equation47(const Eigen::VectorXd& A12, double eigenvalue,
-                    double freq) const;
-  double Equation48(const Eigen::VectorXd& A12, double eigenvalue) const;
-  // A12 = residues[m, :] .* residues[n, :]
+  double CalcSigmaC(const Eigen::VectorXd& res_mn, double eigenvalue, double freq) const;
 };
 }  // namespace xtp
 }  // namespace votca

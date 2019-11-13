@@ -85,23 +85,17 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency) const;
 template Eigen::MatrixXd RPA::calculate_epsilon<false>(double frequency) const;
 
-RPA::rpa_eigensolution RPA::diagonalize_H2p() const {
+RPA::rpa_eigensolution RPA::Diagonalize_H2p() const {
   const Index lumo = _homo + 1;
   const Index n_occ = lumo - _rpamin;
   const Index n_unocc = _rpamax - lumo + 1;
   const Index rpasize = n_occ * n_unocc;
-  
-  // Bruneval, F. et al. molgw 1: Many-body perturbation theory software for
-  // atoms, molecules, and clusters. Computer Physics Communications 208,
-  // 149–161 (2016).
-  
-  // Equation 37
+
   Eigen::VectorXd AmB = Calculate_H2p_AmB();
   Eigen::MatrixXd ApB = Calculate_H2p_ApB();
-  
-  // Equation 41
+
   Eigen::MatrixXd C = AmB.cwiseSqrt().asDiagonal() * ApB * AmB.cwiseSqrt().asDiagonal();
-  tools::EigenSystem result = Solve_C(C);
+  tools::EigenSystem result = Diagonalize_H2p_C(C);
   
   // Omega has to have correct size otherwise MKL does not rescale for Sqrt
   Eigen::VectorXd omega;
@@ -112,10 +106,6 @@ RPA::rpa_eigensolution RPA::diagonalize_H2p() const {
       << TimeStamp() << " Lowest neutral excitation energy (eV): "
       << tools::conv::hrt2ev * omega.minCoeff() << flush;
 
-  // Equation 42
-  //     X = (1/2) * [(A-B)^(+1/2) + Omega^(+1/2) * (A-B)^(-1/2)] * Z
-  //     Y = (1/2) * [(A-B)^(+1/2) - Omega^(+1/2) * (A-B)^(-1/2)] * Z
-  // X + Y = (A-B)^(+1/2) * Z
   Eigen::MatrixXd XpY = AmB.cwiseSqrt().asDiagonal() * result.eigenvectors();
   
   RPA::rpa_eigensolution sol;
@@ -164,7 +154,7 @@ Eigen::MatrixXd RPA::Calculate_H2p_ApB() const {
   return ApB;
 }
 
-tools::EigenSystem RPA::Solve_C(const Eigen::MatrixXd& C) const {
+tools::EigenSystem RPA::Diagonalize_H2p_C(const Eigen::MatrixXd& C) const {
   XTP_LOG_SAVE(logDEBUG, _log)
       << TimeStamp() << " Diagonalizing two-particle Hamiltonian " << flush;
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(C);  // Uses lower triangle

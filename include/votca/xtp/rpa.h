@@ -44,7 +44,7 @@ class RPA {
     Eigen::MatrixXd _XpY;    // Eigenvector components (X + Y)
   };
 
-  rpa_eigensolution diagonalize_H2p() const;
+  rpa_eigensolution Diagonalize_H2p() const;
 
   Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
     return calculate_epsilon<true>(frequency);
@@ -80,7 +80,7 @@ class RPA {
 
   Eigen::VectorXd Calculate_H2p_AmB() const;
   Eigen::MatrixXd Calculate_H2p_ApB() const;
-  tools::EigenSystem Solve_C(const Eigen::MatrixXd& C) const;
+  tools::EigenSystem Diagonalize_H2p_C(const Eigen::MatrixXd& C) const;
 
   template <bool imag>
   Eigen::MatrixXd calculate_epsilon(double frequency) const;

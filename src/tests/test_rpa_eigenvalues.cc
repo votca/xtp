@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(rpa_eigenvalues) {
       2.69024e-05, -2.69024e-05, 0.000155952, 0.000311876, -0.0002498, -0.000249804,
       0.000816289, 1.05559e-06, 1.84996e-12, 5.76753e-06, -9.90455e-11, -0.000800706;
 
-  RPA::rpa_eigensolution sol = rpa.diagonalize_H2p();
+  RPA::rpa_eigensolution sol = rpa.Diagonalize_H2p();
 
   bool check_rpa_eigenvalues = rpa_eigenvalues_ref.isApprox(sol._omega, 0.0001);
   if (!check_rpa_eigenvalues) {
