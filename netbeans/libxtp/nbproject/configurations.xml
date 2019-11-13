@@ -152,6 +152,9 @@
       <itemPath>../../include/votca/xtp/radial_euler_maclaurin_rule.h</itemPath>
       <itemPath>../../include/votca/xtp/rate_engine.h</itemPath>
       <itemPath>../../include/votca/xtp/region.h</itemPath>
+      <itemPath>../../include/votca/xtp/rootfinder_base.h</itemPath>
+      <itemPath>../../include/votca/xtp/rootfinder_fixedpoint.h</itemPath>
+      <itemPath>../../include/votca/xtp/rootfinder_grid.h</itemPath>
       <itemPath>../../include/votca/xtp/rpa.h</itemPath>
       <itemPath>../../include/votca/xtp/segid.h</itemPath>
       <itemPath>../../include/votca/xtp/segment.h</itemPath>
@@ -269,6 +272,11 @@
         <itemPath>../../src/libxtp/polarregion.cc</itemPath>
         <itemPath>../../src/libxtp/qmregion.cc</itemPath>
         <itemPath>../../src/libxtp/region.cc</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f12" displayName="RootFinder" projectFiles="true">
+        <itemPath>../../src/libxtp/rootfinder/rootfinder_base.cc</itemPath>
+        <itemPath>../../src/libxtp/rootfinder/rootfinder_fixedpoint.cc</itemPath>
+        <itemPath>../../src/libxtp/rootfinder/rootfinder_grid.cc</itemPath>
       </logicalFolder>
       <itemPath>../../src/libxtp/aobasis.cc</itemPath>
       <itemPath>../../src/libxtp/aoshell.cc</itemPath>
@@ -4281,6 +4289,12 @@
       </item>
       <item path="../../include/votca/xtp/region.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/rootfinder_base.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/rootfinder_fixedpoint.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/rootfinder_grid.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/rpa.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segid.h" ex="false" tool="3" flavor2="0">
@@ -4713,6 +4727,12 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/ppm.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_base.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_fixedpoint.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_grid.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
@@ -5588,6 +5608,12 @@
       </item>
       <item path="../../include/votca/xtp/region.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="../../include/votca/xtp/rootfinder_base.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/rootfinder_fixedpoint.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="../../include/votca/xtp/rootfinder_grid.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="../../include/votca/xtp/rpa.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="../../include/votca/xtp/segid.h" ex="false" tool="3" flavor2="0">
@@ -6020,6 +6046,12 @@
             flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/ppm.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_base.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_fixedpoint.cc" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="../../src/libxtp/rootfinder/rootfinder_grid.cc" ex="false" tool="1" flavor2="0">
       </item>
       <item path="../../src/libxtp/gwbse/rpa.cc" ex="false" tool="1" flavor2="0">
       </item>
