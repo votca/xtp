@@ -17,7 +17,7 @@
  *
  */
 
-#include "votca/xtp/customtools.h"
+#include <boost/format.hpp>
 #include "votca/xtp/threecenter.h"
 #include "votca/xtp/vc2index.h"
 #include <votca/xtp/aomatrix.h>

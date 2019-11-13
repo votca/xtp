@@ -18,7 +18,6 @@
  */
 
 #include "votca/xtp/vc2index.h"
-#include <votca/xtp/customtools.h>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_exact.h>
 #include <votca/xtp/threecenter.h>
@@ -55,9 +54,6 @@ Eigen::MatrixXd Sigma_Exact::CalcCorrelationOffDiag(
     const Eigen::VectorXd& frequencies) const {
   const Index rpasize = _rpa_solution._omega.size();
   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
-  if (CustomOpts::SigmaCNoOffdiags()) {
-    return result;
-  }
 #pragma omp parallel for
   for (Index m = 0; m < _qptotal; m++) {
     const Eigen::MatrixXd& res_m = _residues[m];
