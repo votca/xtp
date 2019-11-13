@@ -22,8 +22,8 @@
 #define _VOTCA_XTP_RPA_H
 #include "votca/xtp/logger.h"
 #include <vector>
-#include <votca/xtp/eigen.h>
 #include <votca/tools/eigensystem.h>
+#include <votca/xtp/eigen.h>
 
 namespace votca {
 namespace xtp {

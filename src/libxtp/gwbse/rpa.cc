@@ -17,9 +17,9 @@
  *
  */
 
-#include <boost/format.hpp>
 #include "votca/xtp/threecenter.h"
 #include "votca/xtp/vc2index.h"
+#include <boost/format.hpp>
 #include <votca/xtp/aomatrix.h>
 #include <votca/xtp/rpa.h>
 
