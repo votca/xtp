@@ -486,10 +486,8 @@ void InternalCoords::PopulateWilsonMatrix() {
   for (Index b = 0; b < _numBonds; ++b) {
     BondIdx bondIdx = _bonds._indices[b];
 
-    Index atIdxM, atIdxN;
-
-    atIdxM = bondIdx[0];
-    atIdxN = bondIdx[1];
+    Index atIdxM = bondIdx[0];
+    Index atIdxN = bondIdx[1];
 
     Eigen::Vector3d bondVec =
         _qmMolecule[atIdxM].getPos() - _qmMolecule[atIdxN].getPos();

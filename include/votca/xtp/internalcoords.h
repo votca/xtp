@@ -34,10 +34,6 @@
 namespace votca {
 namespace xtp {
 
-// Bonds will be stored in an undirected graph
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>
-    BglGraph;
-
 class InternalCoords : public CoordBase {
  public:
   InternalCoords(const QMMolecule& mol, bool withAuxiliary);
@@ -73,6 +69,10 @@ class InternalCoords : public CoordBase {
   friend std::ostream& operator<<(std::ostream& s, const InternalCoords& ic);
 
  private:
+  // Bonds will be stored in an undirected graph
+  using BglGraph =
+      boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>;
+
   Index _numBonds = 0;
   Index _numInterMolBonds = 0;  // interFragmentBonds
   Index _numHBonds = 0;

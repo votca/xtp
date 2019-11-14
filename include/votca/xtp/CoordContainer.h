@@ -61,11 +61,15 @@ struct CoordContainer {
   std::map<IdxType, ValType> _values;
   votca::Index num;
 
-  ValType& operator[](const IdxType idx) {
+  ValType& operator[](const IdxType& idx) {
     IdxType xdi = IdxReverse(idx);
 
-    if (Contains(idx)) return _values[idx];
-    if (Contains(xdi)) return _values[xdi];
+    if (Contains(idx)) {
+      return _values[idx];
+    }
+    if (Contains(xdi)) {
+      return _values[xdi];
+    }
 
     _values[idx] = 0;
     _indices.emplace_back(idx);
@@ -74,15 +78,15 @@ struct CoordContainer {
     return _values[idx];
   }
 
-  ValType operator[](const IdxType idx) const { return Get(idx); }
+  const ValType& operator[](const IdxType& idx) const { return Get(idx); }
 
-  bool Contains(const IdxType idx) const {
+  bool Contains(const IdxType& idx) const {
     IdxType xdi = IdxReverse(idx);
     return (_values.find(idx) != _values.end() ||
             _values.find(xdi) != _values.end());
   }
 
-  ValType Get(const IdxType idx) const {
+  const ValType& Get(const IdxType& idx) const {
     auto search = _values.find(idx);
     if (search != _values.end()) {
       return search->second;

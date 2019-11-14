@@ -22,7 +22,6 @@
 #define _VOTCA_XTP_COORDBASE
 #include <string>
 #include <votca/xtp/eigen.h>
-#include <votca/xtp/orbitals.h>
 #include <votca/xtp/qmmolecule.h>
 
 namespace votca {

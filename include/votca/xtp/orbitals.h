@@ -114,19 +114,14 @@ class Orbitals {
     switch (type.Type()) {
       case QMStateType::Singlet:
         return Index(_BSE_singlet.eigenvalues().size());
-        break;
       case QMStateType::Triplet:
         return Index(_BSE_triplet.eigenvalues().size());
-        break;
       case QMStateType::KSstate:
         return Index(_mos.eigenvalues().size());
-        break;
       case QMStateType::PQPstate:
         return Index(_QPpert_energies.size());
-        break;
       case QMStateType::DQPstate:
         return Index(_QPdiag.eigenvalues().size());
-        break;
       default:
         return 1;
         break;
