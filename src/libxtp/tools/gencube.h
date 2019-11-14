@@ -32,10 +32,8 @@ class AOBasis;
 class GenCube : public QMTool {
  public:
   GenCube() = default;
-  ;
 
   ~GenCube() override = default;
-  ;
 
   std::string Identify() override { return "gencube"; }
 
@@ -57,9 +55,9 @@ class GenCube : public QMTool {
   bool _dostateonly;
 
   double _padding;
-  int _xsteps;
-  int _ysteps;
-  int _zsteps;
+  Index _xsteps;
+  Index _ysteps;
+  Index _zsteps;
   QMState _state;
   std::string _mode;
   Logger _log;

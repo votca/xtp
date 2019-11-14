@@ -46,7 +46,7 @@ class HamiltonianOperator
   // Required typedefs, constants, and method:
   using Scalar = double;
   using RealScalar = double;
-  using StorageIndex = int;
+  using StorageIndex = long;
   enum {
     ColsAtCompileTime = Eigen::Dynamic,
     MaxColsAtCompileTime = Eigen::Dynamic,
@@ -71,7 +71,7 @@ class HamiltonianOperator
 
   Eigen::VectorXd get_diagonal() const {
     Eigen::VectorXd diag = Eigen::VectorXd::Zero(_size);
-    int half = _size / 2;
+    Index half = _size / 2;
     diag.head(half) = _A.diagonal();
     diag.tail(half) = -diag.head(half);
     return diag;
@@ -82,7 +82,7 @@ class HamiltonianOperator
   // get the full matrix if we have to
   Eigen::MatrixXd get_full_matrix() const {
     Eigen::MatrixXd matrix = Eigen::MatrixXd::Zero(_size, _size);
-    int half = _size / 2;
+    Index half = _size / 2;
     matrix.topLeftCorner(half, half) = _A.get_full_matrix();
     matrix.topRightCorner(half, half) = _B.get_full_matrix();
     matrix.bottomLeftCorner(half, half) = -matrix.topRightCorner(half, half);
@@ -94,7 +94,7 @@ class HamiltonianOperator
   const MatrixReplacementB& _B;
 
  private:
-  int _size;
+  Index _size;
   Eigen::VectorXd _diag;
 };
 }  // namespace xtp
@@ -130,10 +130,23 @@ struct generic_product_impl<
     // alpha must be 1 here
     assert(alpha == Scalar(1) && "scaling is not implemented");
     EIGEN_ONLY_USED_FOR_DEBUG(alpha);
-
-    int half = op.rows() / 2;
-    dst.head(half) = op._A * v.head(half) + op._B * v.tail(half);
-    dst.tail(half) = -(op._B * v.head(half) + op._A * v.tail(half));
+    /**Instead of doing the
+    (A   B)*(v1)
+    (-B -A) (v2)
+     multiplication explicitly for each block
+     we reshape v into (v1,v2)
+     and multiply A*(v1,v2)
+     and then sort the contributions into the resulting vector
+     we do the same for B
+     * **/
+    Map<const MatrixX2d> vmat(v.data(), v.size() / 2, 2);
+    Index half = op.rows() / 2;
+    MatrixX2d temp = op._A * vmat;
+    dst.head(half) = temp.col(0);
+    dst.tail(half) = -temp.col(1);
+    temp = op._B * vmat;
+    dst.head(half) += temp.col(1);
+    dst.tail(half) -= temp.col(0);
   }
 };
 
@@ -165,10 +178,24 @@ struct generic_product_impl<
     assert(alpha == Scalar(1) && "scaling is not implemented");
     EIGEN_ONLY_USED_FOR_DEBUG(alpha);
 
-    int half = op.rows() / 2;
-    dst.topRows(half) = op._A * m.topRows(half) + op._B * m.bottomRows(half);
-    dst.bottomRows(half) =
-        -(op._B * m.topRows(half) + (op._A * m.bottomRows(half)));
+    Index half = op.rows() / 2;
+    /**Instead of doing the
+    (A   B)*(M1)
+    (-B -A) (M2)
+     multiplication explicitly for each block
+     we reshape M into (M1,M2)
+     and multiply A*(M1,M2)
+     and then sort the contributions into the resulting vector
+     we do the same for B
+     * **/
+    Map<const MatrixXd> m_reshaped(m.data(), m.rows() / 2, m.cols() * 2);
+    MatrixXd temp = op._A * m_reshaped;
+    Map<MatrixXd> temp_unshaped(temp.data(), m.rows(), m.cols());
+    dst.topRows(half) = temp_unshaped.topRows(half);
+    dst.bottomRows(half) = -temp_unshaped.bottomRows(half);
+    temp = op._B * m_reshaped;
+    dst.topRows(half) += temp_unshaped.bottomRows(half);
+    dst.bottomRows(half) -= temp_unshaped.topRows(half);
   }
 };
 }  // namespace internal

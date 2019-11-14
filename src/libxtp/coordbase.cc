@@ -42,7 +42,7 @@ void CoordBase::Increment(const Eigen::VectorXd& dx) {
   _coords += dx;
 }
 
-int CoordBase::getNumAtoms() const { return _numAtoms; }
+Index CoordBase::getNumAtoms() const { return _numAtoms; }
 
 bool CoordBase::isApprox(CoordBase& other, const double& tol) const {
   return _coords.isApprox(other.Vector(), tol);

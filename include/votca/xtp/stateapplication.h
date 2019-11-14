@@ -34,13 +34,12 @@ class StateApplication : public XtpApplication {
   StateApplication();
 
   ~StateApplication() override = default;
-  ;
 
   void Initialize() override;
   bool EvaluateOptions() override;
   void Run() override;
 
-  void BeginEvaluate(int nThreads);
+  void BeginEvaluate(Index nThreads);
   bool EvaluateFrame(Topology& top);
 
   void SetCalculator(QMCalculator* calculator);

@@ -28,9 +28,7 @@ namespace xtp {
 class KMCLifetime : public KMCCalculator {
  public:
   KMCLifetime() = default;
-  ;
   ~KMCLifetime() override = default;
-  ;
   bool WriteToStateFile() const override { return false; }
   std::string Identify() override { return "kmclifetime"; }
   void Initialize(tools::Property& options) override;
@@ -40,7 +38,7 @@ class KMCLifetime : public KMCCalculator {
   void WriteDecayProbability(std::string filename);
 
   void RunVSSM() override;
-  void WriteToTraj(fstream& traj, unsigned insertioncount, double simtime,
+  void WriteToTraj(fstream& traj, unsigned long insertioncount, double simtime,
                    const Chargecarrier& carrier) const;
 
   void ReadLifetimeFile(std::string filename);
@@ -48,8 +46,8 @@ class KMCLifetime : public KMCCalculator {
   bool _do_carrierenergy;
   std::string _energy_outputfile;
   double _alpha;
-  unsigned _outputsteps;
-  unsigned int _insertions;
+  unsigned long _outputsteps;
+  unsigned long _insertions;
   std::string _lifetimefile;
 };
 

@@ -42,12 +42,11 @@ class StaticRegion;
 class QMRegion : public Region {
 
  public:
-  QMRegion(int id, Logger& log, std::string workdir)
+  QMRegion(Index id, Logger& log, std::string workdir)
       : Region(id, log), _workdir(workdir) {
     QMPackageFactory::RegisterAll();
   };
   ~QMRegion() override = default;
-  ;
 
   void Initialize(const tools::Property& prop) override;
 
@@ -61,7 +60,7 @@ class QMRegion : public Region {
 
   void ApplyQMFieldToPolarSegments(std::vector<PolarSegment>& segments) const;
 
-  int size() const override { return _size; }
+  Index size() const override { return _size; }
 
   void WritePDB(csg::PDBWriter& writer) const override;
 
@@ -84,7 +83,7 @@ class QMRegion : public Region {
   void AddNucleiFields(std::vector<PolarSegment>& segments,
                        const StaticSegment& seg) const;
 
-  int _size = 0;
+  Index _size = 0;
   Orbitals _orb;
 
   QMState _initstate;

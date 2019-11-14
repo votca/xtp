@@ -27,9 +27,7 @@ namespace xtp {
 class KMCMultiple : public KMCCalculator {
  public:
   KMCMultiple() = default;
-  ;
   ~KMCMultiple() override = default;
-  ;
   bool WriteToStateFile() const override { return false; }
   std::string Identify() override { return "kmcmultiple"; }
   void Initialize(tools::Property& options) override;
@@ -55,7 +53,7 @@ class KMCMultiple : public KMCCalculator {
   double _runtime;
   double _outputtime;
   std::string _timefile = "";
-  int _intermediateoutput_frequency = 10000;
+  Index _intermediateoutput_frequency = 10000;
   unsigned long _diffusionresolution = 1000;
 };
 

@@ -43,11 +43,11 @@ class InternalCoords : public CoordBase {
   InternalCoords(const QMMolecule& mol, bool withAuxiliary);
   InternalCoords(const QMMolecule& mol);
 
-  int getNumBonds() const;
-  int getNumHBonds() const;
-  int getNumAngles() const;
-  int getNumAuxBonds() const;
-  int getNumDihedrals() const;
+  Index getNumBonds() const;
+  Index getNumHBonds() const;
+  Index getNumAngles() const;
+  Index getNumAuxBonds() const;
+  Index getNumDihedrals() const;
   const Eigen::MatrixXd& getWilsonBMatrix() const;
 
   Eigen::MatrixXd CalculatePseudoInverseB() const {
@@ -73,12 +73,12 @@ class InternalCoords : public CoordBase {
   friend std::ostream& operator<<(std::ostream& s, const InternalCoords& ic);
 
  private:
-  int _numBonds = 0;
-  int _numInterMolBonds = 0;  // interFragmentBonds
-  int _numHBonds = 0;
-  int _numAngles = 0;
-  int _numAuxBonds = 0;
-  int _numDihedrals = 0;
+  Index _numBonds = 0;
+  Index _numInterMolBonds = 0;  // interFragmentBonds
+  Index _numHBonds = 0;
+  Index _numAngles = 0;
+  Index _numAuxBonds = 0;
+  Index _numDihedrals = 0;
 
   const bool _withAuxiliary;
 

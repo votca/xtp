@@ -38,7 +38,7 @@ class CoordBase {
   const Eigen::VectorXd& operator()() const;
 
   void Increment(const Eigen::VectorXd& dx);
-  int getNumAtoms() const;
+  Index getNumAtoms() const;
   bool isApprox(CoordBase& other, const double& tol) const;
 
  protected:
@@ -47,7 +47,7 @@ class CoordBase {
 
   const CoordType _type;
   const QMMolecule& _qmMolecule;
-  const int _numAtoms;
+  const Index _numAtoms;
   std::vector<double> _vector;
   Eigen::VectorXd _coords;
 };

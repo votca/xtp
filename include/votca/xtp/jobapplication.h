@@ -36,12 +36,11 @@ class JobApplication : public XtpApplication {
  public:
   JobApplication();
   ~JobApplication() override = default;
-  ;
   void Initialize() override;
   bool EvaluateOptions() override;
   void Run() override;
 
-  void BeginEvaluate(int nThreads, ProgObserver<std::vector<Job> > &obs);
+  void BeginEvaluate(Index nThreads, ProgObserver<std::vector<Job> > &obs);
   bool EvaluateFrame(Topology &top);
   void SetCalculator(JobCalculator *calculator);
 

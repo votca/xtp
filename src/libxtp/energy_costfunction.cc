@@ -63,10 +63,11 @@ bool Energy_costfunction::Converged(const Eigen::VectorXd& delta_parameters,
   bool MaxStep_converged = false;
   Energy_costfunction::conv_paras convval;
   convval.deltaE = delta_cost;
-  convval.RMSForce = std::sqrt(gradient.cwiseAbs2().sum()) / gradient.size();
+  convval.RMSForce =
+      std::sqrt(gradient.cwiseAbs2().sum()) / double(gradient.size());
   convval.MaxForce = gradient.cwiseAbs().maxCoeff(&convval.maxforceindex);
-  convval.RMSStep =
-      std::sqrt(delta_parameters.cwiseAbs2().sum()) / delta_parameters.size();
+  convval.RMSStep = std::sqrt(delta_parameters.cwiseAbs2().sum()) /
+                    double(delta_parameters.size());
   convval.MaxStep = delta_parameters.cwiseAbs().maxCoeff(&convval.maxstepindex);
 
   if (std::abs(convval.deltaE) < _convpara.deltaE) {
@@ -137,7 +138,7 @@ std::string Energy_costfunction::Converged(double val, double limit) {
 
 void Energy_costfunction::Vector2QMAtoms(const Eigen::VectorXd& pos,
                                          QMMolecule& atoms) {
-  for (int i = 0; i < atoms.size(); i++) {
+  for (Index i = 0; i < atoms.size(); i++) {
     Eigen::Vector3d pos_displaced = pos.segment<3>(3 * i);
     atoms[i].setPos(pos_displaced);
   }
@@ -145,7 +146,7 @@ void Energy_costfunction::Vector2QMAtoms(const Eigen::VectorXd& pos,
 
 Eigen::VectorXd Energy_costfunction::QMAtoms2Vector(QMMolecule& atoms) {
   Eigen::VectorXd result = Eigen::VectorXd::Zero(3 * atoms.size());
-  for (int i = 0; i < atoms.size(); i++) {
+  for (Index i = 0; i < atoms.size(); i++) {
     result.segment<3>(3 * i) = atoms[i].getPos();
   }
   return result;

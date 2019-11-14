@@ -38,7 +38,6 @@ class Orbitals;
 class QMPackage {
  public:
   virtual ~QMPackage() = default;
-  ;
 
   virtual std::string getPackageName() const = 0;
 
@@ -88,7 +87,7 @@ class QMPackage {
 
   void setLog(Logger* pLog) { _pLog = pLog; }
 
-  void setCharge(double charge) {
+  void setCharge(Index charge) {
     _charge = charge;
     _spin = std::abs(charge) + 1;
   }
@@ -117,8 +116,8 @@ class QMPackage {
   std::vector<std::string> GetLineAndSplit(std::ifstream& input_file,
                                            const std::string separators) const;
 
-  int _charge;
-  int _spin;  // 2S+1
+  Index _charge;
+  Index _spin;  // 2S+1
   std::string _memory;
   std::string _options;
 

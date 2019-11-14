@@ -28,8 +28,8 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
                           const AOShell& shell_col) const {
 
   // shell info, only lmax tells how far to go
-  int lmax_row = shell_row.getLmax();
-  int lmax_col = shell_col.getLmax();
+  Index lmax_row = shell_row.getLmax();
+  Index lmax_col = shell_col.getLmax();
 
   if (lmax_col > 4 || lmax_row > 4) {
     throw std::runtime_error(
@@ -38,8 +38,8 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
   }
 
   // set size of internal block for recursion
-  int nrows = AOTransform::getBlockSize(lmax_row);
-  int ncols = AOTransform::getBlockSize(lmax_col);
+  Index nrows = AOTransform::getBlockSize(lmax_row);
+  Index ncols = AOTransform::getBlockSize(lmax_col);
 
   // get shell positions
   const Eigen::Vector3d& pos_row = shell_row.getPos();
@@ -185,7 +185,7 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - p     d - p     f - p     g - p
-        for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+        for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
           kin(i, Cart::x) = xi2 * ol(i, Cart::x) + PmB(0) * kin(i, 0) +
                             nx[i] * fak * kin(i_less_x[i], 0);
           kin(i, Cart::y) = xi2 * ol(i, Cart::y) + PmB(1) * kin(i, 0) +
@@ -213,20 +213,20 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - d     d - d     f - d     g - d
-        for (int i = 1; i < n_orbitals[lmax_row]; i++) {
-          double term = fak * kin(i, 0) - fak_b * ol(i, 0);
+        for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
+          double term_loc = fak * kin(i, 0) - fak_b * ol(i, 0);
           kin(i, Cart::xx) = xi2 * ol(i, Cart::xx) + PmB(0) * kin(i, Cart::x) +
-                             nx[i] * fak * kin(i_less_x[i], Cart::x) + term;
+                             nx[i] * fak * kin(i_less_x[i], Cart::x) + term_loc;
           kin(i, Cart::xy) = xi2 * ol(i, Cart::xy) + PmB(0) * kin(i, Cart::y) +
                              nx[i] * fak * kin(i_less_x[i], Cart::y);
           kin(i, Cart::xz) = xi2 * ol(i, Cart::xz) + PmB(0) * kin(i, Cart::z) +
                              nx[i] * fak * kin(i_less_x[i], Cart::z);
           kin(i, Cart::yy) = xi2 * ol(i, Cart::yy) + PmB(1) * kin(i, Cart::y) +
-                             ny[i] * fak * kin(i_less_y[i], Cart::y) + term;
+                             ny[i] * fak * kin(i_less_y[i], Cart::y) + term_loc;
           kin(i, Cart::yz) = xi2 * ol(i, Cart::yz) + PmB(1) * kin(i, Cart::z) +
                              ny[i] * fak * kin(i_less_y[i], Cart::z);
           kin(i, Cart::zz) = xi2 * ol(i, Cart::zz) + PmB(2) * kin(i, Cart::z) +
-                             nz[i] * fak * kin(i_less_z[i], Cart::z) + term;
+                             nz[i] * fak * kin(i_less_z[i], Cart::z) + term_loc;
           //    }
         }
         //------------------------------------------------------
@@ -255,7 +255,7 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - f     d - f     f - f     g - f
-        for (int i = 1; i < n_orbitals[lmax_row]; i++) {
+        for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
           double term_x = 2 * (fak * kin(i, Cart::x) - fak_b * ol(i, Cart::x));
           double term_y = 2 * (fak * kin(i, Cart::y) - fak_b * ol(i, Cart::y));
           double term_z = 2 * (fak * kin(i, Cart::z) - fak_b * ol(i, Cart::z));
@@ -333,13 +333,13 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
         //------------------------------------------------------
 
         // Integrals     p - g     d - g     f - g     g - g
-        for (int i = 1; i < n_orbitals[lmax_row]; i++) {
-          double term_xx = fak * kin(i, Cart::xx) - fak_b * ol(i, Cart::xx);
-          double term_yy = fak * kin(i, Cart::yy) - fak_b * ol(i, Cart::yy);
-          double term_zz = fak * kin(i, Cart::zz) - fak_b * ol(i, Cart::zz);
+        for (Index i = 1; i < n_orbitals[lmax_row]; i++) {
+          double term_xx_loc = fak * kin(i, Cart::xx) - fak_b * ol(i, Cart::xx);
+          double term_yy_loc = fak * kin(i, Cart::yy) - fak_b * ol(i, Cart::yy);
+          double term_zz_loc = fak * kin(i, Cart::zz) - fak_b * ol(i, Cart::zz);
           kin(i, Cart::xxxx) =
               xi2 * ol(i, Cart::xxxx) + PmB(0) * kin(i, Cart::xxx) +
-              nx[i] * fak * kin(i_less_x[i], Cart::xxx) + 3 * term_xx;
+              nx[i] * fak * kin(i_less_x[i], Cart::xxx) + 3 * term_xx_loc;
           kin(i, Cart::xxxy) = xi2 * ol(i, Cart::xxxy) +
                                PmB(1) * kin(i, Cart::xxx) +
                                ny[i] * fak * kin(i_less_y[i], Cart::xxx);
@@ -348,13 +348,13 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
                                nz[i] * fak * kin(i_less_z[i], Cart::xxx);
           kin(i, Cart::xxyy) =
               xi2 * ol(i, Cart::xxyy) + PmB(0) * kin(i, Cart::xyy) +
-              nx[i] * fak * kin(i_less_x[i], Cart::xyy) + term_yy;
+              nx[i] * fak * kin(i_less_x[i], Cart::xyy) + term_yy_loc;
           kin(i, Cart::xxyz) = xi2 * ol(i, Cart::xxyz) +
                                PmB(1) * kin(i, Cart::xxz) +
                                ny[i] * fak * kin(i_less_y[i], Cart::xxz);
           kin(i, Cart::xxzz) =
               xi2 * ol(i, Cart::xxzz) + PmB(0) * kin(i, Cart::xzz) +
-              nx[i] * fak * kin(i_less_x[i], Cart::xzz) + term_zz;
+              nx[i] * fak * kin(i_less_x[i], Cart::xzz) + term_zz_loc;
           kin(i, Cart::xyyy) = xi2 * ol(i, Cart::xyyy) +
                                PmB(0) * kin(i, Cart::yyy) +
                                nx[i] * fak * kin(i_less_x[i], Cart::yyy);
@@ -369,19 +369,19 @@ void AOKinetic::FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
                                nx[i] * fak * kin(i_less_x[i], Cart::zzz);
           kin(i, Cart::yyyy) =
               xi2 * ol(i, Cart::yyyy) + PmB(1) * kin(i, Cart::yyy) +
-              ny[i] * fak * kin(i_less_y[i], Cart::yyy) + 3 * term_yy;
+              ny[i] * fak * kin(i_less_y[i], Cart::yyy) + 3 * term_yy_loc;
           kin(i, Cart::yyyz) = xi2 * ol(i, Cart::yyyz) +
                                PmB(2) * kin(i, Cart::yyy) +
                                nz[i] * fak * kin(i_less_z[i], Cart::yyy);
           kin(i, Cart::yyzz) =
               xi2 * ol(i, Cart::yyzz) + PmB(1) * kin(i, Cart::yzz) +
-              ny[i] * fak * kin(i_less_y[i], Cart::yzz) + term_zz;
+              ny[i] * fak * kin(i_less_y[i], Cart::yzz) + term_zz_loc;
           kin(i, Cart::yzzz) = xi2 * ol(i, Cart::yzzz) +
                                PmB(1) * kin(i, Cart::zzz) +
                                ny[i] * fak * kin(i_less_y[i], Cart::zzz);
           kin(i, Cart::zzzz) =
               xi2 * ol(i, Cart::zzzz) + PmB(2) * kin(i, Cart::zzz) +
-              nz[i] * fak * kin(i_less_z[i], Cart::zzz) + 3 * term_zz;
+              nz[i] * fak * kin(i_less_z[i], Cart::zzz) + 3 * term_zz_loc;
         }
         //------------------------------------------------------
 

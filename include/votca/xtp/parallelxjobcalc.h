@@ -53,7 +53,6 @@ class ParallelXJobCalc : public JobCalculator {
   using Result = typename Job::JobResult;
 
   ParallelXJobCalc() = default;
-  ;
   ~ParallelXJobCalc() override { ; };
 
   std::string Identify() override = 0;
@@ -73,20 +72,19 @@ class ParallelXJobCalc : public JobCalculator {
 
   class JobOperator : public QMThread {
    public:
-    JobOperator(int id, const Topology &top,
-                ParallelXJobCalc<JobContainer> &master, int openmp_threads)
+    JobOperator(Index id, const Topology &top,
+                ParallelXJobCalc<JobContainer> &master, Index openmp_threads)
         : _top(top), _master(master), _openmp_threads(openmp_threads) {
       setId(id);
     }  // comes from baseclass so Id cannot be in initializer list
     ~JobOperator() override = default;
-    ;
 
     void Run() override;
 
    private:
     const Topology &_top;
     ParallelXJobCalc<JobContainer> &_master;
-    int _openmp_threads = 1;
+    Index _openmp_threads = 1;
   };
 
  protected:
@@ -97,7 +95,7 @@ class ParallelXJobCalc : public JobCalculator {
   tools::Mutex _logMutex;
   std::string _mapfile = "";
   std::string _jobfile = "";
-  int _openmp_threads = 1;
+  Index _openmp_threads = 1;
 };
 
 }  // namespace xtp

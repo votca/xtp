@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(aomultipole_comparison) {
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
     es.computeDirect(components);
     double a = 2 * 0.01;
-    for (int i = 0; i < 3; i++) {
+    for (Index i = 0; i < 3; i++) {
       double q = es.eigenvalues()[i] / (a * a);
       const Eigen::Vector3d vec1 =
           seg2[0].getPos() + 0.5 * a * es.eigenvectors().col(i);
@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(large_l_test) {
   AOBasis dftbasis;
   dftbasis.Fill(basisset, mol);
 
-  int dftbasissize = 18;
+  Index dftbasissize = 18;
 
   ofstream mpsfile2("polarsite_all.mps");
   mpsfile2 << "! One Site" << endl;
@@ -786,6 +786,43 @@ BOOST_AUTO_TEST_CASE(large_l_test) {
     cout << esp_ref << endl;
     cout << "esp result" << endl;
     cout << esp.Matrix() << endl;
+  }
+
+  ofstream ecpfile("ecp.xml");
+  ecpfile << "<pseudopotential name=\"ECP_STUTTGART\">" << endl;
+  ecpfile << "  <element name=\"C\" lmax=\"3\" ncore=\"2\">" << endl;
+  ecpfile << "    <shell type=\"F\"><constant power=\"2\" decay=\"1.0\" "
+             "contraction=\"0.0\"></constant></shell>"
+          << endl;
+  ecpfile << "    <shell type=\"S\"><constant power=\"2\" decay=\"6.40105200\" "
+             "contraction=\"33.12163800\"></constant></shell>"
+          << endl;
+  ecpfile << "    <shell type=\"P\"><constant power=\"2\" decay=\"7.30774700\" "
+             "contraction=\"-1.98625700\"></constant></shell>"
+          << endl;
+  ecpfile << "    <shell type=\"D\"><constant power=\"2\" decay=\"5.96179600\" "
+             "contraction=\"-9.45431800\"></constant></shell>"
+          << endl;
+  ecpfile << "  </element>" << endl;
+  ecpfile << "</pseudopotential>" << endl;
+  ecpfile.close();
+  ECPBasisSet ecps;
+  ecps.Load("ecp.xml");
+  ECPAOBasis ecpbasis;
+  ecpbasis.Fill(ecps, mol);
+  AOECP ecp;
+  OPENMP::setMaxThreads(1);
+  ecp.FillPotential(dftbasis, ecpbasis);
+
+  Eigen::MatrixXd ecp_ref = Eigen::MatrixXd::Zero(dftbasissize, dftbasissize);
+
+  bool check_ecp = ecp.Matrix().isApprox(ecp_ref, 0.00001);
+  BOOST_CHECK_EQUAL(check_ecp, 1);
+  if (!check_ecp) {
+    cout << "ecp ref" << endl;
+    cout << ecp_ref << endl;
+    cout << "ecp result" << endl;
+    cout << ecp.Matrix() << endl;
   }
 
   AOPlanewave planewave;
