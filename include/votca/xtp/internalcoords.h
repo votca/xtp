@@ -39,6 +39,10 @@ class InternalCoords : public CoordBase {
   InternalCoords(const QMMolecule& mol, bool withAuxiliary);
   InternalCoords(const QMMolecule& mol);
 
+  const Eigen::Block<VectorXd>& AngleCoordinates() const {
+    return _vector.tail(_numAngles + _numAuxBonds + _numDihedrals);
+  }
+
   Index getNumBonds() const;
   Index getNumHBonds() const;
   Index getNumAngles() const;
