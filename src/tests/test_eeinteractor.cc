@@ -448,10 +448,13 @@ BOOST_AUTO_TEST_CASE(polar_case_monopole) {
   DipoleDipoleInteraction A(interactor, segments);
   Eigen::ConjugateGradient<DipoleDipoleInteraction, Eigen::Lower | Eigen::Upper>
       cg;
-  cg.setMaxIterations(100);
+  cg.setMaxIterations(10000);
   cg.setTolerance(1e-9);
   cg.compute(A);
-  Eigen::VectorXd x = cg.solve(b);
+
+  Eigen::VectorXd initial_guess = Eigen::VectorXd::Zero(6);
+  initial_guess /= 6;
+  Eigen::VectorXd x = cg.solveWithGuess(b, initial_guess);
   index = 0;
   for (PolarSegment& seg : segments) {
     for (PolarSite& site : seg) {
@@ -460,6 +463,7 @@ BOOST_AUTO_TEST_CASE(polar_case_monopole) {
     }
   }
 
+  BOOST_CHECK_EQUAL(cg.info(), Eigen::ComputationInfo::Success);
   Eigen::Vector3d dipole_ref;
   dipole_ref << 0, 0, 1.0 / 3.0;
 
