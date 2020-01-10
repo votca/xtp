@@ -1,5 +1,5 @@
 /*
- *            Copyright 2016 The MUSCET Development Team
+ *            Copyright 2016 The VOTCA Development Team
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
  *
