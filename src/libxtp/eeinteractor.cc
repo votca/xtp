@@ -28,7 +28,7 @@ Eigen::Matrix<double, N, 1> eeInteractor::VSiteA(
 
   const Eigen::Vector3d& posA = siteA.getPos();
   const Eigen::Vector3d& posB = siteB.getPos();
-  int rankB = siteB.getRank();
+  Index rankB = siteB.getRank();
   Eigen::Vector3d a =
       posB - posA;  // Vector of the distance between polar sites
   const double R = a.norm();
@@ -143,10 +143,9 @@ Eigen::Matrix<double, N, 1> eeInteractor::VSiteA(
         QQ(4, 4) =
             5 * (7 * r.xx() * r.yy() - (r.xx() + r.yy())) + 1;  // T22s,22s
 
-        QQ.triangularView<Eigen::StrictlyUpper>() =
-            QQ.triangularView<Eigen::StrictlyLower>().transpose();
         const double fac5 = std::pow(fac1, 5);
-        V.segment(4, 5) += fac5 * QQ * siteB.Q().segment<5>(4);
+        V.segment(4, 5) +=
+            fac5 * QQ.selfadjointView<Eigen::Lower>() * siteB.Q().segment<5>(4);
       }
     }
   }
@@ -176,33 +175,6 @@ Eigen::Matrix3d eeInteractor::FillTholeInteraction(
   }
   Eigen::Matrix3d result = -3 * lambda5 * a * a.transpose();
   result.diagonal().array() += lambda3;
-  return result;  // T_1alpha,1beta (alpha,beta=x,y,z)
-}
-
-Eigen::Vector3d eeInteractor::VThole(const PolarSite& site1,
-                                     const PolarSite& site2,
-                                     const Eigen::Vector3d& dQ) const {
-
-  const Eigen::Vector3d& posB = site2.getPos();
-  const Eigen::Vector3d& posA = site1.getPos();
-  Eigen::Vector3d a =
-      posB - posA;            // Vector of the distance between polar sites
-  const double R = a.norm();  // Norm of distance vector
-  const double fac1 = 1 / R;
-  a *= fac1;  // unit vector pointing from A to B
-
-  double lambda3 = std::pow(fac1, 3);
-  double lambda5 = lambda3;
-  const double au3 = _expdamping * std::pow(R, 3) *
-                     site1.getSqrtInvEigenDamp() *
-                     site2.getSqrtInvEigenDamp();  // au3 is dimensionless
-  if (au3 < 40) {
-    const double exp_ua = std::exp(-au3);
-    lambda3 *= (1 - exp_ua);
-    lambda5 *= (1 - (1 + au3) * exp_ua);
-  }
-  Eigen::Vector3d result = -3 * lambda5 * a * (a.transpose() * dQ);
-  result += lambda3 * dQ;
   return result;  // T_1alpha,1beta (alpha,beta=x,y,z)
 }
 
@@ -275,7 +247,8 @@ eeInteractor::E_terms eeInteractor::CalcPolarEnergy_site(
   // contributions are stat-induced, induced-stat and induced induced
   eeInteractor::E_terms val;
   val.E_indu_indu() = site1.Induced_Dipole().transpose() *
-                      VThole(site1, site2, site2.Induced_Dipole());
+                      FillTholeInteraction(site1, site2) *
+                      site2.Induced_Dipole();
   val.E_indu_stat() = CalcPolar_stat_Energy_site(site1, site2);
   val.E_indu_stat() += CalcPolar_stat_Energy_site(site2, site1);
   return val;
@@ -342,8 +315,8 @@ template double eeInteractor::CalcStaticEnergy(const PolarSegment& seg1,
 template <class S>
 double eeInteractor::CalcStaticEnergy_IntraSegment(const S& seg) const {
   double e = 0;
-  for (int i = 0; i < seg.size(); i++) {
-    for (int j = 0; j < i; j++) {
+  for (Index i = 0; i < seg.size(); i++) {
+    for (Index j = 0; j < i; j++) {
       e += CalcStaticEnergy_site(seg[i], seg[j]);
     }
   }
@@ -374,10 +347,10 @@ template eeInteractor::E_terms eeInteractor::CalcPolarEnergy(
 double eeInteractor::CalcPolarEnergy_IntraSegment(
     const PolarSegment& seg) const {
   double e = 0;
-  for (int i = 0; i < seg.size(); i++) {
-    for (int j = 0; j < i; j++) {
+  for (Index i = 0; i < seg.size(); i++) {
+    for (Index j = 0; j < i; j++) {
       e += seg[i].Induced_Dipole().transpose() *
-           VThole(seg[i], seg[j], seg[j].Induced_Dipole());
+           FillTholeInteraction(seg[i], seg[j]) * seg[j].Induced_Dipole();
     }
   }
   return e;
@@ -385,20 +358,20 @@ double eeInteractor::CalcPolarEnergy_IntraSegment(
 
 Eigen::VectorXd eeInteractor::Cholesky_IntraSegment(
     const PolarSegment& seg) const {
-  int size = 3 * seg.size();
+  Index size = 3 * seg.size();
 
   Eigen::MatrixXd A = Eigen::MatrixXd::Zero(size, size);
-  for (int i = 1; i < seg.size(); i++) {
-    for (int j = 0; j < i; j++) {
+  for (Index i = 1; i < seg.size(); i++) {
+    for (Index j = 0; j < i; j++) {
       A.block<3, 3>(3 * i, 3 * j) = FillTholeInteraction(seg[i], seg[j]);
     }
   }
 
-  for (int i = 0; i < seg.size(); i++) {
+  for (Index i = 0; i < seg.size(); i++) {
     A.block<3, 3>(3 * i, 3 * i) = seg[i].getPInv();
   }
   Eigen::VectorXd b = Eigen::VectorXd(size);
-  for (int i = 0; i < seg.size(); i++) {
+  for (Index i = 0; i < seg.size(); i++) {
     const Eigen::Vector3d V = seg[i].V() + seg[i].V_noE();
     b.segment<3>(3 * i) = -V;
   }

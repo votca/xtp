@@ -28,19 +28,16 @@
 namespace votca {
 namespace xtp {
 
-class TCMatrix_gwbse;
-class RPA;
-
 class GaussianQuadrature {
 
  public:
   struct options {
-    int order = 12;
-    int qptotal;
-    int qpmin;
-    int homo;
-    int rpamin;
-    int rpamax;
+    Index order = 12;
+    Index qptotal;
+    Index qpmin;
+    Index homo;
+    Index rpamin;
+    Index rpamax;
     double alpha = 0.1;
   };
 
@@ -49,20 +46,7 @@ class GaussianQuadrature {
 
   void configure(options opt, const RPA& rpa);
 
-  Eigen::MatrixXd SigmaGQ(const Eigen::VectorXd& frequencies,
-                          const RPA& rpa) const;
-
-  Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
-                              const RPA& rpa) const;
-
-  Eigen::VectorXd SigmaGQDiag_i(const Eigen::VectorXd& frequencies,
-                                const RPA& rpa) const;
-
-  Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,
-                                      const RPA& rpa) const;
-
-  Eigen::VectorXd ExactSigmaGQDiag(const Eigen::VectorXd& frequencies,
-                                   const RPA& rpa) const;
+  double SigmaGQDiag(double frequency, Index gw_level) const;
 
  private:
   options _opt;
@@ -70,11 +54,9 @@ class GaussianQuadrature {
   // This function calculates and stores inverses of the microscopic dielectric
   // matrix in a matrix vector
   void CalcDielInvVector(const RPA& rpa);
-  void CalcDielInvVector_i(const RPA& rpa);
   const Eigen::VectorXd& _energies;
 
   std::vector<Eigen::MatrixXd> _dielinv_matrices_r;
-  std::vector<Eigen::MatrixXd> _dielinv_matrices_i;
   const TCMatrix_gwbse& _Mmn;
   Eigen::VectorXd _quadpoints;
   Eigen::VectorXd _quadadaptedweights;

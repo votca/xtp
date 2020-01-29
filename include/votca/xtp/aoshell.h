@@ -50,9 +50,9 @@ class AOGaussianPrimitive {
   double _powfactor;  // used in evalspace to speed up DFT
   // private constructor, only a shell can create a primitive
   AOGaussianPrimitive(const GaussianPrimitive& gaussian, const AOShell& aoshell)
-      : _decay(gaussian._decay), _aoshell(aoshell) {
-    _contraction = Eigen::VectorXd::Map(gaussian._contraction.data(),
-                                        gaussian._contraction.size());
+      : _decay(gaussian.decay()), _aoshell(aoshell) {
+    _contraction = Eigen::VectorXd::Map(gaussian.Contractions().data(),
+                                        gaussian.Contractions().size());
     _powfactor =
         std::pow(2.0 * _decay / boost::math::constants::pi<double>(), 0.75);
   }
@@ -81,9 +81,11 @@ class AOShell {
     _Lmin = shell._Lmin;
     _scale = shell._scale;
     _numFunc = shell._numFunc;
+    _numcartFunc = shell._numcartFunc;
     _mindecay = shell._mindecay;
     _startIndex = shell._startIndex;
     _offset = shell._offset;
+    _cartOffset = shell._cartOffset;
     _pos = shell._pos;
     _atomindex = shell._atomindex;
     _gaussians.reserve(shell._gaussians.size());
@@ -93,20 +95,20 @@ class AOShell {
   }
 
   const std::string& getType() const { return _type; }
-  int getNumFunc() const { return _numFunc; }
-  int getStartIndex() const { return _startIndex; }
-  int getOffset() const { return _offset; }
-  int getAtomIndex() const { return _atomindex; }
+  Index getNumFunc() const { return _numFunc; }
+  Index getCartesianNumFunc() const { return _numcartFunc; }
+  Index getStartIndex() const { return _startIndex; }
+  Index getOffset() const { return _offset; }
+  Index getCartesianOffset() const { return _cartOffset; }
+  Index getAtomIndex() const { return _atomindex; }
 
-  int getLmax() const { return _Lmax; }
-  int getLmin() const { return _Lmin; }
+  Index getLmax() const { return _Lmax; }
+  Index getLmin() const { return _Lmin; }
 
-  bool isCombined() const { return _type.length() > 1; }
+  bool isCombined() const { return _Lmax != _Lmin; }
 
   const Eigen::Vector3d& getPos() const { return _pos; }
   double getScale() const { return _scale; }
-
-  int getSize() const { return _gaussians.size(); }
 
   void CalcMinDecay() {
     _mindecay = std::numeric_limits<double>::max();
@@ -127,7 +129,7 @@ class AOShell {
                    const Eigen::Vector3d& grid_pos) const;
 
   // iterator over pairs (decay constant; contraction coefficient)
-  typedef std::vector<AOGaussianPrimitive>::const_iterator GaussianIterator;
+  using GaussianIterator = std::vector<AOGaussianPrimitive>::const_iterator;
   GaussianIterator begin() const { return _gaussians.begin(); }
   GaussianIterator end() const { return _gaussians.end(); }
 
@@ -143,31 +145,35 @@ class AOShell {
 
  private:
   // only class aobasis can construct shells
-  AOShell(const Shell& shell, const QMAtom& atom, int startIndex)
+  AOShell(const Shell& shell, const QMAtom& atom, Index startIndex)
       : _type(shell.getType()),
         _Lmax(shell.getLmax()),
         _Lmin(shell.getLmin()),
         _scale(shell.getScale()),
         _numFunc(shell.getnumofFunc()),
+        _numcartFunc(xtp::NumFuncShell_cartesian(shell.getType())),
         _startIndex(startIndex),
         _offset(shell.getOffset()),
+        _cartOffset(xtp::OffsetFuncShell_cartesian(shell.getType())),
         _pos(atom.getPos()),
         _atomindex(atom.getId()) {
     ;
   }
 
   std::string _type;
-  int _Lmax;
-  int _Lmin;
+  Index _Lmax;
+  Index _Lmin;
   // scaling factor
   double _scale;
   // number of functions in shell
-  int _numFunc;
+  Index _numFunc;
+  Index _numcartFunc;
   double _mindecay;
-  int _startIndex;
-  int _offset;
+  Index _startIndex;
+  Index _offset;
+  Index _cartOffset;
   Eigen::Vector3d _pos;
-  int _atomindex;
+  Index _atomindex;
 
   // vector of pairs of decay constants and contraction coefficients
   std::vector<AOGaussianPrimitive> _gaussians;

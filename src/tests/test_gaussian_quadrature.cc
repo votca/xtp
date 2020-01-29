@@ -18,9 +18,9 @@
 #define BOOST_TEST_MODULE gaussian_quadrature_test
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include <votca/ctp/logger.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/aomatrix.h>
+#include <votca/xtp/aopotential.h>
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/rpa.h>
@@ -104,12 +104,12 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   basisfile.close();
 
   BasisSet basis;
-  basis.LoadBasisSet("3-21G.xml");
+  basis.Load("3-21G.xml");
   AOBasis aobasis;
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
 
-  aobasis.AOBasisFill(basis, orbitals.QMAtoms());
+  aobasis.Fill(basis, orbitals.QMAtoms());
 
   orbitals.setBasisSetSize(17);
   orbitals.setNumberOfOccupiedLevels(4);
@@ -117,16 +117,16 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   AOKinetic kinetic;
   kinetic.Fill(aobasis);
 
-  AOESP esp;
-  esp.Fillnucpotential(aobasis, orbitals.QMAtoms());
+  AOMultipole esp;
+  esp.FillPotential(aobasis, orbitals.QMAtoms());
 
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(kinetic.Matrix() +
                                                     esp.Matrix());
-
-  TCMatrix_gwbse Mmn;
+  Logger log;
+  TCMatrix_gwbse Mmn(log);
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, es.eigenvectors());
-  votca::ctp::Logger log;
+
   RPA rpa(log, Mmn);
   rpa.setRPAInputEnergies(es.eigenvalues());
   rpa.configure(4, 0, 17 - 1);
@@ -141,32 +141,6 @@ BOOST_AUTO_TEST_CASE(gaussian_quadrature_full) {
   opt.rpamin = 0;
 
   gq.configure(opt, rpa);
-  Eigen::MatrixXd result = gq.SigmaGQ(es.eigenvalues(), rpa);
-  Eigen::VectorXd result2 = gq.SigmaGQDiag(es.eigenvalues(), rpa);
-  result.diagonal() = result2;
-  Eigen::MatrixXd exactresultoffdiag =
-      gq.ExactSigmaGQOffDiag(es.eigenvalues(), rpa);
-  Eigen::VectorXd exactresultdiag = gq.ExactSigmaGQDiag(es.eigenvalues(), rpa);
-
-  bool check_c_diag = result2.isApprox(exactresultdiag);
-
-  if (!check_c_diag) {
-    std::cout << "GQ Diag" << std::endl;
-    std::cout << result2 << std::endl;
-    std::cout << "GQ Diag ref" << std::endl;
-    std::cout << exactresultdiag << std::endl;
-  }
-  BOOST_CHECK_EQUAL(check_c_diag, true);
-
-  bool check_c = exactresultoffdiag.isApprox(result);
-
-  if (!check_c) {
-    std::cout << "GQ OffDiag" << std::endl;
-    std::cout << result << std::endl;
-    std::cout << "GQ OffDiag ref" << std::endl;
-    std::cout << exactresultoffdiag << std::endl;
-  }
-  BOOST_CHECK_EQUAL(check_c, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

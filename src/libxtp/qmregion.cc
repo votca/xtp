@@ -17,8 +17,10 @@
  *
  */
 
+#include "votca/xtp/density_integration.h"
 #include "votca/xtp/eeinteractor.h"
-#include "votca/xtp/numerical_integrations.h"
+#include "votca/xtp/vxc_grid.h"
+#include <votca/xtp/aomatrix.h>
 #include <votca/xtp/classicalsegment.h>
 #include <votca/xtp/gwbse.h>
 #include <votca/xtp/polarregion.h>
@@ -56,7 +58,8 @@ void QMRegion::Initialize(const tools::Property& prop) {
       _statetracker.setInitialState(_initstate);
       _statetracker.PrintInfo();
     } else {
-      throw std::runtime_error("No filter for excited states specified");
+      throw std::runtime_error(
+          "No statetracker options for excited states found");
     }
   }
 
@@ -85,7 +88,7 @@ bool QMRegion::Converged() const {
     info = "converged";
     converged = true;
   }
-  XTP_LOG_SAVE(logINFO, _log)
+  XTP_LOG(Log::error, _log)
       << " Region:" << this->identify() << " " << this->getId() << " is "
       << info << " deltaE=" << Echange << " RMS Dmat=" << Dchange
       << " MaxDmat=" << Dmax << std::flush;
@@ -97,14 +100,14 @@ void QMRegion::Evaluate(std::vector<std::unique_ptr<Region> >& regions) {
   std::vector<double> interact_energies = ApplyInfluenceOfOtherRegions(regions);
   double e_ext =
       std::accumulate(interact_energies.begin(), interact_energies.end(), 0.0);
-  XTP_LOG_SAVE(logINFO, _log)
+  XTP_LOG(Log::info, _log)
       << TimeStamp()
       << " Calculated interaction potentials with other regions. E[hrt]= "
       << e_ext << std::flush;
-  XTP_LOG_SAVE(logINFO, _log) << "Writing inputs" << std::flush;
+  XTP_LOG(Log::info, _log) << "Writing inputs" << std::flush;
   _qmpackage->setRunDir(_workdir);
   _qmpackage->WriteInputFile(_orb);
-  XTP_LOG_SAVE(logINFO, _log) << "Running DFT calculation" << std::flush;
+  XTP_LOG(Log::error, _log) << "Running DFT calculation" << std::flush;
   bool run_success = _qmpackage->Run();
   if (!run_success) {
     _info = false;
@@ -155,19 +158,19 @@ void QMRegion::push_back(const QMMolecule& mol) {
 double QMRegion::charge() const {
   double charge = 0.0;
   if (!_do_gwbse) {
-    double nuccharge = 0.0;
+    Index nuccharge = 0;
     for (const QMAtom& a : _orb.QMAtoms()) {
       nuccharge += a.getNuccharge();
     }
 
-    double electrons = _orb.getNumberOfAlphaElectrons() * 2;
-    charge = nuccharge - electrons;
+    Index electrons = _orb.getNumberOfAlphaElectrons() * 2;
+    charge = double(nuccharge - electrons);
   } else {
     QMState state = _statetracker.InitialState();
     if (state.Type().isExciton()) {
       charge = 0.0;
     } else if (state.Type().isSingleParticleState()) {
-      if (state.Index() <= _orb.getHomo()) {
+      if (state.StateIdx() <= _orb.getHomo()) {
         charge = +1.0;
       } else {
         charge = -1.0;
@@ -193,7 +196,7 @@ void QMRegion::Reset() {
       std::unique_ptr<QMPackage>(QMPackages().Create(dft_package_name));
   _qmpackage->setLog(&_log);
   _qmpackage->Initialize(_dftoptions);
-  int charge = 0;
+  Index charge = 0;
   if (_initstate.Type() == QMStateType::Electron) {
     charge = -1;
   } else if (_initstate.Type() == QMStateType::Hole) {
@@ -202,7 +205,7 @@ void QMRegion::Reset() {
   _qmpackage->setCharge(charge);
   return;
 }
-double QMRegion::InteractwithQMRegion(const QMRegion& region) {
+double QMRegion::InteractwithQMRegion(const QMRegion&) {
   throw std::runtime_error(
       "QMRegion-QMRegion interaction is not implemented yet.");
   return 0.0;
@@ -224,7 +227,7 @@ void QMRegion::AddNucleiFields(std::vector<PolarSegment>& segments,
                                const StaticSegment& seg) const {
   eeInteractor e;
 #pragma omp parallel for
-  for (int i = 0; i < int(segments.size()); ++i) {
+  for (Index i = 0; i < Index(segments.size()); ++i) {
     e.ApplyStaticField<StaticSegment, Estatic::noE_V>(seg, segments[i]);
   }
 }
@@ -232,10 +235,11 @@ void QMRegion::AddNucleiFields(std::vector<PolarSegment>& segments,
 void QMRegion::ApplyQMFieldToPolarSegments(
     std::vector<PolarSegment>& segments) const {
 
-  NumericalIntegration numint;
+  Vxc_Grid grid;
   AOBasis basis =
       _orb.SetupDftBasis();  // grid needs a basis in scope all the time
-  numint.GridSetup(_grid_accuracy_for_ext_interaction, _orb.QMAtoms(), basis);
+  grid.GridSetup(_grid_accuracy_for_ext_interaction, _orb.QMAtoms(), basis);
+  DensityIntegration<Vxc_Grid> numint(grid);
 
   QMState state = QMState("groundstate");
   if (_do_gwbse) {
@@ -247,8 +251,8 @@ void QMRegion::ApplyQMFieldToPolarSegments(
   overlap.Fill(basis);
   double N_comp = dmat.cwiseProduct(overlap.Matrix()).sum();
   if (std::abs(Ngrid - N_comp) > 0.001) {
-    XTP_LOG_SAVE(logDEBUG, _log) << "=======================" << std::flush;
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log) << "=======================" << std::flush;
+    XTP_LOG(Log::error, _log)
         << "WARNING: Calculated Densities at Numerical Grid, Number of "
            "electrons "
         << Ngrid << " is far away from the the real value " << N_comp
@@ -256,7 +260,7 @@ void QMRegion::ApplyQMFieldToPolarSegments(
         << std::flush;
   }
 #pragma omp parallel for
-  for (int i = 0; i < int(segments.size()); ++i) {
+  for (Index i = 0; i < Index(segments.size()); ++i) {
     PolarSegment& seg = segments[i];
     for (PolarSite& site : seg) {
       site.V_noE() += numint.IntegrateField(site.getPos());
@@ -265,7 +269,7 @@ void QMRegion::ApplyQMFieldToPolarSegments(
 
   StaticSegment seg(_orb.QMAtoms().getType(), _orb.QMAtoms().getId());
   for (const QMAtom& atom : _orb.QMAtoms()) {
-    seg.push_back(StaticSite(atom, atom.getNuccharge()));
+    seg.push_back(StaticSite(atom, double(atom.getNuccharge())));
   }
   AddNucleiFields(segments, seg);
 }

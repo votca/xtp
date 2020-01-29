@@ -22,13 +22,13 @@
 namespace votca {
 namespace xtp {
 
-QMAtom::QMAtom(int index, std::string element, Eigen::Vector3d pos)
+QMAtom::QMAtom(Index index, std::string element, Eigen::Vector3d pos)
     : _index(index), _element(element), _pos(pos) {
   tools::Elements elements;
   _nuccharge = elements.getNucCrg(_element);
 }
 
-QMAtom::QMAtom(data& d) { ReadData(d); }
+QMAtom::QMAtom(const data& d) { ReadData(d); }
 
 void QMAtom::Rotate(const Eigen::Matrix3d& R, const Eigen::Vector3d& refPos) {
   Eigen::Vector3d dir = _pos - refPos;
@@ -56,7 +56,7 @@ void QMAtom::WriteData(data& d) const {
   d.ecpcharge = _ecpcharge;
 }
 
-void QMAtom::ReadData(data& d) {
+void QMAtom::ReadData(const data& d) {
   _element = std::string(d.element);
   free(d.element);
   _index = d.index;

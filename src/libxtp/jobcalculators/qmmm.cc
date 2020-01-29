@@ -59,7 +59,9 @@ void QMMM::Initialize(tools::Property& options) {
     }
     bool groundstate_found = false;
     for (const QMState& state : _states) {
-      if (state.Type() == QMStateType::Gstate) groundstate_found = true;
+      if (state.Type() == QMStateType::Gstate) {
+        groundstate_found = true;
+      }
     }
     if (!groundstate_found) {
       _states.push_back(QMState("n"));
@@ -85,23 +87,24 @@ Job::JobResult QMMM::EvalJob(const Topology& top, Job& job, QMThread& Thread) {
   boost::filesystem::create_directories(workdir);
   Job::JobResult jres = Job::JobResult();
   Logger& pLog = Thread.getLogger();
+
   JobTopology jobtop = JobTopology(job, pLog, workdir);
   jobtop.BuildRegions(top, _regions_def);
 
   if (_print_regions_pdb) {
     std::string pdb_filename = "regions.pdb";
-    XTP_LOG_SAVE(logINFO, pLog) << TimeStamp() << " Writing jobtopology to "
-                                << (workdir + "/" + pdb_filename) << std::flush;
+    XTP_LOG(Log::error, pLog) << TimeStamp() << " Writing jobtopology to "
+                              << (workdir + "/" + pdb_filename) << std::flush;
     jobtop.WriteToPdb(workdir + "/" + pdb_filename);
   }
 
-  int no_static_regions = 0;
+  Index no_static_regions = 0;
   for (std::unique_ptr<Region>& region : jobtop) {
     no_static_regions += region->Converged();
   }
   bool no_top_scf = false;
   if (jobtop.size() - no_static_regions < 2) {
-    XTP_LOG_SAVE(logINFO, pLog)
+    XTP_LOG(Log::error, pLog)
         << TimeStamp() << " Only " << jobtop.size() - no_static_regions
         << " scf region is used. The remaining regions are static. So no "
            "inter regions scf is required. "
@@ -109,15 +112,15 @@ Job::JobResult QMMM::EvalJob(const Topology& top, Job& job, QMThread& Thread) {
     no_top_scf = true;
     _max_iterations = 1;
   }
-  int iteration = 0;
+  Index iteration = 0;
   for (; iteration < _max_iterations; iteration++) {
 
-    XTP_LOG_SAVE(logINFO, pLog)
+    XTP_LOG(Log::error, pLog)
         << TimeStamp() << " --Inter Region SCF Iteration " << iteration + 1
         << " of " << _max_iterations << std::flush;
 
     for (std::unique_ptr<Region>& region : jobtop) {
-      XTP_LOG_SAVE(logINFO, pLog)
+      XTP_LOG(Log::error, pLog)
           << TimeStamp() << " Evaluating " << region->identify() << " "
           << region->getId() << std::flush;
       region->Reset();
@@ -131,8 +134,8 @@ Job::JobResult QMMM::EvalJob(const Topology& top, Job& job, QMThread& Thread) {
 
     std::string checkpointfilename =
         "checkpoint_iter_" + std::to_string(iteration + 1) + ".hdf5";
-    XTP_LOG_SAVE(logINFO, pLog) << TimeStamp() << " Writing checkpoint to "
-                                << checkpointfilename << std::flush;
+    XTP_LOG(Log::error, pLog) << TimeStamp() << " Writing checkpoint to "
+                              << checkpointfilename << std::flush;
     jobtop.WriteToHdf5(workdir + "/" + checkpointfilename);
 
     if (!no_top_scf) {
@@ -145,23 +148,22 @@ Job::JobResult QMMM::EvalJob(const Topology& top, Job& job, QMThread& Thread) {
       for (const std::unique_ptr<Region>& reg : jobtop) {
         etot += reg->Etotal();
       }
-      XTP_LOG_SAVE(logINFO, pLog)
-          << TimeStamp() << " --Total Energy all regions " << etot
-          << std::flush;
+      XTP_LOG(Log::error, pLog) << TimeStamp() << " --Total Energy all regions "
+                                << etot << std::flush;
 
       bool all_regions_converged =
           std::all_of(converged_regions.begin(), converged_regions.end(),
                       [](bool i) { return i; });
 
       if (all_regions_converged) {
-        XTP_LOG_SAVE(logINFO, pLog)
+        XTP_LOG(Log::error, pLog)
             << TimeStamp() << " Job converged after " << iteration + 1
             << " iterations." << std::flush;
         jres.setStatus(Job::JobStatus::COMPLETE);
         break;
       }
       if (iteration == _max_iterations - 1) {
-        XTP_LOG_SAVE(logINFO, pLog)
+        XTP_LOG(Log::error, pLog)
             << TimeStamp() << " Job did not converge after " << iteration + 1
             << " iterations.\n Writing results to jobfile." << std::flush;
         jres.setStatus(Job::JobStatus::FAILED);
@@ -228,11 +230,12 @@ void QMMM::WriteJobFile(const Topology& top) {
 
   std::ofstream ofs;
   ofs.open(_jobfile, std::ofstream::out);
-  if (!ofs.is_open())
+  if (!ofs.is_open()) {
     throw std::runtime_error("\nERROR: bad file handle: " + _jobfile);
+  }
 
   ofs << "<jobs>" << std::endl;
-  int jobid = 0;
+  Index jobid = 0;
   for (const Segment& seg : top.Segments()) {
     for (const QMState& state : _states) {
 
@@ -269,7 +272,7 @@ void QMMM::ReadJobFile(Topology& top) {
         "h</states></write_parse> to your options.");
   }
 
-  int incomplete_jobs = 0;
+  Index incomplete_jobs = 0;
 
   Eigen::Matrix<double, Eigen::Dynamic, 5> energies =
       Eigen::Matrix<double, Eigen::Dynamic, 5>::Zero(top.Segments().size(), 5);
@@ -281,7 +284,7 @@ void QMMM::ReadJobFile(Topology& top) {
   std::vector<tools::Property*> jobProps = xml.Select("jobs.job");
   for (tools::Property* job : jobProps) {
 
-    int jobid = job->get("id").as<int>();
+    Index jobid = job->get("id").as<Index>();
     if (!job->exists("status")) {
       throw std::runtime_error(
           "Jobfile is malformed. <status> tag missing for job " +
@@ -296,8 +299,8 @@ void QMMM::ReadJobFile(Topology& top) {
     std::string marker = job->get("input.site_energies").as<std::string>();
     tools::Tokenizer tok(marker, ":");
     std::vector<std::string> split = tok.ToVector();
-    int segid = std::stoi(split[0]);
-    if (segid < 0 || segid >= int(top.Segments().size())) {
+    Index segid = std::stoi(split[0]);
+    if (segid < 0 || segid >= Index(top.Segments().size())) {
       throw std::runtime_error("JobSegment id" + std::to_string(segid) +
                                " is not in topology for job " +
                                std::to_string(jobid));
@@ -323,7 +326,7 @@ void QMMM::ReadJobFile(Topology& top) {
 
   Eigen::Matrix<int, 1, 5> found_states = found.colwise().sum();
   std::cout << std::endl;
-  for (int i = 0; i < 5; i++) {
+  for (Index i = 0; i < 5; i++) {
     if (found_states(i) > 0) {
       QMStateType type(static_cast<QMStateType::statetype>(i));
       std::cout << "Found " << found_states(i) << " states of type "
@@ -335,8 +338,8 @@ void QMMM::ReadJobFile(Topology& top) {
   }
 
   for (Segment& seg : top.Segments()) {
-    int segid = seg.getId();
-    for (int i = 0; i < 4; i++) {
+    Index segid = seg.getId();
+    for (Index i = 0; i < 4; i++) {
       QMStateType type(static_cast<QMStateType::statetype>(i));
       if (found(segid, i) && found(segid, 4)) {
         double energy = energies(segid, i) - energies(segid, 4);
@@ -347,4 +350,4 @@ void QMMM::ReadJobFile(Topology& top) {
 }
 
 }  // namespace xtp
-};  // namespace votca
+}  // namespace votca

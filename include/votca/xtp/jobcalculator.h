@@ -35,19 +35,21 @@ class Topology;
 
 class JobCalculator : public tools::Calculator {
  public:
-  JobCalculator() {}
-  virtual ~JobCalculator() {}
+  JobCalculator() = default;
+  ~JobCalculator() override = default;
 
-  virtual std::string Identify() = 0;
+  std::string Identify() override = 0;
 
   virtual bool EvaluateFrame(const Topology &top) = 0;
 
   virtual void WriteJobFile(const Topology &top) = 0;
   virtual void ReadJobFile(Topology &top) = 0;
 
+  void setOpenMPThreads(Index ompthreads) { _openmp_threads = ompthreads; }
   void setProgObserver(ProgObserver<std::vector<Job> > *obs) { _progObs = obs; }
 
  protected:
+  Index _openmp_threads;
   ProgObserver<std::vector<Job> > *_progObs;
 };
 

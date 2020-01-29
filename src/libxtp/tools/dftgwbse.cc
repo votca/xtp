@@ -17,7 +17,6 @@
 
 #include "dftgwbse.h"
 #include <votca/tools/constants.h>
-#include <votca/xtp/customtools.h>
 #include <votca/xtp/geometry_optimization.h>
 #include <votca/xtp/gwbseengine.h>
 #include <votca/xtp/qmpackagefactory.h>
@@ -58,7 +57,9 @@ void DftGwBse::Initialize(tools::Property& options) {
   std::vector<string> choices = {"optimize", "energy"};
   string mode = options.ifExistsAndinListReturnElseThrowRuntimeError<string>(
       key + ".mode", choices);
-  if (mode == "optimize") _do_optimize = true;
+  if (mode == "optimize") {
+    _do_optimize = true;
+  }
 
   // GWBSEENGINE options
   _gwbseengine_options = options.get(key + ".gwbse_engine");
@@ -77,8 +78,9 @@ void DftGwBse::Initialize(tools::Property& options) {
       key + ".output", "dftgwbse.out.xml");
 
   // if optimization is chosen, get options for geometry_optimizer
-  if (_do_optimize)
+  if (_do_optimize) {
     _geoopt_options = options.get(key + ".geometry_optimization");
+  }
 
   // register all QM packages (Gaussian, NWCHEM, etc)
   QMPackageFactory::RegisterAll();
@@ -86,30 +88,20 @@ void DftGwBse::Initialize(tools::Property& options) {
 
 bool DftGwBse::Evaluate() {
   OPENMP::setMaxThreads(_nThreads);
-  CustomOpts::Load();
-  if (_reporting == "silent")
-    _log.setReportLevel(logERROR);  // only output ERRORS, GEOOPT info, and
-                                    // excited state info for trial geometry
-  if (_reporting == "noisy")
-    _log.setReportLevel(logDEBUG);  // OUTPUT ALL THE THINGS
-  if (_reporting == "default") _log.setReportLevel(logINFO);  //
+
+  _log.setReportLevel(Log::current_level);
 
   _log.setMultithreading(true);
-  _log.setPreface(logINFO, "\n... ...");
-  _log.setPreface(logERROR, "\n... ...");
-  _log.setPreface(logWARNING, "\n... ...");
-  _log.setPreface(logDEBUG, "\n... ...");
+  _log.setCommonPreface("\n... ...");
 
   // Get orbitals object
   Orbitals orbitals;
 
   if (_do_guess) {
-    XTP_LOG_SAVE(logDEBUG, _log)
-        << "Reading guess from " << _guess_file << flush;
+    XTP_LOG(Log::error, _log) << "Reading guess from " << _guess_file << flush;
     orbitals.ReadFromCpt(_guess_file);
   } else {
-    XTP_LOG_SAVE(logDEBUG, _log)
-        << "Reading structure from " << _xyzfile << flush;
+    XTP_LOG(Log::error, _log) << "Reading structure from " << _xyzfile << flush;
     orbitals.QMAtoms().LoadFromFile(_xyzfile);
   }
 
@@ -141,7 +133,7 @@ bool DftGwBse::Evaluate() {
     gwbse_engine.ExcitationEnergies(orbitals);
   }
 
-  XTP_LOG_SAVE(logDEBUG, _log) << "Saving data to " << _archive_file << flush;
+  XTP_LOG(Log::error, _log) << "Saving data to " << _archive_file << flush;
   orbitals.WriteToCpt(_archive_file);
 
   tools::Property summary = gwbse_engine.ReportSummary();
@@ -149,8 +141,7 @@ bool DftGwBse::Evaluate() {
                                    // actually did gwbse
     tools::PropertyIOManipulator iomXML(tools::PropertyIOManipulator::XML, 1,
                                         "");
-    XTP_LOG_SAVE(logDEBUG, _log)
-        << "Writing output to " << _xml_output << flush;
+    XTP_LOG(Log::error, _log) << "Writing output to " << _xml_output << flush;
     std::ofstream ofout(_xml_output, std::ofstream::out);
     ofout << (summary.get("output"));
     ofout.close();

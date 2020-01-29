@@ -18,7 +18,6 @@
 #define BOOST_TEST_MODULE sigma_ci_test
 #include <boost/test/unit_test.hpp>
 #include <fstream>
-#include <votca/ctp/logger.h>
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/orbitals.h>
 #include <votca/xtp/rpa.h>
@@ -104,12 +103,12 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   basisfile.close();
 
   Orbitals orbitals;
-  orbitals.LoadFromXYZ("molecule.xyz");
+  orbitals.QMAtoms().LoadFromFile("molecule.xyz");
   BasisSet basis;
-  basis.LoadBasisSet("3-21G.xml");
+  basis.Load("3-21G.xml");
 
   AOBasis aobasis;
-  aobasis.AOBasisFill(basis, orbitals.QMAtoms());
+  aobasis.Fill(basis, orbitals.QMAtoms());
 
   Eigen::MatrixXd MOs = Eigen::MatrixXd::Zero(17, 17);
   MOs << -0.00761992, -4.69664e-13, 8.35009e-15, -1.15214e-14, -0.0156169,
@@ -165,10 +164,11 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   mo_energy << -0.612601, -0.341755, -0.341755, -0.341755, 0.137304, 0.16678,
       0.16678, 0.16678, 0.671592, 0.671592, 0.671592, 0.974255, 1.01205,
       1.01205, 1.01205, 1.64823, 19.4429;
-  TCMatrix_gwbse Mmn;
+  Logger log;
+  TCMatrix_gwbse Mmn(log);
   Mmn.Initialize(aobasis.AOBasisSize(), 0, 16, 0, 16);
   Mmn.Fill(aobasis, aobasis, MOs);
-  votca::ctp::Logger log;
+
   RPA rpa(log, Mmn);
   rpa.configure(4, 0, 16);
   rpa.setRPAInputEnergies(mo_energy);
@@ -182,98 +182,31 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   opt.order = 12;
   opt.rpamin = 0;
   sigma.configure(opt);
-  // sigma.configure(4,0,16);
 
   sigma.PrepareScreening();
 
   Eigen::MatrixXd c_off = sigma.CalcCorrelationOffDiag(mo_energy);
-  Eigen::MatrixXd c_offexact = Eigen::MatrixXd::Zero(17, 17);
-  c_offexact = sigma.ExactCorrelationOffDiag(mo_energy);
-  Eigen::VectorXd c_diagexact = sigma.ExactCorrelationDiag(mo_energy);
-  std::cout << "exact" << std::endl;
-  std::cout << " " << std::endl;
-  std::cout << c_diagexact << std::endl;
-  std::cout << " " << std::endl;
+
   Eigen::VectorXd c_diag = sigma.CalcCorrelationDiag(mo_energy);
   c_off.diagonal() = c_diag;
-  std::cout << "diag" << std::endl;
-  std::cout << " " << std::endl;
-  std::cout << c_diag << std::endl;
 
-  /*Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
-  c_ref << 0.120676, 2.58689e-07, -2.52037e-07, 3.99968e-08, 0.0405292,
-      -1.25428e-07, 5.37756e-08, 2.99233e-08, -8.10766e-08, -5.95507e-08,
-      -1.4014e-07, -0.0233041, -3.41069e-07, -2.17655e-07, -2.87835e-08,
-      -0.0147014, -0.00144565, 2.58689e-07, 0.0628008, -1.2626e-07, 3.62623e-08,
-      -2.5785e-08, -7.87579e-05, -1.00701e-06, -7.48821e-07, -6.18615e-05,
-      -0.000213051, 0.00750794, -1.27887e-07, 0.0193896, -0.000201918,
-      -0.000330184, 3.4198e-07, -1.1817e-09, -2.52037e-07, -1.2626e-07,
-      0.0628013, 9.54326e-08, -7.24038e-09, 5.49519e-07, -7.20056e-05,
-      3.15477e-05, -0.00746948, -0.000785852, -8.38336e-05, 1.39395e-07,
-      -0.000175035, -0.0193322, 0.00152515, -2.68216e-07, 2.67092e-09,
-      3.99968e-08, 3.62623e-08, 9.54326e-08, 0.0628013, -5.97396e-09,
-      -1.06723e-06, 3.1592e-05, 7.19606e-05, -0.000787889, 0.00746695,
-      0.000205411, 1.02681e-08, 0.000345011, 0.00152207, 0.01933, 7.70523e-08,
-      3.24027e-10, 0.0405292, -2.5785e-08, -7.24038e-09, -5.97396e-09,
-      -0.0451823, -2.18631e-07, 1.28638e-07, 2.19836e-08, -5.17734e-08,
-      -2.52021e-09, -4.23752e-08, 0.00254096, 7.35127e-08, 6.70113e-08,
-      -2.26926e-09, 0.00843914, -0.00771886, -1.25428e-07, -7.87579e-05,
-      5.49519e-07, -1.06723e-06, -2.18631e-07, -0.010061, 9.8763e-08,
-      1.40982e-08, -1.52749e-05, -9.76693e-05, 0.0070754, 2.23156e-07,
-      0.0520061, -9.16759e-05, -0.000198702, -7.91971e-08, 3.73239e-08,
-      5.37756e-08, -1.00701e-06, -7.20056e-05, 3.1592e-05, 1.28638e-07,
-      9.8763e-08, -0.0100613, -6.99128e-08, -0.00614656, -0.00350514,
-      -6.16153e-05, -1.81029e-07, -0.000152159, -0.0491215, -0.017081,
-      8.98441e-08, -2.4424e-08, 2.99233e-08, -7.48821e-07, 3.15477e-05,
-      7.19606e-05, 2.19836e-08, 1.40982e-08, -6.99128e-08, -0.0100616,
-      0.00350559, -0.00614613, -7.73261e-05, 5.52026e-08, -0.000157503,
-      0.0170815, -0.049122, -4.06344e-08, 2.22078e-09, -8.10766e-08,
-      -6.18615e-05, -0.00746948, -0.000787889, -5.17734e-08, -1.52749e-05,
-      -0.00614656, 0.00350559, -0.0453151, 3.12997e-08, -3.5253e-09,
-      2.21917e-07, 2.0425e-05, -0.0179271, 0.00332992, -1.20113e-07,
-      -1.13638e-08, -5.95507e-08, -0.000213051, -0.000785852, 0.00746695,
-      -2.52021e-09, -9.76693e-05, -0.00350514, -0.00614613, 3.12997e-08,
-      -0.0453153, -4.16704e-08, 8.99497e-08, 0.000177348, -0.00332983,
-      -0.0179262, -5.24173e-08, -4.27551e-09, -1.4014e-07, 0.00750794,
-      -8.38336e-05, 0.000205411, -4.23752e-08, 0.0070754, -6.16153e-05,
-      -7.73261e-05, -3.5253e-09, -4.16704e-08, -0.0453152, 3.19659e-07,
-      -0.0182333, -5.22712e-05, -0.000170735, -2.15984e-07, -1.51435e-08,
-      -0.0233041, -1.27887e-07, 1.39395e-07, 1.02681e-08, 0.00254096,
-      2.23156e-07, -1.81029e-07, 5.52026e-08, 2.21917e-07, 8.99497e-08,
-      3.19659e-07, -0.0937988, -5.91266e-07, -3.95018e-07, -4.00936e-09,
-      -0.0251495, 0.0103057, -3.41069e-07, 0.0193896, -0.000175035, 0.000345011,
-      7.35127e-08, 0.0520061, -0.000152159, -0.000157503, 2.0425e-05,
-      0.000177348, -0.0182333, -5.91266e-07, -0.159212, -3.1902e-07,
-      2.58648e-10, 2.82618e-07, -8.13748e-08, -2.17655e-07, -0.000201918,
-      -0.0193322, 0.00152207, 6.70113e-08, -9.16759e-05, -0.0491215, 0.0170815,
-      -0.0179271, -0.00332983, -5.22712e-05, -3.95018e-07, -3.1902e-07,
-      -0.159212, 2.89916e-07, 3.1149e-07, -8.13703e-08, -2.87835e-08,
-      -0.000330184, 0.00152515, 0.01933, -2.26926e-09, -0.000198702, -0.017081,
-      -0.049122, 0.00332992, -0.0179262, -0.000170735, -4.00936e-09,
-      2.58648e-10, 2.89916e-07, -0.159213, 1.48831e-08, -3.54064e-09,
-      -0.0147014, 3.4198e-07, -2.68216e-07, 7.70523e-08, 0.00843914,
-      -7.91971e-08, 8.98441e-08, -4.06344e-08, -1.20113e-07, -5.24173e-08,
-      -2.15984e-07, -0.0251495, 2.82618e-07, 3.1149e-07, 1.48831e-08,
-      -0.0229993, 0.012047, -0.00144565, -1.1817e-09, 2.67092e-09, 3.24027e-10,
-      -0.00771886, 3.73239e-08, -2.4424e-08, 2.22078e-09, -1.13638e-08,
-      -4.27551e-09, -1.51435e-08, 0.0103057, -8.13748e-08, -8.13703e-08,
-      -3.54064e-09, 0.012047, -0.40848;*/
+  Eigen::MatrixXd c_ref = Eigen::MatrixXd::Zero(17, 17);
 
-  bool check_c_diag = c_diag.isApprox(c_diagexact.diagonal(), 1e-5);
+  bool check_c_diag = c_diag.isApprox(c_ref.diagonal(), 1e-5);
 
   if (!check_c_diag) {
     std::cout << "Sigma C Diag" << std::endl;
     std::cout << c_diag << std::endl;
-    std::cout << "Sigma C Diag Exact" << std::endl;
-    std::cout << c_diagexact << std::endl;
+    std::cout << "Sigma C Diag ref" << std::endl;
+    std::cout << c_ref.diagonal() << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c_diag, true);
-  bool check_c = c_off.isApprox(c_offexact, 1e-4);
+  bool check_c = c_off.isApprox(c_ref, 1e-4);
   if (!check_c) {
     std::cout << "Sigma C OffDiag" << std::endl;
     std::cout << c_off << std::endl;
-    std::cout << "Sigma C OffDiag Exact" << std::endl;
-    std::cout << c_offexact << std::endl;
+    std::cout << "Sigma C OffDiag Ref" << std::endl;
+    std::cout << c_ref << std::endl;
   }
   BOOST_CHECK_EQUAL(check_c, true);
 }

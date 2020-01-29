@@ -1,5 +1,5 @@
 /*
- *            Copyright 2009-2018 The VOTCA Development Team
+ *            Copyright 2009-2019 The VOTCA Development Team
  *                       (http://www.votca.org)
  *
  *      Licensed under the Apache License, Version 2.0 (the "License")
@@ -30,16 +30,16 @@ namespace xtp {
 
 class Gauss_Hermite_Quadrature_Constants {
  public:
-  const Eigen::VectorXd &getPoints(int order);
+  const Eigen::VectorXd &getPoints(Index order);
 
-  const Eigen::VectorXd &getAdaptedWeights(int order);
+  const Eigen::VectorXd &getAdaptedWeights(Index order);
 
  private:
   bool _filled_Points = false;
   bool _filled_AdaptedWeights = false;
 
-  std::map<int, Eigen::VectorXd> _map_points;
-  std::map<int, Eigen::VectorXd> _map_AdaptedWeights;
+  std::map<Index, Eigen::VectorXd> _map_points;
+  std::map<Index, Eigen::VectorXd> _map_AdaptedWeights;
 
   void FillPoints();
   void FillAdaptedWeights();

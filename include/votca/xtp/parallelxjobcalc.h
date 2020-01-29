@@ -48,17 +48,16 @@ class ParallelXJobCalc : public JobCalculator {
 
  public:
   class JobOperator;
-  typedef
-      typename std::iterator_traits<typename JobContainer::iterator>::value_type
-          Job;
-  typedef typename Job::JobResult Result;
+  using Job = typename std::iterator_traits<
+      typename JobContainer::iterator>::value_type;
+  using Result = typename Job::JobResult;
 
-  ParallelXJobCalc(){};
-  virtual ~ParallelXJobCalc() { ; };
+  ParallelXJobCalc() = default;
+  ~ParallelXJobCalc() override { ; };
 
-  std::string Identify() = 0;
+  std::string Identify() override = 0;
 
-  bool EvaluateFrame(const Topology &top);
+  bool EvaluateFrame(const Topology &top) override;
   virtual void CustomizeLogger(QMThread &thread);
   virtual Result EvalJob(const Topology &top, Job &job, QMThread &thread) = 0;
 
@@ -73,19 +72,19 @@ class ParallelXJobCalc : public JobCalculator {
 
   class JobOperator : public QMThread {
    public:
-    JobOperator(int id, const Topology &top,
-                ParallelXJobCalc<JobContainer> &master, int openmp_threads)
+    JobOperator(Index id, const Topology &top,
+                ParallelXJobCalc<JobContainer> &master, Index openmp_threads)
         : _top(top), _master(master), _openmp_threads(openmp_threads) {
       setId(id);
     }  // comes from baseclass so Id cannot be in initializer list
-    ~JobOperator(){};
+    ~JobOperator() override = default;
 
-    void Run();
+    void Run() override;
 
    private:
     const Topology &_top;
     ParallelXJobCalc<JobContainer> &_master;
-    int _openmp_threads = 1;
+    Index _openmp_threads = 1;
   };
 
  protected:
@@ -96,7 +95,6 @@ class ParallelXJobCalc : public JobCalculator {
   tools::Mutex _logMutex;
   std::string _mapfile = "";
   std::string _jobfile = "";
-  int _openmp_threads = 1;
 };
 
 }  // namespace xtp

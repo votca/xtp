@@ -35,12 +35,13 @@ namespace xtp {
 class JobApplication : public XtpApplication {
  public:
   JobApplication();
-  virtual ~JobApplication(){};
-  void Initialize();
-  bool EvaluateOptions();
-  void Run();
+  ~JobApplication() override = default;
+  void Initialize() override;
+  bool EvaluateOptions() override;
+  void Run() override;
 
-  void BeginEvaluate(int nThreads, ProgObserver<std::vector<Job> > &obs);
+  void BeginEvaluate(Index nThreads, Index ompthread,
+                     ProgObserver<std::vector<Job> > &jobs);
   bool EvaluateFrame(Topology &top);
   void SetCalculator(JobCalculator *calculator);
 

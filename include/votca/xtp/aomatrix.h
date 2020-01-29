@@ -28,7 +28,7 @@ namespace xtp {
 
 class AOMatrix {
  public:
-  int Dimension() { return _aomatrix.rows(); }
+  Index Dimension() { return _aomatrix.rows(); }
   const Eigen::MatrixXd& Matrix() const { return _aomatrix; }
   void Fill(const AOBasis& aobasis);
 
@@ -43,25 +43,31 @@ class AOMatrix {
 class AOKinetic : public AOMatrix {
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 };
 
 // derived class for atomic orbital overlap
 class AOOverlap : public AOMatrix {
  public:
   Eigen::MatrixXd FillShell(const AOShell& shell) const;
-  int Removedfunctions() const { return removedfunctions; }
+  Index Removedfunctions() const { return removedfunctions; }
   double SmallestEigenValue() const { return smallestEigenvalue; }
 
   Eigen::MatrixXd Pseudo_InvSqrt(double etol);
   Eigen::MatrixXd Sqrt();
 
+  Eigen::MatrixXd Primitive_Overlap(const AOGaussianPrimitive& g_row,
+                                    const AOGaussianPrimitive& g_col,
+                                    Index l_offset = 0) const;
+
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
-  int removedfunctions;
+  Index removedfunctions;
   double smallestEigenvalue;
 };
 
@@ -71,14 +77,15 @@ class AOCoulomb : public AOMatrix {
   Eigen::MatrixXd Pseudo_InvSqrt_GWBSE(const AOOverlap& auxoverlap,
                                        double etol);
   Eigen::MatrixXd Pseudo_InvSqrt(double etol);
-  int Removedfunctions() const { return removedfunctions; }
+  Index Removedfunctions() const { return removedfunctions; }
 
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
-  int removedfunctions;
+  Index removedfunctions;
 };
 
 }  // namespace xtp

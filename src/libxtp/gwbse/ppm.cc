@@ -28,33 +28,6 @@ void PPM::PPM_construct_parameters(const RPA& rpa) {
   // Solve Eigensystem
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(
       rpa.calculate_epsilon_r(screening_r));
-  std::complex<double> frequency2(screening_r, 0);
-  // Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(
-  //    (rpa.calculate_epsilon((screening_r, 0)).real()));
-  Eigen::MatrixXd epsr = rpa.calculate_epsilon_r(screening_r);
-  Eigen::MatrixXd eps = (rpa.calculate_epsilon(frequency2)).real();
-  std::cout << " zelfde real eps?" << std::endl;
-  std::cout << " epsr(0,0) " << std::endl;
-  std::cout << epsr(0, 0) << std::endl;
-  std::cout << " eps(0,0)" << std::endl;
-  std::cout << eps(0, 0) << std::endl;
-  // std::cout << epsr-eps << std::endl;
-  std::cout << epsr.isApprox(eps, 1e-5) << std::endl;
-  std::cout << " " << std::endl;
-
-  Eigen::MatrixXd epsi = rpa.calculate_epsilon_i(screening_i);
-  std::complex<double> frequency(0, screening_i);
-  std::cout << frequency << std::endl;
-  Eigen::MatrixXd epsi2 =
-      (rpa.calculate_epsilon(frequency)).real();  // screening_i))).real();
-  std::cout << " zelfde imag eps?" << std::endl;
-  std::cout << epsi.isApprox(epsi2, 1e-5) << std::endl;
-  std::cout << epsi.isApprox(epsi2, 1e-4) << std::endl;
-  std::cout << epsi.isApprox(epsi2, 1e-3) << std::endl;
-  std::cout << "epsi" << std::endl;
-  std::cout << epsi << std::endl;
-  std::cout << "epsi2" << std::endl;
-  std::cout << epsi2 << std::endl;
   _ppm_phi = es.eigenvectors();
 
   // store PPM weights from eigenvalues
@@ -64,20 +37,11 @@ void PPM::PPM_construct_parameters(const RPA& rpa) {
   // epsilon(0)
   Eigen::MatrixXd ortho =
       _ppm_phi.transpose() * rpa.calculate_epsilon_i(screening_i) * _ppm_phi;
-  // Eigen::MatrixXd ortho = _ppm_phi.transpose() *
-  //                       (rpa.calculate_epsilon((0, screening_i))).real() *
-  //                       _ppm_phi;
-
-  /*std::cout << " zelfde imag eps" << std::endl;
-  std::cout <<
-  (rpa.calculate_epsilon_i(screening_i)-(rpa.calculate_epsilon((0,screening_i))).real()).isMuchSmallerThan(10)
-  << std::endl; std::cout << " " << std::endl;*/
-
   Eigen::MatrixXd epsilon_1_inv = ortho.inverse();
   // determine PPM frequencies
   _ppm_freq.resize(es.eigenvalues().size());
 #pragma omp parallel for
-  for (int i = 0; i < es.eigenvalues().size(); i++) {
+  for (Index i = 0; i < es.eigenvalues().size(); i++) {
     if (_ppm_weight(i) < 1.e-5) {
       _ppm_weight(i) = 0.0;
       _ppm_freq(i) = 0.5;  // Hartree
@@ -93,4 +57,4 @@ void PPM::PPM_construct_parameters(const RPA& rpa) {
 }
 
 }  // namespace xtp
-};  // namespace votca
+}  // namespace votca

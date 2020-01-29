@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(votca-xtp)
 
 
-set(PROJECT_VERSION "1.6-dev")
+set(PROJECT_VERSION "1.7-dev")
 set(PROJECT_CONTACT "bugs@votca.org")
 string(REGEX REPLACE "^[1-9]+\\.([1-9]+).*$" "\\1" SOVERSION "${PROJECT_VERSION}")
 if (NOT ${SOVERSION} MATCHES "[1-9]+")
@@ -40,15 +40,11 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-
-
-
 ########################################################################
 # User input options                                                   #
 ########################################################################
 
 find_package(LIBXC REQUIRED)
-
 find_package(HDF5 1.8 REQUIRED COMPONENTS CXX)
 
 if (${HDF5_VERSION} GREATER 1.8)
@@ -59,6 +55,7 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
 include(GNUInstallDirs)
 
+option(USE_CUDA "Use a Nvidia GPU to speed up computations" OFF)
 
 option(ENABLE_TESTING "Build and enable testing stuff" OFF)
 if(ENABLE_TESTING)
@@ -72,7 +69,7 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   find_package(Git)
 endif(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
-find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options serialization filesystem system timer)
+find_package(Boost 1.57.0 REQUIRED COMPONENTS program_options filesystem system timer)
 find_package(Eigen3 3.3.0 REQUIRED NO_MODULE)
 message(STATUS "Found Eigen3: ${Eigen3_DIR}")
 
@@ -83,9 +80,20 @@ if(NOT TARGET manpages)
 endif()
 
 find_package(VOTCA_TOOLS REQUIRED NO_MODULE)
+if(DEFINED VOTCA_TOOLS_VERSION AND NOT VOTCA_TOOLS_VERSION STREQUAL PROJECT_VERSION)
+  message(FATAL_ERROR "Incompatible VOTCA Tools version found (needed ${PROJECT_VERSION}, found ${VOTCA_TOOLS_VERSION})")
+endif()
 message(STATUS "Found VOTCA_TOOLS: ${VOTCA_TOOLS_DIR}")
 find_package(VOTCA_CSG REQUIRED NO_MODULE)
+if(DEFINED VOTCA_CSG_VERSION AND NOT VOTCA_CSG_VERSION STREQUAL PROJECT_VERSION)
+  message(FATAL_ERROR "Incompatible VOTCA CSG version found (needed ${PROJECT_VERSION}, found ${VOTCA_CSG_VERSION})")
+endif()
 message(STATUS "Found VOTCA_CSG: ${VOTCA_CSG_DIR}")
+
+if(USE_CUDA)
+  find_package(CUDA REQUIRED)
+endif(USE_CUDA)
+
 ########################################################################
 # Checks what linear algebra packages are installed                    #
 ########################################################################

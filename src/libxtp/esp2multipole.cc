@@ -43,26 +43,27 @@ void Esp2multipole::Initialize(tools::Property& options) {
   _method = options.ifExistsAndinListReturnElseThrowRuntimeError(
       key + ".method", choices);
 
-  if (_method == "mulliken")
+  if (_method == "mulliken") {
     _use_mulliken = true;
-  else if (_method == "loewdin")
+  } else if (_method == "loewdin") {
     _use_lowdin = true;
-  else if (_method == "CHELPG")
+  } else if (_method == "CHELPG") {
     _use_CHELPG = true;
+  }
 
   if (options.exists(key + ".constraints")) {
     if (options.exists(key + ".constraints.regions")) {
       std::vector<tools::Property*> prop_region =
           options.Select(key + ".constraints.regions.region");
-      int index = 0;
+      Index index = 0;
       for (tools::Property* prop : prop_region) {
         std::string indices = prop->get("indices").as<std::string>();
         QMFragment<double> reg = QMFragment<double>(index, indices);
         index++;
         reg.value() = prop->get("charge").as<double>();
         _regionconstraint.push_back(reg);
-        XTP_LOG_SAVE(logDEBUG, _log) << "Fit constrained by Region" << flush;
-        XTP_LOG_SAVE(logDEBUG, _log) << reg;
+        XTP_LOG(Log::error, _log) << "Fit constrained by Region" << flush;
+        XTP_LOG(Log::error, _log) << reg;
       }
     }
     if (options.exists(key + ".constraints.pairs")) {
@@ -71,13 +72,13 @@ void Esp2multipole::Initialize(tools::Property& options) {
       for (tools::Property* prop : prop_pair) {
         std::string pairstring = prop->as<std::string>();
         tools::Tokenizer tok(pairstring, "\n\t ,");
-        std::vector<int> pairvec;
-        tok.ConvertToVector<int>(pairvec);
-        std::pair<int, int> pair;
+        std::vector<Index> pairvec;
+        tok.ConvertToVector<Index>(pairvec);
+        std::pair<Index, Index> pair;
         pair.first = pairvec[0];
         pair.second = pairvec[1];
         _pairconstraint.push_back(pair);
-        XTP_LOG_SAVE(logDEBUG, _log)
+        XTP_LOG(Log::error, _log)
             << "Charges " << pair.first << " " << pair.second
             << " constrained to be equal." << flush;
       }
@@ -99,7 +100,7 @@ void Esp2multipole::PrintDipoles(const Orbitals& orbitals,
                                  const StaticSegment& seg) const {
   Eigen::Vector3d classical_dip = seg.CalcDipole();
 
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << "El Dipole from fitted charges [e*bohr]:\n\t\t"
       << boost::format(
              " dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f") %
@@ -107,7 +108,7 @@ void Esp2multipole::PrintDipoles(const Orbitals& orbitals,
              classical_dip.squaredNorm()
       << flush;
   Eigen::Vector3d qm_dip = orbitals.CalcElDipole(_state);
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << "El Dipole from exact qm density [e*bohr]:\n\t\t"
       << boost::format(
              " dx = %1$+1.4f dy = %2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f") %
@@ -116,8 +117,8 @@ void Esp2multipole::PrintDipoles(const Orbitals& orbitals,
 }
 
 StaticSegment Esp2multipole::Extractingcharges(const Orbitals& orbitals) const {
-  XTP_LOG_SAVE(logDEBUG, _log) << "===== Running on " << OPENMP::getMaxThreads()
-                               << " threads ===== " << flush;
+  XTP_LOG(Log::error, _log) << "===== Running on " << OPENMP::getMaxThreads()
+                            << " threads ===== " << flush;
   StaticSegment result("result", 0);
   if (_use_mulliken) {
     Mulliken mulliken;

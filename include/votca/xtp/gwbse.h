@@ -64,7 +64,7 @@ class GWBSE {
 
  private:
   Eigen::MatrixXd CalculateVXC(const AOBasis& dftbasis);
-  int CountCoreLevels();
+  Index CountCoreLevels();
   Logger* _pLog;
   Orbitals& _orbitals;
 
@@ -80,6 +80,11 @@ class GWBSE {
 
   GW::options _gwopt;
   BSE::options _bseopt;
+
+  std::string _sigma_plot_states = "";
+  Index _sigma_plot_steps = 201;
+  double _sigma_plot_spacing = 1e-2;
+  std::string _sigma_plot_filename = "QPenergies_sigma.dat";
 
   // basis sets
   std::string _auxbasis_name;

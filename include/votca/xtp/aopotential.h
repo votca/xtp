@@ -23,7 +23,6 @@
 
 #include <votca/xtp/aobasis.h>
 #include <votca/xtp/ecpaobasis.h>
-#include <votca/xtp/multiarray.h>
 #include <votca/xtp/staticsite.h>
 
 namespace votca {
@@ -35,7 +34,7 @@ class QMMolecule;
 template <class T>
 class AOPotential {
  public:
-  int Dimension() { return _aopotential.rows(); }
+  Index Dimension() { return _aopotential.rows(); }
   const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& Matrix() const {
     return _aopotential;
   }
@@ -56,7 +55,8 @@ class AOECP : public AOPotential<double> {
 
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
   Eigen::VectorXd ExpandContractions(const AOGaussianPrimitive& gaussian,
@@ -64,16 +64,17 @@ class AOECP : public AOPotential<double> {
   void setECP(const ECPAOBasis* ecp) { _ecp = ecp; }
   const ECPAOBasis* _ecp;
   Eigen::MatrixXd calcVNLmatrix(
-      int lmax_ecp, const Eigen::Vector3d& posC,
+      Index lmax_ecp, const Eigen::Vector3d& posC,
       const AOGaussianPrimitive& g_row, const AOGaussianPrimitive& g_col,
       const Eigen::Matrix<int, 4, 5>& power_ecp,
       const Eigen::Matrix<double, 4, 5>& gamma_ecp,
       const Eigen::Matrix<double, 4, 5>& pref_ecp) const;
 
-  void getBLMCOF(int lmax_ecp, int lmax_dft, const Eigen::Vector3d& pos,
-                 tensor3d& BLC, tensor3d& C) const;
-  Eigen::VectorXd CalcNorms(double decay, int size) const;
-  Eigen::VectorXd CalcInt_r_exp(int nmax, double decay) const;
+  void getBLMCOF(Index lmax_ecp, Index lmax_dft, const Eigen::Vector3d& pos,
+                 Eigen::Tensor<double, 3>& BLC,
+                 Eigen::Tensor<double, 3>& C) const;
+  Eigen::VectorXd CalcNorms(double decay, Index size) const;
+  Eigen::VectorXd CalcInt_r_exp(Index nmax, double decay) const;
 };
 
 class AOMultipole : public AOPotential<double> {
@@ -86,7 +87,8 @@ class AOMultipole : public AOPotential<double> {
 
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
   void setSite(const StaticSite* site) { _site = site; };
@@ -101,7 +103,8 @@ class AOPlanewave : public AOPotential<std::complex<double>> {
 
  protected:
   void FillBlock(Eigen::Block<Eigen::MatrixXcd>& matrix,
-                 const AOShell& shell_row, const AOShell& shell_col) const;
+                 const AOShell& shell_row,
+                 const AOShell& shell_col) const override;
 
  private:
   void setkVector(const Eigen::Vector3d& k) { _k = k; };

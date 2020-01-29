@@ -27,7 +27,7 @@
 namespace votca {
 namespace xtp {
 
-QMPair::QMPair(int id, const Segment* seg1, const Segment* seg2,
+QMPair::QMPair(Index id, const Segment* seg1, const Segment* seg2,
                const Eigen::Vector3d& delta_R)
     : _id(id), _R(delta_R) {
   _segments.first = seg1;
@@ -98,7 +98,7 @@ void QMPair::WriteData(data& d) const {
   d.jeff2t = _Jeff2.getValue(QMStateType::Triplet);
 }
 
-void QMPair::ReadData(data& d, const std::vector<Segment>& segments) {
+void QMPair::ReadData(const data& d, const std::vector<Segment>& segments) {
   _id = d.id;
   _R[0] = d.RX;
   _R[1] = d.RY;

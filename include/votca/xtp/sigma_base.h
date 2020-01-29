@@ -32,16 +32,17 @@ class Sigma_base {
  public:
   Sigma_base(TCMatrix_gwbse& Mmn, const RPA& rpa) : _Mmn(Mmn), _rpa(rpa){};
 
-  virtual ~Sigma_base(){};
+  virtual ~Sigma_base() = default;
 
   struct options {
-    int homo;
-    int qpmin;
-    int qpmax;
-    int rpamin;
-    int order;
-    int rpamax;
-    double alphaa;
+    Index homo = 0;
+    Index qpmin = 0;
+    Index qpmax = 0;
+    Index rpamin = 0;
+    Index rpamax = 0;
+    double eta = 1e-3;
+    Index order = 12;
+    double alpha = 0.1;
   };
 
   void configure(options opt) {
@@ -50,30 +51,33 @@ class Sigma_base {
     _rpatotal = opt.rpamax - opt.rpamin + 1;
   }
 
-  // Calculates Full exchange matrix
-  Eigen::MatrixXd CalcExchange() const;
+  // Calculates full exchange matrix
+  Eigen::MatrixXd CalcExchangeMatrix() const;
+  // Calculates correlation diagonal
+  Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
+  // Calculates correlation off-diagonal
+  Eigen::MatrixXd CalcCorrelationOffDiag(
+      const Eigen::VectorXd& frequencies) const;
 
   // Sets up the screening parametrisation
   virtual void PrepareScreening() = 0;
-  // Calculates Sigma_c diag elements
-  virtual Eigen::VectorXd CalcCorrelationDiag(
-      const Eigen::VectorXd& frequencies) const = 0;
-
-  virtual Eigen::VectorXd CalcCorrelationDiag_imag(
-      const Eigen::VectorXd& frequencies) const {
-    return Eigen::VectorXd::Zero(_qptotal);
-  }
-  // Calculates Sigma_c offdiag elements
-  virtual Eigen::MatrixXd CalcCorrelationOffDiag(
-      const Eigen::VectorXd& frequencies) const = 0;
+  // Calculates Sigma_c diagonal elements
+  virtual double CalcCorrelationDiagElementDerivative(
+      Index gw_level, double frequency) const = 0;
+  virtual double CalcCorrelationDiagElement(Index gw_level,
+                                            double frequency) const = 0;
+  // Calculates Sigma_c off-diagonal elements
+  virtual double CalcCorrelationOffDiagElement(Index gw_level1, Index gw_level2,
+                                               double frequency1,
+                                               double frequency2) const = 0;
 
  protected:
   options _opt;
   TCMatrix_gwbse& _Mmn;
   const RPA& _rpa;
 
-  int _qptotal;
-  int _rpatotal;
+  Index _qptotal = 0;
+  Index _rpatotal = 0;
 };
 }  // namespace xtp
 }  // namespace votca

@@ -30,17 +30,17 @@ namespace xtp {
 
 class MapChecker : public QMCalculator {
  public:
-  MapChecker(){};
+  MapChecker() = default;
 
-  ~MapChecker(){};
+  ~MapChecker() override = default;
 
-  std::string Identify() { return "mapchecker"; }
-  bool WriteToStateFile() const { return false; }
-  void Initialize(tools::Property& opt);
-  bool EvaluateFrame(Topology& top);
+  std::string Identify() override { return "mapchecker"; }
+  bool WriteToStateFile() const override { return false; }
+  void Initialize(tools::Property& opt) override;
+  bool EvaluateFrame(Topology& top) override;
 
  private:
-  std::string AddSteptoFilename(const std::string& filename, int step) const;
+  std::string AddSteptoFilename(const std::string& filename, Index step) const;
   std::string AddStatetoFilename(const std::string& filename,
                                  QMState state) const;
 
@@ -105,11 +105,8 @@ bool MapChecker::EvaluateFrame(Topology& top) {
   top.WriteToPdb(filename);
 
   Logger log;
-  log.setReportLevel(TLogLevel::logDEBUG);
-  log.setPreface(logINFO, "\n... ...");
-  log.setPreface(logERROR, "\n... ...");
-  log.setPreface(logWARNING, "\n... ...");
-  log.setPreface(logDEBUG, "\n... ...");
+  log.setReportLevel(Log::current_level);
+  log.setCommonPreface("\n... ...");
 
   QMMapper map(log);
 
@@ -154,7 +151,7 @@ bool MapChecker::EvaluateFrame(Topology& top) {
 }
 
 std::string MapChecker::AddSteptoFilename(const std::string& filename,
-                                          int step) const {
+                                          Index step) const {
   std::string base = tools::filesystem::GetFileBase(filename);
   std::string fileending = tools::filesystem::GetFileExtension(filename);
   std::string filename_comp =

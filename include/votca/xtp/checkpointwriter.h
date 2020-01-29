@@ -58,7 +58,7 @@ class CheckpointWriter {
   }
 
   // Use this overload if T is a fundamental type
-  // int, double, unsigned int, etc, but not bool
+  // int, double, unsigned, etc, but not bool
   template <typename T>
   typename std::enable_if<std::is_fundamental<T>::value &&
                           !std::is_same<T, bool>::value>::type
@@ -75,7 +75,7 @@ class CheckpointWriter {
   }
 
   void operator()(const bool& v, const std::string& name) const {
-    int temp = static_cast<int>(v);
+    Index temp = static_cast<Index>(v);
     try {
       WriteScalar(_loc, temp, name);
     } catch (H5::Exception&) {
@@ -185,7 +185,9 @@ class CheckpointWriter {
 
     hsize_t dims[2] = {matRows, matCols};  // eigen vectors are n,1 matrices
 
-    if (dims[1] == 0) dims[1] = 1;
+    if (dims[1] == 0) {
+      dims[1] = 1;
+    }
 
     H5::DataSpace dp(2, dims);
     const H5::DataType* dataType = InferDataType<typename T::Scalar>::get();
@@ -244,8 +246,8 @@ class CheckpointWriter {
 
     std::vector<const char*> c_str_copy;
     c_str_copy.reserve(v.size());
-    for (unsigned i = 0; i < v.size(); i++) {
-      c_str_copy.push_back(v[i].c_str());
+    for (const std::string& s : v) {
+      c_str_copy.push_back(s.c_str());
     }
     const H5::DataType* dataType = InferDataType<std::string>::get();
     H5::DataSet dataset;
@@ -289,7 +291,7 @@ class CheckpointWriter {
     WriteData(parent, sys.eigenvalues(), "eigenvalues");
     WriteData(parent, sys.eigenvectors(), "eigenvectors");
     WriteData(parent, sys.eigenvectors2(), "eigenvectors2");
-    WriteScalar(parent, int(sys.info()), "info");
+    WriteScalar(parent, Index(sys.info()), "info");
   }
 
   template <typename T1, typename T2>

@@ -31,7 +31,7 @@ namespace xtp {
 class Calculatorfactory
     : public tools::ObjectFactory<std::string, QMCalculator> {
  private:
-  Calculatorfactory() {}
+  Calculatorfactory() = default;
 
  public:
   static void RegisterAll(void);
@@ -54,10 +54,10 @@ inline QMCalculator *Calculatorfactory::Create(const std::string &key) {
   assoc_map::const_iterator it(getObjects().find(key));
   if (it != getObjects().end()) {
     QMCalculator *calc = (it->second)();
-    calc->LoadDefaults();
     return calc;
-  } else
+  } else {
     throw std::runtime_error("factory key " + key + " not found.");
+  }
 }
 
 }  // namespace xtp

@@ -21,7 +21,6 @@
 #include <votca/xtp/dftcoupling.h>
 
 #include <boost/format.hpp>
-#include <boost/progress.hpp>
 #include <votca/tools/constants.h>
 
 namespace votca {
@@ -33,19 +32,19 @@ using std::flush;
 void DFTcoupling::Initialize(tools::Property& options) {
 
   std::string key = "";
-  _degeneracy = options.ifExistsReturnElseReturnDefault<bool>(
+  _degeneracy = options.ifExistsReturnElseReturnDefault<double>(
       key + "degeneracy", _degeneracy);
   _degeneracy *= tools::conv::ev2hrt;
-  _numberofstatesA = options.ifExistsReturnElseReturnDefault<int>(
+  _numberofstatesA = options.ifExistsReturnElseReturnDefault<Index>(
       key + "levA", _numberofstatesA);
-  _numberofstatesB = options.ifExistsReturnElseReturnDefault<int>(
+  _numberofstatesB = options.ifExistsReturnElseReturnDefault<Index>(
       key + "levB", _numberofstatesB);
 }
 
 void DFTcoupling::WriteToProperty(tools::Property& type_summary,
                                   const Orbitals& orbitalsA,
-                                  const Orbitals& orbitalsB, int a,
-                                  int b) const {
+                                  const Orbitals& orbitalsB, Index a,
+                                  Index b) const {
   double J = getCouplingElement(a, b, orbitalsA, orbitalsB);
   tools::Property& coupling = type_summary.add("coupling", "");
   coupling.setAttribute("levelA", a);
@@ -61,16 +60,16 @@ void DFTcoupling::Addoutput(tools::Property& type_summary,
   dftcoupling.setAttribute("homoB", orbitalsB.getHomo());
   tools::Property& hole_summary = dftcoupling.add("hole", "");
   // hole hole
-  for (int a = Range_orbA.first; a <= orbitalsA.getHomo(); ++a) {
-    for (int b = Range_orbB.first; b <= orbitalsB.getHomo(); ++b) {
+  for (Index a = Range_orbA.first; a <= orbitalsA.getHomo(); ++a) {
+    for (Index b = Range_orbB.first; b <= orbitalsB.getHomo(); ++b) {
       WriteToProperty(hole_summary, orbitalsA, orbitalsB, a, b);
     }
   }
   tools::Property& electron_summary = dftcoupling.add("electron", "");
   // electron-electron
-  for (int a = orbitalsA.getLumo();
+  for (Index a = orbitalsA.getLumo();
        a <= Range_orbA.first + Range_orbA.second - 1; ++a) {
-    for (int b = orbitalsB.getLumo();
+    for (Index b = orbitalsB.getLumo();
          b <= Range_orbB.first + Range_orbB.second - 1; ++b) {
       WriteToProperty(electron_summary, orbitalsA, orbitalsB, a, b);
     }
@@ -78,8 +77,8 @@ void DFTcoupling::Addoutput(tools::Property& type_summary,
   return;
 }
 
-std::pair<int, int> DFTcoupling::DetermineRangeOfStates(
-    const Orbitals& orbital, int numberofstates) const {
+std::pair<int, Index> DFTcoupling::DetermineRangeOfStates(
+    const Orbitals& orbital, Index numberofstates) const {
   const Eigen::VectorXd& MOEnergies = orbital.MOs().eigenvalues();
   if (std::abs(MOEnergies(orbital.getHomo()) - MOEnergies(orbital.getLumo())) <
       _degeneracy) {
@@ -89,48 +88,49 @@ std::pair<int, int> DFTcoupling::DetermineRangeOfStates(
         "degenerate");
   }
 
-  int minimal = orbital.getHomo() - numberofstates + 1;
-  int maximal = orbital.getLumo() + numberofstates - 1;
+  Index minimal = orbital.getHomo() - numberofstates + 1;
+  Index maximal = orbital.getLumo() + numberofstates - 1;
 
-  std::vector<int> deg_min = orbital.CheckDegeneracy(minimal, _degeneracy);
+  std::vector<Index> deg_min = orbital.CheckDegeneracy(minimal, _degeneracy);
   minimal = *std::min_element(deg_min.begin(), deg_min.end());
 
-  std::vector<int> deg_max = orbital.CheckDegeneracy(maximal, _degeneracy);
+  std::vector<Index> deg_max = orbital.CheckDegeneracy(maximal, _degeneracy);
   maximal = *std::max_element(deg_max.begin(), deg_max.end());
 
-  std::pair<int, int> result;
+  std::pair<Index, Index> result;
   result.first = minimal;                 // start
   result.second = maximal - minimal + 1;  // size
 
   return result;
 }
 
-double DFTcoupling::getCouplingElement(int levelA, int levelB,
+double DFTcoupling::getCouplingElement(Index levelA, Index levelB,
                                        const Orbitals& orbitalsA,
                                        const Orbitals& orbitalsB) const {
 
-  int levelsA = Range_orbA.second;
+  Index levelsA = Range_orbA.second;
   if (_degeneracy != 0) {
-    std::vector<int> list_levelsA =
+    std::vector<Index> list_levelsA =
         orbitalsA.CheckDegeneracy(levelA, _degeneracy);
-    std::vector<int> list_levelsB =
-        orbitalsA.CheckDegeneracy(levelB, _degeneracy);
+    std::vector<Index> list_levelsB =
+        orbitalsB.CheckDegeneracy(levelB, _degeneracy);
 
     double JAB_sq = 0;
 
-    for (int iA : list_levelsA) {
-      int indexA = iA - Range_orbA.first;
-      for (int iB : list_levelsB) {
-        int indexB = iB - Range_orbB.first + levelsA;
+    for (Index iA : list_levelsA) {
+      Index indexA = iA - Range_orbA.first;
+      for (Index iB : list_levelsB) {
+        Index indexB = iB - Range_orbB.first + levelsA;
         double JAB_one_level = JAB(indexA, indexB);
         JAB_sq += JAB_one_level * JAB_one_level;
       }
     }
-    return std::sqrt(JAB_sq / (list_levelsA.size() * list_levelsB.size())) *
+    return std::sqrt(JAB_sq /
+                     double(list_levelsA.size() * list_levelsB.size())) *
            tools::conv::hrt2ev;
   } else {
-    int indexA = levelA - Range_orbA.first;
-    int indexB = levelB - Range_orbB.first + levelsA;
+    Index indexA = levelA - Range_orbA.first;
+    Index indexB = levelB - Range_orbB.first + levelsA;
     return JAB(indexA, indexB) * tools::conv::hrt2ev;
   }
 }
@@ -145,13 +145,13 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
                                      const Orbitals& orbitalsB,
                                      const Orbitals& orbitalsAB) {
 
-  XTP_LOG(logDEBUG, *_pLog) << "Calculating electronic couplings" << flush;
+  XTP_LOG(Log::error, *_pLog) << "Calculating electronic couplings" << flush;
 
   CheckAtomCoordinates(orbitalsA, orbitalsB, orbitalsAB);
 
   // constructing the direct product orbA x orbB
-  int basisA = orbitalsA.getBasisSetSize();
-  int basisB = orbitalsB.getBasisSetSize();
+  Index basisA = orbitalsA.getBasisSetSize();
+  Index basisB = orbitalsB.getBasisSetSize();
 
   if ((basisA == 0) || (basisB == 0)) {
     throw std::runtime_error("Basis set size is not stored in monomers");
@@ -160,10 +160,10 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
   Range_orbA = DetermineRangeOfStates(orbitalsA, _numberofstatesA);
   Range_orbB = DetermineRangeOfStates(orbitalsB, _numberofstatesB);
 
-  int levelsA = Range_orbA.second;
-  int levelsB = Range_orbB.second;
+  Index levelsA = Range_orbA.second;
+  Index levelsB = Range_orbB.second;
 
-  XTP_LOG(logDEBUG, *_pLog)
+  XTP_LOG(Log::error, *_pLog)
       << "Levels:Basis A[" << levelsA << ":" << basisA << "]"
       << " B[" << levelsB << ":" << basisB << "]" << flush;
 
@@ -178,25 +178,26 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
   auto MOsB = orbitalsB.MOs().eigenvectors().block(0, Range_orbB.first, basisB,
                                                    Range_orbB.second);
 
-  XTP_LOG(logDEBUG, *_pLog) << "Calculating overlap matrix for basisset: "
-                            << orbitalsAB.getDFTbasisName() << flush;
+  XTP_LOG(Log::info, *_pLog) << "Calculating overlap matrix for basisset: "
+                             << orbitalsAB.getDFTbasisName() << flush;
+
   Eigen::MatrixXd overlap =
       CalculateOverlapMatrix(orbitalsAB) * orbitalsAB.MOs().eigenvectors();
 
-  XTP_LOG(logDEBUG, *_pLog)
+  XTP_LOG(Log::info, *_pLog)
       << "Projecting monomers onto dimer orbitals" << flush;
   Eigen::MatrixXd A_AB = MOsA.transpose() * overlap.topRows(basisA);
   Eigen::MatrixXd B_AB = MOsB.transpose() * overlap.bottomRows(basisB);
   Eigen::VectorXd mag_A = A_AB.rowwise().squaredNorm();
   if (mag_A.any() < 0.95) {
-    XTP_LOG(logERROR, *_pLog)
+    XTP_LOG(Log::error, *_pLog)
         << "\nWarning: "
         << "Projection of orbitals of monomer A on dimer is insufficient,mag="
         << mag_A.minCoeff() << flush;
   }
   Eigen::VectorXd mag_B = B_AB.rowwise().squaredNorm();
   if (mag_B.any() < 0.95) {
-    XTP_LOG(logERROR, *_pLog)
+    XTP_LOG(Log::error, *_pLog)
         << "\nWarning: "
         << "Projection of orbitals of monomer B on dimer is insufficient,mag="
         << mag_B.minCoeff() << flush;
@@ -206,19 +207,19 @@ void DFTcoupling::CalculateCouplings(const Orbitals& orbitalsA,
   psi_AxB_dimer_basis.topRows(A_AB.rows()) = A_AB;
   psi_AxB_dimer_basis.bottomRows(B_AB.rows()) = B_AB;
 
-  XTP_LOG(logDEBUG, *_pLog)
+  XTP_LOG(Log::info, *_pLog)
       << "Projecting the Fock matrix onto the dimer basis" << flush;
   Eigen::MatrixXd JAB_dimer = psi_AxB_dimer_basis *
                               orbitalsAB.MOs().eigenvalues().asDiagonal() *
                               psi_AxB_dimer_basis.transpose();
-  XTP_LOG(logDEBUG, *_pLog) << "Constructing Overlap matrix" << flush;
+  XTP_LOG(Log::info, *_pLog) << "Constructing Overlap matrix" << flush;
   Eigen::MatrixXd S_AxB = psi_AxB_dimer_basis * psi_AxB_dimer_basis.transpose();
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(S_AxB);
   Eigen::MatrixXd Sm1 = es.operatorInverseSqrt();
-  XTP_LOG(logDEBUG, *_pLog) << "Smallest eigenvalue of overlap matrix is "
-                            << es.eigenvalues()(0) << flush;
+  XTP_LOG(Log::info, *_pLog) << "Smallest eigenvalue of overlap matrix is "
+                             << es.eigenvalues()(0) << flush;
   JAB = Sm1 * JAB_dimer * Sm1;
-  XTP_LOG(logDEBUG, *_pLog) << "Done with electronic couplings" << flush;
+  XTP_LOG(Log::error, *_pLog) << "Done with electronic couplings" << flush;
 }
 
 }  // namespace xtp

@@ -22,14 +22,11 @@
 
 using namespace std;
 
-/*******************
- * Public Methods *
- *******************/
 namespace votca {
 namespace xtp {
 
 const Eigen::VectorXd& Gauss_Hermite_Quadrature_Constants::getPoints(
-    int order) {
+    Index order) {
   if (!this->_filled_Points) {
     this->FillPoints();
     _filled_Points = true;
@@ -41,7 +38,7 @@ const Eigen::VectorXd& Gauss_Hermite_Quadrature_Constants::getPoints(
 }
 
 const Eigen::VectorXd& Gauss_Hermite_Quadrature_Constants::getAdaptedWeights(
-    int order) {
+    Index order) {
   if (!this->_filled_AdaptedWeights) {
     this->FillAdaptedWeights();
     _filled_AdaptedWeights = true;
@@ -51,10 +48,6 @@ const Eigen::VectorXd& Gauss_Hermite_Quadrature_Constants::getAdaptedWeights(
                            " not in range {8,10,12,...,20}.");
   return _map_AdaptedWeights.at(order);
 }
-
-/*******************
- * Private Methods *
- *******************/
 
 void Gauss_Hermite_Quadrature_Constants::FillPoints() {
   Eigen::VectorXd points_8(8);
@@ -169,7 +162,7 @@ void Gauss_Hermite_Quadrature_Constants::FillPoints() {
       4.603682449550744273077675248978347585113398487762,
       5.3874808900112328620169004106811207539962864490659;
   _map_points[20] = points_20;
-};
+}
 
 void Gauss_Hermite_Quadrature_Constants::FillAdaptedWeights() {
   Eigen::VectorXd AdaptedWeights_8(8);
@@ -284,6 +277,6 @@ void Gauss_Hermite_Quadrature_Constants::FillAdaptedWeights() {
       0.70433296117694240871382040028335195838920171116,
       0.898591961453191416420545454828522781943430553196;
   _map_AdaptedWeights[20] = AdaptedWeights_20;
-};
+}
 }  // namespace xtp
 }  // namespace votca

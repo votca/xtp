@@ -16,7 +16,8 @@
  */
 
 #include "neighborlist.h"
-
+#include <boost/format.hpp>
+#include <boost/progress.hpp>
 using namespace std;
 
 namespace votca {
@@ -71,10 +72,10 @@ void Neighborlist::Initialize(tools::Property& options) {
   }
 }
 
-int Neighborlist::DetClassicalPairs(Topology& top) {
-  int classical_pairs = 0;
+Index Neighborlist::DetClassicalPairs(Topology& top) {
+  Index classical_pairs = 0;
 #pragma omp parallel for
-  for (int i = 0; i < top.NBList().size(); i++) {
+  for (Index i = 0; i < top.NBList().size(); i++) {
     const Segment* seg1 = top.NBList()[i]->Seg1();
     const Segment* seg2 = top.NBList()[i]->Seg2();
     if (top.GetShortestDist(*seg1, *seg2) > _excitonqmCutoff) {
@@ -91,10 +92,6 @@ int Neighborlist::DetClassicalPairs(Topology& top) {
 bool Neighborlist::EvaluateFrame(Topology& top) {
   OPENMP::setMaxThreads(_nThreads);
   std::cout << " Using " << OPENMP::getMaxThreads() << " threads" << std::flush;
-
-  if (tools::globals::verbose) {
-    std::cout << std::endl << "... ..." << std::flush;
-  }
 
   double min = top.getBox().diagonal().minCoeff();
 
@@ -135,14 +132,14 @@ bool Neighborlist::EvaluateFrame(Topology& top) {
   // cache approx sizes
   std::vector<double> approxsize = std::vector<double>(segs.size(), 0.0);
 #pragma omp parallel for
-  for (unsigned i = 0; i < segs.size(); i++) {
+  for (Index i = 0; i < Index(segs.size()); i++) {
     approxsize[i] = segs[i]->getApproxSize();
   }
 #pragma omp parallel for schedule(guided)
-  for (unsigned i = 0; i < segs.size(); i++) {
+  for (Index i = 0; i < Index(segs.size()); i++) {
     Segment* seg1 = segs[i];
     double cutoff = _constantCutoff;
-    for (unsigned j = i + 1; j < segs.size(); j++) {
+    for (Index j = i + 1; j < Index(segs.size()); j++) {
       Segment* seg2 = segs[j];
       if (!_useConstantCutoff) {
         try {
@@ -203,7 +200,7 @@ bool Neighborlist::EvaluateFrame(Topology& top) {
   if (_useExcitonCutoff) {
     std::cout << std::endl
               << " ... ... Determining classical pairs " << std::endl;
-    int classical_pairs = DetClassicalPairs(top);
+    Index classical_pairs = DetClassicalPairs(top);
     std::cout << " ... ... Found " << classical_pairs << " classical pairs "
               << std::endl;
   }
@@ -211,8 +208,9 @@ bool Neighborlist::EvaluateFrame(Topology& top) {
   // sort qmpairs by seg1id and then by seg2id then reindex the pair id
   // according to that.
   top.NBList().sortAndReindex([](QMPair* a, QMPair* b) {
-    if (a->Seg1()->getId() != b->Seg1()->getId())
+    if (a->Seg1()->getId() != b->Seg1()->getId()) {
       return a->Seg1()->getId() < b->Seg1()->getId();
+    }
     return a->Seg2()->getId() < b->Seg2()->getId();
   });
 

@@ -69,7 +69,7 @@ class CheckpointReader {
   }
 
   void operator()(bool& v, const std::string& name) const {
-    int temp = int(v);
+    Index temp = Index(v);
     try {
       ReadScalar(_loc, temp, name);
     } catch (H5::Exception&) {
@@ -107,7 +107,7 @@ class CheckpointReader {
     }
   }
 
-  int getNumDataSets() const { return _loc.getNumObjs(); }
+  Index getNumDataSets() const { return _loc.getNumObjs(); }
 
   CptLoc getLoc() { return _loc; }
 
@@ -161,12 +161,15 @@ class CheckpointReader {
     H5::DataSpace dp = dataset.getSpace();
 
     hsize_t dims[2];
-    dp.getSimpleExtentDims(dims, NULL);  // ndims is always 2 for us
+    dp.getSimpleExtentDims(dims, nullptr);  // ndims is always 2 for us
 
     hsize_t matRows = dims[0];
     hsize_t matCols = dims[1];
 
     matrix.derived().resize(matRows, matCols);
+    if (matrix.size() == 0) {
+      return;
+    }
 
     hsize_t matColSize = matrix.derived().outerStride();
 
@@ -202,9 +205,12 @@ class CheckpointReader {
     const H5::DataType* dataType = InferDataType<T>::get();
 
     hsize_t dims[2];
-    dp.getSimpleExtentDims(dims, NULL);
+    dp.getSimpleExtentDims(dims, nullptr);
 
     v.resize(dims[0]);
+    if (v.empty()) {
+      return;
+    }
     try {
       dataset.read(&(v[0]), *dataType);
     } catch (H5::Exception&) {
@@ -224,9 +230,12 @@ class CheckpointReader {
     const H5::DataType* dataType = InferDataType<std::string>::get();
 
     hsize_t dims[2];
-    dp.getSimpleExtentDims(dims, NULL);
+    dp.getSimpleExtentDims(dims, nullptr);
 
     std::vector<char*> temp(dims[0]);
+    if (temp.empty()) {
+      return;
+    }
     try {
       dataset.read(temp.data(), *dataType);
     } catch (H5::Exception&) {
@@ -249,7 +258,7 @@ class CheckpointReader {
     ReadData(parent, sys.eigenvalues(), "eigenvalues");
     ReadData(parent, sys.eigenvectors(), "eigenvectors");
     ReadData(parent, sys.eigenvectors2(), "eigenvectors2");
-    int info;
+    Index info;
     ReadScalar(parent, info, "info");
     sys.info() = static_cast<Eigen::ComputationInfo>(info);
   }

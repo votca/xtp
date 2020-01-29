@@ -34,7 +34,8 @@ void Spectrum::Initialize(tools::Property& options) {
       key + ".orbitals");
   _output_file = options.ifExistsReturnElseReturnDefault<std::string>(
       key + ".output", _output_file);
-  _n_pt = options.ifExistsReturnElseReturnDefault<int>(key + ".points", _n_pt);
+  _n_pt =
+      options.ifExistsReturnElseReturnDefault<Index>(key + ".points", _n_pt);
   _lower = options.get(key + ".lower").as<double>();
   _upper = options.ifExistsReturnElseThrowRuntimeError<double>(key + ".upper");
   _fwhm = options.ifExistsReturnElseThrowRuntimeError<double>(key + ".fwhm");
@@ -46,9 +47,9 @@ void Spectrum::Initialize(tools::Property& options) {
             key + ".type", choices);
   }
   _minexc =
-      options.ifExistsReturnElseReturnDefault<int>(key + ".minexc", _minexc);
+      options.ifExistsReturnElseReturnDefault<Index>(key + ".minexc", _minexc);
   _maxexc =
-      options.ifExistsReturnElseReturnDefault<int>(key + ".maxexc", _maxexc);
+      options.ifExistsReturnElseReturnDefault<Index>(key + ".maxexc", _maxexc);
   _shiftby =
       options.ifExistsReturnElseReturnDefault<double>(key + ".shift", _shiftby);
 
@@ -57,20 +58,17 @@ void Spectrum::Initialize(tools::Property& options) {
 
 bool Spectrum::Evaluate() {
   OPENMP::setMaxThreads(_nThreads);
-  _log.setReportLevel(logDEBUG);
+  _log.setReportLevel(Log::current_level);
   _log.setMultithreading(true);
 
-  _log.setPreface(logINFO, "\n... ...");
-  _log.setPreface(logERROR, "\n... ...");
-  _log.setPreface(logWARNING, "\n... ...");
-  _log.setPreface(logDEBUG, "\n... ...");
+  _log.setCommonPreface("\n... ...");
 
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << "Calculating absorption spectrum plot " << _orbfile << std::flush;
 
   Orbitals orbitals;
   // load the QM data from serialized orbitals object
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << " Loading QM data from " << _orbfile << std::flush;
   orbitals.ReadFromCpt(_orbfile);
 
@@ -91,12 +89,12 @@ bool Spectrum::Evaluate() {
       orbitals.TransitionDipoles();
   Eigen::VectorXd osc = orbitals.Oscillatorstrengths();
 
-  if (_maxexc > int(TransitionDipoles.size())) {
-    _maxexc = int(TransitionDipoles.size()) - 1;
+  if (_maxexc > Index(TransitionDipoles.size())) {
+    _maxexc = Index(TransitionDipoles.size()) - 1;
   }
 
-  int n_exc = _maxexc - _minexc + 1;
-  XTP_LOG_SAVE(logDEBUG, _log)
+  Index n_exc = _maxexc - _minexc + 1;
+  XTP_LOG(Log::error, _log)
       << " Considering " << n_exc << " excitation with max energy "
       << BSESingletEnergies(_maxexc) << " eV / min wave length "
       << evtonm(BSESingletEnergies[_maxexc - 1]) << " nm" << std::flush;
@@ -138,16 +136,16 @@ bool Spectrum::Evaluate() {
   if (_spectrum_type == "energy") {
     ofs << "# E(eV)    epsGaussian    IM(eps)Gaussian   epsLorentz    "
            "Im(esp)Lorentz\n";
-    for (int i_pt = 0; i_pt <= _n_pt; i_pt++) {
+    for (Index i_pt = 0; i_pt <= _n_pt; i_pt++) {
 
-      double e = (_lower + i_pt * (_upper - _lower) / _n_pt);
+      double e = (_lower + double(i_pt) * (_upper - _lower) / double(_n_pt));
 
       double eps_Gaussian = 0.0;
       double imeps_Gaussian = 0.0;
       double eps_Lorentzian = 0.0;
       double imeps_Lorentzian = 0.0;
 
-      for (int i_exc = _minexc; i_exc <= _maxexc; i_exc++) {
+      for (Index i_exc = _minexc; i_exc <= _maxexc; i_exc++) {
         eps_Gaussian +=
             osc[i_exc] *
             Gaussian(e, BSESingletEnergies(i_exc) + _shiftby, _fwhm);
@@ -163,7 +161,7 @@ bool Spectrum::Evaluate() {
           << eps_Lorentzian << "   " << imeps_Lorentzian << std::endl;
     }
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << " Spectrum in energy range from  " << _lower << " to " << _upper
         << " eV and with broadening of FWHM " << _fwhm
         << " eV written to file  " << _output_file << std::flush;
@@ -173,15 +171,16 @@ bool Spectrum::Evaluate() {
 
     ofs << "# lambda(nm)    epsGaussian    IM(eps)Gaussian   epsLorentz    "
            "Im(esp)Lorentz\n";
-    for (int i_pt = 0; i_pt <= _n_pt; i_pt++) {
+    for (Index i_pt = 0; i_pt <= _n_pt; i_pt++) {
 
-      double lambda = (_lower + i_pt * (_upper - _lower) / _n_pt);
+      double lambda =
+          (_lower + double(i_pt) * (_upper - _lower) / double(_n_pt));
       double eps_Gaussian = 0.0;
       double imeps_Gaussian = 0.0;
       double eps_Lorentzian = 0.0;
       double imeps_Lorentzian = 0.0;
 
-      for (int i_exc = _minexc; i_exc <= _maxexc; i_exc++) {
+      for (Index i_exc = _minexc; i_exc <= _maxexc; i_exc++) {
         double exc_lambda = nmtoev(BSESingletEnergies(i_exc) + _shiftby);
         eps_Gaussian += osc[i_exc] * Gaussian(lambda, exc_lambda, _fwhm);
         imeps_Gaussian +=
@@ -194,7 +193,7 @@ bool Spectrum::Evaluate() {
       ofs << lambda << "    " << eps_Gaussian << "   " << imeps_Gaussian
           << "   " << eps_Lorentzian << "   " << imeps_Lorentzian << std::endl;
     }
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << " Spectrum in wavelength range from  " << _lower << " to " << _upper
         << " nm and with broadening of FWHM " << _fwhm
         << " nm written to file  " << _output_file << std::flush;

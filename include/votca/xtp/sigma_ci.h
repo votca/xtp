@@ -20,7 +20,6 @@
 #ifndef _VOTCA_XTP_SIGMA_CI_H
 #define _VOTCA_XTP_SIGMA_CI_H
 #include <complex>
-#include <votca/xtp/eigen.h>
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/logger.h>
 #include <votca/xtp/rpa.h>
@@ -38,56 +37,40 @@ class RPA;
 class Sigma_CI : public Sigma_base {
 
  public:
-  Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa, Eigen::MatrixXd vxc)
+  Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa)
       : Sigma_base(Mmn, rpa),
         _gq(rpa.getRPAInputEnergies(), Mmn),
-        _eta(rpa.getEta()),
-        _vxc(vxc){};
+        _eta(rpa.getEta()){};
 
   ~Sigma_CI(){};
 
-  void PrepareScreening();
+  void PrepareScreening() final;
 
-  Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
-  Eigen::VectorXd CalcCorrelationDiag_imag(
-      const Eigen::VectorXd& frequencies) const;
+  double CalcCorrelationDiagElement(Index gw_level,
+                                    double frequency) const final;
 
-  Eigen::VectorXd ExactCorrelationDiag(
-      const Eigen::VectorXd& frequencies) const;
-
-  Eigen::MatrixXd CalcCorrelationOffDiag(
-      const Eigen::VectorXd& frequencies) const;
-
-  Eigen::MatrixXd ExactCorrelationOffDiag(
-      const Eigen::VectorXd& frequencies) const;
-
-  void SetSigmaX(Eigen::MatrixXd sigmax) { _sigmaX = sigmax; };
+  double CalcCorrelationDiagElementDerivative(Index gw_level,
+                                              double frequency) const {
+    double h = 1e-3;
+    double plus = CalcCorrelationDiagElement(gw_level, frequency + h);
+    double minus = CalcCorrelationDiagElement(gw_level, frequency - h);
+    return plus - minus / (2 * h);
+  }
+  // Calculates Sigma_c off-diagonal elements
+  double CalcCorrelationOffDiagElement(Index, Index, double, double) const {
+    return 0;
+  }
 
  private:
-  double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
-                                   double delta, double eta) const;
-  double CalcDiagContributionValue_i(const Eigen::RowVectorXd& Imx_row,
-                                     double delta, double eta) const;
-
-  /*double CalcDiagContributionValue(const Eigen::MatrixXd& IMatrix, double eta,
-                                   double delta) const;*/
-
-  double CalcOffDiagContributionValue(const Eigen::RowVectorXd& Imx_row1,
-                                      const Eigen::RowVectorXd& Imx_row2,
-                                      double eta, double delta) const;
+  double CalcDiagContribution(const Eigen::RowVectorXd& Imx_row, double delta,
+                              double eta) const;
 
   double CalcDiagContributionValue_alpha(const Eigen::RowVectorXd& Imx_row,
                                          double delta, double alpha) const;
-  double CalcDiagContributionValue_alpha_i(const Eigen::RowVectorXd& Imx_row,
-                                           double delta, double alpha) const;
+
   GaussianQuadrature _gq;
 
   double _eta;
-
-  // double _alpha;
-
-  Eigen::MatrixXd _vxc;
-  Eigen::MatrixXd _sigmaX;
 };
 
 }  // namespace xtp

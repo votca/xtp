@@ -76,13 +76,15 @@ void MolPol::Initialize(tools::Property& options) {
         options.ifExistsReturnElseThrowRuntimeError<std::string>(key +
                                                                  ".logfile");
     Logger log;
-    log.setPreface(logINFO, "\n... ...");
-    log.setPreface(logDEBUG, "\n... ...");
-    log.setReportLevel(logDEBUG);
+    log.setPreface(Log::info, "\n ...");
+    log.setPreface(Log::error, "\n ...");
+    log.setPreface(Log::warning, "\n ...");
+    log.setPreface(Log::debug, "\n ...");
+    log.setReportLevel(Log::current_level);
     log.setMultithreading(true);
 
     // Set-up QM package
-    XTP_LOG_SAVE(logINFO, log)
+    XTP_LOG(Log::error, log)
         << "Using package <" << qm_package << ">" << std::flush;
     QMPackageFactory::RegisterAll();
     std::unique_ptr<QMPackage> qmpack =
@@ -100,21 +102,18 @@ void MolPol::Initialize(tools::Property& options) {
   _tolerance_pol = options.ifExistsReturnElseReturnDefault<double>(
       key + ".tolerance", _tolerance_pol);
 
-  _max_iter = options.ifExistsReturnElseReturnDefault<int>(key + ".iterations",
-                                                           _max_iter);
+  _max_iter = options.ifExistsReturnElseReturnDefault<Index>(
+      key + ".iterations", _max_iter);
 }
 
 Eigen::Vector3d MolPol::Polarize(const PolarSegment& input,
                                  const Eigen::Vector3d& ext_field) const {
   Logger log;
   log.setMultithreading(false);
-  log.setPreface(logINFO, (boost::format("\n ...")).str());
-  log.setPreface(logERROR, (boost::format("\n ...")).str());
-  log.setPreface(logWARNING, (boost::format("\n ...")).str());
-  log.setPreface(logDEBUG, (boost::format("\n ...")).str());
-  if (tools::globals::verbose) {
-    log.setReportLevel(logDEBUG);
-  }
+  log.setCommonPreface("\n ...");
+
+  log.setReportLevel(Log::current_level);
+
   PolarRegion pol(0, log);
   pol.Initialize(_polar_options);
   pol.push_back(input);
@@ -176,7 +175,7 @@ bool MolPol::Evaluate() {
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es;
   es.computeDirect(_polarisation_target, Eigen::EigenvaluesOnly);
   const double pol_volume_target = std::pow(es.eigenvalues().prod(), 1.0 / 3.0);
-  for (int iter = 0; iter < _max_iter; iter++) {
+  for (Index iter = 0; iter < _max_iter; iter++) {
 
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es2;
     Eigen::Matrix3d pol = CalcClassicalPol(polar);
@@ -206,7 +205,7 @@ bool MolPol::Evaluate() {
       PrintPolarisation(pol);
     }
 
-    for (int i = 0; i < polar.size(); i++) {
+    for (Index i = 0; i < polar.size(); i++) {
       PolarSite& site = polar[i];
       Eigen::Matrix3d local_pol = site.getPolarisation();
       site.setPolarisation(local_pol * std::pow(1 + scale * _weights[i], 2));

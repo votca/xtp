@@ -37,18 +37,11 @@ namespace xtp {
 
 class BSECoupling : public CouplingBase {
  public:
-  void Initialize(tools::Property& options);
+  void Initialize(tools::Property& options) override;
   std::string Identify() const { return "bsecoupling"; }
 
-  Eigen::MatrixXd getJAB_singletstorage() const {
-    return (_output_perturbation ? JAB_singlet[0] : JAB_singlet[1]);
-  }
-
-  Eigen::MatrixXd getJAB_tripletstorage() const {
-    return (_output_perturbation ? JAB_triplet[0] : JAB_triplet[1]);
-  }
   void Addoutput(tools::Property& type_summary, const Orbitals& orbitalsA,
-                 const Orbitals& orbitalsB) const;
+                 const Orbitals& orbitalsB) const override;
 
   /**
    * \brief evaluates electronic couplings
@@ -58,28 +51,28 @@ class BSECoupling : public CouplingBase {
    * @param _orbitalsAB molecular orbitals of the dimer AB
    */
   void CalculateCouplings(const Orbitals& orbitalsA, const Orbitals& orbitalsB,
-                          const Orbitals& orbitalsAB);
+                          const Orbitals& orbitalsAB) override;
 
  private:
   void WriteToProperty(tools::Property& summary, const QMState& stateA,
                        const QMState& stateB) const;
 
-  double getSingletCouplingElement(int levelA, int levelB,
-                                   int methodindex) const;
+  double getSingletCouplingElement(Index levelA, Index levelB,
+                                   Index methodindex) const;
 
-  double getTripletCouplingElement(int levelA, int levelB,
-                                   int methodindex) const;
+  double getTripletCouplingElement(Index levelA, Index levelB,
+                                   Index methodindex) const;
 
-  Eigen::MatrixXd SetupCTStates(int bseA_vtotal, int bseB_vtotal,
-                                int bseAB_vtotal, int bseAB_ctotal,
+  Eigen::MatrixXd SetupCTStates(Index bseA_vtotal, Index bseB_vtotal,
+                                Index bseAB_vtotal, Index bseAB_ctotal,
                                 const Eigen::MatrixXd& A_AB,
                                 const Eigen::MatrixXd& B_AB) const;
 
   Eigen::MatrixXd ProjectFrenkelExcitons(const Eigen::MatrixXd& BSE_Coeffs,
                                          const Eigen::MatrixXd& X_AB,
-                                         int bseX_vtotal, int bseX_ctotal,
-                                         int bseAB_vtotal,
-                                         int bseAB_ctotal) const;
+                                         Index bseX_vtotal, Index bseX_ctotal,
+                                         Index bseAB_vtotal,
+                                         Index bseAB_ctotal) const;
 
   template <class BSE_OPERATOR>
   std::array<Eigen::MatrixXd, 2> ProjectExcitons(Eigen::MatrixXd& FE_AB,
@@ -102,12 +95,12 @@ class BSECoupling : public CouplingBase {
   bool _doTriplets = false;
   bool _doSinglets = false;
   bool _output_perturbation = true;
-  int _levA = std::numeric_limits<int>::max();
-  int _levB = std::numeric_limits<int>::max();
-  int _occA = 5;
-  int _unoccA = 5;
-  int _occB = 5;
-  int _unoccB = 5;
+  Index _levA = std::numeric_limits<Index>::max();
+  Index _levB = std::numeric_limits<Index>::max();
+  Index _occA = 5;
+  Index _unoccA = 5;
+  Index _occB = 5;
+  Index _unoccB = 5;
 };
 
 }  // namespace xtp

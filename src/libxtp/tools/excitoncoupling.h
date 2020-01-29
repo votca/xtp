@@ -37,10 +37,10 @@ namespace xtp {
 
 class ExcitonCoupling : public QMTool {
  public:
-  std::string Identify() { return "excitoncoupling"; }
+  std::string Identify() override { return "excitoncoupling"; }
 
-  void Initialize(tools::Property& options);
-  bool Evaluate();
+  void Initialize(tools::Property& options) override;
+  bool Evaluate() override;
 
  private:
   std::string _orbA, _orbB, _orbAB;
@@ -82,19 +82,17 @@ void ExcitonCoupling::Initialize(tools::Property& options) {
 
   // get the path to the shared folders with xml files
   char* votca_share = getenv("VOTCASHARE");
-  if (votca_share == NULL)
+  if (votca_share == nullptr) {
     throw std::runtime_error("VOTCASHARE not set, cannot open help files.");
+  }
 }
 
 bool ExcitonCoupling::Evaluate() {
   OPENMP::setMaxThreads(_nThreads);
-  _log.setReportLevel(logDEBUG);
+  _log.setReportLevel(Log::current_level);
   _log.setMultithreading(true);
 
-  _log.setPreface(logINFO, "\n... ...");
-  _log.setPreface(logERROR, "\n... ...");
-  _log.setPreface(logWARNING, "\n... ...");
-  _log.setPreface(logDEBUG, "\n... ...");
+  _log.setCommonPreface("\n... ...");
   tools::Property summary;
   tools::Property& job_output = summary.add("output", "");
   // get the corresponding object from the QMPackageFactory
@@ -102,15 +100,15 @@ bool ExcitonCoupling::Evaluate() {
     Orbitals orbitalsA, orbitalsB, orbitalsAB;
     // load the QM data from serialized orbitals objects
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << " Loading QM data for molecule A from " << _orbA << std::flush;
     orbitalsA.ReadFromCpt(_orbA);
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << " Loading QM data for molecule B from " << _orbB << std::flush;
     orbitalsB.ReadFromCpt(_orbB);
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << " Loading QM data for dimer AB from " << _orbAB << std::flush;
     orbitalsAB.ReadFromCpt(_orbAB);
 
@@ -128,7 +126,7 @@ bool ExcitonCoupling::Evaluate() {
   }
 
   else if (_classical) {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << "Calculating electronic coupling using classical transition charges."
         << _orbB << std::flush;
     PolarSegment seg1 = PolarSegment("A", 0);
