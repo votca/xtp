@@ -42,14 +42,16 @@ void GaussianQuadrature::configure(options opt, const RPA& rpa) {
 // matrix in a matrix vector
 void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
   Eigen::MatrixXd eps_inv_zero = rpa.calculate_real_epsilon_inverse(0.0, 0.0);
-  Eigen::MatrixXd Id =
-      Eigen::MatrixXd::Identity(eps_inv_zero.rows(), eps_inv_zero.cols());
+  eps_inv_zero.diagonal().array() -= 1.0;
+  _dielinv_matrices_r.resize(_opt.order);
+#pragma openmp parallel schedule(guided)
   for (Index j = 0; j < _opt.order; j++) {
     double exp_alpha = std::exp(-std::pow(_opt.alpha * _quadpoints(j), 2));
     Eigen::MatrixXd eps_inv_j =
-        rpa.calculate_real_epsilon_inverse(0.0, _quadpoints(j)) - Id;
-    Eigen::MatrixXd eps_inv_zero_alpha = exp_alpha * (eps_inv_zero - Id);
-    _dielinv_matrices_r.push_back(-eps_inv_j + eps_inv_zero_alpha);
+        rpa.calculate_real_epsilon_inverse(0.0, _quadpoints(j));
+    eps_inv_j.diagonal().array() -= 1.0;
+    Eigen::MatrixXd eps_inv_zero_alpha = exp_alpha * eps_inv_zero;
+    _dielinv_matrices_r[j] = (eps_inv_zero_alpha - eps_inv_j);
   }
 }
 
@@ -57,11 +59,10 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level) const {
 
   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
   Eigen::ArrayXd DeltaE = frequency - _energies.array();
-  Eigen::ArrayXd DeltaESq = DeltaE.square();
   double result = 0.0;
   for (Index j = 0; j < _opt.order; ++j) {
     Eigen::VectorXd coeffs1 =
-        (DeltaE) / (DeltaESq + std::pow(_quadpoints(j), 2));
+        (DeltaE) / (DeltaE.square() + std::pow(_quadpoints(j), 2));
     Eigen::MatrixXd Amx = coeffs1.asDiagonal() * Imx;
     Eigen::MatrixXd Cmx = Imx * (_dielinv_matrices_r[j]);  // C = I * B
     double value = (Cmx.cwiseProduct(Amx)).sum();

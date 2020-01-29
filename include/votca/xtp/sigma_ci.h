@@ -62,10 +62,10 @@ class Sigma_CI : public Sigma_base {
   }
 
  private:
-  double CalcDiagContribution(const Eigen::RowVectorXd& Imx_row, double delta,
+  double CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
                               double eta) const;
 
-  double CalcDiagContributionValue_alpha(const Eigen::RowVectorXd& Imx_row,
+  double CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
                                          double delta, double alpha) const;
 
   GaussianQuadrature _gq;

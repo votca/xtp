@@ -35,44 +35,37 @@ void Sigma_CI::PrepareScreening() {
   _gq.configure(opt, _rpa);
 }
 
-double Sigma_CI::CalcDiagContribution(const Eigen::RowVectorXd& Imx_row,
-                                      double delta, double eta) const {
+// This function is used in the calculation of the residues
+// This calculates eps^-1 (inverse of the dielectric function) for complex
+// frequencies of the kind omega = delta + i*eta
+double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
+                                      double eta) const {
 
-  // This function is used in the calculation of the residues
-  // This calculates eps^-1 (inverse of the dielectric function) for complex
-  // frequencies of the kind omega = delta + i*eta
   Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta, eta);
-  // I subract the Identity to obtain what is usually called the susceptibility
   DielMxInv.diagonal().array() -= 1.0;
-  // This evaluate the diagonal contribution for a specific dielectric function
-  // at a generic complex frequency omega (What in the documentation is called
-  // Lambda
-  double value = ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
-
-  return value;
+  double lambda = ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
+  return lambda;
 }
 
-double Sigma_CI::CalcDiagContributionValue_alpha(
-    const Eigen::RowVectorXd& Imx_row, double delta, double alpha) const {
-  // This function is used in the calculation of the residues
-  // This calculates eps^-1 (inverse of the dielectric function) for complex
-  // frequency omega = 0 + i* 0 (origin)
+// This function is used in the calculation of the residues
+// This calculates eps^-1 (inverse of the dielectric function) for complex
+// frequency omega = 0 + i* 0 (origin)
+double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
+                                                 double delta,
+                                                 double alpha) const {
+
   Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
-  // I subract the Identity to obtain what is usually called the susceptibility
   R.diagonal().array() -= 1.0;
   // We add this alpha term to have a nice behaviour around omega = 0. Please be
   // careful with the delta sign delta here is a generic number but in practice
   // it should be e^qp - e^ks
-
   double erfc_factor = -0.5 * std::copysign(1.0, delta) *
                        std::exp(std::pow(alpha * delta, 2)) *
                        std::erfc(std::abs(alpha * delta));
 
-  R *= erfc_factor;
-
   double value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
 
-  return value;
+  return value * erfc_factor;
 }
 
 double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
