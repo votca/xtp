@@ -355,6 +355,11 @@ void GWBSE::Initialize(tools::Property& options) {
         << " Integration order Quadrature: " << _gwopt.order << flush;
   }
 
+  _gwopt.eta =
+      options.ifExistsReturnElseReturnDefault<double>(key + ".eta", _gwopt.eta);
+
+  XTP_LOG(Log::error, *_pLog) << " eta: " << _gwopt.eta << flush;
+
   // possible tasks
   std::string tasks_string =
       options.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".tasks");
@@ -400,20 +405,6 @@ void GWBSE::Initialize(tools::Property& options) {
       index++;
     }
   }
-
-  _gwopt.sigma_integration =
-      options.ifExistsReturnElseReturnDefault<std::string>(
-          key + ".sigma_integrator", _gwopt.sigma_integration);
-  XTP_LOG(Log::error, *_pLog)
-      << " Sigma integration: " << _gwopt.sigma_integration << flush;
-  _gwopt.eta =
-      options.ifExistsReturnElseReturnDefault<double>(key + ".eta", _gwopt.eta);
-  if (_gwopt.sigma_integration == "exact") {
-    XTP_LOG(Log::error, *_pLog)
-        << " RPA Hamiltonian size: " << (homo + 1 - rpamin) * (rpamax - homo)
-        << flush;
-  }
-  XTP_LOG(Log::error, *_pLog) << " eta: " << _gwopt.eta << flush;
 
   _gwopt.qp_solver = options.ifExistsReturnElseReturnDefault<std::string>(
       key + ".qp_solver", _gwopt.qp_solver);
