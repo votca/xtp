@@ -58,9 +58,11 @@ class Sigma_base {
   // Calculates Sigma_c diag elements
   virtual Eigen::VectorXd CalcCorrelationDiag(
       const Eigen::VectorXd& frequencies) const = 0;
-  
+
   virtual Eigen::VectorXd CalcCorrelationDiag_imag(
-    const Eigen::VectorXd& frequencies) const{return Eigen::VectorXd::Zero(_qptotal);}
+      const Eigen::VectorXd& frequencies) const {
+    return Eigen::VectorXd::Zero(_qptotal);
+  }
   // Calculates Sigma_c offdiag elements
   virtual Eigen::MatrixXd CalcCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const = 0;

@@ -41,7 +41,7 @@ class GaussianQuadrature {
     int homo;
     int rpamin;
     int rpamax;
-    double alpha = 0.1 ;
+    double alpha = 0.1;
   };
 
   GaussianQuadrature(const Eigen::VectorXd& energies,
@@ -55,8 +55,8 @@ class GaussianQuadrature {
   Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
                               const RPA& rpa) const;
 
- Eigen::VectorXd SigmaGQDiag_i(const Eigen::VectorXd& frequencies,
-                              const RPA& rpa) const;
+  Eigen::VectorXd SigmaGQDiag_i(const Eigen::VectorXd& frequencies,
+                                const RPA& rpa) const;
 
   Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,
                                       const RPA& rpa) const;
@@ -72,7 +72,7 @@ class GaussianQuadrature {
   void CalcDielInvVector(const RPA& rpa);
   void CalcDielInvVector_i(const RPA& rpa);
   const Eigen::VectorXd& _energies;
-  
+
   std::vector<Eigen::MatrixXd> _dielinv_matrices_r;
   std::vector<Eigen::MatrixXd> _dielinv_matrices_i;
   const TCMatrix_gwbse& _Mmn;

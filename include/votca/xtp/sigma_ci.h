@@ -20,9 +20,9 @@
 #ifndef _VOTCA_XTP_SIGMA_CI_H
 #define _VOTCA_XTP_SIGMA_CI_H
 #include <complex>
-#include <votca/xtp/logger.h>
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/gaussian_quadrature.h>
+#include <votca/xtp/logger.h>
 #include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_base.h>
 
@@ -41,14 +41,16 @@ class Sigma_CI : public Sigma_base {
   Sigma_CI(TCMatrix_gwbse& Mmn, RPA& rpa, Eigen::MatrixXd vxc)
       : Sigma_base(Mmn, rpa),
         _gq(rpa.getRPAInputEnergies(), Mmn),
-        _eta(rpa.getEta()),_vxc(vxc){};
+        _eta(rpa.getEta()),
+        _vxc(vxc){};
 
   ~Sigma_CI(){};
 
   void PrepareScreening();
 
   Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
-  Eigen::VectorXd CalcCorrelationDiag_imag(const Eigen::VectorXd& frequencies) const;
+  Eigen::VectorXd CalcCorrelationDiag_imag(
+      const Eigen::VectorXd& frequencies) const;
 
   Eigen::VectorXd ExactCorrelationDiag(
       const Eigen::VectorXd& frequencies) const;
@@ -58,14 +60,14 @@ class Sigma_CI : public Sigma_base {
 
   Eigen::MatrixXd ExactCorrelationOffDiag(
       const Eigen::VectorXd& frequencies) const;
-  
-  void SetSigmaX(Eigen::MatrixXd sigmax) {_sigmaX = sigmax;};
+
+  void SetSigmaX(Eigen::MatrixXd sigmax) { _sigmaX = sigmax; };
 
  private:
   double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
-                                    double delta, double eta) const;
- double CalcDiagContributionValue_i(const Eigen::RowVectorXd& Imx_row,
-                                    double delta, double eta) const;
+                                   double delta, double eta) const;
+  double CalcDiagContributionValue_i(const Eigen::RowVectorXd& Imx_row,
+                                     double delta, double eta) const;
 
   /*double CalcDiagContributionValue(const Eigen::MatrixXd& IMatrix, double eta,
                                    double delta) const;*/
@@ -75,16 +77,15 @@ class Sigma_CI : public Sigma_base {
                                       double eta, double delta) const;
 
   double CalcDiagContributionValue_alpha(const Eigen::RowVectorXd& Imx_row,
-                                           double delta, double alpha) const;
+                                         double delta, double alpha) const;
   double CalcDiagContributionValue_alpha_i(const Eigen::RowVectorXd& Imx_row,
-                                           double delta, double alpha) const;   
+                                           double delta, double alpha) const;
   GaussianQuadrature _gq;
 
   double _eta;
-  
-  //double _alpha;
-  
-  
+
+  // double _alpha;
+
   Eigen::MatrixXd _vxc;
   Eigen::MatrixXd _sigmaX;
 };

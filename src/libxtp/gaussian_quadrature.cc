@@ -86,7 +86,6 @@ Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
     Eigen::ArrayXd DeltaESq = DeltaE.square();
 
     for (int j = 0; j < _opt.order; ++j) {
-      std::cout << _dielinv_matrices_r[j].norm();
       Eigen::VectorXd coeffs1 = Eigen::VectorXd(rpatotal);
 
       coeffs1 = (DeltaE) / (DeltaESq + std::pow(_quadpoints(j), 2));
