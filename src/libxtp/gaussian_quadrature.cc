@@ -17,11 +17,11 @@
  *
  */
 
+#include <c++/5/cmath>
 #include <votca/tools/constants.h>
-#include <votca/xtp/gauss_hermite_quadrature_constants.h>
+#include <votca/xtp/gauss_laguerre_quadrature_constants.h>
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/threecenter.h>
-#include <c++/5/cmath>
 
 namespace votca {
 namespace xtp {
@@ -33,23 +33,38 @@ GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& energies,
 
 void GaussianQuadrature::configure(options opt, const RPA& rpa) {
   _opt = opt;
-  Gauss_Hermite_Quadrature_Constants ghqc;
-  _quadpoints = ghqc.getPoints(_opt.order);
-  _quadadaptedweights = ghqc.getAdaptedWeights(_opt.order);
+  Gauss_Laguerre_Quadrature_Constants glqc;
+  _quadpoints = glqc.getPoints(_opt.order);
+  _quadadaptedweights = glqc.getAdaptedWeights(_opt.order);
   CalcDielInvVector(rpa);
 }
 
 // This function calculates and stores inverses of the microscopic dielectric
 // matrix in a matrix vector
 void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
+  Eigen::MatrixXd eps_inv_zero = rpa.calculate_real_epsilon_inverse(0.0, 0.0);
+  Eigen::MatrixXd Id =
+      Eigen::MatrixXd::Identity(eps_inv_zero.rows(), eps_inv_zero.cols());
   for (int j = 0; j < _opt.order; j++) {
-    std::complex<double> omega(0, _quadpoints(j));
-    _dielinv_matrices.push_back(rpa.calculate_epsilon(omega).inverse());
+    double exp_alpha = std::exp(-1 * std::pow(_opt.alpha * _quadpoints(j), 2));
+    Eigen::MatrixXd eps_inv_j =
+        rpa.calculate_real_epsilon_inverse(0.0, _quadpoints(j)) - Id;
+    Eigen::MatrixXd eps_inv_zero_alpha = exp_alpha * (eps_inv_zero - Id);
+    _dielinv_matrices_r.push_back(-eps_inv_j + eps_inv_zero_alpha);
   }
 }
-
-
-
+void GaussianQuadrature::CalcDielInvVector_i(const RPA& rpa) {
+  Eigen::MatrixXd eps_inv_zero_i = rpa.calculate_imag_epsilon_inverse(0.0, 0.0);
+  Eigen::MatrixXd Id =
+      Eigen::MatrixXd::Identity(eps_inv_zero_i.rows(), eps_inv_zero_i.cols());
+  for (int j = 0; j < _opt.order; j++) {
+    double exp_alpha = std::exp(-1 * std::pow(_opt.alpha * _quadpoints(j), 2));
+    Eigen::MatrixXd eps_inv_j_i =
+        rpa.calculate_imag_epsilon_inverse(0.0, _quadpoints(j)) - Id;
+    Eigen::MatrixXd eps_inv_zero_alpha = exp_alpha * (eps_inv_zero_i - Id);
+    _dielinv_matrices_i.push_back(-eps_inv_j_i + eps_inv_zero_alpha);
+  }
+}
 
 Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
     const Eigen::VectorXd& frequencies, const RPA& rpa) const {
@@ -58,52 +73,73 @@ Eigen::VectorXd GaussianQuadrature::SigmaGQDiag(
   int rpatotal = _energies.size();
   int unoccupied = rpatotal - occupied;
   double middle_of_gap_energy = (_energies(homo + 1) + _energies(homo)) / 2;
-  const Eigen::ArrayXd shiftedenergies =
-      _energies.array() ;// - middle_of_gap_energy;
-  const Eigen::ArrayXd shiftedfrequencies =
-      frequencies.array() ; // - middle_of_gap_energy;
+  const Eigen::ArrayXd energies = _energies.array();
+  const Eigen::ArrayXd frequencies_ar = frequencies.array();
   double eta = rpa.getEta();
   int auxsize = _Mmn.auxsize();
-  
-  std::cout << " eta in GQ " << eta << std::endl;
 
   Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
 #pragma omp parallel for
   for (int m = 0; m < _opt.qptotal; ++m) {
     const Eigen::MatrixXd& Imx = _Mmn[m];
-    Eigen::ArrayXd DeltaE = shiftedfrequencies(m) - shiftedenergies;
+    Eigen::ArrayXd DeltaE = frequencies_ar(m) - energies;
     Eigen::ArrayXd DeltaESq = DeltaE.square();
-   
-    for (int j = 0; j < _opt.order; ++j) {
-     
-      double quad_m_eta = _quadpoints(j) - eta;
-      double quad_p_eta = _quadpoints(j) + eta;
-      Eigen::VectorXd coeffs1 = Eigen::VectorXd(rpatotal);
-        
-      coeffs1.segment(0, occupied) =
-          (DeltaE.segment(0, occupied)) / (DeltaESq.segment(0, occupied) + std::pow(quad_m_eta, 2));
-      coeffs1.segment(occupied, unoccupied) =  (DeltaE.segment(occupied,unoccupied)) / (DeltaESq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
-      
-      Eigen::MatrixXd Amx = coeffs1.asDiagonal() * Imx;
-      Eigen::MatrixXd Pmx = Imx * ((_dielinv_matrices[j]).real()) - Imx;
-      double value = (Pmx.cwiseProduct(Amx)).sum();
- 
-      
-      Eigen::VectorXd coeffs2 = Eigen::VectorXd(rpatotal);
-      coeffs2.segment(0, occupied) =
-          (quad_m_eta) /(DeltaESq.segment(0, occupied) + std::pow(quad_m_eta, 2));
-      
-      coeffs2.segment(occupied, unoccupied) =
-          (quad_p_eta) / (DeltaESq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
 
-      Eigen::MatrixXd Qmx = Imx * ((_dielinv_matrices[j]).imag());
-      Eigen::MatrixXd Bmx = coeffs2.asDiagonal() * Imx;
-      value += (Qmx.cwiseProduct(Bmx)).sum();
+    for (int j = 0; j < _opt.order; ++j) {
+      std::cout << _dielinv_matrices_r[j].norm();
+      Eigen::VectorXd coeffs1 = Eigen::VectorXd(rpatotal);
+
+      coeffs1 = (DeltaE) / (DeltaESq + std::pow(_quadpoints(j), 2));
+
+      Eigen::MatrixXd Amx = coeffs1.asDiagonal() * Imx;
+
+      Eigen::MatrixXd Cmx = Imx * (_dielinv_matrices_r[j]);  // C = I * B
+
+      double value = (Cmx.cwiseProduct(Amx)).sum();
 
       result(m) += _quadadaptedweights(j) * value;
     }
   }
-  result /= (-2 * tools::conv::Pi);
+  result /= (tools::conv::Pi);
+  return result;
+}
+
+Eigen::VectorXd GaussianQuadrature::SigmaGQDiag_i(
+    const Eigen::VectorXd& frequencies, const RPA& rpa) const {
+  int homo = _opt.homo - _opt.rpamin;
+  int occupied = homo + 1;
+  int rpatotal = _energies.size();
+  int unoccupied = rpatotal - occupied;
+  double middle_of_gap_energy = (_energies(homo + 1) + _energies(homo)) / 2;
+  const Eigen::ArrayXd energies = _energies.array();
+  const Eigen::ArrayXd frequencies_ar = frequencies.array();
+  double eta = rpa.getEta();
+  int auxsize = _Mmn.auxsize();
+
+  Eigen::VectorXd result = Eigen::VectorXd::Zero(_opt.qptotal);
+#pragma omp parallel for
+  for (int m = 0; m < _opt.qptotal; ++m) {
+    const Eigen::MatrixXd& Imx = _Mmn[m];
+    Eigen::ArrayXd DeltaE = frequencies_ar(m) - energies;
+    Eigen::ArrayXd DeltaESq = DeltaE.square();
+
+    for (int j = 0; j < _opt.order; ++j) {
+      std::cout << "HEY I AM HERE" << std::endl;
+      std::cout << _dielinv_matrices_i[j].norm();
+      Eigen::VectorXd coeffs1 = Eigen::VectorXd(rpatotal);
+
+      coeffs1 = (DeltaE) / (DeltaESq + std::pow(_quadpoints(j), 2));
+
+      Eigen::MatrixXd Amx = coeffs1.asDiagonal() * Imx;
+
+      Eigen::MatrixXd Cmx = Imx * (_dielinv_matrices_i[j]);  // C = I * B
+
+      double value = (Cmx.cwiseProduct(Amx)).sum();
+
+      result(m) += _quadadaptedweights(j) * value;
+    }
+  }
+  result /= (tools::conv::Pi);
   return result;
 }
 
@@ -134,7 +170,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
       for (int j = 0; j < _opt.order; ++j) {
         double quad_m_eta = _quadpoints(j) - eta;
         double quad_p_eta = _quadpoints(j) + eta;
-        Eigen::MatrixXd Pmxn = Imxn * ((_dielinv_matrices[j]).real()) - Imxn;
+        Eigen::MatrixXd Pmxn = Imxn * ((_dielinv_matrices_r[j]).real()) - Imxn;
         Eigen::VectorXd coeffs1m = Eigen::VectorXd(rpatotal);
         coeffs1m.segment(0, occupied) =
             DeltaEm.segment(0, occupied) /
@@ -144,7 +180,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEmSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Amxm = coeffs1m.asDiagonal() * Imxm;
         double value = (Pmxn.cwiseProduct(Amxm)).sum();
-        Eigen::MatrixXd Pmxm = Imxm * ((_dielinv_matrices[j]).real()) - Imxm;
+        Eigen::MatrixXd Pmxm = Imxm * ((_dielinv_matrices_r[j]).real()) - Imxm;
         Eigen::VectorXd coeffs1n = Eigen::VectorXd(rpatotal);
         coeffs1n.segment(0, occupied) =
             DeltaEn.segment(0, occupied) /
@@ -154,7 +190,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEnSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Amxn = coeffs1n.asDiagonal() * Imxn;
         value += (Pmxm.cwiseProduct(Amxn).sum)();
-        Eigen::MatrixXd Qmxn = Imxn * ((_dielinv_matrices[j]).imag());
+        Eigen::MatrixXd Qmxn = Imxn * ((_dielinv_matrices_r[j]).imag());
         Eigen::VectorXd coeffs2m = Eigen::VectorXd(rpatotal);
         coeffs2m.segment(0, occupied) =
             quad_m_eta /
@@ -164,7 +200,7 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
             (DeltaEmSq.segment(occupied, unoccupied) + std::pow(quad_p_eta, 2));
         Eigen::MatrixXd Bmxm = coeffs2m.asDiagonal() * Imxm;
         value += (Qmxn.cwiseProduct(Bmxm)).sum();
-        Eigen::MatrixXd Qmxm = Imxm * ((_dielinv_matrices[j]).imag());
+        Eigen::MatrixXd Qmxm = Imxm * ((_dielinv_matrices_r[j]).imag());
         Eigen::VectorXd coeffs2n = Eigen::VectorXd(rpatotal);
         coeffs2n.segment(0, occupied) =
             quad_m_eta /
@@ -183,75 +219,6 @@ Eigen::MatrixXd GaussianQuadrature::SigmaGQ(const Eigen::VectorXd& frequencies,
   result /= (-4 * tools::conv::Pi);
   return result;
 }
-
-
-Eigen::MatrixXcd GaussianQuadrature::EpsilonGQ(
-  std::complex<double> frequency, const RPA& rpa) const {
-  int homo = _opt.homo - _opt.rpamin;
-  int occupied = homo + 1;
-  int rpatotal = _energies.size();
-  int unoccupied = rpatotal - occupied;
-  double fermi = (_energies(homo + 1) + _energies(homo)) / 2;
-  const Eigen::ArrayXd shiftedenergies = _energies.array() ;
-  double eta = rpa.getEta();
-  int auxsize = _Mmn.auxsize();
-  
-  Eigen::MatrixXcd result = Eigen::MatrixXcd::Zero(auxsize,auxsize);
-  Eigen::VectorXcd kernel = Eigen::VectorXcd::Zero(rpatotal);
-  const std::complex<double> ieta(0, eta);
-  
-#pragma omp parallel for
-for (int m_level = 0; m_level < rpatotal; m_level++) {     
-  
-    const double energy_m = _energies(m_level);
-    const Eigen::MatrixXd Mmn_RPA = _Mmn[m_level].block(occupied, 0, unoccupied, auxsize);
-    const Eigen::ArrayXd deltaE = _energies.segment(occupied, unoccupied).array() - energy_m; //Difference between RPA energies
-    const Eigen::ArrayXcd kernel1 = -( deltaE - 2 * ieta - frequency );
-    const Eigen::ArrayXcd kernel2 =  ( deltaE - 2 * ieta + frequency );
-    
-    for (int j = 0; j < _opt.order; ++j) { 
-      
-     //coeffs1 = Eigen::VectorXcd(rpatotal);
-      
-     Eigen::VectorXcd coeffs1 = -_quadpoints(j)*kernel1;
-     Eigen::VectorXcd coeffs2 = -_quadpoints(j)*kernel2;
-      
-     //std::cout << coeffs1 << std::endl;
-      
-     //kernel(m_level) += _quadadaptedweights(j) * coeffs1;
-    
-    }
-    //result += Mmn_RPA.transpose() * kernel.asDiagonal() * Mmn_RPA;
-  }
-  
-  return result;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(
     const Eigen::VectorXd& frequencies, const RPA& rpa) const {
@@ -273,7 +240,7 @@ Eigen::VectorXd GaussianQuadrature::ExactSigmaGQDiag(
   for (int m = 0; m < _opt.qptotal; ++m) {
     const Eigen::MatrixXd Imxm = _Mmn[m];
     for (int j = 0; j < _opt.order; ++j) {
-      Eigen::MatrixXcd DielMxInv = _dielinv_matrices[j];
+      Eigen::MatrixXcd DielMxInv = _dielinv_matrices_r[j];
       Eigen::MatrixXcd DielMxInvReal = DielMxInv.real();
       Eigen::MatrixXcd DielMxInvImag = DielMxInv.imag();
       std::complex<double> GHQ(0, 0);
@@ -331,7 +298,7 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(
           for (int nu = 0; nu < auxsize; ++nu) {
             std::complex<double> GHQ(0, 0);
             for (int j = 0; j < _opt.order; ++j) {
-              Eigen::MatrixXcd DielMxInv = _dielinv_matrices[j];
+              Eigen::MatrixXcd DielMxInv = _dielinv_matrices_r[j];
               std::complex<double> omega2(0, _quadpoints(j) - eta);
               GHQ +=
                   _quadadaptedweights(j) *
@@ -347,7 +314,7 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(
           for (int nu = 0; nu < auxsize; ++nu) {
             std::complex<double> GHQ(0, 0);
             for (int j = 0; j < _opt.order; ++j) {
-              Eigen::MatrixXcd DielMxInv = _dielinv_matrices[j];
+              Eigen::MatrixXcd DielMxInv = _dielinv_matrices_r[j];
               std::complex<double> omega2(0, _quadpoints(j) + eta);
               GHQ +=
                   _quadadaptedweights(j) *
@@ -365,7 +332,7 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(
             for (int j = 0; j < _opt.order; ++j) {
               Eigen::MatrixXcd DielMxInv =
                   Eigen::MatrixXcd::Zero(auxsize, auxsize);
-              DielMxInv = _dielinv_matrices[j];
+              DielMxInv = _dielinv_matrices_r[j];
               std::complex<double> omega2(0, _quadpoints(j) - eta);
               GHQ +=
                   _quadadaptedweights(j) *
@@ -381,7 +348,7 @@ Eigen::MatrixXd GaussianQuadrature::ExactSigmaGQOffDiag(
           for (int nu = 0; nu < auxsize; ++nu) {
             std::complex<double> GHQ(0, 0);
             for (int j = 0; j < _opt.order; ++j) {
-              Eigen::MatrixXcd DielMxInv = _dielinv_matrices[j];
+              Eigen::MatrixXcd DielMxInv = _dielinv_matrices_r[j];
               std::complex<double> omega2(0, _quadpoints(j) + eta);
               GHQ +=
                   _quadadaptedweights(j) *

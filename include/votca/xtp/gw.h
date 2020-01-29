@@ -46,6 +46,7 @@ class GW {
     int rpamin;
     int rpamax;
     int order = 12;  // only needed for complex integration sigma default:12
+    double alpha = 0.1; // only needed for complex integration of sigma: default 0.1
     double g_sc_limit = 1e-5;  // default 1e-5
     int g_sc_max_iterations = 50;
     double gw_sc_limit = 1e-5;
@@ -78,9 +79,11 @@ class GW {
   int _qptotal;
 
   Eigen::VectorXd _gwa_energies;
+  Eigen::VectorXcd _gwa_energies_i;
 
   Eigen::MatrixXd _Sigma_x;
   Eigen::MatrixXd _Sigma_c;
+  Eigen::MatrixXd _Sigma_c_i;
 
   options _opt;
 

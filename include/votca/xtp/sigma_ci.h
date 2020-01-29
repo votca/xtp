@@ -48,7 +48,7 @@ class Sigma_CI : public Sigma_base {
   void PrepareScreening();
 
   Eigen::VectorXd CalcCorrelationDiag(const Eigen::VectorXd& frequencies) const;
-
+  Eigen::VectorXd CalcCorrelationDiag_imag(const Eigen::VectorXd& frequencies) const;
 
   Eigen::VectorXd ExactCorrelationDiag(
       const Eigen::VectorXd& frequencies) const;
@@ -63,7 +63,9 @@ class Sigma_CI : public Sigma_base {
 
  private:
   double CalcDiagContributionValue(const Eigen::RowVectorXd& Imx_row,
-                                   double eta, double delta) const;
+                                    double delta, double eta) const;
+ double CalcDiagContributionValue_i(const Eigen::RowVectorXd& Imx_row,
+                                    double delta, double eta) const;
 
   /*double CalcDiagContributionValue(const Eigen::MatrixXd& IMatrix, double eta,
                                    double delta) const;*/
@@ -72,9 +74,17 @@ class Sigma_CI : public Sigma_base {
                                       const Eigen::RowVectorXd& Imx_row2,
                                       double eta, double delta) const;
 
+  double CalcDiagContributionValue_alpha(const Eigen::RowVectorXd& Imx_row,
+                                           double delta, double alpha) const;
+  double CalcDiagContributionValue_alpha_i(const Eigen::RowVectorXd& Imx_row,
+                                           double delta, double alpha) const;   
   GaussianQuadrature _gq;
 
   double _eta;
+  
+  //double _alpha;
+  
+  
   Eigen::MatrixXd _vxc;
   Eigen::MatrixXd _sigmaX;
 };

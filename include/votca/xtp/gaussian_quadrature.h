@@ -23,7 +23,7 @@
 #include <votca/xtp/eigen.h>
 #include <votca/xtp/rpa.h>
 
-// Computes the contribution from the Gauss-Hermite quadrature to the
+// Computes the contribution from the Gauss-Laguerre quadrature to the
 // self-energy expectation matrix for given RPA and frequencies
 namespace votca {
 namespace xtp {
@@ -41,6 +41,7 @@ class GaussianQuadrature {
     int homo;
     int rpamin;
     int rpamax;
+    double alpha = 0.1 ;
   };
 
   GaussianQuadrature(const Eigen::VectorXd& energies,
@@ -53,8 +54,8 @@ class GaussianQuadrature {
 
   Eigen::VectorXd SigmaGQDiag(const Eigen::VectorXd& frequencies,
                               const RPA& rpa) const;
-  
-  Eigen::MatrixXcd EpsilonGQ(std::complex<double> frequency,
+
+ Eigen::VectorXd SigmaGQDiag_i(const Eigen::VectorXd& frequencies,
                               const RPA& rpa) const;
 
   Eigen::MatrixXd ExactSigmaGQOffDiag(const Eigen::VectorXd& frequencies,
@@ -69,10 +70,11 @@ class GaussianQuadrature {
   // This function calculates and stores inverses of the microscopic dielectric
   // matrix in a matrix vector
   void CalcDielInvVector(const RPA& rpa);
-
+  void CalcDielInvVector_i(const RPA& rpa);
   const Eigen::VectorXd& _energies;
   
-  std::vector<Eigen::MatrixXcd> _dielinv_matrices;
+  std::vector<Eigen::MatrixXd> _dielinv_matrices_r;
+  std::vector<Eigen::MatrixXd> _dielinv_matrices_i;
   const TCMatrix_gwbse& _Mmn;
   Eigen::VectorXd _quadpoints;
   Eigen::VectorXd _quadadaptedweights;

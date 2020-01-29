@@ -48,6 +48,7 @@ class RPA {
 
   Eigen::MatrixXcd calculate_epsilon(std::complex<double> frequency) const;
 
+    
   rpa_eigensolution calculate_eigenvalues() const;
 
   Eigen::MatrixXd calculate_epsilon_i(double frequency) const {
@@ -57,7 +58,19 @@ class RPA {
   Eigen::MatrixXd calculate_epsilon_r(double frequency) const {
     return calculate_epsilon<false>(frequency);
   }
+  
+  Eigen::MatrixXd calculate_epsilon_i(double frequency_r, double frequency_i) const {
+    return calculate_epsilon_cmplxfreq<true>(frequency_r, frequency_i);
+  }
 
+  Eigen::MatrixXd calculate_epsilon_r(double frequency_r, double frequency_i) const {
+    return calculate_epsilon_cmplxfreq<false>(frequency_r, frequency_i);
+  }
+ 
+  
+  Eigen::MatrixXd calculate_real_epsilon_inverse(double frequency_r, double frequency_i) const;
+  Eigen::MatrixXd calculate_imag_epsilon_inverse(double frequency_r, double frequency_i) const;
+  
   const Eigen::VectorXd& getRPAInputEnergies() const { return _energies; }
 
   void setRPAInputEnergies(const Eigen::VectorXd& rpaenergies) {
@@ -75,7 +88,7 @@ class RPA {
   int _rpamin;
   int _rpamax;
   const double _eta = 0.0001;
-
+  
   Eigen::VectorXd _energies;
 
   const TCMatrix_gwbse& _Mmn;
@@ -95,6 +108,10 @@ class RPA {
 
   template <bool imag>
   Eigen::MatrixXd calculate_epsilon(double frequency) const;
+  
+  template <bool imag>
+  Eigen::MatrixXd calculate_epsilon_cmplxfreq(double frequency_r, double frequency_i) const;
+  
 };
 }  // namespace xtp
 }  // namespace votca

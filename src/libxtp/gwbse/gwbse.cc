@@ -151,6 +151,7 @@ void GWBSE::Initialize(tools::Property& options) {
   _gwopt.qpmax = qpmax;
   _gwopt.rpamin = rpamin;
   _gwopt.rpamax = rpamax;
+  
 
   _bseopt.vmin = bse_vmin;
   _bseopt.cmax = bse_cmax;
@@ -285,9 +286,6 @@ void GWBSE::Initialize(tools::Property& options) {
       options.ifExistsReturnElseReturnDefault<std::string>(
           key + ".sigma_integrator", _gwopt.sigma_integration);
 
-  _gwopt.order = options.ifExistsReturnElseReturnDefault<int>(
-      key + ".hermitquad_order", _gwopt.order);
-
   _gwopt.g_sc_limit = options.ifExistsReturnElseReturnDefault<double>(
       key + ".g_sc_limit",
       _gwopt.g_sc_limit);  // convergence criteria for qp iteration [Hartree]]
@@ -323,7 +321,15 @@ void GWBSE::Initialize(tools::Property& options) {
     XTP_LOG_SAVE(logDEBUG, *_pLog)
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
-
+  _gwopt.order = options.ifExistsReturnElseReturnDefault<int>(
+      key + ".laguerrequad_order", _gwopt.order);
+  _gwopt.alpha = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".alphaa", _gwopt.alpha);
+  if (_gwopt.sigma_integration == "ci"){
+       XTP_LOG(logDEBUG, *_pLog) << " Alpha value: " << _gwopt.alpha << flush;
+       XTP_LOG(logDEBUG, *_pLog) << " Integration order Quadrature: " << _gwopt.order << flush;
+  }
+ 
   // possible tasks
   std::string tasks_string =
       options.ifExistsReturnElseThrowRuntimeError<std::string>(key + ".tasks");
