@@ -162,8 +162,8 @@ void GW::CalculateGWPerturbation() {
   Eigen::VectorXd dft_shifted_energies = ScissorShift_DFTlevel(_dft_energies);
   _rpa.setRPAInputEnergies(
       dft_shifted_energies.segment(_opt.rpamin, _opt.rpamax - _opt.rpamin + 1));
-  Eigen::VectorXd frequencies = dft_shifted_energies.segment(
-      _opt.qpmin, _qptotal);  // + _Sigma_x.diagonal() -_vxc.diagonal();
+  Eigen::VectorXd frequencies =
+      dft_shifted_energies.segment(_opt.qpmin, _qptotal);
   for (Index i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
 
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
@@ -219,6 +219,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd frequencies_new = frequencies;
   Eigen::Array<bool, Eigen::Dynamic, 1> converged =
       Eigen::Array<bool, Eigen::Dynamic, 1>::Zero(_qptotal);
+
 #pragma omp parallel for schedule(dynamic)
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
     double initial_f = frequencies[gw_level];

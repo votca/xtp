@@ -55,7 +55,7 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
   const Index n_unocc = _rpamax - lumo + 1;
   const double freq2 = frequency * frequency;
   const double eta2 = _eta * _eta;
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
   for (Index m_level = 0; m_level < n_occ; m_level++) {
     const double qp_energy_m = _energies(m_level);
 
