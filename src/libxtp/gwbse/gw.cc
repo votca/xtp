@@ -245,7 +245,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     }
   }
 
-  if ((converged == true).all()) {
+  if ((converged == false).any()) {
     std::vector<Index> states;
     for (Index s = 0; s < converged.size(); s++) {
       if (!converged[s]) {
@@ -406,8 +406,8 @@ void GW::PlotSigma(std::string filename, Index steps, double spacing,
       const Index gw_level = state_inds[i];
       const double omega = frequencies(gw_level) + offset;
       double sigma = _sigma->CalcCorrelationDiagElement(gw_level, omega);
-      mat(grid_point, 3 * i) = omega;
-      mat(grid_point, 3 * i + 1) = sigma + intercept[gw_level];
+      mat(grid_point, 2 * i) = omega;
+      mat(grid_point, 2 * i + 1) = sigma + intercept[gw_level];
     }
   }
 
