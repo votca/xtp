@@ -83,8 +83,6 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
 }
 
 Eigen::MatrixXcd RPA::calculate_epsilon_complex(double frequency_r,double frequency_i) const {
-  // This is for the case of complex frequencies (general case omega = alpha + i
-  // beta)
   const Index size = _Mmn.auxsize();
   std::vector<Eigen::MatrixXcd> thread_result = std::vector<Eigen::MatrixXcd>(
       OPENMP::getMaxThreads(), Eigen::MatrixXcd::Zero(size, size));
@@ -120,7 +118,7 @@ Eigen::MatrixXcd RPA::calculate_epsilon_complex(double frequency_r,double freque
 Eigen::MatrixXcd result = Eigen::MatrixXcd::Identity(size, size);
    
 for (const auto& mat : thread_result) {
-    result -= mat;
+    result -= 2.*mat;
   }
   return result;
 }
