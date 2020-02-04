@@ -94,20 +94,27 @@ Eigen::MatrixXcd RPA::calculate_epsilon_complex(double frequency_r,double freque
 
   std::complex<double> frequency(frequency_r, frequency_i);
   std::complex<double> eta(0.0, _eta);  
-
+ 
 #pragma omp parallel for
   for (Index m_level = 0; m_level < n_occ; m_level++) {
     const double qp_energy_m = _energies(m_level);
     const Eigen::MatrixXd Mmn_RPA =
         _Mmn[m_level].block(n_occ, 0, n_unocc, size);
     const Eigen::ArrayXcd deltaE =
-        -_energies.segment(n_occ, n_unocc).array() + qp_energy_m;
+        _energies.segment(n_occ, n_unocc).array() - qp_energy_m;
 
     Eigen::VectorXcd chi;
     Eigen::ArrayXcd deltaEm = frequency - deltaE + eta;
-    Eigen::ArrayXcd deltaEp = frequency_r + deltaE - eta;
+    Eigen::ArrayXcd deltaEp = frequency + deltaE - eta;
+
+    
     chi = deltaEm.cwiseInverse() - deltaEp.cwiseInverse();
+    //std::cout << "chi " << chi << std::endl;
     Eigen::MatrixXcd tempresult =  Mmn_RPA.transpose() * chi.asDiagonal()* Mmn_RPA;
+
+  //auto temp = Mmn_RPA.transpose() * chi.asDiagonal();
+    //Eigen::MatrixXd tempresult = temp * Mmn_RPA;
+
     thread_result[OPENMP::getThreadId()] += tempresult;
 }   
 Eigen::MatrixXcd result = Eigen::MatrixXcd::Identity(size, size);

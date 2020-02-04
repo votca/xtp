@@ -87,7 +87,7 @@ class RPA {
   Index _homo;  // HOMO index with respect to dft energies
   Index _rpamin;
   Index _rpamax;
-  const double _eta = 0.0001;
+  const double _eta = 0.001;
 
   Eigen::VectorXd _energies;
 

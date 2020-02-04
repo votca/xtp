@@ -93,16 +93,17 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
   Index homo = _opt.homo - _opt.rpamin;
   Index lumo = homo + 1;
   double fermi_rpa = (rpa_energies(lumo) + rpa_energies(homo)) / 2.0;
+  
   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
   for (Index i = 0; i < rpatotal; ++i) {
-    double delta = -frequency + rpa_energies(i);
-    double value = 0;
-    double value_occ = 0;
-    double value_unocc = 0;
-    double discriminant = fermi_rpa - rpa_energies(i);
+    double delta = std::abs(rpa_energies(i) - frequency);
+    
+    //double discriminant = fermi_rpa - rpa_energies(i);
     double factor = CalcResiduePrefactor(fermi_rpa, rpa_energies(i), frequency);
-    double eta = std::copysign(1.0,discriminant)*_eta;
-    sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, eta);
+    //double eta = std::copysign(1.0,discriminant)*_eta;
+    if (factor != 0.0){
+      sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, _eta);
+    }
     
     // This is what is left from the alpha correction in the Quadrature term
     //result_alpha += CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
