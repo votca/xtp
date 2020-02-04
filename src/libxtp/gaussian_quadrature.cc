@@ -33,8 +33,8 @@ GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& energies,
 
 void GaussianQuadrature::configure(options opt, const RPA& rpa) {
   _opt = opt;
-  // Gauss_Laguerre_Quadrature_Constants glqc;
-  Gauss_Hermite_Quadrature_Constants glqc;
+  Gauss_Laguerre_Quadrature_Constants glqc;
+  //Gauss_Hermite_Quadrature_Constants glqc;
   _quadpoints = glqc.getPoints(_opt.order);
   _quadadaptedweights = glqc.getAdaptedWeights(_opt.order);
   CalcDielInvVector(rpa);
@@ -45,13 +45,13 @@ void GaussianQuadrature::configure(options opt, const RPA& rpa) {
 void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
   // Eigen::MatrixXd eps_inv_zero = rpa.calculate_real_epsilon_inverse(0.0,
   // 0.0);
-  Eigen::MatrixXcd eps_inv_zero_c =
-      rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
+  //Eigen::MatrixXcd eps_inv_zero_c =
+   //   rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
   // eps_inv_zero.diagonal().array() -= 1.0;
   _dielinv_matrices_r.resize(_opt.order);
 #pragma openmp parallel schedule(guided)
   for (Index j = 0; j < _opt.order; j++) {
-    double exp_alpha = std::exp(-std::pow(_opt.alpha * _quadpoints(j), 2));
+    //double exp_alpha = std::exp(-std::pow(_opt.alpha * _quadpoints(j), 2));
     Eigen::MatrixXcd eps_inv_j =
         rpa.calculate_epsilon_complex(0.0, _quadpoints(j)).inverse();
     // rpa.calculate_real_epsilon_inverse(0.0, _quadpoints(j));
@@ -70,7 +70,7 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level) const {
     Eigen::VectorXcd coeffs1 =
         (DeltaE) / (DeltaE.square() + std::pow(_quadpoints(j), 2));
     Eigen::MatrixXcd Amx = coeffs1.asDiagonal() * Imx;
-    Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);  // C = I * B
+    Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);  
     std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
     result += _quadadaptedweights(j) * value;
   }
@@ -97,7 +97,7 @@ double GaussianQuadrature::SigmaGQHDiag(double frequency, Index gw_level,
     result += _quadadaptedweights(j) * value;
   }
 
-  return result.real() / (tools::conv::Pi);
+  return result.real() / (2.*tools::conv::Pi);
 }
 
 }  // namespace xtp

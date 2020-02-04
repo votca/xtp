@@ -41,10 +41,13 @@ void Sigma_CI::PrepareScreening() {
 double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
                                       double eta) const {
 
-  //Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta, eta);
-  Eigen::MatrixXcd DielMxInv = _rpa.calculate_epsilon_complex(delta,eta).inverse();
+  // Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta,
+  // eta);
+  Eigen::MatrixXcd DielMxInv =
+      _rpa.calculate_epsilon_complex(delta, eta).inverse();
   DielMxInv.diagonal().array() -= 1.0;
-  std::complex<double> lambda = ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
+  std::complex<double> lambda =
+      ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
   return lambda.real();
 }
 
@@ -54,8 +57,8 @@ double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
 double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
                                                  double delta,
                                                  double alpha) const {
-  Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0,0.0).inverse();
-  //Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
+  Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
+  // Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
   R.diagonal().array() -= 1.0;
   // We add this alpha term to have a nice behaviour around omega = 0. Please be
   // careful with the delta sign delta here is a generic number but in practice
@@ -69,16 +72,17 @@ double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
   return value * erfc_factor;
 }
 
-double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m, double frequency) const {
+double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m,
+                                      double frequency) const {
   double factor = 0.0;
-  
-  if (e_f < e_m && e_m < frequency){
+
+  if (e_f < e_m && e_m < frequency) {
     factor = 1.0;
-  } else if ( e_f > e_m && e_m > frequency ) {
+  } else if (e_f > e_m && e_m > frequency) {
     factor = -1.0;
   } else if (e_m - frequency == 0.0 && e_f > e_m) {
-    factor = -0.5;}
-    else if (e_m - frequency == 0.0 && e_f < e_m) {
+    factor = -0.5;
+  } else if (e_m - frequency == 0.0 && e_f < e_m) {
     factor = 0.5;
   }
   return factor;
@@ -88,27 +92,25 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
                                          Index gw_level) const {
   Index rpatotal = rpa_energies.size();
   double sigma_c = 0.0;
-
   double result_alpha = 0.0;
   Index homo = _opt.homo - _opt.rpamin;
   Index lumo = homo + 1;
   double fermi_rpa = (rpa_energies(lumo) + rpa_energies(homo)) / 2.0;
-  
+
   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
   for (Index i = 0; i < rpatotal; ++i) {
     double delta = std::abs(rpa_energies(i) - frequency);
-    
-    //double discriminant = fermi_rpa - rpa_energies(i);
     double factor = CalcResiduePrefactor(fermi_rpa, rpa_energies(i), frequency);
-    //double eta = std::copysign(1.0,discriminant)*_eta;
-    if (factor != 0.0){
+
+    if (factor != 0.0) {
       sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, _eta);
     }
-    
+
     // This is what is left from the alpha correction in the Quadrature term
-    //result_alpha += CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
+    // result_alpha += CalcDiagContributionValue_alpha(Imx.row(i), delta,
+    // _opt.alpha);
   }
-  return  sigma_c; //+ result_alpha;
+  return sigma_c;  //+ result_alpha;
 }
 
 double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
@@ -119,9 +121,9 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQHDiag(frequency, gw_level,_eta);
+  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
 
-  return  sigma_c_residue +  sigma_c_integral;
+  return sigma_c_residue + sigma_c_integral;
 }
 
 }  // namespace xtp
