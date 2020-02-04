@@ -58,6 +58,7 @@ class RPA {
     return calculate_epsilon_cmplxfreq<false>(frequency_r, frequency_i);
   }
 
+  Eigen::MatrixXcd calculate_epsilon_complex(double frequency_r, double frequency_i) const;
   Eigen::MatrixXd calculate_real_epsilon_inverse(double frequency_r,
                                                  double frequency_i) const;
   Eigen::MatrixXd calculate_imag_epsilon_inverse(double frequency_r,

@@ -41,10 +41,11 @@ void Sigma_CI::PrepareScreening() {
 double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
                                       double eta) const {
 
-  Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta, eta);
+  //Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta, eta);
+  Eigen::MatrixXcd DielMxInv = _rpa.calculate_epsilon_complex(delta,eta).inverse();
   DielMxInv.diagonal().array() -= 1.0;
-  double lambda = ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
-  return lambda;
+  std::complex<double> lambda = ((Imx_row * DielMxInv).cwiseProduct(Imx_row)).sum();
+  return lambda.real();
 }
 
 // This function is used in the calculation of the residues
@@ -53,8 +54,8 @@ double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
 double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
                                                  double delta,
                                                  double alpha) const {
-
-  Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
+  Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0,0.0).inverse();
+  //Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
   R.diagonal().array() -= 1.0;
   // We add this alpha term to have a nice behaviour around omega = 0. Please be
   // careful with the delta sign delta here is a generic number but in practice
@@ -63,59 +64,63 @@ double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
                        std::exp(std::pow(alpha * delta, 2)) *
                        std::erfc(std::abs(alpha * delta));
 
-  double value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
+  double value = ((Imx_row * R.real()).cwiseProduct(Imx_row)).sum();
 
   return value * erfc_factor;
+}
+
+double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m, double frequency) const {
+  double factor = 0.0;
+  
+  if (e_f < e_m && e_m < frequency){
+    factor = 1.0;
+  } else if ( e_f > e_m && e_m > frequency ) {
+    factor = -1.0;
+  } else if (e_m - frequency == 0.0 && e_f > e_m) {
+    factor = -0.5;}
+    else if (e_m - frequency == 0.0 && e_f < e_m) {
+    factor = 0.5;
+  }
+  return factor;
+}
+double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
+                                         double frequency,
+                                         Index gw_level) const {
+  Index rpatotal = rpa_energies.size();
+  double sigma_c = 0.0;
+
+  double result_alpha = 0.0;
+  Index homo = _opt.homo - _opt.rpamin;
+  Index lumo = homo + 1;
+  double fermi_rpa = (rpa_energies(lumo) + rpa_energies(homo)) / 2.0;
+  const Eigen::MatrixXd& Imx = _Mmn[gw_level];
+  for (Index i = 0; i < rpatotal; ++i) {
+    double delta = -frequency + rpa_energies(i);
+    double value = 0;
+    double value_occ = 0;
+    double value_unocc = 0;
+    double discriminant = fermi_rpa - rpa_energies(i);
+    double factor = CalcResiduePrefactor(fermi_rpa, rpa_energies(i), frequency);
+    double eta = std::copysign(1.0,discriminant)*_eta;
+    sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, eta);
+    
+    // This is what is left from the alpha correction in the Quadrature term
+    //result_alpha += CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
+  }
+  return  sigma_c; //+ result_alpha;
 }
 
 double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
                                             double frequency) const {
 
-  Index homo = _opt.homo - _opt.rpamin;
-  Index lumo = homo + 1;
-
   const Eigen::VectorXd& RPAenergies = _rpa.getRPAInputEnergies();
-  double fermi_rpa = (RPAenergies(lumo) + RPAenergies(homo)) / 2;
 
-  Index rpatotal = RPAenergies.size();
+  double sigma_c_residue =
+      CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c = 0.0;
+  double sigma_c_integral = _gq.SigmaGQHDiag(frequency, gw_level,_eta);
 
-  double result_alpha = 0.0;
-  double result_occ = 0.0;
-  double result_unocc = 0.0;
-
-  const Eigen::MatrixXd& Imx = _Mmn[gw_level];
-
-  for (Index i = 0; i < rpatotal; ++i) {
-    // delta_ji = E^qp(j) - E^{KS}(i)
-    double delta = -RPAenergies(i) + frequency;
-    double value = 0;
-    double value_occ = 0;
-    double value_unocc = 0;
-    double discriminant = fermi_rpa - RPAenergies(i);
-    if (delta > 0 && discriminant < 0) {
-      value = CalcDiagContribution(Imx.row(i), delta, _eta);
-    } else if (delta < 0 && discriminant > 0) {
-      value = -CalcDiagContribution(Imx.row(i), delta, -_eta);
-    } else if (delta == 0 && discriminant > 0) {
-      value_occ = -0.5 * CalcDiagContribution(Imx.row(i), 0, -_eta);
-    } else if (delta == 0 && discriminant < 0) {
-      value_unocc = 0.5 * CalcDiagContribution(Imx.row(i), 0, _eta);
-    }
-    sigma_c += value;
-    result_occ += value_occ;
-    result_unocc += value_unocc;
-    // This is what is left from the alpha correction in the Quadrature term
-    result_alpha +=
-        CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
-  }
-
-  double GAUSSQ = _gq.SigmaGQDiag(frequency, gw_level);
-
-  sigma_c += GAUSSQ + result_occ + result_unocc + result_alpha;
-
-  return sigma_c;
+  return  sigma_c_residue +  sigma_c_integral;
 }
 
 }  // namespace xtp

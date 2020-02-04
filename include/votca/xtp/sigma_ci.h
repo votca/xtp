@@ -60,6 +60,9 @@ class Sigma_CI : public Sigma_base {
   double CalcCorrelationOffDiagElement(Index, Index, double, double) const {
     return 0;
   }
+  double CalcResiduePrefactor(double e_f, double e_m, double frequency) const;
+  double CalcResidueContribution(Eigen::VectorXd rpa_energies, double frequency,
+                                 Index gw_level) const;
 
  private:
   double CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
@@ -69,7 +72,7 @@ class Sigma_CI : public Sigma_base {
                                          double delta, double alpha) const;
 
   GaussianQuadrature _gq;
-
+  
   double _eta;
 };
 

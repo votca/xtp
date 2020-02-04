@@ -82,6 +82,44 @@ Eigen::MatrixXd RPA::calculate_epsilon(double frequency) const {
   return result;
 }
 
+Eigen::MatrixXcd RPA::calculate_epsilon_complex(double frequency_r,double frequency_i) const {
+  // This is for the case of complex frequencies (general case omega = alpha + i
+  // beta)
+  const Index size = _Mmn.auxsize();
+  std::vector<Eigen::MatrixXcd> thread_result = std::vector<Eigen::MatrixXcd>(
+      OPENMP::getMaxThreads(), Eigen::MatrixXcd::Zero(size, size));
+  const Index lumo = _homo + 1;
+  const Index n_occ = lumo - _rpamin;
+  const Index n_unocc = _rpamax - lumo + 1;
+
+  std::complex<double> frequency(frequency_r, frequency_i);
+  std::complex<double> eta(0.0, _eta);  
+
+#pragma omp parallel for
+  for (Index m_level = 0; m_level < n_occ; m_level++) {
+    const double qp_energy_m = _energies(m_level);
+    const Eigen::MatrixXd Mmn_RPA =
+        _Mmn[m_level].block(n_occ, 0, n_unocc, size);
+    const Eigen::ArrayXcd deltaE =
+        -_energies.segment(n_occ, n_unocc).array() + qp_energy_m;
+
+    Eigen::VectorXcd chi;
+    Eigen::ArrayXcd deltaEm = frequency - deltaE + eta;
+    Eigen::ArrayXcd deltaEp = frequency_r + deltaE - eta;
+    chi = deltaEm.cwiseInverse() - deltaEp.cwiseInverse();
+    Eigen::MatrixXcd tempresult =  Mmn_RPA.transpose() * chi.asDiagonal()* Mmn_RPA;
+    thread_result[OPENMP::getThreadId()] += tempresult;
+}   
+Eigen::MatrixXcd result = Eigen::MatrixXcd::Identity(size, size);
+   
+for (const auto& mat : thread_result) {
+    result -= mat;
+  }
+  return result;
+}
+
+
+
 template <bool imag>
 Eigen::MatrixXd RPA::calculate_epsilon_cmplxfreq(double frequency_r,
                                                  double frequency_i) const {
@@ -96,10 +134,10 @@ Eigen::MatrixXd RPA::calculate_epsilon_cmplxfreq(double frequency_r,
 
   // Sum and Difference (and relative squares) for the imaginary part of the
   // frequency beta + eta
-  const double freq_i_p = frequency_i + 2 * _eta;
+  const double freq_i_p = frequency_i + _eta;
   const double freq_i_p_2 = std::pow(freq_i_p, 2);
   // beta - eta
-  const double freq_i_m = frequency_i - 2 * _eta;
+  const double freq_i_m = frequency_i -  _eta;
   const double freq_i_m_2 = std::pow(freq_i_m, 2);
 
 #pragma omp parallel for
@@ -112,29 +150,29 @@ Eigen::MatrixXd RPA::calculate_epsilon_cmplxfreq(double frequency_r,
     // Energy difference of the unoccupied energies block and the occupied ones
     // (aka transitions from occupied to unoccupied levels)
     const Eigen::ArrayXd deltaE =
-        _energies.segment(n_occ, n_unocc).array() - qp_energy_m;
+        -_energies.segment(n_occ, n_unocc).array() + qp_energy_m;
 
     Eigen::VectorXd chi;
     Eigen::ArrayXd deltaEm_r = frequency_r - deltaE;
     Eigen::ArrayXd deltaEp_r = frequency_r + deltaE;
     if (imag) {
-      chi = -((freq_i_p) / (deltaEm_r.square() + freq_i_p_2)) +
+      chi = ((freq_i_p) / (deltaEm_r.square() + freq_i_p_2)) -
             ((freq_i_m) / (deltaEp_r.square() + freq_i_m_2));
     } else {
 
-      chi = (deltaEm_r) / (deltaEm_r.square() + freq_i_p_2) -
-            (deltaEp_r) / (deltaEp_r.square() + freq_i_m_2);
+      chi = 1.0 - ((deltaEm_r) / (deltaEm_r.square() + freq_i_p_2)) -
+           ((deltaEp_r) / (deltaEp_r.square() + freq_i_m_2));
     }
 
     auto temp = Mmn_RPA.transpose() * chi.asDiagonal();
     Eigen::MatrixXd tempresult = temp * Mmn_RPA;
     thread_result[OPENMP::getThreadId()] += tempresult;
   }
-  Eigen::MatrixXd result = Eigen::MatrixXd::Identity(size, size);
+   Eigen::MatrixXd result = Eigen::MatrixXd::Zero(size, size);
   for (const auto& mat : thread_result) {
-    result -= 2 * mat;
+    result += mat;
   }
-  return result;
+  return 2*result;
 }
 
 Eigen::MatrixXd RPA::calculate_real_epsilon_inverse(double frequency_r,
@@ -150,7 +188,7 @@ Eigen::MatrixXd RPA::calculate_imag_epsilon_inverse(double frequency_r,
 
   Eigen::MatrixXd eps_real = calculate_epsilon_r(frequency_r, frequency_i);
   Eigen::MatrixXd eps_imag = calculate_epsilon_i(frequency_r, frequency_i);
-  return (eps_imag + eps_real * eps_imag.inverse() * eps_real).inverse();
+  return -(eps_imag + eps_real * eps_imag.inverse() * eps_real).inverse();
 }
 
 template Eigen::MatrixXd RPA::calculate_epsilon<true>(double frequency) const;

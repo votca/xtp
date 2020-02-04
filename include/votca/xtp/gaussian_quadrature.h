@@ -38,7 +38,7 @@ class GaussianQuadrature {
     Index homo;
     Index rpamin;
     Index rpamax;
-    double alpha = 0.1;
+    double alpha = 0.001;
   };
 
   GaussianQuadrature(const Eigen::VectorXd& energies,
@@ -47,6 +47,7 @@ class GaussianQuadrature {
   void configure(options opt, const RPA& rpa);
 
   double SigmaGQDiag(double frequency, Index gw_level) const;
+  double SigmaGQHDiag(double frequency, Index gw_level, double eta) const;
 
  private:
   options _opt;
@@ -56,7 +57,7 @@ class GaussianQuadrature {
   void CalcDielInvVector(const RPA& rpa);
   const Eigen::VectorXd& _energies;
 
-  std::vector<Eigen::MatrixXd> _dielinv_matrices_r;
+  std::vector<Eigen::MatrixXcd> _dielinv_matrices_r;
   const TCMatrix_gwbse& _Mmn;
   Eigen::VectorXd _quadpoints;
   Eigen::VectorXd _quadadaptedweights;
