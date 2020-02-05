@@ -216,7 +216,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double intercept = intercepts[gw_level];
     boost::optional<double> newf;
     if (_opt.qp_solver == "fixedpoint") {
-      newf = SolveQP_FixedPoint(intercept, initial_f, gw_level);
+      newf = SolveQP_Newton(intercept, initial_f, gw_level);
     }
     if (newf) {
       frequencies_new[gw_level] = newf.value();
@@ -286,16 +286,7 @@ double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
 boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
                                                double frequency0,
                                                Index gw_level) const {
-  // This function will implement the actual fixed-point method, i.e. the old
-  // VOTCA default method
   boost::optional<double> newf = boost::none;
-  QPFunc f(gw_level, *_sigma.get(), intercept0);
-  NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
-      _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
-  double freq_new = newton.FindRoot(f, frequency0);
-  if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
-    newf = freq_new;
-  }
   return newf;
 }
 
@@ -347,9 +338,14 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
 
 boost::optional<double> GW::SolveQP_Newton(double intercept0, double frequency0,
                                            Index gw_level) const {
-  // This function will implement Newton's method, which is currently
-  // implemented in SolveQP_FixedPoint
   boost::optional<double> newf = boost::none;
+  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
+      _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
+  double freq_new = newton.FindRoot(f, frequency0);
+  if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
+    newf = freq_new;
+  }
   return newf;
 }
 
