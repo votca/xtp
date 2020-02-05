@@ -255,7 +255,6 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
 double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
                              double upperbound, double f_upperbound,
                              const QPFunc& f) const {
-
   if (f_lowerbound * f_upperbound > 0) {
     throw std::runtime_error(
         "Bisection needs a postive and negative function value");
@@ -287,6 +286,7 @@ boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
                                                double frequency0,
                                                Index gw_level) const {
   boost::optional<double> newf = boost::none;
+  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   return newf;
 }
 
@@ -295,8 +295,8 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
   const double range =
       _opt.qp_grid_spacing * double(_opt.qp_grid_steps - 1) / 2.0;
   boost::optional<double> newf = boost::none;
-  double freq_prev = frequency0 - range;
   QPFunc fqp(gw_level, *_sigma.get(), intercept0);
+  double freq_prev = frequency0 - range;
   double targ_prev = fqp.value(freq_prev);
   double qp_energy = 0.0;
   double gradient_max = std::numeric_limits<double>::max();
@@ -326,12 +326,10 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
                                                   double frequency0,
                                                   Index gw_level) const {
   boost::optional<double> newf = boost::none;
-  double sigma = _sigma->CalcCorrelationDiagElement(gw_level, frequency0);
-  double dsigma_domega =
-      _sigma->CalcCorrelationDiagElementDerivative(gw_level, frequency0);
-  double Z = 1.0 - dsigma_domega;
-  if (std::abs(Z) > 1e-9) {
-    newf = frequency0 + (intercept0 - frequency0 + sigma) / Z;
+  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
+  std::pair<double, double> res = fqp(frequency0);
+  if (std::abs(res.second) > 1e-9) {
+    newf = -(res.first - res.second * frequency0) / res.second;
   }
   return newf;
 }
@@ -339,10 +337,10 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
 boost::optional<double> GW::SolveQP_Newton(double intercept0, double frequency0,
                                            Index gw_level) const {
   boost::optional<double> newf = boost::none;
-  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
       _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
-  double freq_new = newton.FindRoot(f, frequency0);
+  double freq_new = newton.FindRoot(fqp, frequency0);
   if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
     newf = freq_new;
   }
