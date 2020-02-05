@@ -102,7 +102,7 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
     double delta = std::abs(rpa_energies(i) - frequency);
     double factor = CalcResiduePrefactor(fermi_rpa, rpa_energies(i), frequency);
 
-    if (factor != 0.0) {
+    if (std::abs(factor) > 0.1) {
       sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, _eta);
     }
 
