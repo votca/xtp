@@ -48,7 +48,7 @@ class GaussianQuadrature {
 
   double SigmaGQDiag(double frequency, Index gw_level) const;
   double SigmaGQHDiag(double frequency, Index gw_level, double eta) const;
-
+ double SigmaGQLDiag(double frequency, Index gw_level, double eta) const;
  private:
   options _opt;
 

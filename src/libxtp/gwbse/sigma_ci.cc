@@ -58,18 +58,16 @@ double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
                                                  double delta,
                                                  double alpha) const {
   Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
-  // Eigen::MatrixXd R = _rpa.calculate_real_epsilon_inverse(0.0, 0.0);
+
   R.diagonal().array() -= 1.0;
-  // We add this alpha term to have a nice behaviour around omega = 0. Please be
-  // careful with the delta sign delta here is a generic number but in practice
-  // it should be e^qp - e^ks
-  double erfc_factor = -0.5 * std::copysign(1.0, delta) *
-                       std::exp(std::pow(alpha * delta, 2)) *
-                       std::erfc(std::abs(alpha * delta));
 
-  double value = ((Imx_row * R.real()).cwiseProduct(Imx_row)).sum();
+   double erfc_factor = -0.5 * std::copysign(1.0, delta) *
+                        std::exp(std::pow(alpha * delta, 2)) *
+                        std::erfc(std::abs(alpha * delta));
 
-  return value * erfc_factor;
+  std::complex<double> value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
+
+  return value.real() * erfc_factor;
 }
 
 double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m,
@@ -108,10 +106,10 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
     }
 
     // This is what is left from the alpha correction in the Quadrature term
-    // result_alpha += CalcDiagContributionValue_alpha(Imx.row(i), delta,
-    // _opt.alpha);
+    //result_alpha +=
+        //CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
   }
-  return sigma_c;  //+ result_alpha;
+  return sigma_c;
 }
 
 double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
@@ -123,11 +121,11 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
   double sigma_c_integral = _gq.SigmaGQHDiag(frequency, gw_level, _eta);
-  //double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
+  // double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
 
-  //return sigma_c_residue + sigma_c_integral;
+  // return sigma_c_residue;
 
-  return sigma_c_integral;
+  return sigma_c_residue + sigma_c_integral;
 }
 
 }  // namespace xtp

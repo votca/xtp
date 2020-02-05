@@ -20,6 +20,7 @@
 #include <votca/tools/constants.h>
 #include <votca/xtp/gauss_hermite_quadrature_constants.h>
 #include <votca/xtp/gauss_laguerre_quadrature_constants.h>
+#include <votca/xtp/gauss_legendre_quadrature_constants.h>
 #include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/threecenter.h>
 
@@ -34,7 +35,8 @@ GaussianQuadrature::GaussianQuadrature(const Eigen::VectorXd& energies,
 void GaussianQuadrature::configure(options opt, const RPA& rpa) {
   _opt = opt;
   //Gauss_Laguerre_Quadrature_Constants glqc;
-  Gauss_Hermite_Quadrature_Constants glqc;
+  //Gauss_Hermite_Quadrature_Constants glqc;
+  Gauss_Legendre_Quadrature_Constants glqc;
   _quadpoints = glqc.getPoints(_opt.order);
   _quadadaptedweights = glqc.getAdaptedWeights(_opt.order);
   CalcDielInvVector(rpa);
@@ -43,14 +45,17 @@ void GaussianQuadrature::configure(options opt, const RPA& rpa) {
 // This function calculates and stores inverses of the microscopic dielectric
 // matrix in a matrix vector
 void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
-
   _dielinv_matrices_r.resize(_opt.order);
+  double x0 = 0.5;
+  
 #pragma openmp parallel schedule (guided)
   for (Index j = 0; j < _opt.order; j++) {
+    double exponent = (1.0 + _quadpoints(j))/(1.0 - _quadpoints(j));
+  double newpoint = std::pow(x0,exponent);
     Eigen::MatrixXcd eps_inv_j =
-        rpa.calculate_epsilon_complex(0.0, _quadpoints(j)).inverse();
+        rpa.calculate_epsilon_complex(0.0, newpoint).inverse();
       eps_inv_j.diagonal().array() -= 1.0;
-    _dielinv_matrices_r[j] = -eps_inv_j;  // (eps_inv_zero_alpha - eps_inv_j);
+    _dielinv_matrices_r[j] =  - eps_inv_j;
   }
 }
 
@@ -93,9 +98,42 @@ double GaussianQuadrature::SigmaGQHDiag(double frequency, Index gw_level,
     Eigen::VectorXcd denominator =
         (1.0) / (DeltaE + std::complex<double>(0.0, _quadpoints(j)));
     Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;
-    Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);  // C = I * B
+    Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);  
     std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
     result += _quadadaptedweights(j)  * value;
+  }
+
+  return result.real() / (2.0*tools::conv::Pi);
+}
+
+double GaussianQuadrature::SigmaGQLDiag(double frequency, Index gw_level,
+                                        double eta) const {
+  Index homo = _opt.homo - _opt.rpamin;
+  Index lumo = homo + 1;
+  
+  const Eigen::MatrixXd& Imx = _Mmn[gw_level];
+  Eigen::ArrayXcd DeltaE = frequency - _energies.array();
+  std::complex<double> result = std::complex<double>(0.0, 0.0);
+   
+  double x0 = 0.5;
+  
+  for ( Index k = 0; k < lumo; ++k){
+    DeltaE(k) += std::complex<double>(0.0,1.0*eta); 
+  }
+  for ( Index k = lumo; k < _energies.size() ; ++k){
+    DeltaE(k) += std::complex<double>(0.0,-1.0*eta); 
+  }
+
+  for (Index j = 0; j < _opt.order; ++j) {
+    double exponent = (1.0+_quadpoints(j))/(1.0-_quadpoints(j));
+    double newpoint = std::pow(x0,exponent);
+    double newweight = (2.0*_quadadaptedweights(j)*x0)/((1.0-_quadadaptedweights(j)*_quadadaptedweights(j)));
+    Eigen::VectorXcd denominator =
+        (1.0) / (DeltaE + std::complex<double>(0.0, newpoint));
+    Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;
+    Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);  
+    std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
+    result += newweight  * value;
   }
 
   return result.real() / (2.0*tools::conv::Pi);
