@@ -92,6 +92,8 @@ Eigen::MatrixXcd RPA::calculate_epsilon_complex(double frequency_r,double freque
 
   std::complex<double> frequency(frequency_r, frequency_i);
   std::complex<double> eta(0.0, _eta);  
+
+  //std::cout << "calc eps " <<  _eta << std::endl;
  
 #pragma omp parallel for
   for (Index m_level = 0; m_level < n_occ; m_level++) {

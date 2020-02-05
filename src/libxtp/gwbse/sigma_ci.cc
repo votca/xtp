@@ -102,6 +102,7 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
     double delta = std::abs(rpa_energies(i) - frequency);
     double factor = CalcResiduePrefactor(fermi_rpa, rpa_energies(i), frequency);
 
+    // just sum contributing terms
     if (std::abs(factor) > 0.1) {
       sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, _eta);
     }
@@ -121,9 +122,12 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
+  double sigma_c_integral = _gq.SigmaGQHDiag(frequency, gw_level, _eta);
+  //double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
 
-  return sigma_c_residue + sigma_c_integral;
+  //return sigma_c_residue + sigma_c_integral;
+
+  return sigma_c_integral;
 }
 
 }  // namespace xtp
