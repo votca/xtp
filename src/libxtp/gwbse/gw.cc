@@ -251,68 +251,6 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   return frequencies_new;
 }
 
-boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
-                                                  double frequency0,
-                                                  Index gw_level) const {
-  boost::optional<double> newf = boost::none;
-
-  double sigma = _sigma->CalcCorrelationDiagElement(gw_level, frequency0);
-  double dsigma_domega =
-      _sigma->CalcCorrelationDiagElementDerivative(gw_level, frequency0);
-  double Z = 1.0 - dsigma_domega;
-  if (std::abs(Z) > 1e-9) {
-    newf = frequency0 + (intercept0 - frequency0 + sigma) / Z;
-  }
-  return newf;
-}
-
-boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
-                                         Index gw_level) const {
-  const double range =
-      _opt.qp_grid_spacing * double(_opt.qp_grid_steps - 1) / 2.0;
-  boost::optional<double> newf = boost::none;
-  double freq_prev = frequency0 - range;
-  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
-  double targ_prev = fqp.value(freq_prev);
-  double qp_energy = 0.0;
-  double gradient_max = std::numeric_limits<double>::max();
-  bool pole_found = false;
-  for (Index i_node = 1; i_node < _opt.qp_grid_steps; ++i_node) {
-    double freq = freq_prev + _opt.qp_grid_spacing;
-    double targ = fqp.value(freq);
-    if (targ_prev * targ < 0.0) {  // Sign change
-      double f = SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
-      double gradient = std::abs(fqp.deriv(f));
-      if (gradient < gradient_max) {
-        qp_energy = f;
-        gradient_max = gradient;
-        pole_found = true;
-      }
-    }
-    freq_prev = freq;
-    targ_prev = targ;
-  }
-
-  if (pole_found) {
-    newf = qp_energy;
-  }
-  return newf;
-}
-
-boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
-                                               double frequency0,
-                                               Index gw_level) const {
-  boost::optional<double> newf = boost::none;
-  QPFunc f(gw_level, *_sigma.get(), intercept0);
-  NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
-      _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
-  double freq_new = newton.FindRoot(f, frequency0);
-  if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
-    newf = freq_new;
-  }
-  return newf;
-}
-
 // https://en.wikipedia.org/wiki/Bisection_method
 double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
                              double upperbound, double f_upperbound,
@@ -343,6 +281,76 @@ double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
     }
   }
   return zero;
+}
+
+boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
+                                               double frequency0,
+                                               Index gw_level) const {
+  // This function will implement the actual fixed-point method, i.e. the old
+  // VOTCA default method
+  boost::optional<double> newf = boost::none;
+  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
+      _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
+  double freq_new = newton.FindRoot(f, frequency0);
+  if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
+    newf = freq_new;
+  }
+  return newf;
+}
+
+boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
+                                         Index gw_level) const {
+  const double range =
+      _opt.qp_grid_spacing * double(_opt.qp_grid_steps - 1) / 2.0;
+  boost::optional<double> newf = boost::none;
+  double freq_prev = frequency0 - range;
+  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
+  double targ_prev = fqp.value(freq_prev);
+  double qp_energy = 0.0;
+  double gradient_max = std::numeric_limits<double>::max();
+  bool pole_found = false;
+  for (Index i_node = 1; i_node < _opt.qp_grid_steps; ++i_node) {
+    double freq = freq_prev + _opt.qp_grid_spacing;
+    double targ = fqp.value(freq);
+    if (targ_prev * targ < 0.0) {  // Sign change
+      double f = SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
+      double gradient = std::abs(fqp.deriv(f));
+      if (gradient < gradient_max) {
+        qp_energy = f;
+        gradient_max = gradient;
+        pole_found = true;
+      }
+    }
+    freq_prev = freq;
+    targ_prev = targ;
+  }
+  if (pole_found) {
+    newf = qp_energy;
+  }
+  return newf;
+}
+
+boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
+                                                  double frequency0,
+                                                  Index gw_level) const {
+  boost::optional<double> newf = boost::none;
+  double sigma = _sigma->CalcCorrelationDiagElement(gw_level, frequency0);
+  double dsigma_domega =
+      _sigma->CalcCorrelationDiagElementDerivative(gw_level, frequency0);
+  double Z = 1.0 - dsigma_domega;
+  if (std::abs(Z) > 1e-9) {
+    newf = frequency0 + (intercept0 - frequency0 + sigma) / Z;
+  }
+  return newf;
+}
+
+boost::optional<double> GW::SolveQP_Newton(double intercept0, double frequency0,
+                                           Index gw_level) const {
+  // This function will implement Newton's method, which is currently
+  // implemented in SolveQP_FixedPoint
+  boost::optional<double> newf = boost::none;
+  return newf;
 }
 
 bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
