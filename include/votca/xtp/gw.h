@@ -134,15 +134,15 @@ class GW {
   void PrintGWA_Energies() const;
 
   Eigen::VectorXd SolveQP(const Eigen::VectorXd& frequencies) const;
-  boost::optional<double> SolveQP_FixedPoint(double frequency0,
-                                             const QPFunc& fqp) const;
-  boost::optional<double> SolveQP_Grid(double frequency0,
-                                       const QPFunc& fqp) const;
   boost::optional<double> SolveQP_Bisection(double lowerbound,
                                             double f_lowerbound,
                                             double upperbound,
                                             double f_upperbound,
                                             const QPFunc& fqp) const;
+  boost::optional<double> SolveQP_FixedPoint(double frequency0,
+                                             const QPFunc& fqp) const;
+  boost::optional<double> SolveQP_Grid(double frequency0,
+                                       const QPFunc& fqp) const;
   boost::optional<double> SolveQP_Linearisation(double frequency0,
                                                 const QPFunc& fqp) const;
   boost::optional<double> SolveQP_Newton(double frequency0,
