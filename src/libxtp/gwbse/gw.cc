@@ -227,7 +227,13 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     boost::optional<double> newf = boost::none;
     bool conv = false;
     if (_opt.qp_solver == "fixedpoint") {
+      newf = SolveQP_FixedPoint(frequency, fqp);
+      conv = (newf != boost::none);
+    } else if (_opt.qp_solver == "newton") {
       newf = SolveQP_Newton(frequency, fqp);
+      conv = (newf != boost::none);
+    } else {  // Default: grid
+      newf = SolveQP_Grid(frequency, fqp);
       conv = (newf != boost::none);
     }
     if (!conv) {
