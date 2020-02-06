@@ -287,6 +287,7 @@ boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
                                                Index gw_level) const {
   boost::optional<double> newf = boost::none;
   QPFunc fqp(gw_level, *_sigma.get(), intercept0);
+  newf = fqp.value(frequency0) + frequency0;
   return newf;
 }
 
