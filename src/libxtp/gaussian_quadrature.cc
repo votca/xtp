@@ -53,9 +53,6 @@ void GaussianQuadrature::configure(options opt, const RPA& rpa) {
     std::cout << "There no such a thing as the integration scheme you asked"
               << std::endl;
   }
-  // _quadpoints = glqc.getPoints(_opt.order);
-  // _quadadaptedweights = glqc.getAdaptedWeights(_opt.order);
-  // CalcDielInvVector(rpa);
 }
 
 // This function calculates and stores inverses of the microscopic dielectric
@@ -79,11 +76,7 @@ void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
     eps_inv_j.diagonal().array() -= 1.0;
     _dielinv_matrices_r[j] = -eps_inv_j;
     }
-    // Eigen::MatrixXcd eps_inv_j =
-    //     rpa.calculate_epsilon_complex(0.0, newpoint).inverse();
-    // eps_inv_j.diagonal().array() -= 1.0;
-    // _dielinv_matrices_r[j] = -eps_inv_j;
-  }
+ }
 }
 
 double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
@@ -94,7 +87,7 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
   Eigen::ArrayXcd DeltaE = frequency - _energies.array();
   std::complex<double> result = std::complex<double>(0.0, 0.0);
-
+ 
 
   if (_opt.quadrature_scheme == "modified_legendre") {
     //This work for integration limits a = 0 b = +infty
@@ -112,14 +105,22 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
       double den =
           (1.0 - _quadadaptedweights(j)) * (1.0 - _quadadaptedweights(j));
       double newweight = (2.0 * _quadadaptedweights(j) * 0.5) / den;
-      Eigen::VectorXcd denominator =
+      Eigen::VectorXcd denominator1 =
           (1.0) / (DeltaE + std::complex<double>(0.0, newpoint));
-      Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;
+      Eigen::MatrixXcd Amx = denominator1.asDiagonal() * Imx;
       Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);
-      std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
-      result += newweight * value;
+      std::complex<double> value1 = (Cmx.cwiseProduct(Amx)).sum();
+      Eigen::VectorXcd denominator2 =
+          (1.0) / (DeltaE + std::complex<double>(0.0, -newpoint));
+      Eigen::MatrixXcd Dmx = denominator2.asDiagonal() * Imx;
+      Eigen::MatrixXcd Emx = Imx * (_dielinv_matrices_r[j].conjugate());
+      std::complex<double> value2 = (Emx.cwiseProduct(Dmx)).sum();
+     
+result += newweight * (value1+value2);
     }
+
 result *= 0.5;
+
   } else if (_opt.quadrature_scheme == "hermite") {
     //This work for integration limits a = -infty b = +infty
 
@@ -154,87 +155,6 @@ result *= 0.5;
   }
   return result.real() / (tools::conv::Pi);
 }
-
-// double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level)
-// const {
-
-//   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
-//   Eigen::ArrayXd DeltaE = frequency - _energies.array();
-//   std::complex<double> result = std::complex<double>(0.0, 0.0);
-//   for (Index j = 0; j < _opt.order; ++j) {
-//     Eigen::VectorXcd coeffs1 =
-//         (DeltaE) / (DeltaE.square() + std::pow(_quadpoints(j), 2));
-//     Eigen::MatrixXcd Amx = coeffs1.asDiagonal() * Imx;
-//     Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);
-//     std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
-//     result += _quadadaptedweights(j) * value;
-//   }
-
-//   return result.real() / (tools::conv::Pi);
-// }
-
-// double GaussianQuadrature::SigmaGQHDiag(double frequency, Index gw_level,
-//                                         double eta) const {
-//   Index homo = _opt.homo - _opt.rpamin;
-//   Index lumo = homo + 1;
-
-//   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
-//   Eigen::ArrayXcd DeltaE = frequency - _energies.array();
-//   std::complex<double> result = std::complex<double>(0.0, 0.0);
-
-//   for ( Index k = 0; k < lumo; ++k){
-//     DeltaE(k) += std::complex<double>(0.0,1.0*eta);
-//   }
-//   for ( Index k = lumo; k < _energies.size() ; ++k){
-//     DeltaE(k) += std::complex<double>(0.0,-1.0*eta);
-//   }
-
-//   for (Index j = 0; j < _opt.order; ++j) {
-
-//     Eigen::VectorXcd denominator =
-//         (1.0) / (DeltaE + std::complex<double>(0.0, _quadpoints(j)));
-//     Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;
-//     Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);
-//     std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
-//     result += _quadadaptedweights(j)  * value;
-//   }
-
-//   return result.real() / (2.0*tools::conv::Pi);
-// }
-
-// double GaussianQuadrature::SigmaGQLDiag(double frequency, Index gw_level,
-//                                         double eta) const {
-//   Index homo = _opt.homo - _opt.rpamin;
-//   Index lumo = homo + 1;
-
-//   const Eigen::MatrixXd& Imx = _Mmn[gw_level];
-//   Eigen::ArrayXcd DeltaE = frequency - _energies.array();
-//   std::complex<double> result = std::complex<double>(0.0, 0.0);
-
-//   double x0 = 0.5;
-
-//   for ( Index k = 0; k < lumo; ++k){
-//     DeltaE(k) += std::complex<double>(0.0,1.0*eta);
-//   }
-//   for ( Index k = lumo; k < _energies.size() ; ++k){
-//     DeltaE(k) += std::complex<double>(0.0,-1.0*eta);
-//   }
-
-//   for (Index j = 0; j < _opt.order; ++j) {
-//     double exponent = (1.0+_quadpoints(j))/(1.0-_quadpoints(j));
-//     double newpoint = std::pow(x0,exponent);
-//     double den = (1.0-_quadadaptedweights(j))*(1.0-_quadadaptedweights(j));
-//     double newweight = (2.0*_quadadaptedweights(j)*x0)/den;
-//     Eigen::VectorXcd denominator =
-//         (1.0) / (DeltaE + std::complex<double>(0.0, newpoint));
-//     Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;
-//     Eigen::MatrixXcd Cmx = Imx * (_dielinv_matrices_r[j]);
-//     std::complex<double> value = (Cmx.cwiseProduct(Amx)).sum();
-//     result += newweight  * value;
-//   }
-
-//   return result.real() / (2.0*tools::conv::Pi);
-// }
 
 }  // namespace xtp
 

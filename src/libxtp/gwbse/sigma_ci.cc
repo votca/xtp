@@ -33,8 +33,6 @@ void Sigma_CI::PrepareScreening() {
   opt.rpamin = _opt.rpamin;
   opt.alpha = _opt.alpha;
   opt.quadrature_scheme = _opt.quadrature_scheme;
-
-  std::cout << "in prep screen " << _opt.quadrature_scheme << std::endl;
   _gq.configure(opt, _rpa);
 }
 
@@ -120,7 +118,7 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 1.0);
+  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 2.0);
   
   //return sigma_c_residue;
   //return sigma_c_integral;
