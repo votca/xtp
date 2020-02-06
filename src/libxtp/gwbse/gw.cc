@@ -261,7 +261,6 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   return frequencies_new;
 }
 
-// https://en.wikipedia.org/wiki/Bisection_method
 boost::optional<double> GW::SolveQP_Bisection(double freq_lb, double freq_ub,
                                               double targ_lb, double targ_ub,
                                               const QPFunc& fqp) const {
