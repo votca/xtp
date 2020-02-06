@@ -214,20 +214,21 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
     double initial_f = frequencies[gw_level];
     double intercept = intercepts[gw_level];
+    QPFunc fqp(gw_level, *_sigma.get(), intercept);
     boost::optional<double> newf;
     if (_opt.qp_solver == "fixedpoint") {
-      newf = SolveQP_Newton(intercept, initial_f, gw_level);
+      newf = SolveQP_Newton(initial_f, fqp);
     }
     if (newf) {
       frequencies_new[gw_level] = newf.value();
       converged[gw_level] = true;
     } else {
-      newf = SolveQP_Grid(intercept, initial_f, gw_level);
+      newf = SolveQP_Grid(initial_f, fqp);
       if (newf) {
         frequencies_new[gw_level] = newf.value();
         converged[gw_level] = true;
       } else {
-        newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
+        newf = SolveQP_Linearisation(initial_f, fqp);
         if (newf) {
           frequencies_new[gw_level] = newf.value();
         }
@@ -252,23 +253,25 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
 }
 
 // https://en.wikipedia.org/wiki/Bisection_method
-double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
-                             double upperbound, double f_upperbound,
-                             const QPFunc& f) const {
+boost::optional<double> GW::SolveQP_Bisection(double lowerbound,
+                                              double f_lowerbound,
+                                              double upperbound,
+                                              double f_upperbound,
+                                              const QPFunc& fqp) const {
   if (f_lowerbound * f_upperbound > 0) {
     throw std::runtime_error(
         "Bisection needs a postive and negative function value");
   }
-  double zero = 0.0;
+  boost::optional<double> newf = boost::none;
   while (true) {
     double c = 0.5 * (lowerbound + upperbound);
     if (std::abs(upperbound - lowerbound) < _opt.g_sc_limit) {
-      zero = c;
+      newf = c;
       break;
     }
-    double y_c = f.value(c);
+    double y_c = fqp.value(c);
     if (std::abs(y_c) < _opt.g_sc_limit) {
-      zero = c;
+      newf = c;
       break;
     }
     if (y_c * f_lowerbound > 0) {
@@ -279,24 +282,21 @@ double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
       f_upperbound = y_c;
     }
   }
-  return zero;
+  return newf;
 }
 
-boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
-                                               double frequency0,
-                                               Index gw_level) const {
+boost::optional<double> GW::SolveQP_FixedPoint(double frequency0,
+                                               const QPFunc& fqp) const {
   boost::optional<double> newf = boost::none;
-  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   newf = fqp.value(frequency0) + frequency0;
   return newf;
 }
 
-boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
-                                         Index gw_level) const {
+boost::optional<double> GW::SolveQP_Grid(double frequency0,
+                                         const QPFunc& fqp) const {
   const double range =
       _opt.qp_grid_spacing * double(_opt.qp_grid_steps - 1) / 2.0;
   boost::optional<double> newf = boost::none;
-  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   double freq_prev = frequency0 - range;
   double targ_prev = fqp.value(freq_prev);
   double qp_energy = 0.0;
@@ -306,12 +306,15 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
     double freq = freq_prev + _opt.qp_grid_spacing;
     double targ = fqp.value(freq);
     if (targ_prev * targ < 0.0) {  // Sign change
-      double f = SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
-      double gradient = std::abs(fqp.deriv(f));
-      if (gradient < gradient_max) {
-        qp_energy = f;
-        gradient_max = gradient;
-        pole_found = true;
+      boost::optional<double> newf_bisection =
+          SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
+      if (newf_bisection) {
+        double gradient = std::abs(fqp.deriv(newf_bisection.value()));
+        if (gradient < gradient_max) {
+          qp_energy = newf_bisection.value();
+          gradient_max = gradient;
+          pole_found = true;
+        }
       }
     }
     freq_prev = freq;
@@ -323,11 +326,9 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
   return newf;
 }
 
-boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
-                                                  double frequency0,
-                                                  Index gw_level) const {
+boost::optional<double> GW::SolveQP_Linearisation(double frequency0,
+                                                  const QPFunc& fqp) const {
   boost::optional<double> newf = boost::none;
-  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   std::pair<double, double> res = fqp(frequency0);
   if (std::abs(res.second) > 1e-9) {
     newf = -(res.first - res.second * frequency0) / res.second;
@@ -335,10 +336,9 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
   return newf;
 }
 
-boost::optional<double> GW::SolveQP_Newton(double intercept0, double frequency0,
-                                           Index gw_level) const {
+boost::optional<double> GW::SolveQP_Newton(double frequency0,
+                                           const QPFunc& fqp) const {
   boost::optional<double> newf = boost::none;
-  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
   NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
       _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
   double freq_new = newton.FindRoot(fqp, frequency0);
