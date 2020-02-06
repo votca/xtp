@@ -253,33 +253,31 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
 }
 
 // https://en.wikipedia.org/wiki/Bisection_method
-boost::optional<double> GW::SolveQP_Bisection(double lowerbound,
-                                              double f_lowerbound,
-                                              double upperbound,
-                                              double f_upperbound,
+boost::optional<double> GW::SolveQP_Bisection(double freq_lb, double freq_ub,
+                                              double targ_lb, double targ_ub,
                                               const QPFunc& fqp) const {
-  if (f_lowerbound * f_upperbound > 0) {
+  if (targ_lb * targ_ub > 0) {
     throw std::runtime_error(
         "Bisection needs a postive and negative function value");
   }
   boost::optional<double> newf = boost::none;
   for (Index i_g = 0; i_g < _opt.g_sc_max_iterations; i_g++) {
-    double c = 0.5 * (lowerbound + upperbound);
-    if (std::abs(upperbound - lowerbound) < _opt.g_sc_limit) {
-      newf = c;
+    double freq_center = 0.5 * (freq_lb + freq_ub);
+    if (std::abs(freq_ub - freq_lb) < _opt.g_sc_limit) {
+      newf = freq_center;
       break;
     }
-    double y_c = fqp.value(c);
-    if (std::abs(y_c) < _opt.g_sc_limit) {
-      newf = c;
+    double targ_center = fqp.value(freq_center);
+    if (std::abs(targ_center) < _opt.g_sc_limit) {
+      newf = freq_center;
       break;
     }
-    if (y_c * f_lowerbound > 0) {
-      lowerbound = c;
-      f_lowerbound = y_c;
+    if (targ_center * targ_lb > 0) {
+      freq_lb = freq_center;
+      targ_lb = targ_center;
     } else {
-      upperbound = c;
-      f_upperbound = y_c;
+      freq_ub = freq_center;
+      targ_ub = targ_center;
     }
   }
   return newf;
@@ -288,14 +286,14 @@ boost::optional<double> GW::SolveQP_Bisection(double lowerbound,
 boost::optional<double> GW::SolveQP_FixedPoint(double frequency0,
                                                const QPFunc& fqp) const {
   boost::optional<double> newf = boost::none;
-  double fprev = frequency0;
+  double freq_prev = frequency0;
   for (Index i_g = 0; i_g < _opt.g_sc_max_iterations; i_g++) {
-    double fcurr = fqp.value(frequency0) + frequency0;
-    if (std::abs(fcurr - fprev) < _opt.g_sc_limit) {
-      newf = fcurr;
+    double freq_curr = fqp.value(frequency0) + frequency0;
+    if (std::abs(freq_curr - freq_prev) < _opt.g_sc_limit) {
+      newf = freq_curr;
       break;
     }
-    fprev = fcurr;
+    freq_prev = freq_curr;
   }
   return newf;
 }
@@ -308,27 +306,25 @@ boost::optional<double> GW::SolveQP_Grid(double frequency0,
   double freq_prev = frequency0 - range;
   double targ_prev = fqp.value(freq_prev);
   double qp_energy = 0.0;
-  double gradient_max = std::numeric_limits<double>::max();
-  bool pole_found = false;
+  double gradient_min = std::numeric_limits<double>::max();
   for (Index i_node = 1; i_node < _opt.qp_grid_steps; ++i_node) {
-    double freq = freq_prev + _opt.qp_grid_spacing;
-    double targ = fqp.value(freq);
-    if (targ_prev * targ < 0.0) {  // Sign change
+    double freq_curr = freq_prev + _opt.qp_grid_spacing;
+    double targ_curr = fqp.value(freq_curr);
+    if (targ_prev * targ_curr < 0.0) {  // Sign change
       boost::optional<double> newf_bisection =
-          SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
+          SolveQP_Bisection(freq_prev, freq_curr, targ_prev, targ_curr, fqp);
       if (newf_bisection) {
         double gradient = std::abs(fqp.deriv(newf_bisection.value()));
-        if (gradient < gradient_max) {
+        if (gradient < gradient_min) {
           qp_energy = newf_bisection.value();
-          gradient_max = gradient;
-          pole_found = true;
+          gradient_min = gradient;
         }
       }
     }
-    freq_prev = freq;
-    targ_prev = targ;
+    freq_prev = freq_curr;
+    targ_prev = targ_curr;
   }
-  if (pole_found) {
+  if (gradient_min != std::numeric_limits<double>::max()) {
     newf = qp_energy;
   }
   return newf;
@@ -349,9 +345,9 @@ boost::optional<double> GW::SolveQP_Newton(double frequency0,
   boost::optional<double> newf = boost::none;
   NewtonRapson<QPFunc> newton = NewtonRapson<QPFunc>(
       _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
-  double freq_new = newton.FindRoot(fqp, frequency0);
+  double res = newton.FindRoot(fqp, frequency0);
   if (newton.getInfo() == NewtonRapson<QPFunc>::success) {
-    newf = freq_new;
+    newf = res;
   }
   return newf;
 }
@@ -359,11 +355,8 @@ boost::optional<double> GW::SolveQP_Newton(double frequency0,
 bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
                    double epsilon) const {
   Index state = 0;
-  bool energies_converged = true;
   double diff_max = (e1 - e2).cwiseAbs().maxCoeff(&state);
-  if (diff_max > epsilon) {
-    energies_converged = false;
-  }
+  bool energies_converged = (diff_max <= epsilon);
   XTP_LOG(Log::info, _log) << TimeStamp() << " E_diff max=" << diff_max
                            << " StateNo:" << state << std::flush;
   return energies_converged;
