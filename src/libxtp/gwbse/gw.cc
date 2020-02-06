@@ -221,28 +221,24 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
       Eigen::Array<bool, Eigen::Dynamic, 1>::Zero(_qptotal);
 #pragma omp parallel for schedule(dynamic)
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
-    double initial_f = frequencies[gw_level];
+    double frequency = frequencies[gw_level];
     double intercept = intercepts[gw_level];
     QPFunc fqp(gw_level, *_sigma.get(), intercept);
-    boost::optional<double> newf;
+    boost::optional<double> newf = boost::none;
+    bool conv = false;
     if (_opt.qp_solver == "fixedpoint") {
-      newf = SolveQP_Newton(initial_f, fqp);
+      newf = SolveQP_Newton(frequency, fqp);
+      conv = (newf != boost::none);
     }
-    if (newf) {
-      frequencies_new[gw_level] = newf.value();
-      converged[gw_level] = true;
-    } else {
-      newf = SolveQP_Grid(initial_f, fqp);
-      if (newf) {
-        frequencies_new[gw_level] = newf.value();
-        converged[gw_level] = true;
-      } else {
-        newf = SolveQP_Linearisation(initial_f, fqp);
-        if (newf) {
-          frequencies_new[gw_level] = newf.value();
-        }
-      }
+    if (!conv) {
+      newf = SolveQP_Grid(frequency, fqp);
+      conv = (newf != boost::none);
     }
+    if (!conv) {
+      newf = SolveQP_Linearisation(frequency, fqp);
+    }
+    frequencies_new[gw_level] = newf.value();
+    converged[gw_level] = conv;
   }
 
   if (!converged.all()) {
