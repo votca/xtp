@@ -345,15 +345,18 @@ void GWBSE::Initialize(tools::Property& options) {
     XTP_LOG(Log::error, *_pLog)
         << " RPA size: " << (homo + 1 - rpamin) * (rpamax - homo) << flush;
   }
-  _gwopt.order = options.ifExistsReturnElseReturnDefault<Index>(
+   _gwopt.order = options.ifExistsReturnElseReturnDefault<Index>(
       key + ".laguerrequad_order", _gwopt.order);
+      XTP_LOG(Log::error, *_pLog)
+        << " Integration order Quadrature: " << _gwopt.order << flush;
+        _gwopt.quadrature_scheme = options.ifExistsReturnElseReturnDefault<std::string>(
+      key + ".quadrature_scheme", _gwopt.quadrature_scheme);
+      XTP_LOG(Log::error, *_pLog)
+        << " Integration scheme Quadrature: " << _gwopt.quadrature_scheme << flush;
   _gwopt.alpha = options.ifExistsReturnElseReturnDefault<double>(key + ".alpha",
                                                                  _gwopt.alpha);
-  if (_gwopt.sigma_integration == "ci") {
     XTP_LOG(Log::error, *_pLog) << " Alpha value: " << _gwopt.alpha << flush;
-    XTP_LOG(Log::error, *_pLog)
-        << " Integration order Quadrature: " << _gwopt.order << flush;
-  }
+    
 
   _gwopt.eta =
       options.ifExistsReturnElseReturnDefault<double>(key + ".eta", _gwopt.eta);

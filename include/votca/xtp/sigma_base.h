@@ -28,6 +28,7 @@ namespace xtp {
 class TCMatrix_gwbse;
 class RPA;
 
+
 class Sigma_base {
  public:
   Sigma_base(TCMatrix_gwbse& Mmn, const RPA& rpa) : _Mmn(Mmn), _rpa(rpa){};
@@ -43,6 +44,7 @@ class Sigma_base {
     double eta = 1e-3;
     Index order = 12;
     double alpha = 0.1;
+    std::string quadrature_scheme="laguerre";
   };
 
   void configure(options opt) {

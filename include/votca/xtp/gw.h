@@ -62,6 +62,7 @@ class GW {
     double qp_solver_alpha = 0.75;
     Index qp_grid_steps = 601;       // Number of grid points
     double qp_grid_spacing = 0.005;  // Spacing of grid points in Ha
+    std::string quadrature_scheme; //Kind of Gaussian-quadrature scheme to use
   };
 
   void configure(const options& opt);

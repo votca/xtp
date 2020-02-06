@@ -32,6 +32,9 @@ void Sigma_CI::PrepareScreening() {
   opt.qpmin = _opt.qpmin;
   opt.rpamin = _opt.rpamin;
   opt.alpha = _opt.alpha;
+  opt.quadrature_scheme = _opt.quadrature_scheme;
+
+  std::cout << "in prep screen " << _opt.quadrature_scheme << std::endl;
   _gq.configure(opt, _rpa);
 }
 
@@ -40,9 +43,6 @@ void Sigma_CI::PrepareScreening() {
 // frequencies of the kind omega = delta + i*eta
 double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
                                       double eta) const {
-
-  // Eigen::MatrixXd DielMxInv = _rpa.calculate_real_epsilon_inverse(delta,
-  // eta);
   Eigen::MatrixXcd DielMxInv =
       _rpa.calculate_epsilon_complex(delta, eta).inverse();
   DielMxInv.diagonal().array() -= 1.0;
@@ -120,7 +120,7 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQLDiag(frequency, gw_level, 1.0);
+  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 1.0);
   
   //return sigma_c_residue;
   //return sigma_c_integral;
