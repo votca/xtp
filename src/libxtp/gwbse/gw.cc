@@ -228,10 +228,10 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     // Call solver of choice
     if (_opt.qp_solver == "fixedpoint") {
       newf = SolveQP_FixedPoint(frequency, fqp);
-    } else if (_opt.qp_solver == "newton") {
-      newf = SolveQP_Newton(frequency, fqp);
     } else if (_opt.qp_solver == "grid") {
       newf = SolveQP_Grid(frequency, fqp);
+    } else if (_opt.qp_solver == "newton") {
+      newf = SolveQP_Newton(frequency, fqp);
     }
     // Call default solver
     if (!newf && _opt.qp_solver != "grid") {
