@@ -394,13 +394,25 @@ void GWBSE::Initialize(tools::Property& options) {
   }
   XTP_LOG(Log::error, *_pLog) << " eta: " << _gwopt.eta << flush;
 
-  _gwopt.qp_solver = options.ifExistsReturnElseReturnDefault<std::string>(
-      key + ".qp_solver", _gwopt.qp_solver);
+  if (options.exists(key + ".qp_solver")) {
+    std::vector<std::string> solvers = {"fixedpoint", "grid", "newton"};
+    _gwopt.qp_solver =
+        options.ifExistsAndinListReturnElseThrowRuntimeError<std::string>(
+            key + ".qp_solver", solvers);
+  }
+  _gwopt.qp_solver_alpha = options.ifExistsReturnElseReturnDefault<double>(
+      key + ".qp_solver_alpha", _gwopt.qp_solver_alpha);
+  _gwopt.qp_solver_fallback = options.ifExistsReturnElseReturnDefault<bool>(
+      key + ".qp_solver_fallback", _gwopt.qp_solver_fallback);
   _gwopt.qp_grid_steps = options.ifExistsReturnElseReturnDefault<Index>(
       key + ".qp_grid_steps", _gwopt.qp_grid_steps);
   _gwopt.qp_grid_spacing = options.ifExistsReturnElseReturnDefault<double>(
       key + ".qp_grid_spacing", _gwopt.qp_grid_spacing);
   XTP_LOG(Log::error, *_pLog) << " QP solver: " << _gwopt.qp_solver << flush;
+  XTP_LOG(Log::error, *_pLog)
+      << " QP solver alpha: " << _gwopt.qp_solver_alpha << flush;
+  XTP_LOG(Log::error, *_pLog)
+      << " QP solver fallback: " << _gwopt.qp_solver_fallback << flush;
   if (_gwopt.qp_solver == "grid") {
     XTP_LOG(Log::error, *_pLog)
         << " QP grid steps: " << _gwopt.qp_grid_steps << flush;

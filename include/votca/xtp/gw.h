@@ -55,8 +55,9 @@ class GW {
     std::string sigma_integration = "ppm";
     Index reset_3c = 5;  // how often the 3c integrals in iterate should be
                          // rebuild
-    std::string qp_solver = "grid";
-    double qp_solver_alpha = 0.75;
+    std::string qp_solver = "grid";  // QP Solver
+    double qp_solver_alpha = 0.75;   // QP solver mixing parameter
+    bool qp_solver_fallback = true;  // Call default solver if QP solver fails
     Index qp_grid_steps = 601;       // Number of grid points
     double qp_grid_spacing = 0.005;  // Spacing of grid points in Ha
   };

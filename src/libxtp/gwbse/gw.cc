@@ -219,6 +219,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd frequencies_new = frequencies;
   Eigen::Array<bool, Eigen::Dynamic, 1> converged =
       Eigen::Array<bool, Eigen::Dynamic, 1>::Zero(_qptotal);
+  bool fallback = _opt.qp_solver_fallback && _opt.qp_solver != "grid";
 #pragma omp parallel for schedule(dynamic)
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
     double frequency = frequencies[gw_level];
@@ -234,7 +235,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
       newf = SolveQP_Newton(frequency, fqp);
     }
     // Call default solver
-    if (!newf && _opt.qp_solver != "grid") {
+    if (!newf && fallback) {
       newf = SolveQP_Grid(frequency, fqp);
     }
     // Check converged. Still not converged? Do a linearisation

@@ -16,7 +16,9 @@
         <tasks help="tasks to do gw,singlets,triplets or all">gw,singlets,triplets</tasks> 
         <sigma_integrator help="self-energy correlation integration method: ppm, exact">ppm</sigma_integrator>
         <eta help="small parameter eta of the Green's function">1e-3</eta>
-        <qp_solver help="QP equation solve method: fixedpoint,grid,newton, default=grid">newton</qp_solver>
+        <qp_solver help="QP equation solve method: fixedpoint,grid,newton">newton</qp_solver>
+        <qp_solver_alpha help="QP solver mixing parameter">0.75</qp_solver_alpha>
+        <qp_solver_fallback help="call default solver if QP solver fails">1</qp_solver_fallback>
         <qp_grid_steps help="number of QP grid points">201</qp_grid_steps>
         <qp_grid_spacing help="spacing of QP grid points in Ha">1e-3</qp_grid_spacing>
         <exctotal help="maximum number of BSE states to calculate">25</exctotal>
