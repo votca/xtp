@@ -263,7 +263,7 @@ boost::optional<double> GW::SolveQP_Bisection(double lowerbound,
         "Bisection needs a postive and negative function value");
   }
   boost::optional<double> newf = boost::none;
-  while (true) {
+  for (Index i_g = 0; i_g < _opt.g_sc_max_iterations; i_g++) {
     double c = 0.5 * (lowerbound + upperbound);
     if (std::abs(upperbound - lowerbound) < _opt.g_sc_limit) {
       newf = c;
@@ -288,7 +288,15 @@ boost::optional<double> GW::SolveQP_Bisection(double lowerbound,
 boost::optional<double> GW::SolveQP_FixedPoint(double frequency0,
                                                const QPFunc& fqp) const {
   boost::optional<double> newf = boost::none;
-  newf = fqp.value(frequency0) + frequency0;
+  double fprev = frequency0;
+  for (Index i_g = 0; i_g < _opt.g_sc_max_iterations; i_g++) {
+    double fcurr = fqp.value(frequency0) + frequency0;
+    if (std::abs(fcurr - fprev) < _opt.g_sc_limit) {
+      newf = fcurr;
+      break;
+    }
+    fprev = fcurr;
+  }
   return newf;
 }
 
