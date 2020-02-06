@@ -127,7 +127,8 @@ double GaussianQuadrature::SigmaGQLDiag(double frequency, Index gw_level,
   for (Index j = 0; j < _opt.order; ++j) {
     double exponent = (1.0+_quadpoints(j))/(1.0-_quadpoints(j));
     double newpoint = std::pow(x0,exponent);
-    double newweight = (2.0*_quadadaptedweights(j)*x0)/((1.0-_quadadaptedweights(j)*_quadadaptedweights(j)));
+    double den = (1.0-_quadadaptedweights(j))*(1.0-_quadadaptedweights(j));
+    double newweight = (2.0*_quadadaptedweights(j)*x0)/den;
     Eigen::VectorXcd denominator =
         (1.0) / (DeltaE + std::complex<double>(0.0, newpoint));
     Eigen::MatrixXcd Amx = denominator.asDiagonal() * Imx;

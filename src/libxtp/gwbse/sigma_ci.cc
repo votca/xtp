@@ -120,11 +120,10 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQHDiag(frequency, gw_level, _eta);
-  // double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level);
-
-  // return sigma_c_residue;
-
+  double sigma_c_integral = _gq.SigmaGQLDiag(frequency, gw_level, 1.0);
+  
+  //return sigma_c_residue;
+  //return sigma_c_integral;
   return sigma_c_residue + sigma_c_integral;
 }
 
