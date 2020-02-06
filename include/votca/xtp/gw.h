@@ -64,17 +64,16 @@ class GW {
   void configure(const options& opt);
 
   Eigen::VectorXd getGWAResults() const;
+  Eigen::MatrixXd getHQP() const;
+
+  // Diagonalize QP particle Hamiltonian
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DiagonalizeHQP() const;
+
   // Calculates the diagonal elements up to self consistency
   void CalculateGWPerturbation();
 
   // Calculated offdiagonal elements as well
   void CalculateHQP();
-
-  Eigen::MatrixXd getHQP() const;
-
-  // Diagonalize QP particle Hamiltonian
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DiagonalizeQPHamiltonian()
-      const;
 
   void PlotSigma(std::string filename, Index steps, double spacing,
                  std::string states) const;
@@ -130,8 +129,11 @@ class GW {
   double CalcHomoLumoShift(Eigen::VectorXd frequencies) const;
   Eigen::VectorXd ScissorShift_DFTlevel(
       const Eigen::VectorXd& dft_energies) const;
-  void PrintQP_Energies(const Eigen::VectorXd& qp_diag_energies) const;
   void PrintGWA_Energies() const;
+  void PrintQP_Energies(const Eigen::VectorXd& qp_diag_energies) const;
+
+  bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
+                 double epsilon) const;
 
   Eigen::VectorXd SolveQP(const Eigen::VectorXd& frequencies) const;
   boost::optional<double> SolveQP_Bisection(double freq_lb, double freq_ub,
@@ -145,8 +147,6 @@ class GW {
                                                 const QPFunc& fqp) const;
   boost::optional<double> SolveQP_Newton(double frequency0,
                                          const QPFunc& fqp) const;
-  bool Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
-                 double epsilon) const;
 };
 }  // namespace xtp
 }  // namespace votca

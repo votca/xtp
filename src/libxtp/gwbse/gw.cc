@@ -50,11 +50,9 @@ void GW::configure(const options& opt) {
   _Sigma_c = Eigen::MatrixXd::Zero(_qptotal, _qptotal);
 }
 
-double GW::CalcHomoLumoShift(Eigen::VectorXd frequencies) const {
-  double DFTgap = _dft_energies(_opt.homo + 1) - _dft_energies(_opt.homo);
-  double QPgap = frequencies(_opt.homo + 1 - _opt.qpmin) -
-                 frequencies(_opt.homo - _opt.qpmin);
-  return QPgap - DFTgap;
+Eigen::VectorXd GW::getGWAResults() const {
+  return _Sigma_x.diagonal() + _Sigma_c.diagonal() - _vxc.diagonal() +
+         _dft_energies.segment(_opt.qpmin, _qptotal);
 }
 
 Eigen::MatrixXd GW::getHQP() const {
@@ -63,11 +61,25 @@ Eigen::MatrixXd GW::getHQP() const {
              _dft_energies.segment(_opt.qpmin, _qptotal).asDiagonal());
 }
 
-Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> GW::DiagonalizeQPHamiltonian()
-    const {
+Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> GW::DiagonalizeHQP() const {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> qpdiag(getHQP());
   PrintQP_Energies(qpdiag.eigenvalues());
   return qpdiag;
+}
+
+double GW::CalcHomoLumoShift(Eigen::VectorXd frequencies) const {
+  double DFTgap = _dft_energies(_opt.homo + 1) - _dft_energies(_opt.homo);
+  double QPgap = frequencies(_opt.homo + 1 - _opt.qpmin) -
+                 frequencies(_opt.homo - _opt.qpmin);
+  return QPgap - DFTgap;
+}
+
+Eigen::VectorXd GW::ScissorShift_DFTlevel(
+    const Eigen::VectorXd& dft_energies) const {
+  Eigen::VectorXd shifted_energies = dft_energies;
+  shifted_energies.segment(_opt.homo + 1, dft_energies.size() - _opt.homo - 1)
+      .array() += _opt.shift;
+  return shifted_energies;
 }
 
 void GW::PrintGWA_Energies() const {
@@ -130,14 +142,6 @@ void GW::PrintQP_Energies(const Eigen::VectorXd& qp_diag_energies) const {
   return;
 }
 
-Eigen::VectorXd GW::ScissorShift_DFTlevel(
-    const Eigen::VectorXd& dft_energies) const {
-  Eigen::VectorXd shifted_energies = dft_energies;
-  shifted_energies.segment(_opt.homo + 1, dft_energies.size() - _opt.homo - 1)
-      .array() += _opt.shift;
-  return shifted_energies;
-}
-
 void GW::CalculateGWPerturbation() {
 
   _Sigma_x = (1 - _opt.ScaHFX) * _sigma->CalcExchangeMatrix();
@@ -198,9 +202,14 @@ void GW::CalculateGWPerturbation() {
   PrintGWA_Energies();
 }
 
-Eigen::VectorXd GW::getGWAResults() const {
-  return _Sigma_x.diagonal() + _Sigma_c.diagonal() - _vxc.diagonal() +
-         _dft_energies.segment(_opt.qpmin, _qptotal);
+bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
+                   double epsilon) const {
+  Index state = 0;
+  double diff_max = (e1 - e2).cwiseAbs().maxCoeff(&state);
+  bool energies_converged = (diff_max <= epsilon);
+  XTP_LOG(Log::info, _log) << TimeStamp() << " E_diff max=" << diff_max
+                           << " StateNo:" << state << std::flush;
+  return energies_converged;
 }
 
 Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
@@ -350,16 +359,6 @@ boost::optional<double> GW::SolveQP_Newton(double frequency0,
     newf = res;
   }
   return newf;
-}
-
-bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
-                   double epsilon) const {
-  Index state = 0;
-  double diff_max = (e1 - e2).cwiseAbs().maxCoeff(&state);
-  bool energies_converged = (diff_max <= epsilon);
-  XTP_LOG(Log::info, _log) << TimeStamp() << " E_diff max=" << diff_max
-                           << " StateNo:" << state << std::flush;
-  return energies_converged;
 }
 
 void GW::CalculateHQP() {

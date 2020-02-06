@@ -674,8 +674,7 @@ bool GWBSE::Evaluate() {
         << TimeStamp() << " Calculated offdiagonal part of Sigma  " << flush;
     Hqp = gw.getHQP();
 
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es =
-        gw.DiagonalizeQPHamiltonian();
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es = gw.DiagonalizeHQP();
     if (es.info() == Eigen::ComputationInfo::Success) {
       XTP_LOG(Log::error, *_pLog)
           << TimeStamp() << " Diagonalized QP Hamiltonian  " << flush;
