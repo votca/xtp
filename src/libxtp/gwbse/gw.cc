@@ -225,23 +225,27 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double intercept = intercepts[gw_level];
     QPFunc fqp(gw_level, *_sigma.get(), intercept);
     boost::optional<double> newf = boost::none;
-    bool conv = false;
     if (_opt.qp_solver == "fixedpoint") {
       newf = SolveQP_FixedPoint(frequency, fqp);
-      conv = (newf != boost::none);
     } else if (_opt.qp_solver == "newton") {
       newf = SolveQP_Newton(frequency, fqp);
-      conv = (newf != boost::none);
     } else {  // Default: grid
       newf = SolveQP_Grid(frequency, fqp);
-      conv = (newf != boost::none);
     }
-    if (!conv) {
+    bool conv = false;
+    if (newf) {
+      // We have converged with the QP solver of choice
+      conv = true;
+    } else {
+      // We're defaulting to the grid solver
       newf = SolveQP_Grid(frequency, fqp);
-      conv = (newf != boost::none);
-    }
-    if (!conv) {
-      newf = SolveQP_Linearisation(frequency, fqp);
+      if (newf) {
+        // We have converged with the grid solver
+        conv = true;
+      } else {
+        // We're defaulting to a simple linearisation
+        newf = SolveQP_Linearisation(frequency, fqp);
+      }
     }
     frequencies_new[gw_level] = newf.value();
     converged[gw_level] = conv;
