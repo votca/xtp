@@ -75,8 +75,8 @@ std::string IndexParser::CreateIndexString(
 }
 
 std::string IndexParser::CreateIndexString(
-    const std::vector<Index>& indeces) const {
-  std::set<Index> s(indeces.begin(), indeces.end());
+    const std::vector<Index>& indexes) const {
+  std::set<Index> s(indexes.begin(), indexes.end());
   std::vector<Index> sorted_unique(s.begin(), s.end());
   std::string result = "";
   if (sorted_unique.empty()) {
