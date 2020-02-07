@@ -49,7 +49,11 @@ void BSE::configure(const options& opt, const Eigen::VectorXd& DFTenergies) {
 void BSE::SetupDirectInteractionOperator(const Eigen::VectorXd& DFTenergies) {
   RPA rpa = RPA(_log, _Mmn);
   rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
-  rpa.UpdateRPAInputEnergies(DFTenergies, _Hqp.diagonal(), _opt.qpmin);
+  if ( isG0W0 ){ 
+    rpa.setRPAInputEnergies(DFTenergies);
+  } else {
+    rpa.UpdateRPAInputEnergies(DFTenergies, _Hqp.diagonal(), _opt.qpmin);
+  }
 
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(rpa.calculate_epsilon_r(0));
   _Mmn.MultiplyRightWithAuxMatrix(es.eigenvectors());

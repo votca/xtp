@@ -178,6 +178,7 @@ void GWBSE::Initialize(tools::Property& options) {
   _bseopt.qpmin = qpmin;
   _bseopt.rpamin = rpamin;
   _bseopt.rpamax = rpamax;
+ 
 
   _orbitals.setRPAindices(rpamin, rpamax);
   _orbitals.setGWindices(qpmin, qpmax);
@@ -299,6 +300,7 @@ void GWBSE::Initialize(tools::Property& options) {
           key + ".mode", choices);
   if (mode == "G0W0") {
     _gwopt.gw_sc_max_iterations = 1;
+    _bseopt.isG0W0 = true;
   } else if (mode == "evGW") {
     _gwopt.g_sc_limit = 0.1 * _gwopt.gw_sc_limit;
     _gwopt.eta = 0.1;

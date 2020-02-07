@@ -44,6 +44,7 @@ class BSE {
 
   struct options {
     bool useTDA = true;
+    bool isG0W0 = false;
     Index homo;
     Index rpamin;
     Index rpamax;
@@ -90,6 +91,8 @@ class BSE {
   Index _bse_size;
   Index _bse_vtotal;
   Index _bse_ctotal;
+
+  bool isG0W0;
 
   Eigen::VectorXd _epsilon_0_inv;
 
