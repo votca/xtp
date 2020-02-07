@@ -306,7 +306,7 @@ boost::optional<double> GW::SolveQP_FixedPoint(double frequency0,
   boost::optional<double> newf = boost::none;
   double freq_prev = frequency0;
   for (Index i_g = 0; i_g < _opt.g_sc_max_iterations; i_g++) {
-    double freq_curr = fqp.value(frequency0) + frequency0;
+    double freq_curr = fqp.value(freq_prev) + freq_prev;
     if (std::abs(freq_curr - freq_prev) < _opt.g_sc_limit) {
       newf = freq_curr;
       break;
