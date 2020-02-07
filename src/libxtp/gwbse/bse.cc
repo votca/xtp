@@ -50,7 +50,7 @@ void BSE::SetupDirectInteractionOperator(const Eigen::VectorXd& DFTenergies) {
   RPA rpa = RPA(_log, _Mmn);
   rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
   if ( isG0W0 ){ 
-    rpa.setRPAInputEnergies(DFTenergies);
+    rpa.setRPAInputEnergies(DFTenergies.segment(_opt.rpamin, _opt.rpamax - _opt.rpamin + 1));
   } else {
     rpa.UpdateRPAInputEnergies(DFTenergies, _Hqp.diagonal(), _opt.qpmin);
   }
