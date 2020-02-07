@@ -49,25 +49,6 @@ double Sigma_CI::CalcDiagContribution(Eigen::RowVectorXd Imx_row, double delta,
   return lambda.real();
 }
 
-// This function is used in the calculation of the residues
-// This calculates eps^-1 (inverse of the dielectric function) for complex
-// frequency omega = 0 + i* 0 (origin)
-double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
-                                                 double delta,
-                                                 double alpha) const {
-  Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
-
-  R.diagonal().array() -= 1.0;
-
-   double erfc_factor = -0.5 * std::copysign(1.0, delta) *
-                        std::exp(std::pow(alpha * delta, 2)) *
-                        std::erfc(std::abs(alpha * delta));
-
-  std::complex<double> value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
-
-  return value.real() * erfc_factor;
-}
-
 double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m,
                                       double frequency) const {
   double factor = 0.0;
@@ -83,6 +64,7 @@ double Sigma_CI::CalcResiduePrefactor(double e_f, double e_m,
   }
   return factor;
 }
+
 double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
                                          double frequency,
                                          Index gw_level) const {
@@ -104,8 +86,8 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
     }
 
     // This is what is left from the alpha correction in the Quadrature term
-    //result_alpha +=
-        //CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
+     //result_alpha +=
+     //CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
   }
   return sigma_c;
 }
@@ -118,12 +100,29 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 2.0);
-  
-  //return sigma_c_residue;
-  //return sigma_c_integral;
+  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 0.5);
+
   return sigma_c_residue + sigma_c_integral;
 }
 
+// // This function is used in the calculation of the residues
+// // This calculates eps^-1 (inverse of the dielectric function) for complex
+// // frequency omega = 0 + i* 0 (origin)
+
+ double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
+                                                  double delta,
+                                                  double alpha) const {
+   Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
+
+   R.diagonal().array() -= 1.0;
+
+    double erfc_factor = -0.5 * std::copysign(1.0, delta) *
+                         std::exp(std::pow(alpha * delta, 2)) *
+                         std::erfc(std::abs(alpha * delta));
+
+   std::complex<double> value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
+
+   return value.real() * erfc_factor;
+ }
 }  // namespace xtp
 }  // namespace votca
