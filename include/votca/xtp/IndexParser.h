@@ -38,7 +38,8 @@ class IndexParser {
  public:
   std::vector<Index> CreateIndexVector(const std::string& Ids) const;
 
-  std::string CreateIndexString(const std::vector<Index>& indeces) const;
+  std::string CreateIndexString(const std::vector<bool>& mask) const;
+  std::string CreateIndexString(const std::vector<Index>& indexes) const;
 };
 
 }  // namespace xtp

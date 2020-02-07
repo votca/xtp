@@ -64,6 +64,17 @@ std::vector<Index> IndexParser::CreateIndexVector(
 }
 
 std::string IndexParser::CreateIndexString(
+    const std::vector<bool>& mask) const {
+  std::vector<Index> indexes;
+  for (Index i = 0; i < mask.size(); i++) {
+    if (!mask[i]) {
+      indexes.push_back(i);
+    }
+  }
+  return CreateIndexString(indexes);
+}
+
+std::string IndexParser::CreateIndexString(
     const std::vector<Index>& indeces) const {
   std::set<Index> s(indeces.begin(), indeces.end());
   std::vector<Index> sorted_unique(s.begin(), s.end());
