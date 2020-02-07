@@ -216,10 +216,12 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   const Eigen::VectorXd intercepts =
       _dft_energies.segment(_opt.qpmin, _qptotal) + _Sigma_x.diagonal() -
       _vxc.diagonal();
+  const bool do_fallback = _opt.qp_solver_fallback && _opt.qp_solver != "grid";
   Eigen::VectorXd frequencies_new = frequencies;
   Eigen::Array<bool, Eigen::Dynamic, 1> converged =
-      Eigen::Array<bool, Eigen::Dynamic, 1>::Zero(_qptotal);
-  bool fallback = _opt.qp_solver_fallback && _opt.qp_solver != "grid";
+      Eigen::Array<bool, Eigen::Dynamic, 1>::Constant(_qptotal, false);
+  Eigen::Array<bool, Eigen::Dynamic, 1> fallbacks =
+      Eigen::Array<bool, Eigen::Dynamic, 1>::Constant(_qptotal, false);
 #pragma omp parallel for schedule(dynamic)
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
     double frequency = frequencies[gw_level];
@@ -235,33 +237,36 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
       newf = SolveQP_Newton(frequency, fqp);
     }
     // Call default solver
-    if (!newf && fallback) {
+    if (!newf && do_fallback) {
       newf = SolveQP_Grid(frequency, fqp);
+      fallbacks[gw_level] = true;
     }
     // Check converged. Still not converged? Do a linearisation
-    bool conv = false;
     if (newf) {
-      conv = true;
+      converged[gw_level] = true;
     } else {
       newf = SolveQP_Linearisation(frequency, fqp);
     }
     // Update frequency
     frequencies_new[gw_level] = newf.value();
-    converged[gw_level] = conv;
   }
 
-  if (!converged.all()) {
-    std::vector<Index> states;
-    for (Index s = 0; s < converged.size(); s++) {
-      if (!converged[s]) {
-        states.push_back(s);
-      }
-    }
-    IndexParser rp;
-    XTP_LOG(Log::error, _log) << TimeStamp() << " Not converged PQP states are:"
-                              << rp.CreateIndexString(states) << std::flush;
+  IndexParser ip;
+  if (fallbacks.any()) {
+    std::vector<bool> mask_fallbacks(fallbacks.data(),
+                                     fallbacks.data() + fallbacks.size());
     XTP_LOG(Log::error, _log)
-        << TimeStamp() << " Increase the grid search interval" << std::flush;
+        << TimeStamp()
+        << " WARNING! Defaulting to the grid solver for the following states: "
+        << ip.CreateIndexString(mask_fallbacks) << std::flush;
+  }
+  if (!converged.all()) {
+    std::vector<bool> mask_converged(converged.data(),
+                                     converged.data() + converged.size());
+    mask_converged.flip();
+    XTP_LOG(Log::error, _log)
+        << TimeStamp() << " WARNING! The following states did not converge: "
+        << ip.CreateIndexString(mask_converged) << std::flush;
   }
   return frequencies_new;
 }
