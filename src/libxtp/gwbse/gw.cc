@@ -105,8 +105,8 @@ void GW::PrintGWA_Energies() const {
 
     XTP_LOG(Log::error, _log)
         << level
-        << (boost::format(" = %1$4d DFT = %2$+1.4f VXC = %3$+1.4f S-X = "
-                          "%4$+1.4f S-C = %5$+1.4f GWA = %6$+1.4f") %
+        << (boost::format(" = %1$4d DFT = %2$+1.6f VXC = %3$+1.6f S-X = "
+                          "%4$+1.6f S-C = %5$+1.6f GWA = %6$+1.6f") %
             (i + _opt.qpmin) % _dft_energies(i + _opt.qpmin) % _vxc(i, i) %
             _Sigma_x(i, i) % _Sigma_c(i, i) % gwa_energies(i))
                .str()
