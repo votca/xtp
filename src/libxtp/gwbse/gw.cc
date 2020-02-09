@@ -158,17 +158,22 @@ void GW::CalculateGWPerturbation() {
   Eigen::VectorXd dft_shifted_energies = ScissorShift_DFTlevel(_dft_energies);
   _rpa.setRPAInputEnergies(
       dft_shifted_energies.segment(_opt.rpamin, _opt.rpamax - _opt.rpamin + 1));
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Calculating screening via RPA"
+                           << std::flush;
+  _sigma->PrepareScreening();
   Eigen::VectorXd frequencies =
       dft_shifted_energies.segment(_opt.qpmin, _qptotal);
   for (Index i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
-    if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
+    if (i_gw != 0) {
+      if (i_gw % _opt.reset_3c == 0) {
+        XTP_LOG(Log::info, _log)
+            << TimeStamp() << " Rebuilding 3c integrals" << std::flush;
+        _Mmn.Rebuild();
+      }
       XTP_LOG(Log::info, _log)
-          << TimeStamp() << " Rebuilding 3c integrals" << std::flush;
-      _Mmn.Rebuild();
+          << TimeStamp() << " Calculating screening via RPA" << std::flush;
+      _sigma->PrepareScreening();
     }
-    XTP_LOG(Log::info, _log)
-        << TimeStamp() << " Calculating screening via RPA" << std::flush;
-    _sigma->PrepareScreening();
 
     XTP_LOG(Log::info, _log)
         << TimeStamp() << " Solving QP equations " << std::flush;
@@ -198,6 +203,8 @@ void GW::CalculateGWPerturbation() {
       }
     }
   }
+  XTP_LOG(Log::error, _log)
+      << TimeStamp() << " Calculating diagonal part of Sigma  " << std::flush;
   _Sigma_c.diagonal() = _sigma->CalcCorrelationDiag(frequencies);
   PrintGWA_Energies();
 }
