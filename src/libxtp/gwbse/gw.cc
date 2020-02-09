@@ -161,15 +161,15 @@ void GW::CalculateGWPerturbation() {
   Eigen::VectorXd frequencies =
       dft_shifted_energies.segment(_opt.qpmin, _qptotal);
   for (Index i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
-
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
-      _Mmn.Rebuild();
       XTP_LOG(Log::info, _log)
           << TimeStamp() << " Rebuilding 3c integrals" << std::flush;
+      _Mmn.Rebuild();
     }
-    _sigma->PrepareScreening();
     XTP_LOG(Log::info, _log)
-        << TimeStamp() << " Calculated screening via RPA" << std::flush;
+        << TimeStamp() << " Calculating screening via RPA" << std::flush;
+    _sigma->PrepareScreening();
+
     XTP_LOG(Log::info, _log)
         << TimeStamp() << " Solving QP equations " << std::flush;
     frequencies = SolveQP(frequencies);
