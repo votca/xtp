@@ -62,7 +62,7 @@ class GW {
     double qp_solver_alpha = 0.75;
     Index qp_grid_steps = 601;       // Number of grid points
     double qp_grid_spacing = 0.005;  // Spacing of grid points in Ha
-    std::string quadrature_scheme; //Kind of Gaussian-quadrature scheme to use
+    std::string quadrature_scheme;  // Kind of Gaussian-quadrature scheme to use
   };
 
   void configure(const options& opt);
@@ -144,6 +144,9 @@ class GW {
   Eigen::VectorXd SolveQP(const Eigen::VectorXd& frequencies) const;
   boost::optional<double> SolveQP_Grid(double intercept0, double frequency0,
                                        Index gw_level) const;
+  boost::optional<double> SolveQP_SelfConsistent(double intercept0,
+                                                 double frequency0,
+                                                 Index gw_level) const;
   boost::optional<double> SolveQP_FixedPoint(double intercept0,
                                              double frequency0,
                                              Index gw_level) const;

@@ -67,7 +67,7 @@ void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
   double halfpi = std::acos(0.0);
 #pragma openmp parallel schedule(guided)
   for (Index j = 0; j < _opt.order; j++) {
-    if (_opt.quadrature_scheme == "legendre") {   
+    if (_opt.quadrature_scheme == "legendre") {
       double newpoint = std::tan(halfpi * _quadpoints(j));
       Eigen::MatrixXcd eps_inv_j =
           rpa.calculate_epsilon_complex(0.0, newpoint).inverse();
@@ -200,10 +200,11 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
     }
     double halfpi = std::acos(0.0);
     for (Index j = 0; j < _opt.order; ++j) {
-      
+
       double newpoint = std::tan(halfpi * _quadpoints(j));
-      double den = std::cos(halfpi*_quadpoints(j))*std::cos(halfpi*_quadpoints(j));
-      double num = halfpi/den;    
+      double den =
+          std::cos(halfpi * _quadpoints(j)) * std::cos(halfpi * _quadpoints(j));
+      double num = halfpi / den;
       double newweight = _quadadaptedweights(j);
       Eigen::VectorXcd denominator1 =
           (num) / (DeltaE + std::complex<double>(0.0, newpoint));
@@ -214,7 +215,6 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
     }
 
     result *= 0.5;
-
   }
 
   return result.real() / (tools::conv::Pi);

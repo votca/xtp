@@ -84,10 +84,6 @@ double Sigma_CI::CalcResidueContribution(Eigen::VectorXd rpa_energies,
     if (std::abs(factor) > 0.1) {
       sigma_c += factor * CalcDiagContribution(Imx.row(i), delta, _eta);
     }
-
-    // This is what is left from the alpha correction in the Quadrature term
-     //result_alpha +=
-     //CalcDiagContributionValue_alpha(Imx.row(i), delta, _opt.alpha);
   }
   return sigma_c;
 }
@@ -100,29 +96,25 @@ double Sigma_CI::CalcCorrelationDiagElement(Index gw_level,
   double sigma_c_residue =
       CalcResidueContribution(RPAenergies, frequency, gw_level);
 
-  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, 0.5);
+  double sigma_c_integral = _gq.SigmaGQDiag(frequency, gw_level, _opt.alpha);
 
   return sigma_c_residue + sigma_c_integral;
 }
 
-// // This function is used in the calculation of the residues
-// // This calculates eps^-1 (inverse of the dielectric function) for complex
-// // frequency omega = 0 + i* 0 (origin)
+double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
+                                                 double delta,
+                                                 double alpha) const {
+  Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
 
- double Sigma_CI::CalcDiagContributionValue_alpha(Eigen::RowVectorXd Imx_row,
-                                                  double delta,
-                                                  double alpha) const {
-   Eigen::MatrixXcd R = _rpa.calculate_epsilon_complex(0.0, 0.0).inverse();
+  R.diagonal().array() -= 1.0;
 
-   R.diagonal().array() -= 1.0;
+  double erfc_factor = -0.5 * std::copysign(1.0, delta) *
+                       std::exp(std::pow(alpha * delta, 2)) *
+                       std::erfc(std::abs(alpha * delta));
 
-    double erfc_factor = -0.5 * std::copysign(1.0, delta) *
-                         std::exp(std::pow(alpha * delta, 2)) *
-                         std::erfc(std::abs(alpha * delta));
+  std::complex<double> value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
 
-   std::complex<double> value = ((Imx_row * R).cwiseProduct(Imx_row)).sum();
-
-   return value.real() * erfc_factor;
- }
+  return value.real() * erfc_factor;
+}
 }  // namespace xtp
 }  // namespace votca

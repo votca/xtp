@@ -26,6 +26,7 @@
 #include <votca/xtp/IndexParser.h>
 #include <votca/xtp/gw.h>
 #include <votca/xtp/newton_rapson.h>
+#include <votca/xtp/selfconsistentsolver.h>
 namespace votca {
 namespace xtp {
 
@@ -229,6 +230,9 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     if (_opt.qp_solver == "fixedpoint") {
       newf = SolveQP_FixedPoint(intercept, initial_f, gw_level);
     }
+    if (_opt.qp_solver == "scf") {
+      newf = SolveQP_SelfConsistent(intercept, initial_f, gw_level);
+    }
     if (newf) {
       frequencies_new[gw_level] = newf.value();
       converged[gw_level] = true;
@@ -306,6 +310,20 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
 
   if (pole_found) {
     newf = qp_energy;
+  }
+  return newf;
+}
+
+boost::optional<double> GW::SolveQP_SelfConsistent(double intercept0,
+                                               double frequency0,
+                                               Index gw_level) const {
+  boost::optional<double> newf = boost::none;
+  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  Selfconsistentsolver<QPFunc> scf = Selfconsistentsolver<QPFunc>(
+      _opt.g_sc_max_iterations, _opt.g_sc_limit, _opt.qp_solver_alpha);
+  double freq_new = scf.FindRoot(f, frequency0);
+  if (scf.getInfo() == Selfconsistentsolver<QPFunc>::success) {
+    newf = freq_new;
   }
   return newf;
 }
