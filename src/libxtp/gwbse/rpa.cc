@@ -34,12 +34,12 @@ void RPA::UpdateRPAInputEnergies(const Eigen::VectorXd& dftenergies,
   Index lumo = _homo + 1;
 
   Index qpmax = qpmin + gwsize - 1;
-  _energies.segment(qpmin - _rpamin, gwsize) = gwaenergies;
+  _energies.segment(qpmin, gwsize) = gwaenergies;
   double DFTgap = dftenergies(lumo) - dftenergies(_homo);
   double QPgap = gwaenergies(lumo - qpmin) - gwaenergies(_homo - qpmin);
   double shift = QPgap - DFTgap;
   Index levelaboveqpmax = _rpamax - qpmax;
-  _energies.segment(qpmax + 1 - _rpamin, levelaboveqpmax).array() += shift;
+  _energies.segment(qpmax + 1, levelaboveqpmax).array() += shift;
 }
 
 template <bool imag>
