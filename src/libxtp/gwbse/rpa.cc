@@ -28,18 +28,16 @@ namespace xtp {
 void RPA::UpdateRPAInputEnergies(const Eigen::VectorXd& dftenergies,
                                  const Eigen::VectorXd& gwaenergies,
                                  Index qpmin) {
-  Index rpatotal = _rpamax - _rpamin + 1;
+  const Index rpatotal = _rpamax - _rpamin + 1;
+  const Index qptotal = Index(gwaenergies.size());
+  const Index qpmax = qpmin + qptotal - 1;
+  const Index lumo = _homo + 1;
   _energies = dftenergies.segment(_rpamin, rpatotal);
-  Index gwsize = Index(gwaenergies.size());
-  Index lumo = _homo + 1;
-
-  Index qpmax = qpmin + gwsize - 1;
-  _energies.segment(qpmin, gwsize) = gwaenergies;
+  _energies.segment(qpmin, qptotal) = gwaenergies;
   double DFTgap = dftenergies(lumo) - dftenergies(_homo);
   double QPgap = gwaenergies(lumo - qpmin) - gwaenergies(_homo - qpmin);
   double shift = QPgap - DFTgap;
-  Index levelaboveqpmax = _rpamax - qpmax;
-  _energies.segment(qpmax + 1, levelaboveqpmax).array() += shift;
+  _energies.segment(qpmax + 1, _rpamax - qpmax).array() += shift;
 }
 
 template <bool imag>
