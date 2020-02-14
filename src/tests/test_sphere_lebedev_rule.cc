@@ -46,7 +46,7 @@ Eigen::VectorXd ReadVectorFromString(const std::string& matrix) {
 
 BOOST_AUTO_TEST_CASE(medium_test) {
 
-  /*std::ofstream xyzfile("molecule.xyz");
+  std::ofstream xyzfile("molecule.xyz");
   xyzfile << " 5" << std::endl;
   xyzfile << " methane" << std::endl;
   xyzfile << " C            .000000     .000000     .000000" << std::endl;
@@ -276,12 +276,12 @@ BOOST_AUTO_TEST_CASE(medium_test) {
   bool Hweight = C_weight_ref.isApprox(Hgrid.weight, 0.0001);
   BOOST_CHECK_EQUAL(Hphi, true);
   BOOST_CHECK_EQUAL(Htheta, true);
-  BOOST_CHECK_EQUAL(Hweight, true);*/
+  BOOST_CHECK_EQUAL(Hweight, true);
 }
 
 BOOST_AUTO_TEST_CASE(fine_test) {
 
-  /*std::ofstream xyzfile("molecule.xyz");
+  std::ofstream xyzfile("molecule.xyz");
   xyzfile << " 5" << std::endl;
   xyzfile << " methane" << std::endl;
   xyzfile << " Ge            .000000     .000000     .000000" << std::endl;
@@ -1033,12 +1033,12 @@ BOOST_AUTO_TEST_CASE(element_not_implemented) {
   LebedevGrid spheregrid;
 
   BOOST_REQUIRE_THROW(spheregrid.CalculateSphericalGrids(mol, "xfine"),
-                      std::runtime_error);*/
+                      std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(xfine_test) {
 
-  /*std::ofstream xyzfile("molecule.xyz");
+  std::ofstream xyzfile("molecule.xyz");
   xyzfile << " 5" << std::endl;
   xyzfile << " methane" << std::endl;
   xyzfile << " Ge            .000000     .000000     .000000" << std::endl;
@@ -2245,7 +2245,7 @@ BOOST_AUTO_TEST_CASE(xfine_test) {
   bool Hweight = H_weight_ref.isApprox(Hgrid.weight, 0.0001);
   BOOST_CHECK_EQUAL(Hphi, true);
   BOOST_CHECK_EQUAL(Htheta, true);
-  BOOST_CHECK_EQUAL(Hweight, true);*/
+  BOOST_CHECK_EQUAL(Hweight, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
