@@ -3,7 +3,7 @@
 <!-- xtp_tools -e exciton options.xml -->
 <dftgwbse help="Electronic Excitations using GW-BSE">
 
-        <dftpackage help="Package for DFT ground state">xtpdft.xml</dftpackage>
+        <dftpackage help="User Input for DFT ground state">user_input.xml</dftpackage>
 
         <mode help="Calculator mode: energy or optimize">energy</mode>
         <reporting help="Package for DFT ground state">noisy</reporting>
@@ -21,7 +21,7 @@
         <geometry_optimization help="geometry optimization options">
             <state help="initial state to optimize for">s1</state>
             <statetracker help="tries to identify state without looking at the energy">
-                <oscillator_strength>0.001</oscillator_strength>
+                <oscillatorstrength>0.001</oscillatorstrength>
             </statetracker>
             <convergence help="Convergence criteria for geometry optimization">
                     <energy help="default: 1.e-6 Hartree">0.01</energy>

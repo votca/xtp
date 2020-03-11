@@ -36,20 +36,68 @@ using std::flush;
 namespace votca {
 namespace xtp {
 
-void BSE::configure(const options& opt, const Eigen::VectorXd& DFTenergies) {
+void BSE::configure(const options& opt, const Eigen::VectorXd& RPAInputEnergies,
+                    const Eigen::MatrixXd& Hqp_in) {
   _opt = opt;
   _bse_vmax = _opt.homo;
   _bse_cmin = _opt.homo + 1;
   _bse_vtotal = _bse_vmax - _opt.vmin + 1;
   _bse_ctotal = _opt.cmax - _bse_cmin + 1;
   _bse_size = _bse_vtotal * _bse_ctotal;
-  SetupDirectInteractionOperator(DFTenergies);
+  if (_opt.use_Hqp_offdiag) {
+    _Hqp = AdjustHqpSize(Hqp_in, RPAInputEnergies);
+  } else {
+    _Hqp = AdjustHqpSize(Hqp_in, RPAInputEnergies).diagonal().asDiagonal();
+  }
+  SetupDirectInteractionOperator(RPAInputEnergies);
 }
 
-void BSE::SetupDirectInteractionOperator(const Eigen::VectorXd& DFTenergies) {
-  RPA rpa = RPA(_Mmn);
+Eigen::MatrixXd BSE::AdjustHqpSize(const Eigen::MatrixXd& Hqp,
+                                   const Eigen::VectorXd& RPAInputEnergies) {
+
+  Index hqp_size = _bse_vtotal + _bse_ctotal;
+  Index gwsize = _opt.qpmax - _opt.qpmin + 1;
+  Index RPAoffset = _opt.vmin - _opt.rpamin;
+  Eigen::MatrixXd Hqp_BSE = Eigen::MatrixXd::Zero(hqp_size, hqp_size);
+
+  if (_opt.vmin >= _opt.qpmin) {
+    Index start = _opt.vmin - _opt.qpmin;
+    if (_opt.cmax <= _opt.qpmax) {
+      Hqp_BSE = Hqp.block(start, start, hqp_size, hqp_size);
+    } else {
+      Index virtoffset = gwsize - start;
+      Hqp_BSE.topLeftCorner(virtoffset, virtoffset) =
+          Hqp.block(start, start, virtoffset, virtoffset);
+
+      Index virt_extra = _opt.cmax - _opt.qpmax;
+      Hqp_BSE.diagonal().tail(virt_extra) =
+          RPAInputEnergies.segment(RPAoffset + virtoffset, virt_extra);
+    }
+  }
+
+  if (_opt.vmin < _opt.qpmin) {
+    Index occ_extra = _opt.qpmin - _opt.vmin;
+    Hqp_BSE.diagonal().head(occ_extra) =
+        RPAInputEnergies.segment(RPAoffset, occ_extra);
+
+    Hqp_BSE.block(occ_extra, occ_extra, gwsize, gwsize) = Hqp;
+
+    if (_opt.cmax > _opt.qpmax) {
+      Index virtoffset = occ_extra + gwsize;
+      Index virt_extra = _opt.cmax - _opt.qpmax;
+      Hqp_BSE.diagonal().tail(virt_extra) =
+          RPAInputEnergies.segment(RPAoffset + virtoffset, virt_extra);
+    }
+  }
+
+  return Hqp_BSE;
+}
+
+void BSE::SetupDirectInteractionOperator(
+    const Eigen::VectorXd& RPAInputEnergies) {
+  RPA rpa = RPA(_log, _Mmn);
   rpa.configure(_opt.homo, _opt.rpamin, _opt.rpamax);
-  rpa.UpdateRPAInputEnergies(DFTenergies, _Hqp.diagonal(), _opt.qpmin);
+  rpa.setRPAInputEnergies(RPAInputEnergies);
 
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(rpa.calculate_epsilon_r(0));
   _Mmn.MultiplyRightWithAuxMatrix(es.eigenvectors());
@@ -103,7 +151,7 @@ tools::EigenSystem BSE::Solve_singlets_TDA() const {
 
   SingletOperator_TDA Hs(_epsilon_0_inv, _Mmn, _Hqp);
   configureBSEOperator(Hs);
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << TimeStamp() << " Setup TDA singlet hamiltonian " << flush;
   return solve_hermitian(Hs);
 }
@@ -143,11 +191,11 @@ tools::EigenSystem BSE::solve_hermitian(BSE_OPERATOR& h) const {
     DS.set_max_search_space(10 * _opt.nmax);
 
     if (_opt.matrixfree) {
-      XTP_LOG_SAVE(logDEBUG, _log)
+      XTP_LOG(Log::error, _log)
           << TimeStamp() << " Using matrix free method" << flush;
       DS.solve(h, _opt.nmax);
     } else {
-      XTP_LOG_SAVE(logDEBUG, _log)
+      XTP_LOG(Log::error, _log)
           << TimeStamp() << " Using full matrix method" << flush;
 
       // get the full matrix
@@ -157,9 +205,8 @@ tools::EigenSystem BSE::solve_hermitian(BSE_OPERATOR& h) const {
 
       elapsed_time = hend - hstart;
 
-      XTP_LOG_SAVE(logDEBUG, _log)
-          << TimeStamp() << " Full matrix assembled in " << elapsed_time.count()
-          << " secs" << flush;
+      XTP_LOG(Log::info, _log) << TimeStamp() << " Full matrix assembled in "
+                               << elapsed_time.count() << " secs" << flush;
 
       // solve theeigenalue problem
       hstart = std::chrono::system_clock::now();
@@ -167,15 +214,15 @@ tools::EigenSystem BSE::solve_hermitian(BSE_OPERATOR& h) const {
       hend = std::chrono::system_clock::now();
 
       elapsed_time = hend - hstart;
-      XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Davidson solve done in "
-                                   << elapsed_time.count() << " secs" << flush;
+      XTP_LOG(Log::info, _log) << TimeStamp() << " Davidson solve done in "
+                               << elapsed_time.count() << " secs" << flush;
     }
     result.eigenvalues() = DS.eigenvalues();
     result.eigenvectors() = DS.eigenvectors();
 
   } else {
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Lapack Diagonalization" << flush;
 
     hstart = std::chrono::system_clock::now();
@@ -183,20 +230,20 @@ tools::EigenSystem BSE::solve_hermitian(BSE_OPERATOR& h) const {
     hend = std::chrono::system_clock::now();
 
     elapsed_time = hend - hstart;
-    XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Full matrix assembled in "
-                                 << elapsed_time.count() << " secs" << flush;
+    XTP_LOG(Log::info, _log) << TimeStamp() << " Full matrix assembled in "
+                             << elapsed_time.count() << " secs" << flush;
     hstart = std::chrono::system_clock::now();
     result = tools::linalg_eigenvalues(hfull, _opt.nmax);
     hend = std::chrono::system_clock::now();
     elapsed_time = hend - hstart;
-    XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Lapack solve done in "
-                                 << elapsed_time.count() << " secs" << flush;
+    XTP_LOG(Log::info, _log) << TimeStamp() << " Lapack solve done in "
+                             << elapsed_time.count() << " secs" << flush;
   }
   end = std::chrono::system_clock::now();
   elapsed_time = end - start;
 
-  XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Diagonalization done in "
-                               << elapsed_time.count() << " secs" << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Diagonalization done in "
+                           << elapsed_time.count() << " secs" << flush;
 
   return result;
 }
@@ -209,7 +256,7 @@ tools::EigenSystem BSE::Solve_singlets_BTDA() const {
     SingletOperator_BTDA_B B(_epsilon_0_inv, _Mmn, _Hqp);
     configureBSEOperator(B);
 
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Setup Full singlet hamiltonian " << flush;
     return Solve_nonhermitian_Davidson(A, B);
   } else {
@@ -217,7 +264,7 @@ tools::EigenSystem BSE::Solve_singlets_BTDA() const {
     configureBSEOperator(Hs_ApB);
     Operator_BTDA_AmB Hs_AmB(_epsilon_0_inv, _Mmn, _Hqp);
     configureBSEOperator(Hs_AmB);
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Setup Full singlet hamiltonian " << flush;
     return Solve_nonhermitian(Hs_ApB, Hs_AmB);
   }
@@ -229,7 +276,7 @@ tools::EigenSystem BSE::Solve_triplets_BTDA() const {
     configureBSEOperator(A);
     Hd2Operator B(_epsilon_0_inv, _Mmn, _Hqp);
     configureBSEOperator(B);
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Setup Full triplet hamiltonian " << flush;
     return Solve_nonhermitian_Davidson(A, B);
   } else {
@@ -237,7 +284,7 @@ tools::EigenSystem BSE::Solve_triplets_BTDA() const {
     configureBSEOperator(Ht_ApB);
     Operator_BTDA_AmB Ht_AmB(_epsilon_0_inv, _Mmn, _Hqp);
     configureBSEOperator(Ht_AmB);
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Setup Full triplet hamiltonian " << flush;
     return Solve_nonhermitian(Ht_ApB, Ht_AmB);
   }
@@ -261,16 +308,17 @@ tools::EigenSystem BSE::Solve_nonhermitian(BSE_OPERATOR_ApB& apb,
 
   Eigen::MatrixXd ApB = apb.get_full_matrix();
   Eigen::MatrixXd AmB = amb.get_full_matrix();
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << TimeStamp() << " Setup singlet hamiltonian " << flush;
-  XTP_LOG_SAVE(logDEBUG, _log)
+  XTP_LOG(Log::error, _log)
       << TimeStamp() << " Lapack Diagonalization" << flush;
 
   // calculate Cholesky decomposition of A-B = LL^T. It throws an error if not
   // positive definite
   //(A-B) is not needed any longer and can be overwritten
-  XTP_LOG_SAVE(logDEBUG, _log)
-      << TimeStamp() << " Trying Cholesky decomposition of KAA-KAB" << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp()
+                           << " Trying Cholesky decomposition of KAA-KAB"
+                           << flush;
   Eigen::LLT<Eigen::Ref<Eigen::MatrixXd> > L(AmB);
 
   for (Index i = 0; i < AmB.rows(); ++i) {
@@ -279,38 +327,38 @@ tools::EigenSystem BSE::Solve_nonhermitian(BSE_OPERATOR_ApB& apb,
     }
   }
   if (L.info() != Eigen::ComputationInfo::Success) {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp()
         << " Cholesky decomposition of KAA-KAB was unsucessful. Try a smaller "
            "basisset. This can indicate a triplet instability."
         << flush;
     throw std::runtime_error("Cholesky decompostion failed");
   } else {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::info, _log)
         << TimeStamp() << " Cholesky decomposition of KAA-KAB was successful"
         << flush;
   }
 
   ApB = AmB.transpose() * ApB * AmB;
 
-  XTP_LOG_SAVE(logDEBUG, _log)
-      << TimeStamp() << " Calculated H = L^T(A+B)L " << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Calculated H = L^T(A+B)L "
+                           << flush;
 
-  XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Solving for first "
-                               << _opt.nmax << " eigenvectors" << flush;
+  XTP_LOG(Log::error, _log) << TimeStamp() << " Solving for first " << _opt.nmax
+                            << " eigenvectors" << flush;
 
   hstart = std::chrono::system_clock::now();
   tools::EigenSystem eigensys = tools::linalg_eigenvalues(ApB, _opt.nmax);
   hend = std::chrono::system_clock::now();
   elapsed_time = hend - hstart;
-  XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Lapack solve done in "
-                               << elapsed_time.count() << " secs" << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Lapack solve done in "
+                           << elapsed_time.count() << " secs" << flush;
 
   if (eigensys.info() != Eigen::ComputationInfo::Success) {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Could not solve problem" << flush;
   } else {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::info, _log)
         << TimeStamp() << " Solved HR_l = eps_l^2 R_l " << flush;
   }
   ApB.resize(0, 0);
@@ -348,8 +396,8 @@ tools::EigenSystem BSE::Solve_nonhermitian(BSE_OPERATOR_ApB& apb,
   end = std::chrono::system_clock::now();
   elapsed_time = end - start;
 
-  XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Diagonalization done in "
-                               << elapsed_time.count() << " secs" << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Diagonalization done in "
+                           << elapsed_time.count() << " secs" << flush;
 
   return result;
 }
@@ -370,19 +418,19 @@ tools::EigenSystem BSE::Solve_nonhermitian_Davidson(BSE_OPERATOR_A& Aop,
   DavidsonSolver DS(_log);
   DS.set_correction(_opt.davidson_correction);
   DS.set_tolerance(_opt.davidson_tolerance);
-  DS.set_ortho("QR");
+  DS.set_ortho(_opt.davidson_ortho);
   DS.set_size_update(_opt.davidson_update);
   DS.set_iter_max(_opt.davidson_maxiter);
   DS.set_max_search_space(10 * _opt.nmax);
   DS.set_matrix_type("HAM");
 
   if (_opt.matrixfree) {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Using matrix free method" << flush;
     DS.solve(Hop, _opt.nmax);
 
   } else {
-    XTP_LOG_SAVE(logDEBUG, _log)
+    XTP_LOG(Log::error, _log)
         << TimeStamp() << " Using full matrix method" << flush;
     // get the full matrix
     hstart = std::chrono::system_clock::now();
@@ -391,8 +439,8 @@ tools::EigenSystem BSE::Solve_nonhermitian_Davidson(BSE_OPERATOR_A& Aop,
 
     elapsed_time = hend - hstart;
 
-    XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Full matrix assembled in "
-                                 << elapsed_time.count() << " secs" << flush;
+    XTP_LOG(Log::info, _log) << TimeStamp() << " Full matrix assembled in "
+                             << elapsed_time.count() << " secs" << flush;
 
     // solve theeigenalue problem
     hstart = std::chrono::system_clock::now();
@@ -400,8 +448,8 @@ tools::EigenSystem BSE::Solve_nonhermitian_Davidson(BSE_OPERATOR_A& Aop,
     hend = std::chrono::system_clock::now();
 
     elapsed_time = hend - hstart;
-    XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Davidson solve done in "
-                                 << elapsed_time.count() << " secs" << flush;
+    XTP_LOG(Log::info, _log) << TimeStamp() << " Davidson solve done in "
+                             << elapsed_time.count() << " secs" << flush;
   }
 
   // results
@@ -422,8 +470,8 @@ tools::EigenSystem BSE::Solve_nonhermitian_Davidson(BSE_OPERATOR_A& Aop,
   end = std::chrono::system_clock::now();
   elapsed_time = end - start;
 
-  XTP_LOG_SAVE(logDEBUG, _log) << TimeStamp() << " Diagonalization done in "
-                               << elapsed_time.count() << " secs" << flush;
+  XTP_LOG(Log::info, _log) << TimeStamp() << " Diagonalization done in "
+                           << elapsed_time.count() << " secs" << flush;
 
   return result;
 }
@@ -433,11 +481,11 @@ void BSE::printFragInfo(const std::vector<QMFragment<BSE_Population> >& frags,
   for (const QMFragment<BSE_Population>& frag : frags) {
     double dq = frag.value().H[state] + frag.value().E[state];
     double qeff = dq + frag.value().Gs;
-    XTP_LOG_SAVE(logINFO, _log)
+    XTP_LOG(Log::error, _log)
         << format(
-               "           Fragment %1$4d%% -- hole: %2$5.1f%%  electron: "
+               "           Fragment %1$4d -- hole: %2$5.1f%%  electron: "
                "%3$5.1f%%  dQ: %4$+5.2f  Qeff: %5$+5.2f") %
-               frag.getId() % (100.0 * frag.value().H[state]) %
+               int(frag.getId()) % (100.0 * frag.value().H[state]) %
                (-100.0 * frag.value().E[state]) % dq % qeff
         << flush;
   }
@@ -449,7 +497,7 @@ void BSE::PrintWeights(const Eigen::VectorXd& weights) const {
   for (Index i_bse = 0; i_bse < _bse_size; ++i_bse) {
     double weight = weights(i_bse);
     if (weight > _opt.min_print_weight) {
-      XTP_LOG_SAVE(logINFO, _log)
+      XTP_LOG(Log::error, _log)
           << format("           HOMO-%1$-3d -> LUMO+%2$-3d  : %3$3.1f%%") %
                  (_opt.homo - vc.v(i_bse)) % (vc.c(i_bse) - _opt.homo - 1) %
                  (100.0 * weight)
@@ -466,9 +514,9 @@ void BSE::Analyze_singlets(std::vector<QMFragment<BSE_Population> > fragments,
   QMStateType singlet = QMStateType(QMStateType::Singlet);
 
   Eigen::VectorXd oscs = orb.Oscillatorstrengths();
-  if (tools::globals::verbose) {
-    act = Analyze_eh_interaction(singlet, orb);
-  }
+
+  act = Analyze_eh_interaction(singlet, orb);
+
   if (fragments.size() > 0) {
     Lowdin low;
     low.CalcChargeperFragment(fragments, orb, singlet);
@@ -477,7 +525,7 @@ void BSE::Analyze_singlets(std::vector<QMFragment<BSE_Population> > fragments,
   const Eigen::VectorXd& energies = orb.BSESinglets().eigenvalues();
 
   double hrt2ev = tools::conv::hrt2ev;
-  XTP_LOG_SAVE(logINFO, _log)
+  XTP_LOG(Log::error, _log)
       << "  ====== singlet energies (eV) ====== " << flush;
   for (Index i = 0; i < _opt.nmax; ++i) {
     Eigen::VectorXd weights =
@@ -487,26 +535,19 @@ void BSE::Analyze_singlets(std::vector<QMFragment<BSE_Population> > fragments,
     }
 
     double osc = oscs[i];
-    if (tools::globals::verbose) {
-      XTP_LOG_SAVE(logINFO, _log)
-          << format(
-                 "  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> "
-                 "= %4$+1.4f <K_x> = %5$+1.4f <K_d> = %6$+1.4f") %
-                 (i + 1) % (hrt2ev * energies(i)) %
-                 (1240.0 / (hrt2ev * energies(i))) %
-                 (hrt2ev * act.qp_contrib(i)) %
-                 (hrt2ev * act.exchange_contrib(i)) %
-                 (hrt2ev * act.direct_contrib(i))
-          << flush;
-    } else {
-      XTP_LOG_SAVE(logINFO, _log)
-          << format("  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm") %
-                 (i + 1) % (hrt2ev * energies(i)) %
-                 (1240.0 / (hrt2ev * energies(i)))
-          << flush;
-    }
+    XTP_LOG(Log::error, _log)
+        << format(
+               "  S = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> "
+               "= %4$+1.4f <K_x> = %5$+1.4f <K_d> = %6$+1.4f") %
+               (i + 1) % (hrt2ev * energies(i)) %
+               (1240.0 / (hrt2ev * energies(i))) %
+               (hrt2ev * act.qp_contrib(i)) %
+               (hrt2ev * act.exchange_contrib(i)) %
+               (hrt2ev * act.direct_contrib(i))
+        << flush;
+
     const Eigen::Vector3d& trdip = orb.TransitionDipoles()[i];
-    XTP_LOG_SAVE(logINFO, _log)
+    XTP_LOG(Log::error, _log)
         << format(
                "           TrDipole length gauge[e*bohr]  dx = %1$+1.4f dy = "
                "%2$+1.4f dz = %3$+1.4f |d|^2 = %4$+1.4f f = %5$+1.4f") %
@@ -518,7 +559,7 @@ void BSE::Analyze_singlets(std::vector<QMFragment<BSE_Population> > fragments,
       printFragInfo(fragments, i);
     }
 
-    XTP_LOG_SAVE(logINFO, _log) << flush;
+    XTP_LOG(Log::error, _log) << flush;
   }
   return;
 }
@@ -528,16 +569,15 @@ void BSE::Analyze_triplets(std::vector<QMFragment<BSE_Population> > fragments,
 
   Interaction act;
   QMStateType triplet = QMStateType(QMStateType::Triplet);
-  if (tools::globals::verbose) {
-    act = Analyze_eh_interaction(triplet, orb);
-  }
+  act = Analyze_eh_interaction(triplet, orb);
+
   if (fragments.size() > 0) {
     Lowdin low;
     low.CalcChargeperFragment(fragments, orb, triplet);
   }
 
   const Eigen::VectorXd& energies = orb.BSETriplets().eigenvalues();
-  XTP_LOG_SAVE(logINFO, _log)
+  XTP_LOG(Log::error, _log)
       << "  ====== triplet energies (eV) ====== " << flush;
   for (Index i = 0; i < _opt.nmax; ++i) {
     Eigen::VectorXd weights =
@@ -545,29 +585,22 @@ void BSE::Analyze_triplets(std::vector<QMFragment<BSE_Population> > fragments,
     if (!orb.getTDAApprox()) {
       weights -= orb.BSETriplets().eigenvectors2().col(i).cwiseAbs2();
     }
-    if (tools::globals::verbose) {
-      XTP_LOG_SAVE(logINFO, _log)
-          << format(
-                 "  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> "
-                 "= %4$+1.4f <K_d> = %5$+1.4f") %
-                 (i + 1) % (tools::conv::hrt2ev * energies(i)) %
-                 (1240.0 / (tools::conv::hrt2ev * energies(i))) %
-                 (tools::conv::hrt2ev * act.qp_contrib(i)) %
-                 (tools::conv::hrt2ev * act.direct_contrib(i))
-          << flush;
-    } else {
-      XTP_LOG_SAVE(logINFO, _log)
-          << format("  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm") %
-                 (i + 1) % (tools::conv::hrt2ev * energies(i)) %
-                 (1240.0 / (tools::conv::hrt2ev * energies(i)))
-          << flush;
-    }
+
+    XTP_LOG(Log::error, _log)
+        << format(
+               "  T = %1$4d Omega = %2$+1.12f eV  lamdba = %3$+3.2f nm <FT> "
+               "= %4$+1.4f <K_d> = %5$+1.4f") %
+               (i + 1) % (tools::conv::hrt2ev * energies(i)) %
+               (1240.0 / (tools::conv::hrt2ev * energies(i))) %
+               (tools::conv::hrt2ev * act.qp_contrib(i)) %
+               (tools::conv::hrt2ev * act.direct_contrib(i))
+        << flush;
 
     PrintWeights(weights);
     if (fragments.size() > 0) {
       printFragInfo(fragments, i);
     }
-    XTP_LOG_SAVE(logINFO, _log) << format("   ") << flush;
+    XTP_LOG(Log::error, _log) << format("   ") << flush;
   }
 
   return;
