@@ -658,9 +658,9 @@ bool GWBSE::Evaluate() {
 
     sternheimer.configurate(opt);
 
-    //std::vector<Eigen::Matrix3cd> polar = sternheimer.Polarisability();
+    std::vector<Eigen::Matrix3cd> polar = sternheimer.Polarisability();
 
-    std::vector<Eigen::Vector3cd> EPC = sternheimer.EnergyGradient();
+    //std::vector<Eigen::Vector3cd> EPC = sternheimer.EnergyGradient();
 
     // XTP_LOG(Log::error, *_pLog)
     //     << TimeStamp() << "Result :"  << flush;

@@ -57,7 +57,7 @@ class Sternheimer {
         0.1;  // strength of the electric field for polarizability
     Index max_iterations_sc_sternheimer = 100;
     double tolerance_sc_sternheimer = 10E-9;
-    double mixing_constant = 0.5;  // 0<mixing_const<1
+    double mixing_constant = 0.6;  // 0<mixing_const<1
     Index max_mixing_history = 10;
   };
 

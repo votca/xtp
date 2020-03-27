@@ -218,13 +218,13 @@ Eigen::MatrixXcd Sternheimer::DeltaNSC(
       return delta_n_out_new;
     }
     // Mixing if at least in iteration 2
-    if (n == 0) {
+    if (n <= 100) {
       perturbationUsed =
           _opt.mixing_constant * perturbationVectoroutput.back() +
           (1 - _opt.mixing_constant) * perturbationVectorInput.back();
       perturbationVectorInput.push_back(perturbationUsed);
     } else {
-
+      //perturbationUsed = AndersonMixing(perturbationVectorInput.at(perturbationVectorInput.size()-1),perturbationVectorInput.at(perturbationVectorInput.size()-2),perturbationVectoroutput.at(perturbationVectoroutput.size()-1),perturbationVectoroutput.at(perturbationVectoroutput.size()-2),_opt.mixing_constant);
       perturbationUsed = (NPAndersonMixing(perturbationVectorInput,
                                            perturbationVectoroutput, 0.5));
       if (perturbationVectorInput.size() > _opt.max_mixing_history - 1) {
@@ -411,7 +411,7 @@ std::vector<Eigen::Matrix3cd> Sternheimer::Polarisability() const {
   for (Index n = 0; n < frequency_evaluation_grid.size(); n++) {
     for (Index i = 0; i < 3; i++) {
       Eigen::MatrixXcd delta_n =
-          DeltaNSC(frequency_evaluation_grid[n],
+          1/_opt.perturbation_strength*DeltaNSC(frequency_evaluation_grid[n],
                    -_opt.perturbation_strength * dipole.Matrix()[i]);
       for (Index j = i; j < 3; j++) {
         Polar[n](i, j) = -(delta_n.cwiseProduct(dipole.Matrix()[j])).sum();
