@@ -38,7 +38,7 @@ namespace xtp {
 void IQM::Initialize(tools::Property& options) {
   ParseOptionsXML(options);
 
-  // register all QM packages (Gaussian, turbomole, etc))
+  // register all QM packages (Orca)
   QMPackageFactory::RegisterAll();
   return;
 }
@@ -412,6 +412,7 @@ Job::JobResult IQM::EvalJob(const Topology& top, Job& job, QMThread& opThread) {
       bool _run_dft_status = qmpackage->Run();
       if (!_run_dft_status) {
         SetJobToFailed(jres, pLog, qmpackage->getPackageName() + " run failed");
+        WriteLoggerToFile(work_dir + "/dft.log", dft_logger);
         return jres;
       }
     }
