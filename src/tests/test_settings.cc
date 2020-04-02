@@ -87,7 +87,6 @@ BOOST_AUTO_TEST_CASE(test_amend) {
   Settings user_input("package");
   user_input.load_from_xml("user_input.xml");
   user_input.amend(qmpackage_template);
-  user_input.validate();
 
   auto basisset = user_input.get("functional");
   auto ecp = user_input.get("ecp");

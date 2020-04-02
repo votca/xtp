@@ -7,13 +7,7 @@
         <basisset help="Basis set for MOs" default="def2-tzvp">def2-tzvp</basisset>
         <auxbasisset help="Auxiliary basis set for RI" default="aux-def2-tzvp">aux-def2-tzvp</auxbasisset>
         <functional help="functional name(s) according to LIBXC" default="XC_HYB_GGA_XC_PBEH">XC_HYB_GGA_XC_PBEH</functional>
-
-        <dftpackage>
-            <package>
-                <name help="Name of the DFT package" default="xtp">xtp</name>
-                <executable help="Executable of the DFT package" default="xtp">xtp</executable>
-            </package>      
-        </dftpackage>
+        <name help="Name of the DFT package" default="xtp">xtp</name>
 
         <gwbse_engine>
             <tasks help="guess,input,dft,parse,gwbse" default="input,dft,parse,gwbse">input,dft,parse,gwbse</tasks>

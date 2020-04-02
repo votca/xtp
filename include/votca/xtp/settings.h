@@ -21,13 +21,13 @@
 #define __XTP_SETTINGS__H
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <votca/tools/property.h>
-
 /*
  * \brief Hierarchical representation of a QM Package input
  */
@@ -108,10 +108,12 @@ class Settings {
    */
   bool has_key(const std::string& key) const;
 
-  /**
-   * \brief Check that the input is correct
-   */
-  void validate() const;
+  friend std::ostream& operator<<(std::ostream& os, const Settings& sett) {
+    for (const auto& s : sett._nodes) {
+      os << "key: " << s.first << "\nvalue:" << s.second << "\n";
+    }
+    return os;
+  }
 
  private:
   using Settings_map = std::unordered_map<std::string, votca::tools::Property>;
@@ -121,38 +123,6 @@ class Settings {
   std::string get_primary_key(const std::string& key) {
     return key.substr(0, key.find("."));
   }
-
-  void check_mandatory_keyword(const std::string& key) const;
-
-  std::vector<std::string> _general_properties = {
-      "auxbasisset",            // string
-      "basisset",               // string
-      "charge",                 // index
-      "cleanup",                // string
-      "convergence_tightness",  // std::string
-      "dipole_spacing",         // boolean
-      "ecp",                    // string
-      "executable",             // string
-      // "external_charge",        // Eigen::Vector9d
-      "functional",     // string
-      "name",           // string
-      "optimize",       // boolean
-      "orca",           // string
-      "polarisation",   // boolean
-      "read_guess",     // boolean
-      "spin",           // index
-      "scratch",        // string
-      "write_charges",  // boolean
-      "xtpdft",         // string
-  };
-
-  std::vector<std::string> _mandatory_keyword = {
-      "functional",  // string
-      "name",        // string, one of: orca
-  };
-
-  std::unordered_map<std::string, std::vector<std::string>> _keyword_options{
-      {"name", {"orca"}}};
 };
 
 }  // namespace xtp

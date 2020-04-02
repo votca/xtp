@@ -30,7 +30,6 @@ using std::flush;
 void QMPackage::ParseCommonOptions(tools::Property& options) {
 
   std::string key = "package";
-  // std::string key = "";
 
   _settings.read_property(options, key);
   char* votca_share = getenv("VOTCASHARE");
@@ -41,7 +40,6 @@ void QMPackage::ParseCommonOptions(tools::Property& options) {
     qmpackage_defaults.load_from_xml(this->FindDefaultsFile());
     _settings.amend(qmpackage_defaults);
   }
-  _settings.validate();
 
   _charge = _settings.get<Index>("charge");
   _spin = _settings.get<Index>("spin");
