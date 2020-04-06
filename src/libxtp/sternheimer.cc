@@ -480,6 +480,7 @@ std::vector<double> Sternheimer::getIsotropicAverage(
   }
   return iA;
 }
+
 std::vector<Eigen::Vector3cd> Sternheimer::EnergyGradient() const {
 
   QMMolecule mol = _orbitals.QMAtoms();
@@ -550,12 +551,9 @@ void Sternheimer::printHellmannFeynmanForces(
   }
 }
 
-std::complex<double> Sternheimer::KoopmanCorrection(Index n,
-                                                    double deltaf_n) const {
-
-  std::complex<double> v_nn = std::complex<double>(0.0, 0.0);
+double Sternheimer::EvaluateHxcKoopman(Eigen::MatrixXd X,
+                                                     Eigen::MatrixXd Y) const {
   // Setting up Grid for Fxc functional
-
   AOBasis dftbasis = _orbitals.SetupDftBasis();
   AOBasis auxbasis = _orbitals.SetupAuxBasis();
   ERIs eris;
@@ -568,28 +566,27 @@ std::complex<double> Sternheimer::KoopmanCorrection(Index n,
 
   Vxcpot.setXCfunctional(_orbitals.getXCFunctionalName());
 
-  // Build reference density matrix
+  Eigen::MatrixXcd A =
+      Vxcpot.IntegrateVXC(Y).matrix() + eris.ContractRightIndecesWithMatrix(Y);
+
+ double c = (X).cwiseProduct(A.real()).sum();
+
+  return c;
+}
+double Sternheimer::KoopmanCorrection(Index n,
+                                                    double deltaf_n) const {
+
   Eigen::MatrixXd N_n =
       _mo_coefficients.col(n) * _mo_coefficients.col(n).transpose();
-  Eigen::MatrixXd N_ref = (1.0 - deltaf_n) * N_n;
-  N_ref += _density_Matrix.real();
 
-  // Build KI potentials
-  //(1)
-  Eigen::MatrixXcd vhxc_1 = Vxcpot.IntegrateVXC(_density_Matrix).matrix();
-  vhxc_1 += eris.ContractRightIndecesWithMatrix(_density_Matrix);
-  //(2)
-  Eigen::MatrixXcd vhxc_2 = Vxcpot.IntegrateVXC(N_ref).matrix();
-  vhxc_2 += eris.ContractRightIndecesWithMatrix(N_ref);
-  //(3)
-  Eigen::MatrixXcd vhxc_3 = Vxcpot.IntegrateVXC(N_ref - N_n).matrix();
-  vhxc_3 += eris.ContractRightIndecesWithMatrix(N_ref - N_n);
-  // constant
-  std::complex<double> constant = (N_ref).cwiseProduct(vhxc_2).sum();
-  constant -= (N_ref - N_n).cwiseProduct(vhxc_3).sum();
-  constant -= (N_n).cwiseProduct(vhxc_2).sum();
-  // Evaluate expectation value
-  return (N_n).cwiseProduct(-vhxc_1 + vhxc_3).sum() + constant;
+  Eigen::MatrixXd P_ref = _density_Matrix + (1 - deltaf_n) * N_n;
+
+  double b =
+      -EvaluateHxcKoopman(P_ref - N_n, P_ref - N_n) +
+      EvaluateHxcKoopman(P_ref, P_ref) - EvaluateHxcKoopman(N_n, P_ref) -
+      EvaluateHxcKoopman(N_n, _density_Matrix) + EvaluateHxcKoopman(N_n, P_ref);
+
+  return b;
 }
 
 std::complex<double> Sternheimer::KoopmanRelaxationCoeff(
@@ -640,7 +637,7 @@ void Sternheimer::printKoopmanRelaxationCoeff(std::complex<double> alpha,
 }
 
 void Sternheimer::printKoopman(std::complex<double> alpha,
-                               std::complex<double> correction, Index n) const {
+                               double correction, Index n) const {
   std::cout << "\n"
             << "#Orbital "
             << "alpha "
@@ -695,7 +692,7 @@ std::vector<Eigen::Vector3cd> Sternheimer::MOEnergyGradient(Index n,
           sign * ao3dDipole.Matrix()[a] + contract + FxcInt;
       EnergyGrad[k][a] = _mo_coefficients.col(n).transpose() *
                          (DeltaV * mol.at(k).getNuccharge()) *
-                         _mo_coefficients.col(n);
+                         _mo_coefficients.col(m);
     }
   }
 
@@ -704,15 +701,17 @@ std::vector<Eigen::Vector3cd> Sternheimer::MOEnergyGradient(Index n,
 void Sternheimer::printMOEnergyGradient(
     std::vector<Eigen::Vector3cd>& EnergyGrad, Index n, Index m) const {
   QMMolecule mol = _orbitals.QMAtoms();
-  std::cout << "\n"
-            << "#Atom_Type "
-            << "Atom_Index "
-            << "Gradient x y z " << std::endl;
-  for (int i = 0; i < EnergyGrad.size(); i++) {
-    std::cout << mol.at(i).getElement() << " " << i << " "
-              << EnergyGrad[i][0].real() << " " << EnergyGrad[i][1].real()
-              << " " << EnergyGrad[i][2].real() << std::endl;
+  std::string filename =
+      "qp_" + std::to_string(n) + "_" + std::to_string(m) + ".dat";
+  std::ofstream myfile(filename);
+  if (myfile.is_open()) {
+    for (Index i = 0; i < EnergyGrad.size(); i++) {
+      for (Index a = 0; a < 3; a++) {
+        myfile << EnergyGrad[i][a].real() << "\n";
+      }
+    }
   }
+  myfile.close();
 }
 
 Eigen::MatrixXcd Sternheimer::GreensFunctionLHS(std::complex<double> w) const {
@@ -837,7 +836,6 @@ std::complex<double> Sternheimer::SelfEnergy_at_r(double omega,
     }
     i++;
   }
-
   return _mo_coefficients.col(n).transpose() * left * right *
          _mo_coefficients.col(m);
 }

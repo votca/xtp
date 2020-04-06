@@ -700,9 +700,8 @@ bool GWBSE::Evaluate() {
           << TimeStamp() << " Started Sternheimer MO Energy Gradient" << flush;
       sternheimer.configurate(opt);
       for (Index n = 0; n < _orbitals.MOs().eigenvalues().size(); ++n) {
-
         std::vector<Eigen::Vector3cd> EPC = sternheimer.MOEnergyGradient(n, n);
-        sternheimer.printMOEnergyGradient(EPC, n, n);
+        sternheimer.printMOEnergyGradient(EPC, n,n);
       }
       XTP_LOG(Log::error, *_pLog)
           << TimeStamp() << " Finished Sternheimer MO Energy Gradient" << flush;
@@ -728,13 +727,13 @@ bool GWBSE::Evaluate() {
       sternheimer.configurate(opt);
       for (Index n = 0; n < _orbitals.MOs().eigenvalues().size(); ++n) {
 
-        double f = 1.0;  // For occupied states
+        double f = 2.0;  // For occupied states
         if (n > _orbitals.getHomo()) {
           f = 0.0;  // for unoccupied state
         }
         std::complex<double> alpha = sternheimer.KoopmanRelaxationCoeff(n, 1);
-        std::complex<double> correction = sternheimer.KoopmanCorrection(n, f);
-        std::cout << correction + _orbitals.MOs().eigenvalues()(n) << std::endl;
+        double correction = sternheimer.KoopmanCorrection(n, f);
+        std::cout << "\n" << correction + _orbitals.MOs().eigenvalues()(n) << std::endl;
         sternheimer.printKoopman(alpha, correction, n);
       }
       XTP_LOG(Log::error, *_pLog)
