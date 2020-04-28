@@ -23,12 +23,14 @@
 
 #include <votca/xtp/eigen.h>  //get the MACROS for gcc
 
+#include <H5Cpp.h>
+
 #define DO_PRAGMA(X) _Pragma(#X)
 
 #define DISABLE_WARNING(warningName) \
 DO_PRAGMA(GCC diagnostic ignored #warningName)
 
-#if (defined STRICT_GNUC) && GCC_VERSION > 90000
+#if (defined STRICT_GNUC) && GCC_VERSION > 90000 && H5_VERSION_LE(1,10,4)
 #define DISABLE_DEPRECATE_COPY_WARNING(X) \
 DO_PRAGMA(GCC diagnostic push) \
 DISABLE_WARNING(-Wdeprecated-copy) \
@@ -37,7 +39,5 @@ DO_PRAGMA(GCC diagnostic pop)
 #else
 #define DISABLE_DEPRECATE_COPY_WARNING(X) X
 #endif
-
-#include <H5Cpp.h>
 
 #endif  // VOTCA_XTP_VOTCA_HDF5_H
