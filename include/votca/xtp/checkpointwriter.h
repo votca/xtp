@@ -154,7 +154,7 @@ class CheckpointWriter {
     try {
       attr = loc.createAttribute(name, *dataType, dp);
     } catch (H5::AttributeIException&) {
-      attr = loc.openAttribute(name);
+      DISABLE_DEPRECATE_COPY_WARNING(attr = loc.openAttribute(name);)
     }
     attr.write(*dataType, &value);
   }
@@ -169,9 +169,9 @@ class CheckpointWriter {
     H5::Attribute attr;
 
     try {
-      attr = loc.createAttribute(name, *strType, dp);
+      DISABLE_DEPRECATE_COPY_WARNING(attr = loc.createAttribute(name, *strType, dp);)
     } catch (H5::AttributeIException&) {
-      attr = loc.openAttribute(name);
+      DISABLE_DEPRECATE_COPY_WARNING(attr = loc.openAttribute(name);)
     }
     attr.write(*strType, &value);
   }
@@ -253,9 +253,9 @@ class CheckpointWriter {
     H5::DataSet dataset;
     H5::DataSpace dp(1, dims);
     try {
-      dataset = loc.createDataSet(name.c_str(), *dataType, dp);
+      DISABLE_DEPRECATE_COPY_WARNING(dataset = loc.createDataSet(name.c_str(), *dataType, dp);)
     } catch (H5::GroupIException&) {
-      dataset = loc.openDataSet(name.c_str());
+      DISABLE_DEPRECATE_COPY_WARNING(dataset = loc.openDataSet(name.c_str());)
     }
     dataset.write(c_str_copy.data(), *dataType);
   }
@@ -267,9 +267,9 @@ class CheckpointWriter {
     std::string r;
     CptLoc parent;
     try {
-      parent = loc.createGroup(name);
+      DISABLE_DEPRECATE_COPY_WARNING(parent = loc.createGroup(name);)
     } catch (H5::GroupIException&) {
-      parent = loc.openGroup(name);
+      DISABLE_DEPRECATE_COPY_WARNING(parent = loc.openGroup(name);)
     }
     for (auto const& x : v) {
       r = std::to_string(c);
@@ -283,9 +283,9 @@ class CheckpointWriter {
 
     CptLoc parent;
     try {
-      parent = loc.createGroup(name);
+      DISABLE_DEPRECATE_COPY_WARNING(parent = loc.createGroup(name);)
     } catch (H5::GroupIException&) {
-      parent = loc.openGroup(name);
+      DISABLE_DEPRECATE_COPY_WARNING(parent = loc.openGroup(name);)
     }
 
     WriteData(parent, sys.eigenvalues(), "eigenvalues");

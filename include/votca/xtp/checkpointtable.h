@@ -48,7 +48,7 @@ class CptTable {
            const CptLoc& loc)
       : _name(name), _loc(loc), _inited(true), _rowStructure(rowSize) {
 
-    _dataset = _loc.openDataSet(_name);
+    DISABLE_DEPRECATE_COPY_WARNING(_dataset = _loc.openDataSet(_name);)
     _dp = _dataset.getSpace();
     hsize_t dims[2];
     _dp.getSimpleExtentDims(dims, nullptr);
@@ -90,14 +90,14 @@ class CptTable {
     _dims[1] = 1;
 
     _dp = H5::DataSpace(2, _dims);
-    _loc = loc;
+    DISABLE_DEPRECATE_COPY_WARNING(_loc = loc;)
 
     if (compact) {
       _props.setLayout(H5D_layout_t::H5D_COMPACT);
     }
 
     try {
-      _dataset = _loc.createDataSet(_name.c_str(), _rowStructure, _dp, _props);
+      DISABLE_DEPRECATE_COPY_WARNING(_dataset = _loc.createDataSet(_name.c_str(), _rowStructure, _dp, _props);)
     } catch (H5::Exception&) {
       std::stringstream message;
       message << "Could not write " << _name << " from " << _loc.getFileName();
