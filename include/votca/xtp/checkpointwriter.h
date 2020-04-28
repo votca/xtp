@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2019 The VOTCA Development Team (http://www.votca.org)
+ * Copyright 2009-2020 The VOTCA Development Team (http://www.votca.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 
 #pragma once
-#ifndef VOTCA_XTP_CHECKPOINT_WRITER_H
-#define VOTCA_XTP_CHECKPOINT_WRITER_H
+#ifndef VOTCA_XTP_CHECKPOINTWRITER_H
+#define VOTCA_XTP_CHECKPOINTWRITER_H
 
-#include <H5Cpp.h>
 #include <map>
 #include <string>
 #include <type_traits>
@@ -28,6 +27,7 @@
 #include <votca/xtp/checkpoint_utils.h>
 #include <votca/xtp/checkpointtable.h>
 #include <votca/xtp/eigen.h>
+#include <votca/xtp/votca_hdf5.h>
 
 namespace votca {
 namespace xtp {
@@ -317,4 +317,4 @@ class CheckpointWriter {
 };
 }  // namespace xtp
 }  // namespace votca
-#endif  // VOTCA_XTP_CHECKPOINT_WRITER_H
+#endif  // VOTCA_XTP_CHECKPOINTWRITER_H
