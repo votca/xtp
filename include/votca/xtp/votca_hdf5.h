@@ -25,7 +25,7 @@
 
 #if (defined STRICT_GNUC) && GCC_VERSION > 90000
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Werror=deprecated-copy"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #endif
 #include <H5Cpp.h>
 #if (defined STRICT_GNUC) && GCC_VERSION > 90000
