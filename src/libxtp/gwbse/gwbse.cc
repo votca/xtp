@@ -788,26 +788,27 @@ bool GWBSE::Evaluate() {
       }
 
       std::vector<std::complex<double>> result;
-
+ std::cout << "\n # omega \t HOMO \n" << std::endl;
       for (int j = 0; j < eval_points; ++j) {
         std::complex<double> w (omega_start +j*steps,0);
         Eigen::VectorXcd sigma_c = sternheimer.SelfEnergy_diagonal(w);
-         pade.addPoint(w,sigma_c(homo));
-         result.push_back(sigma_c(homo));
-        XTP_LOG(Log::error, *_pLog)
-           << TimeStamp() << "Frequency "<< w <<" finished. " << j << flush;
+        std::cout << w << "\t" << sigma_c(homo).real() << "\t" << sigma_c(homo).imag() << std::endl;
+        //  pade.addPoint(w,sigma_c(homo));
+        //  result.push_back(sigma_c(homo));
+        // XTP_LOG(Log::error, *_pLog)
+        //    << TimeStamp() << "Frequency "<< w <<" finished. " << j << flush;
       }
 
-      std::cout << "\n # omega \t HOMO \n" << std::endl;
+      // std::cout << "\n # omega \t HOMO \n" << std::endl;
 
-      if (n_points > 1){
-         steps = (omega_end-omega_start)/n_points;;
-      }
-      for (int j = 0; j < n_points; ++j) {
-        double w =omega_start + j*steps;
-        std::complex<double> SE = pade.evaluatePoint(w);
-        std::cout << w << "\t" << SE.real() << "\t" << SE.imag() << std::endl;
-      }
+      // if (n_points > 1){
+      //    steps = (omega_end-omega_start)/n_points;;
+      // }
+      // for (int j = 0; j < n_points; ++j) {
+      //   double w =omega_start + j*steps;
+      //   std::complex<double> SE = pade.evaluatePoint(w);
+      //   std::cout << w << "\t" << SE.real() << "\t" << SE.imag() << std::endl;
+      // }
 
       
       XTP_LOG(Log::error, *_pLog)
