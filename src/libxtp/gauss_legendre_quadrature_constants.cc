@@ -31,9 +31,10 @@ const Eigen::VectorXd& Gauss_Legendre_Quadrature_Constants::getPoints(
     this->FillPoints();
     _filled_Points = true;
   }
-  if (_map_points.count(order) == 0)
+  if (_map_points.count(order) == 0) {
     throw invalid_argument("Order " + std::to_string(order) +
                            " not in range {8,10,12,...,20}.");
+  }
   return _map_points.at(order);
 }
 
@@ -43,9 +44,9 @@ const Eigen::VectorXd& Gauss_Legendre_Quadrature_Constants::getAdaptedWeights(
     this->FillAdaptedWeights();
     _filled_AdaptedWeights = true;
   }
-  if (_map_AdaptedWeights.count(order) == 0)
+  if (_map_AdaptedWeights.count(order) == 0){
     throw invalid_argument("Order " + std::to_string(order) +
-                           " not in range {8,10,12,...,20}.");
+                           " not in range {12,40,60,200}.");}
   return _map_AdaptedWeights.at(order);
 }
 
