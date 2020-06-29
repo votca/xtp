@@ -38,6 +38,7 @@ For more detailed information about the changes see the history of the
 * standardize includes in src files (#462)
 * add cmake exported target (#489)
 * update codacy badge (#490)
+* fix tests on Fedora 32 (#491)
 
 
 ## Version 1.6.1 (released 21.06.20)
