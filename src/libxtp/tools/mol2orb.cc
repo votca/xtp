@@ -10,8 +10,6 @@
 
 // Local VOTCA includes
 #include "votca/xtp/logger.h"
-#include "votca/xtp/qmstate.h"
-#include "votca/xtp/qmtool.h"
 
 namespace votca {
 namespace xtp {

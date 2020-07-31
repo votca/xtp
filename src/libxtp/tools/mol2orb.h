@@ -4,15 +4,11 @@
 #ifndef VOTCA_XTP_MOL2ORB_PRIVATE_H
 #define VOTCA_XTP_MOL2ORB_PRIVATE_H
 
-// Third party includes
-#include <boost/math/constants/constants.hpp>
-
 // VOTCA includes
 #include <votca/tools/constants.h>
 
 // Local VOTCA includes
 #include "votca/xtp/logger.h"
-#include "votca/xtp/qmstate.h"
 #include "votca/xtp/qmtool.h"
 #include <votca/xtp/orbitals.h>
 
