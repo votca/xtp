@@ -28,7 +28,7 @@ class Mol2Orb : public QMTool {
   bool Evaluate() override;
 
  private:
-   // clang-format off
+  // clang-format off
   std::array<Index,25> _multipliers={
             1, //s
             1,1,1, //p
@@ -53,7 +53,7 @@ class Mol2Orb : public QMTool {
     std::array<int, 2>{1, 2},
     std::array<int, 2>{3, 4},
     std::array<int, 2>{5, 6},
-    std::array<int, 2>{7,8}
+    std::array<int, 2>{7, 8}
   };
   // clang-format on
   std::string _moldenfile;

@@ -104,7 +104,9 @@ void Mol2Orb::reorderOrbitals(Eigen::MatrixXd& v) {
   Index nrOfFunctions = 0;
   for (const AOShell& shell : _basis) {
     // Make multiplier vector
-    std::vector<Index> shellmultiplier{_multipliers.begin() + shell.getOffset(), _multipliers.begin() + shell.getOffset()  + shell.getNumFunc()};
+    std::vector<Index> shellmultiplier{
+        _multipliers.begin() + shell.getOffset(),
+        _multipliers.begin() + shell.getOffset() + shell.getNumFunc()};
     multiplier.insert(multiplier.end(), shellmultiplier.begin(),
                       shellmultiplier.end());
     // reorder
@@ -172,7 +174,6 @@ inline std::string Mol2Orb::readMOs(Orbitals& orbitals,
       iss >> tempInt >> tempDouble;
       orbitals.MOs().eigenvectors()(j, i) = tempDouble;
     }
-
   }
 
   orbitals.setNumberOfAlphaElectrons(number_of_electrons);
@@ -192,7 +193,7 @@ bool Mol2Orb::Evaluate() {
   _log.setMultithreading(true);
   _log.setCommonPreface("\n... ...");
 
-  Orbitals orbitals;  
+  Orbitals orbitals;
 
   // Open the file
   std::ifstream input_file(_moldenfile);
