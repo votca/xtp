@@ -32,6 +32,7 @@
 #include "tools/partialcharges.h"
 #include "tools/qmsandbox.h"
 #include "tools/spectrum.h"
+#include "tools/mol2orb.h"
 
 namespace votca {
 namespace xtp {
@@ -49,6 +50,7 @@ void QMToolFactory::RegisterAll(void) {
   QMTools().Register<Coupling>("coupling");
   QMTools().Register<MolPol>("molpol");
   QMTools().Register<APDFT>("apdft");
+  QMTools().Register<Mol2Orb>("mol2orb");
 }
 
 }  // namespace xtp
