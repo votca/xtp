@@ -5,10 +5,10 @@
 
 // Local VOTCA includes
 #include "votca/xtp/ecpaobasis.h"
+#include "votca/xtp/logger.h"
 #include "votca/xtp/orbitals.h"
 #include "votca/xtp/qmatom.h"
 #include <votca/tools/constants.h>
-#include "votca/xtp/logger.h"
 
 namespace votca {
 namespace xtp {

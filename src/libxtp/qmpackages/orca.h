@@ -22,8 +22,8 @@
 #define VOTCA_XTP_ORCA_H
 
 // Local VOTCA includes
-#include "votca/xtp/qmpackage.h"
 #include "votca/xtp/orbreorder.h"
+#include "votca/xtp/qmpackage.h"
 
 namespace votca {
 namespace xtp {
@@ -63,7 +63,9 @@ class Orca : public QMPackage {
   const std::array<Index, 25>& ShellMulitplier() const final {
     return _multipliers;
   }
-  const OrbTranspositions& ShellTranspositions() const final { return _transpositions; }
+  const OrbTranspositions& ShellTranspositions() const final {
+    return _transpositions;
+  }
 
  private:
   // clang-format off
