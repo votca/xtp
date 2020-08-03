@@ -14,6 +14,7 @@ Version 2021-dev
 -  Usage of offdiagonal elements of Hqp in BSE optional, default: with
    offdiagonals (#402)
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  refactored MO reordering of external QMPackages (#406)
 -  Add defaults to XML (#319, #413)
 -  fix build with gcc-10 (#422, #424)
@@ -32,8 +33,10 @@ Version 2021-dev
 -  changed to OpenMP reductions instead of hand crafted solutions (#466,
    #471, #493)
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  switch to GitHub Actions as CI (#467, #474, #477, #482, #500, #502,
    #518)
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  move tutorial to its own repo (#450)
 -  removed share/packages folder (#475)
@@ -41,6 +44,7 @@ Version 2021-dev
 -  improve mkl support (#479)
 -  add def2-tzvp, def2-tzvpp, def2-qzvp, def2-qzvpp for Rb,I,Ag,Xe
    (#480)
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  create a map between orca and libxc functional names (#461)
 -  fix path to share/data (#486, #487)
@@ -60,11 +64,13 @@ Version 2021-dev
 -  write an empty state file if it does not exist yet (#526)
    
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 Version 1.6.2 (released XX.07.20)
 =================================
 
 -  move CI to GitHub Actions (#512, #514, #516,
    #519)
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  add more checks to the dft_parse_part (#521)
 
@@ -173,8 +179,10 @@ Version 1.4\_rc1 (released 26.09.16)
 -  an extension of the whole workflow from: electrons and holes, to
    singlet and triplet excitons
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  a fully functional GW-BSE code optimized for: molecular properties,
    including excited state geometry optimizsation
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  Inclusion of LIBXC to calculate Exchange correlation matrices
 -  allowing interfacing GW-BSE with many quantum mechanical packages
@@ -185,6 +193,7 @@ Version 1.4\_rc1 (released 26.09.16)
 -  support for intel mkl library and compilers for better performance
 -  A periodic polarisation embedding: to calculate classical
    configuration energies without cutoffs
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  xtp\_update\_exciton to update state file to newest format
 -  integration of moo and kmc into xtp for easier installation
@@ -199,37 +208,48 @@ Version 1.3 (released XX.09.15)
 -  new executables: ctp\_tools, ctp\_dump, ctp\_parallel,
    xtp\_testsuite, xtp\_update
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  ctp\_tools wraps light-weight tools that assist e.g. in generating
    the system mapping file
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  ctp\_dump extracts information from the state file to human-readable
    format
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  ctp\_parallel wraps heavy-duty job-based calculators: allows
    synchronization across processes
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  ctp\_testsuite provides an easy-to-use environment to run: selected
    tests, individual calculators
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  ctp\_update updates an existent state file to the current version
 -  new calculators: edft, idft, pdb2map, xqmultipole, ...
 -  edft / idft: provide interfaces to the GAUSSIAN, TURBOMOLE & NWCHEM
    package, using packages computes: couplings, internal energies,
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
    partial charges
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  pdb2map (generates a system mapping file from an input coordinate
    file)
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  xqmultipole computes classical configuration energies of: charged
    clusters embedded in a molecular environment
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  enhanced usability via the command-line help, tutorial & test-suite
 -  a GUI tutorial assists with the first practical steps in using
    VOTCA-CTP
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  an extended and homogenized help system provides: short infos on
    individual calculator options from the command line
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 
 Version 1.0 (released 23.10.11)
@@ -238,10 +258,12 @@ Version 1.0 (released 23.10.11)
 -  parallel evaluation of site energies using: Thole model + GDMA -
    Tinker no longer required
 -  Add a molden parser to xtp (#524)
+-  Add a molden parser to xtp (#524)
 -  much clearer input files (and many more checks for input errors)
 -  most of calculators are parallel and can be used on a cluster
 -  bug in zindo/ctp interface fixed
 -  state file now contains: the atomistic trajectory, rigid fragments,
    conjugated segments
+-  Add a molden parser to xtp (#524)
 -  Add a molden parser to xtp (#524)
 -  support for several MD frames
