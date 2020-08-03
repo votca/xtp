@@ -110,8 +110,8 @@ void Mol2Orb::reorderOrbitals(Eigen::MatrixXd& v) {
                       shellmultiplier.end());
     // reorder
     nrOfFunctions = shell.getNumFunc();
-    for (auto& cycle : getTranspositions(nrOfFunctions)) {
-      v.row(currentFunction + cycle[0]).swap(v.row(currentFunction + cycle[1]));
+    for (auto& transposition : getTranspositions(nrOfFunctions)) {
+      v.row(currentFunction + transposition[0]).swap(v.row(currentFunction + transposition[1]));
     }
     currentFunction += nrOfFunctions;
   }
