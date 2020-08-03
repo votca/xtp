@@ -28,11 +28,11 @@
 #include "tools/excitoncoupling.h"
 #include "tools/gencube.h"
 #include "tools/log2mps.h"
-#include "tools/mol2orb.h"
 #include "tools/molpol.h"
 #include "tools/partialcharges.h"
 #include "tools/qmsandbox.h"
 #include "tools/spectrum.h"
+#include "tools/mol2orb.h"
 
 namespace votca {
 namespace xtp {
