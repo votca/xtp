@@ -9,6 +9,7 @@
 
 // Local VOTCA includes
 #include "votca/xtp/logger.h"
+#include "votca/xtp/orbreorder.h"
 #include "votca/xtp/qmtool.h"
 #include <votca/xtp/orbitals.h>
 
@@ -35,26 +36,28 @@ class Mol2Orb : public QMTool {
             1,1,1,1,1,-1,-1, //f 
             1,1,1,1,1,-1,-1,-1,-1 //g
             };
-  std::vector<std::array<int, 2>> _TranspositionsS{};
-  std::vector<std::array<int, 2>> _TranspositionsP{
-    std::array<int, 2>{0, 2}
+
+  OrbTranspositions _transpositions { 
+    std::vector<std::array<Index, 2>> {}, //s
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{0, 2}
+    }, //p
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4}
+      }, //d
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4},
+      std::array<Index, 2>{5, 6}
+    }, //f
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4},
+      std::array<Index, 2>{5, 6},
+      std::array<Index, 2>{7, 8}
+    }//g
   };
-  std::vector<std::array<int, 2>> _TranspositionsD{
-    std::array<int, 2>{1, 2},
-    std::array<int, 2>{3, 4}
-    };
-  std::vector<std::array<int, 2>> _TranspositionsF{
-    std::array<int, 2>{1, 2},
-    std::array<int, 2>{3, 4},
-    std::array<int, 2>{5, 6}
-  };
-  std::vector<std::array<int, 2>> _TranspositionsG{
-    std::array<int, 2>{1, 2},
-    std::array<int, 2>{3, 4},
-    std::array<int, 2>{5, 6},
-    std::array<int, 2>{7, 8}
-  };
-  // clang-format on
   std::string _moldenfile;
   std::string _orbfile;
   std::string _xyzfile;
@@ -67,9 +70,7 @@ class Mol2Orb : public QMTool {
   inline std::string readAtoms(QMMolecule& mol, std::string units,
                                std::ifstream& input_file) const;
   inline std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
-  std::vector<std::array<int, 2>> getTranspositions(Index numFunc);
   void addBasissetInfo(Orbitals& orbitals);
-  void reorderOrbitals(Eigen::MatrixXd& v);
 };
 
 }  // namespace xtp

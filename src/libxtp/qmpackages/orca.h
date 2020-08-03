@@ -23,6 +23,7 @@
 
 // Local VOTCA includes
 #include "votca/xtp/qmpackage.h"
+#include "votca/xtp/orbreorder.h"
 
 namespace votca {
 namespace xtp {
@@ -62,7 +63,7 @@ class Orca : public QMPackage {
   const std::array<Index, 25>& ShellMulitplier() const final {
     return _multipliers;
   }
-  const std::array<Index, 25>& ShellReorder() const final { return _reorder; }
+  const OrbTranspositions& ShellTranspositions() const final { return _transpositions; }
 
  private:
   // clang-format off
@@ -73,13 +74,28 @@ class Orca : public QMPackage {
             1,1,1,1,1,-1,-1, //f 
             1,1,1,1,1,-1,-1,-1,-1 //g
             };
-  std::array<Index,25> _reorder={
-            0, //s
-            0,+1,-1, //p orca order is z,x,y Y1,0,Y1,1,Y1,-1
-            0,+1,-1,+1,-1, //d orca order is d3z2-r2 dxz dyz dx2-y2 dxy e.g. Y2,0 Y2,1 Y2,-1 Y2,2
-            0,+1,-1,+1,-1,+1,-1, //f 
-            0,+1,-1,+1,-1,+1,-1,+1,-1 //g
-            };
+  OrbTranspositions _transpositions { 
+    std::vector<std::array<Index, 2>> {}, //s
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2}
+    }, //p
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4}
+      }, //d
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4},
+      std::array<Index, 2>{5, 6}
+    }, //f
+    std::vector<std::array<Index, 2>> {
+      std::array<Index, 2>{1, 2},
+      std::array<Index, 2>{3, 4},
+      std::array<Index, 2>{5, 6},
+      std::array<Index, 2>{7, 8}
+    }//g
+  };
+
   // clang-format on
   std::string indent(const double& number);
   std::string getLName(Index lnum);

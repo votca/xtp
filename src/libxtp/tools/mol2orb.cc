@@ -8,8 +8,6 @@
 #include "votca/xtp/orbitals.h"
 #include "votca/xtp/qmatom.h"
 #include <votca/tools/constants.h>
-
-// Local VOTCA includes
 #include "votca/xtp/logger.h"
 
 namespace votca {
@@ -44,8 +42,10 @@ void Mol2Orb::addBasissetInfo(Orbitals& orbitals) {
   orbitals.setAuxbasisName(_aux_basisset_name);
 }
 
+// The returned string contains the line with the next section header
+// or if it is the last section an empty string.
 std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
-                                      std::ifstream& input_file) const {
+                               std::ifstream& input_file) const {
   std::string line;
   std::istringstream iss(" ");
   while (std::getline(input_file, line)) {
@@ -75,55 +75,9 @@ std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
   return "";
 }
 
-std::vector<std::array<int, 2>> Mol2Orb::getTranspositions(Index numFunc) {
-  switch (numFunc) {
-    case 1:
-      return _TranspositionsS;
-    case 3:
-      return _TranspositionsP;
-    case 5:
-      return _TranspositionsD;
-    case 7:
-      return _TranspositionsF;
-    case 9:
-      return _TranspositionsG;
-    default:
-      throw std::runtime_error("Impossible number of functions in shell");
-  }
-}
-
-void Mol2Orb::reorderOrbitals(Eigen::MatrixXd& v) {
-  std::vector<Index> reorder;
-  std::vector<Index> multiplier;
-  reorder.reserve(_basis.AOBasisSize());
-  multiplier.reserve(_basis.AOBasisSize());
-
-  // reorder and get multiplier vector
-  Index currentFunction = 0;
-  Index nrOfFunctions = 0;
-  for (const AOShell& shell : _basis) {
-    // Make multiplier vector
-    std::vector<Index> shellmultiplier{
-        _multipliers.begin() + shell.getOffset(),
-        _multipliers.begin() + shell.getOffset() + shell.getNumFunc()};
-    multiplier.insert(multiplier.end(), shellmultiplier.begin(),
-                      shellmultiplier.end());
-    // reorder
-    nrOfFunctions = shell.getNumFunc();
-    for (auto& transposition : getTranspositions(nrOfFunctions)) {
-      v.row(currentFunction + transposition[0]).swap(v.row(currentFunction + transposition[1]));
-    }
-    currentFunction += nrOfFunctions;
-  }
-
-  // Multiply by multiplier
-  for (Index i = 0; i < v.cols(); i++) {
-    v.row(i) = multiplier[i] * v.row(i);
-  }
-}
-
-std::string Mol2Orb::readMOs(Orbitals& orbitals,
-                                    std::ifstream& input_file) {
+// The returned string contains the line with the next section header
+// or, if it is the last section, an empty string.
+std::string Mol2Orb::readMOs(Orbitals& orbitals, std::ifstream& input_file) {
 
   // setup space to store everything
   Index basis_size = orbitals.getBasisSetSize();
@@ -156,7 +110,7 @@ std::string Mol2Orb::readMOs(Orbitals& orbitals,
     iss >> tempStr >> tempStr;
     if (tempStr == "Beta") {
       throw std::runtime_error(
-        "Open shell systems are currently not supported");
+          "Open shell systems are currently not supported");
     }
     // occupation line
     std::getline(input_file, line);
@@ -181,7 +135,8 @@ std::string Mol2Orb::readMOs(Orbitals& orbitals,
   // Get the correct ordering of atomic orbitals
   // Note that the molden specification specifies its own orbital ordering
   // Hence we can't use the qmpackage's ordering.
-  reorderOrbitals(orbitals.MOs().eigenvectors());
+  OrbReorder reorder(_transpositions, _multipliers);
+  reorder.reorderOrbitals(orbitals.MOs().eigenvectors(), _basis);
 
   getline(input_file, line);
   return line;
