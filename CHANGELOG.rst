@@ -54,6 +54,7 @@ Version 2021-dev
 -  add NOSCF option for iqm in internal and external DFT (#483)
 -  added versions to output files (#523)
 -  write an empty state file if it does not exist yet (#526)
+-  Add a molden parser to xtp (#524)
    
 Version 1.6.2 (released XX.07.20)
 =================================
