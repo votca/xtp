@@ -6,6 +6,7 @@
 // Local VOTCA includes
 #include "votca/xtp/ecpaobasis.h"
 #include "votca/xtp/orbitals.h"
+#include "votca/xtp/qmatom.h"
 #include <votca/tools/constants.h>
 
 // Local VOTCA includes
@@ -28,7 +29,7 @@ void Mol2Orb::Initialize(const tools::Property& user_options) {
   _aux_basisset_name = options.get(".auxbasisset").as<std::string>();
 }
 
-void Mol2Orb::setupBasis(Orbitals& orbitals) {
+void Mol2Orb::addBasissetInfo(Orbitals& orbitals) {
   // We only need the basis set for checking correctness
   BasisSet bs;
   bs.Load(_basisset_name);
@@ -43,7 +44,7 @@ void Mol2Orb::setupBasis(Orbitals& orbitals) {
   orbitals.setAuxbasisName(_aux_basisset_name);
 }
 
-inline std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
+std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
                                       std::ifstream& input_file) const {
   std::string line;
   std::istringstream iss(" ");
@@ -65,29 +66,27 @@ inline std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
         atom_id - 1;  // molden uses indexing from 1, we use indexing from 0
 
     // Add data to orbitals object
-    using Atom =
-        typename std::iterator_traits<QMMolecule::iterator>::value_type;
     Eigen::Vector3d pos(x, y, z);
     if (units == "Angs") {
       pos = tools::conv::ang2bohr * pos;
     }
-    mol.push_back(Atom(atom_id, atom_type, pos));
+    mol.push_back(QMAtom(atom_id, atom_type, pos));
   }
   return "";
 }
 
-inline std::vector<std::array<int, 2>> Mol2Orb::getTwoCycles(Index numFunc) {
+std::vector<std::array<int, 2>> Mol2Orb::getTranspositions(Index numFunc) {
   switch (numFunc) {
     case 1:
-      return _twoCyclesS;
+      return _TranspositionsS;
     case 3:
-      return _twoCyclesP;
+      return _TranspositionsP;
     case 5:
-      return _twoCyclesD;
+      return _TranspositionsD;
     case 7:
-      return _twoCyclesF;
+      return _TranspositionsF;
     case 9:
-      return _twoCyclesG;
+      return _TranspositionsG;
     default:
       throw std::runtime_error("Impossible number of functions in shell");
   }
@@ -111,7 +110,7 @@ void Mol2Orb::reorderOrbitals(Eigen::MatrixXd& v) {
                       shellmultiplier.end());
     // reorder
     nrOfFunctions = shell.getNumFunc();
-    for (auto& cycle : getTwoCycles(nrOfFunctions)) {
+    for (auto& cycle : getTranspositions(nrOfFunctions)) {
       v.row(currentFunction + cycle[0]).swap(v.row(currentFunction + cycle[1]));
     }
     currentFunction += nrOfFunctions;
@@ -123,7 +122,7 @@ void Mol2Orb::reorderOrbitals(Eigen::MatrixXd& v) {
   }
 }
 
-inline std::string Mol2Orb::readMOs(Orbitals& orbitals,
+std::string Mol2Orb::readMOs(Orbitals& orbitals,
                                     std::ifstream& input_file) {
 
   // setup space to store everything
@@ -140,7 +139,7 @@ inline std::string Mol2Orb::readMOs(Orbitals& orbitals,
   std::string line;
   std::string tempStr;
   double tempDouble;
-  int tempInt;
+  Index tempIndex;
   std::istringstream iss(" ");
   for (int i = 0; i < basis_size; i++) {  // loop over mo's
     std::getline(input_file, line);       // skip symmetry label
@@ -156,8 +155,8 @@ inline std::string Mol2Orb::readMOs(Orbitals& orbitals,
     iss.clear();
     iss >> tempStr >> tempStr;
     if (tempStr == "Beta") {
-      XTP_LOG(Log::error, _log)
-          << "Open shell systems are currently not supported" << std::flush;
+      throw std::runtime_error(
+        "Open shell systems are currently not supported");
     }
     // occupation line
     std::getline(input_file, line);
@@ -171,7 +170,7 @@ inline std::string Mol2Orb::readMOs(Orbitals& orbitals,
       std::getline(input_file, line);
       iss.str(line);
       iss.clear();
-      iss >> tempInt >> tempDouble;
+      iss >> tempIndex >> tempDouble;
       orbitals.MOs().eigenvectors()(j, i) = tempDouble;
     }
   }
@@ -230,7 +229,7 @@ bool Mol2Orb::Evaluate() {
       XTP_LOG(Log::error, _log)
           << "Reading atoms using " << units << " units." << std::flush;
       line = readAtoms(mol, units, input_file);
-      setupBasis(orbitals);
+      addBasissetInfo(orbitals);
     } else if (sectionType == "GTO") {
       XTP_LOG(Log::error, _log)
           << "Basisset specification is ignored." << std::flush;

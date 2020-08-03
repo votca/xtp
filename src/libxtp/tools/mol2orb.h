@@ -14,18 +14,17 @@
 
 namespace votca {
 namespace xtp {
-class Orbitals;
 
 class Mol2Orb : public QMTool {
  public:
   Mol2Orb() = default;
 
-  ~Mol2Orb() override = default;
+  ~Mol2Orb() final = default;
 
-  std::string Identify() override { return "mol2orb"; }
+  std::string Identify() final { return "mol2orb"; }
 
-  void Initialize(const tools::Property& user_options) override;
-  bool Evaluate() override;
+  void Initialize(const tools::Property& user_options) final;
+  bool Evaluate() final;
 
  private:
   // clang-format off
@@ -36,20 +35,20 @@ class Mol2Orb : public QMTool {
             1,1,1,1,1,-1,-1, //f 
             1,1,1,1,1,-1,-1,-1,-1 //g
             };
-  std::vector<std::array<int, 2>> _twoCyclesS{};
-  std::vector<std::array<int, 2>> _twoCyclesP{
+  std::vector<std::array<int, 2>> _TranspositionsS{};
+  std::vector<std::array<int, 2>> _TranspositionsP{
     std::array<int, 2>{0, 2}
   };
-  std::vector<std::array<int, 2>> _twoCyclesD{
+  std::vector<std::array<int, 2>> _TranspositionsD{
     std::array<int, 2>{1, 2},
     std::array<int, 2>{3, 4}
     };
-  std::vector<std::array<int, 2>> _twoCyclesF{
+  std::vector<std::array<int, 2>> _TranspositionsF{
     std::array<int, 2>{1, 2},
     std::array<int, 2>{3, 4},
     std::array<int, 2>{5, 6}
   };
-  std::vector<std::array<int, 2>> _twoCyclesG{
+  std::vector<std::array<int, 2>> _TranspositionsG{
     std::array<int, 2>{1, 2},
     std::array<int, 2>{3, 4},
     std::array<int, 2>{5, 6},
@@ -68,8 +67,8 @@ class Mol2Orb : public QMTool {
   inline std::string readAtoms(QMMolecule& mol, std::string units,
                                std::ifstream& input_file) const;
   inline std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
-  inline std::vector<std::array<int, 2>> getTwoCycles(Index numFunc);
-  void setupBasis(Orbitals& orbitals);
+  std::vector<std::array<int, 2>> getTranspositions(Index numFunc);
+  void addBasissetInfo(Orbitals& orbitals);
   void reorderOrbitals(Eigen::MatrixXd& v);
 };
 
