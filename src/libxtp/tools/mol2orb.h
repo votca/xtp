@@ -67,7 +67,7 @@ class Mol2Orb final : public QMTool {
   AOBasis _auxbasis;
   Logger _log;
 
-  std::string readAtoms(QMMolecule& mol, std::string units,
+  std::string readAtoms(QMMolecule& mol, const std::string& units,
                                std::ifstream& input_file) const;
   std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
   void addBasissetInfo(Orbitals& orbitals);

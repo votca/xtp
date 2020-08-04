@@ -44,7 +44,7 @@ void Mol2Orb::addBasissetInfo(Orbitals& orbitals) {
 
 // The returned string contains the line with the next section header
 // or if it is the last section an empty string.
-std::string Mol2Orb::readAtoms(QMMolecule& mol, std::string units,
+std::string Mol2Orb::readAtoms(QMMolecule& mol, const std::string& units,
                                std::ifstream& input_file) const {
   std::string line;
   std::istringstream iss(" ");
