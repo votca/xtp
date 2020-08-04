@@ -29,13 +29,8 @@
 namespace votca {
 namespace xtp {
 
-struct OrbTranspositions {
-  std::vector<std::array<Index, 2>> sOrb;
-  std::vector<std::array<Index, 2>> pOrb;
-  std::vector<std::array<Index, 2>> dOrb;
-  std::vector<std::array<Index, 2>> fOrb;
-  std::vector<std::array<Index, 2>> gOrb;
-};
+
+typedef std::array<std::vector<std::array<Index,2>>,5> OrbTranspositions;
 
 class OrbReorder {
  public:

@@ -27,9 +27,9 @@
 // Local VOTCA includes
 #include "votca/xtp/dftengine.h"
 #include "votca/xtp/orbitals.h"
+#include "votca/xtp/orbreorder.h"
 #include "votca/xtp/polarsite.h"
 #include "votca/xtp/qmpackage.h"
-#include "votca/xtp/orbreorder.h"
 
 namespace votca {
 namespace xtp {
@@ -72,7 +72,9 @@ class XTPDFT : public QMPackage {
   const std::array<Index, 25>& ShellMulitplier() const final {
     return _multipliers;
   }
-  const OrbTranspositions& ShellTranspositions() const final { return _transpositions; }
+  const OrbTranspositions& ShellTranspositions() const final {
+    return _transpositions;
+  }
 
  private:
   // clang-format off
@@ -83,12 +85,13 @@ class XTPDFT : public QMPackage {
             1,1,1,1,1,1,1, //f 
             1,1,1,1,1,1,1,1,1 //g
             };
-    OrbTranspositions _transpositions { 
-    std::vector<std::array<Index, 2>> {}, //s
-    std::vector<std::array<Index, 2>> {}, //p
-    std::vector<std::array<Index, 2>> {}, //d
-    std::vector<std::array<Index, 2>> {}, //f
-    std::vector<std::array<Index, 2>> {}  //g
+  OrbTranspositions _transpositions { 
+  std::vector<std::array<Index, 2>> {}, //s
+  std::vector<std::array<Index, 2>> {}, //p
+  std::vector<std::array<Index, 2>> {}, //d
+  std::vector<std::array<Index, 2>> {}, //f
+  std::vector<std::array<Index, 2>> {}  //g
+
   };
   // clang-format on
 

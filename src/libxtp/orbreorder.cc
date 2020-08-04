@@ -23,23 +23,7 @@
 namespace votca {
 namespace xtp {
 
-std::vector<std::array<Index, 2>> OrbReorder::getTranspositions(
-    Index nrOfFunctions) {
-  switch (nrOfFunctions) {
-    case 1:
-      return _transpositions.sOrb;
-    case 3:
-      return _transpositions.pOrb;
-    case 5:
-      return _transpositions.dOrb;
-    case 7:
-      return _transpositions.fOrb;
-    case 9:
-      return _transpositions.gOrb;
-    default:
-      throw std::runtime_error("Impossible number of functions in shell");
-  }
-}
+
 
 void OrbReorder::reorderOrbitals(Eigen::MatrixXd& moCoefficients,
                                  AOBasis& basis) {
@@ -58,7 +42,8 @@ void OrbReorder::reorderOrbitals(Eigen::MatrixXd& moCoefficients,
                       shellmultiplier.end());
     // reorder
     nrOfFunctions = shell.getNumFunc();
-    for (auto& transposition : getTranspositions(nrOfFunctions)) {
+    Index angL = (nrOfFunctions + 1) / 2;
+    for (auto& transposition : _transpositions[angL]) {
       moCoefficients.row(currentFunction + transposition[0])
           .swap(moCoefficients.row(currentFunction + transposition[1]));
     }
