@@ -39,24 +39,24 @@ class Mol2Orb final : public QMTool {
 
   OrbTranspositions _transpositions { 
     std::vector<std::array<Index, 2>> {}, //s
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{0, 2}
-    }, //p
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4}
-      }, //d
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4},
-      std::array<Index, 2>{5, 6}
-    }, //f
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4},
-      std::array<Index, 2>{5, 6},
-      std::array<Index, 2>{7, 8}
-    }//g
+    std::vector<std::array<Index, 2>> {   //p
+      {0, 2}
+    }, 
+    std::vector<std::array<Index, 2>> {   //d
+      {1, 2},
+      {3, 4}
+      }, 
+    std::vector<std::array<Index, 2>> {   //f
+      {1, 2},  
+      {3, 4},
+      {5, 6}
+    }, 
+    std::vector<std::array<Index, 2>> {   //g
+      {1, 2},
+      {3, 4},
+      {5, 6},
+      {7, 8}
+    }
   };
   std::string _moldenfile;
   std::string _orbfile;
@@ -67,9 +67,9 @@ class Mol2Orb final : public QMTool {
   AOBasis _auxbasis;
   Logger _log;
 
-  inline std::string readAtoms(QMMolecule& mol, std::string units,
+  std::string readAtoms(QMMolecule& mol, std::string units,
                                std::ifstream& input_file) const;
-  inline std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
+  std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
   void addBasissetInfo(Orbitals& orbitals);
 };
 

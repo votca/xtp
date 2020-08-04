@@ -1,8 +1,8 @@
 
 
 #pragma once
-#ifndef VOTCA_XTP_MOL2ORB_PRIVATE_H
-#define VOTCA_XTP_MOL2ORB_PRIVATE_H
+#ifndef VOTCA_XTP_ORB2MOL_PRIVATE_H
+#define VOTCA_XTP_ORB2MOL_PRIVATE_H
 
 // VOTCA includes
 #include <votca/tools/constants.h>
@@ -12,6 +12,7 @@
 #include "votca/xtp/orbreorder.h"
 #include "votca/xtp/qmtool.h"
 #include <votca/xtp/orbitals.h>
+#include <fstream>
 
 namespace votca {
 namespace xtp {
@@ -22,12 +23,12 @@ class Orb2Mol final : public QMTool {
 
   ~Orb2Mol() final = default;
 
-  std::string Identify() final { return "mol2orb"; }
+  std::string Identify() final { return "orb2mol"; }
 
   void Initialize(const tools::Property& user_options) final;
   bool Evaluate() final;
 
- private:
+private:
   // clang-format off
   std::array<Index,25> _multipliers={
             1, //s
@@ -39,24 +40,24 @@ class Orb2Mol final : public QMTool {
 
   OrbTranspositions _transpositions { 
     std::vector<std::array<Index, 2>> {}, //s
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{0, 2}
-    }, //p
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4}
-      }, //d
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4},
-      std::array<Index, 2>{5, 6}
-    }, //f
-    std::vector<std::array<Index, 2>> {
-      std::array<Index, 2>{1, 2},
-      std::array<Index, 2>{3, 4},
-      std::array<Index, 2>{5, 6},
-      std::array<Index, 2>{7, 8}
-    }//g
+    std::vector<std::array<Index, 2>> {   //p
+      {0, 2}
+    }, 
+    std::vector<std::array<Index, 2>> {   //d
+      {1, 2},
+      {3, 4}
+      }, 
+    std::vector<std::array<Index, 2>> {   //f
+      {1, 2},  
+      {3, 4},
+      {5, 6}
+    }, 
+    std::vector<std::array<Index, 2>> {   //g
+      {1, 2},
+      {3, 4},
+      {5, 6},
+      {7, 8}
+    }
   };
   std::string _moldenfile;
   std::string _orbfile;
@@ -67,13 +68,12 @@ class Orb2Mol final : public QMTool {
   AOBasis _auxbasis;
   Logger _log;
 
-  inline std::string readAtoms(QMMolecule& mol, std::string units,
-                               std::ifstream& input_file) const;
-  inline std::string readMOs(Orbitals& orbitals, std::ifstream& input_file);
-  void addBasissetInfo(Orbitals& orbitals);
+ void writeAtoms(Orbitals& orbitals, std::ofstream& outFile);
+ void writeMOs(Orbitals& orbitals, std::ofstream& outFile);
+ void writeBasisSet(Orbitals& orbitals, std::ofstream& outFile);
 };
 
 }  // namespace xtp
 }  // namespace votca
 
-#endif  // VOTCA_XTP_MOL2ORB_PRIVATE_H
+#endif  // VOTCA_XTP_ORB2MOL_PRIVATE_H
