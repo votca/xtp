@@ -25,15 +25,32 @@ void Orb2Mol::writeAtoms(Orbitals& orbitals, std::ofstream& outFile) {
   }
 }
 
-void Orb2Mol::writeMOs(Orbitals& orbitals, std::ofstream& outFile) { ; }
+void Orb2Mol::writeMOs(Orbitals& orbitals, std::ofstream& outFile) { 
+  
+  Eigen::VectorXd energies = orbitals.MOs().eigenvalues();
+
+  OrbReorder reorder(_transpositions, _multipliers);
+  reorder.reorderOrbitals(orbitals.MOs().eigenvectors(), _basis);
+
+  Eigen::MatrixXd moCoefficients= orbitals.MOs().eigenvectors();
+
+  for(Index i = 0; i < orbitals.getBasisSetSize(); i++) { // over columns
+    outFile << "Sym= \n";
+    outFile << boost::format("Ene= %-20.12e\n") % energies[i] ;
+    outFile << "Spin= Alpha\n";
+    outFile << boost::format("Occup= %-5.2f\n") % (2*(i < orbitals.getLumo()));
+    for (Index j = 0; j < orbitals.getBasisSetSize(); j++){
+      outFile << boost::format("%5d %22.12e\n") % (j+1) % moCoefficients(j,i);
+
+    }
+  }
+ }
 
 void Orb2Mol::writeBasisSet(Orbitals& orbitals, std::ofstream& outFile) {
   if (orbitals.hasDFTbasisName()) {
-    BasisSet bs;
-    bs.Load(orbitals.getDFTbasisName());
 
     for (auto& atom : orbitals.QMAtoms()) {
-      const Element& element = bs.getElement(atom.getElement());
+      const Element& element = _bs.getElement(atom.getElement());
       // The 0 in the format string of the next line is meaningless it
       // is included for backwards compatibility of molden files
       outFile <<  boost::format("%4d 0 \n") % (atom.getId() + 1);
@@ -66,6 +83,9 @@ bool Orb2Mol::Evaluate() {
   Orbitals orbitals;
   XTP_LOG(Log::error, _log) << "Loading data from " << _orbfile << std::flush;
   orbitals.ReadFromCpt(_orbfile);
+
+  _bs.Load(orbitals.getDFTbasisName());
+  _basis.Fill(_bs, orbitals.QMAtoms());
 
   std::ofstream outFile(_moldenfile);
 

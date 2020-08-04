@@ -42,7 +42,7 @@ void OrbReorder::reorderOrbitals(Eigen::MatrixXd& moCoefficients,
                       shellmultiplier.end());
     // reorder
     nrOfFunctions = shell.getNumFunc();
-    Index angL = (nrOfFunctions + 1) / 2;
+    Index angL = (nrOfFunctions - 1) / 2;
     for (auto& transposition : _transpositions[angL]) {
       moCoefficients.row(currentFunction + transposition[0])
           .swap(moCoefficients.row(currentFunction + transposition[1]));

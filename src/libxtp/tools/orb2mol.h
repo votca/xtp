@@ -65,7 +65,7 @@ private:
   std::string _basisset_name;
   std::string _aux_basisset_name;
   AOBasis _basis;
-  AOBasis _auxbasis;
+  BasisSet _bs;
   Logger _log;
 
  void writeAtoms(Orbitals& orbitals, std::ofstream& outFile);
