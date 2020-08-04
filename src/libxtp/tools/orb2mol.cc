@@ -25,26 +25,27 @@ void Orb2Mol::writeAtoms(Orbitals& orbitals, std::ofstream& outFile) {
   }
 }
 
-void Orb2Mol::writeMOs(Orbitals& orbitals, std::ofstream& outFile) { 
-  
+void Orb2Mol::writeMOs(Orbitals& orbitals, std::ofstream& outFile) {
+
   Eigen::VectorXd energies = orbitals.MOs().eigenvalues();
 
   OrbReorder reorder(_transpositions, _multipliers);
   reorder.reorderOrbitals(orbitals.MOs().eigenvectors(), _basis);
 
-  Eigen::MatrixXd moCoefficients= orbitals.MOs().eigenvectors();
+  Eigen::MatrixXd moCoefficients = orbitals.MOs().eigenvectors();
 
-  for(Index i = 0; i < orbitals.getBasisSetSize(); i++) { // over columns
+  for (Index i = 0; i < orbitals.getBasisSetSize(); i++) {  // over columns
     outFile << "Sym= \n";
-    outFile << boost::format("Ene= %-20.12e\n") % energies[i] ;
+    outFile << boost::format("Ene= %-20.12e\n") % energies[i];
     outFile << "Spin= Alpha\n";
-    outFile << boost::format("Occup= %-5.2f\n") % (2*(i < orbitals.getLumo()));
-    for (Index j = 0; j < orbitals.getBasisSetSize(); j++){
-      outFile << boost::format("%5d %22.12e\n") % (j+1) % moCoefficients(j,i);
-
+    outFile << boost::format("Occup= %-5.2f\n") %
+                   (2 * (i < orbitals.getLumo()));
+    for (Index j = 0; j < orbitals.getBasisSetSize(); j++) {
+      outFile << boost::format("%5d %22.12e\n") % (j + 1) %
+                     moCoefficients(j, i);
     }
   }
- }
+}
 
 void Orb2Mol::writeBasisSet(Orbitals& orbitals, std::ofstream& outFile) {
   if (orbitals.hasDFTbasisName()) {
@@ -53,15 +54,16 @@ void Orb2Mol::writeBasisSet(Orbitals& orbitals, std::ofstream& outFile) {
       const Element& element = _bs.getElement(atom.getElement());
       // The 0 in the format string of the next line is meaningless it
       // is included for backwards compatibility of molden files
-      outFile <<  boost::format("%4d 0 \n") % (atom.getId() + 1);
+      outFile << boost::format("%4d 0 \n") % (atom.getId() + 1);
       for (const Shell& shell : element) {
         for (const char& subtype : shell.getType()) {
           // The 1.0 at the end of the next line is meaningless it
           // is included for backwards compatibility of molden files
-          outFile << boost::format("%-3s %4d %3.1f \n") % std::tolower(subtype, std::locale())  % shell.getSize() % 1.0; 
+          outFile << boost::format("%-3s %4d %3.1f \n") %
+                         std::tolower(subtype, std::locale()) %
+                         shell.getSize() % 1.0;
           for (const GaussianPrimitive& gaussian : shell) {
-            outFile << boost::format("%22.10e %22.10e\n") %
-                           gaussian.decay() %
+            outFile << boost::format("%22.10e %22.10e\n") % gaussian.decay() %
                            gaussian.Contractions()[FindLmax(
                                std::string(1, subtype))];
           }
@@ -90,6 +92,7 @@ bool Orb2Mol::Evaluate() {
   std::ofstream outFile(_moldenfile);
 
   if (outFile.is_open()) {
+    XTP_LOG(Log::error, _log) << "Parsing data to " << _moldenfile << std::flush;
     // print Header
     outFile << "[Molden Format]\n";
     outFile << "[Title]\n";
@@ -108,6 +111,8 @@ bool Orb2Mol::Evaluate() {
 
     outFile << "[MO]\n";
     writeMOs(orbitals, outFile);
+
+    XTP_LOG(Log::error, _log) << "Done parsing \n" << std::flush;
     return true;
   }
   return false;
