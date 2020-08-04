@@ -16,11 +16,11 @@
 namespace votca {
 namespace xtp {
 
-class Mol2Orb final : public QMTool {
+class Orb2Mol final : public QMTool {
  public:
-  Mol2Orb() = default;
+  Orb2Mol() = default;
 
-  ~Mol2Orb() final = default;
+  ~Orb2Mol() final = default;
 
   std::string Identify() final { return "mol2orb"; }
 
