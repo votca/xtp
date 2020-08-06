@@ -30,15 +30,11 @@ void Neighborlist::Initialize(const tools::Property& user_options) {
   tools::Property options =
       LoadDefaultsAndUpdateWithUserOptions("xtp", user_options);
 
-  std::vector<tools::Property*> segs = options.Select(".segments");
-
-  for (tools::Property* segprop : segs) {
+  for (tools::Property* segprop : options.Select("segments.pair")) {
     std::string types = segprop->get("segmentname").as<std::string>();
     double cutoff = segprop->get("cutoff").as<double>() * tools::conv::nm2bohr;
-
     tools::Tokenizer tok(types, " ");
-    std::vector<std::string> names;
-    tok.ToVector(names);
+    std::vector<std::string> names = tok.ToVector();
 
     if (names.size() != 2) {
       throw std::runtime_error(
