@@ -50,10 +50,15 @@ Version 2021-dev
 -  implement RPA correlation energy (#498)
 -  added verbose option for rootfinder (#503)
 -  fix orca pointcharges (#504)
+-  remove constant cutoff from neighborlist (#508, #509)
+-  fix default and flags properties issue (#511)
 -  add more checks to the dft_parse_part (#510)
 -  add NOSCF option for iqm in internal and external DFT (#483)
 -  added versions to output files (#523)
 -  write an empty state file if it does not exist yet (#526)
+-  fix double unit conversion (#531)
+-  Unittests can read input and reference values from files (#529)
+-  fix double SCF in ORCA keyword line (#533)
 -  Add a molden parser to xtp (#524)
    
 Version 1.6.2 (released XX.07.20)
@@ -62,6 +67,7 @@ Version 1.6.2 (released XX.07.20)
 -  move CI to GitHub Actions (#512, #514, #516,
    #519)
 -  add more checks to the dft_parse_part (#521)
+-  make unit tests work in parallel (#530)
 
 Version 1.6.1 (released 21.06.20)
 =================================
