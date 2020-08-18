@@ -92,7 +92,8 @@ bool Orb2Mol::Evaluate() {
   std::ofstream outFile(_moldenfile);
 
   if (outFile.is_open()) {
-    XTP_LOG(Log::error, _log) << "Parsing data to " << _moldenfile << std::flush;
+    XTP_LOG(Log::error, _log)
+        << "Parsing data to " << _moldenfile << std::flush;
     // print Header
     outFile << "[Molden Format]\n";
     outFile << "[Title]\n";

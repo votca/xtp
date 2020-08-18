@@ -11,8 +11,8 @@
 #include "votca/xtp/logger.h"
 #include "votca/xtp/orbreorder.h"
 #include "votca/xtp/qmtool.h"
-#include <votca/xtp/orbitals.h>
 #include <fstream>
+#include <votca/xtp/orbitals.h>
 
 namespace votca {
 namespace xtp {
@@ -28,7 +28,7 @@ class Orb2Mol final : public QMTool {
   void Initialize(const tools::Property& user_options) final;
   bool Evaluate() final;
 
-private:
+ private:
   // clang-format off
   std::array<Index,25> _multipliers={
             1, //s
