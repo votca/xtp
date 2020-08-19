@@ -23,8 +23,6 @@
 namespace votca {
 namespace xtp {
 
-
-
 void OrbReorder::reorderOrbitals(Eigen::MatrixXd& moCoefficients,
                                  AOBasis& basis) {
   std::vector<Index> multiplier;
@@ -40,12 +38,12 @@ void OrbReorder::reorderOrbitals(Eigen::MatrixXd& moCoefficients,
     multiplier.insert(multiplier.end(), shellmultiplier.begin(),
                       shellmultiplier.end());
     // reorder
-    for (Index l = shell.getLmin(); l <= shell.getLmax(); l++){
+    for (Index l = shell.getLmin(); l <= shell.getLmax(); l++) {
       for (auto& transposition : _transpositions[l]) {
         moCoefficients.row(currentFunction + transposition[0])
             .swap(moCoefficients.row(currentFunction + transposition[1]));
       }
-      currentFunction += (2*l +1);
+      currentFunction += (2 * l + 1);
     }
   }
 
