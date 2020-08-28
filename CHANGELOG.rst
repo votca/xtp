@@ -59,7 +59,9 @@ Version 2021-dev
 -  fix double unit conversion (#531)
 -  Unittests can read input and reference values from files (#529)
 -  fix double SCF in ORCA keyword line (#533)
+-  xtp internally uses only single shells. (#539)
 -  Add a molden parser to xtp (#524)
+
    
 Version 1.6.2 (released XX.07.20)
 =================================
