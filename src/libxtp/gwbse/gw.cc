@@ -168,7 +168,7 @@ void GW::CalculateGWPerturbation() {
 
   Anderson _mixing;
   _mixing.Configure(_opt.gw_mixing_order, _opt.gw_mixing_alpha);
-
+  
   for (Index i_gw = 0; i_gw < _opt.gw_sc_max_iterations; ++i_gw) {
 
     if (i_gw % _opt.reset_3c == 0 && i_gw != 0) {
@@ -258,6 +258,18 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double initial_f = frequencies[gw_level];
     double intercept = intercepts[gw_level];
     boost::optional<double> newf;
+
+    // Go to the linearized solution first
+    newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
+    if (newf) {
+      initial_f = newf.value();
+      frequencies_new[gw_level] = newf.value();
+    }
+    newf = boost::none;
+    std::cout << frequencies[gw_level] << " vs lin " << initial_f << std::endl;
+
+
+    // search for better solution 
     if (_opt.qp_solver == "fixedpoint") {
       newf = SolveQP_FixedPoint(intercept, initial_f, gw_level);
     }
@@ -269,12 +281,13 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
       if (newf) {
         frequencies_new[gw_level] = newf.value();
         converged[gw_level] = true;
-      } else {
-        newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
-        if (newf) {
-          frequencies_new[gw_level] = newf.value();
-        }
-      }
+      } 
+      //else {
+      //  newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
+      //  if (newf) {
+      //    frequencies_new[gw_level] = newf.value();
+      //  }
+      //}
     }
   }
 
@@ -304,6 +317,7 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
       _sigma->CalcCorrelationDiagElementDerivative(gw_level, frequency0);
   double Z = 1.0 - dsigma_domega;
   if (std::abs(Z) > 1e-9) {
+    std::cout << " Z " << Z << std::endl;
     newf = frequency0 + (intercept0 - frequency0 + sigma) / Z;
   }
   return newf;
