@@ -103,6 +103,8 @@ class GW {
   const Eigen::MatrixXd& _vxc;
   const Eigen::VectorXd& _dft_energies;
 
+
+
   RPA _rpa;
   // small class which calculates f(w) with and df/dw(w)
   // f=Sigma_c(w)+offset-w
@@ -127,7 +129,7 @@ class GW {
     }
     double deriv(double frequency) const {
       return _sigma_c_func.CalcCorrelationDiagElementDerivative(_gw_level,
-                                                                frequency);
+                                                                frequency) -1.0;
     }
 
    private:
@@ -151,6 +153,11 @@ class GW {
   boost::optional<double> SolveQP_FixedPoint(double intercept0,
                                              double frequency0,
                                              Index gw_level) const;
+
+  std::vector<boost::optional<double> > SolveQP_FixedPoint_Aitken(double intercept0,
+                                             double frequency0,
+                                             Index gw_level) const;
+
   boost::optional<double> SolveQP_Linearisation(double intercept0,
                                                 double frequency0,
                                                 Index gw_level) const;

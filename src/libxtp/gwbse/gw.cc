@@ -26,6 +26,7 @@
 #include "votca/xtp/anderson_mixing.h"
 #include "votca/xtp/gw.h"
 #include "votca/xtp/newton_rapson.h"
+#include "votca/xtp/aitken.h"
 #include "votca/xtp/rpa.h"
 #include "votca/xtp/sigma_cda.h"
 #include "votca/xtp/sigma_exact.h"
@@ -258,20 +259,26 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double initial_f = frequencies[gw_level];
     double intercept = intercepts[gw_level];
     boost::optional<double> newf;
-
+    std::vector<boost::optional<double> > newf2;
     // Go to the linearized solution first
-    newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
+    /*newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
     if (newf) {
       initial_f = newf.value();
       frequencies_new[gw_level] = newf.value();
     }
     newf = boost::none;
-    std::cout << frequencies[gw_level] << " vs lin " << initial_f << std::endl;
+    std::cout << frequencies[gw_level] << " vs lin " << initial_f << std::endl;*/
 
 
     // search for better solution 
     if (_opt.qp_solver == "fixedpoint") {
-      newf = SolveQP_FixedPoint(intercept, initial_f, gw_level);
+      newf2 = SolveQP_FixedPoint_Aitken(intercept, initial_f, gw_level);
+      if (newf2[0]){
+        if (newf2[1].value() > 0.1){
+          std::cout << "Found stable QP at " << newf2[0].value() << " Hrtr with weight " <<  newf2[1].value() << std::endl;
+        }
+        newf = newf2[0];
+      }
     }
     if (newf) {
       frequencies_new[gw_level] = newf.value();
@@ -341,7 +348,7 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
     if (targ_prev * targ < 0.0) {  // Sign change
       double f = SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
       double gradient = fqp.deriv(f);
-      double qp_weight = 1.0 / (1.0 - gradient);
+      double qp_weight = -1.0 / ( gradient);
       roots.push_back(std::make_pair(f, qp_weight));
       if (std::abs(gradient) < gradient_max) {
         gradient_max = std::abs(gradient);
@@ -389,6 +396,25 @@ boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
   }
   return newf;
 }
+
+std::vector<boost::optional<double> >  GW::SolveQP_FixedPoint_Aitken(double intercept0,
+                                               double frequency0,
+                                               Index gw_level) const {
+  std::vector<boost::optional<double> > newf2(2);
+  newf2[0] = boost::none;
+  newf2[1] = boost::none;
+  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  Aitken<QPFunc> aitken = Aitken<QPFunc>(
+      _opt.g_sc_max_iterations, _opt.g_sc_limit);
+  std::vector<double> freq_new = aitken.FindRoot(f, frequency0);
+  if (aitken.getInfo() == Aitken<QPFunc>::success) {
+    newf2[0] = freq_new[0];
+    newf2[1] = freq_new[1];
+  }
+  return newf2;
+}
+
+
 
 // https://en.wikipedia.org/wiki/Bisection_method
 double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
