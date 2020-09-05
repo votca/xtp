@@ -324,7 +324,6 @@ boost::optional<double> GW::SolveQP_Linearisation(double intercept0,
       _sigma->CalcCorrelationDiagElementDerivative(gw_level, frequency0);
   double Z = 1.0 - dsigma_domega;
   if (std::abs(Z) > 1e-9) {
-    std::cout << " Z " << Z << std::endl;
     newf = frequency0 + (intercept0 - frequency0 + sigma) / Z;
   }
   return newf;
