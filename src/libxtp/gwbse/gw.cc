@@ -272,7 +272,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
 
     // search for better solution 
     if (_opt.qp_solver == "fixedpoint") {
-      newf2 = SolveQP_FixedPoint_Aitken(intercept, initial_f, gw_level);
+      newf2 = SolveQP_FixedPoint_Anderson(intercept, initial_f, gw_level);
       if (newf2[0]){
         if (newf2[1].value() > 0.1){
           std::cout << "Found stable QP at " << newf2[0].value() << " Hrtr with weight " <<  newf2[1].value() << std::endl;
@@ -409,6 +409,56 @@ std::vector<boost::optional<double> >  GW::SolveQP_FixedPoint_Aitken(double inte
   if (aitken.getInfo() == Aitken<QPFunc>::success) {
     newf2[0] = freq_new[0];
     newf2[1] = freq_new[1];
+  }
+  return newf2;
+}
+
+
+std::vector<boost::optional<double> >  GW::SolveQP_FixedPoint_Anderson(double intercept0,
+                                               double frequency0,
+                                               Index gw_level) const {
+  std::vector<boost::optional<double> > newf2(2);
+  newf2[0] = boost::none;
+  newf2[1] = boost::none;
+  QPFunc f(gw_level, *_sigma.get(), intercept0);
+  bool converged;
+
+  Anderson mixing;
+  mixing.Configure(_opt.gw_mixing_order, 0.5);
+
+  // Initial energy to input
+  Eigen::VectorXd x_in(1); // Anderson implemented for vectors...
+  Eigen::VectorXd x_out(1);
+  x_in(0) = frequency0;
+  
+
+  // Iterating
+  converged = false;
+  for ( Index iter = 0; iter < _opt.g_sc_max_iterations; iter++) {
+
+    mixing.UpdateInput(x_in);
+    x_out(0) = f.value(x_in(0))+x_in(0);     // this is solving f(x)=x, but f.value is f(x)-x
+    mixing.UpdateOutput(x_out);
+    Eigen::VectorXd x_mixed = mixing.MixHistory();
+
+
+  std::cout << " Anderson " << x_mixed(0) << std::endl;
+
+
+    if ( std::abs(x_mixed(0) - x_in(0)) < _opt.g_sc_limit) {
+        converged = true;
+        break;
+    }
+
+    x_in = x_mixed;
+
+
+
+  }
+  
+  if (converged) {
+    newf2[0] = x_in(0);
+    newf2[1] = -1.0/f.deriv(x_in(0));
   }
   return newf2;
 }

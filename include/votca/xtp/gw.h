@@ -158,6 +158,10 @@ class GW {
                                              double frequency0,
                                              Index gw_level) const;
 
+  std::vector<boost::optional<double> > SolveQP_FixedPoint_Anderson(double intercept0,
+                                             double frequency0,
+                                             Index gw_level) const;
+
   boost::optional<double> SolveQP_Linearisation(double intercept0,
                                                 double frequency0,
                                                 Index gw_level) const;
