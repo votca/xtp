@@ -254,7 +254,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
   Eigen::VectorXd frequencies_new = frequencies;
   Eigen::Array<bool, Eigen::Dynamic, 1> converged =
       Eigen::Array<bool, Eigen::Dynamic, 1>::Zero(_qptotal);
-#pragma omp parallel for schedule(dynamic)
+//#pragma omp parallel for schedule(dynamic)
   for (Index gw_level = 0; gw_level < _qptotal; ++gw_level) {
     double initial_f = frequencies[gw_level];
     double intercept = intercepts[gw_level];
