@@ -49,6 +49,11 @@ void Anderson::UpdateInput(const Eigen::VectorXd &newInput) {
   _input.push_back(newInput);
 }
 
+void Anderson::Reset(){
+  _input.clear();
+  _output.clear();
+}
+
 const Eigen::VectorXd Anderson::MixHistory() {
 
   const Index iteration = _output.size();

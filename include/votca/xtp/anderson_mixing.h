@@ -50,6 +50,7 @@ class Anderson {
   void UpdateOutput(const Eigen::VectorXd &newOutput);
   void UpdateInput(const Eigen::VectorXd &newInput);
   void Configure(const Index order, const double alpha);
+  void Reset();
 
  private:
   std::vector<Eigen::VectorXd> _input;
