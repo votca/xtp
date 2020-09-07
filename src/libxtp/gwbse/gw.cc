@@ -565,10 +565,10 @@ void GW::PlotSigma(std::string filename, Index steps, double spacing,
         ((double)grid_point - ((double)(steps - 1) / 2.0)) * spacing;
     for (Index i = 0; i < num_states; i++) {
       const Index gw_level = state_inds[i];
-      const double omega = frequencies(gw_level) + offset;
-      double sigma = _sigma->CalcCorrelationDiagElement(gw_level, omega);
+      const double omega = frequencies(gw_level-_opt.qpmin) + offset; // this only work, if all levels are calculated
+      double sigma = _sigma->CalcCorrelationDiagElement(gw_level-_opt.qpmin, omega);
       mat(grid_point, 2 * i) = omega;
-      mat(grid_point, 2 * i + 1) = sigma + intercept[gw_level];
+      mat(grid_point, 2 * i + 1) = sigma + intercept[gw_level-_opt.qpmin];
     }
   }
 
