@@ -53,6 +53,7 @@ void GW::configure(const options& opt) {
   sigma_opt.rpamin = _opt.rpamin;
   sigma_opt.rpamax = _opt.rpamax;
   sigma_opt.eta = _opt.eta;
+  sigma_opt.alpha = _opt.alpha;
   sigma_opt.quadrature_scheme = _opt.quadrature_scheme;
   sigma_opt.order = _opt.order;
   _sigma->configure(sigma_opt);
@@ -353,6 +354,7 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
       double f = SolveQP_Bisection(freq_prev, targ_prev, freq, targ, fqp);
       double gradient = fqp.deriv(f);
       double qp_weight = -1.0 / ( gradient);
+
       roots.push_back(std::make_pair(f, qp_weight));
       if (std::abs(gradient) < gradient_max) {
         gradient_max = std::abs(gradient);

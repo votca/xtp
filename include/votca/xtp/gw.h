@@ -65,6 +65,7 @@ class GW {
     double gw_mixing_alpha;         //  mixing alpha, also linear mixing
     std::string quadrature_scheme;  // Kind of Gaussian-quadrature scheme to use
     Index order = 100;  // only needed for complex integration sigma default:12
+    double alpha;
   };
 
   void configure(const options& opt);
@@ -114,14 +115,11 @@ class GW {
     QPFunc(Index gw_level, const Sigma_base& sigma, double offset)
         : _gw_level(gw_level), _offset(offset), _sigma_c_func(sigma){};
     std::pair<double, double> operator()(double frequency) const {
-      std::pair<double, double> value;
-      value.first =
-          _sigma_c_func.CalcCorrelationDiagElement(_gw_level, frequency);
-      value.second = _sigma_c_func.CalcCorrelationDiagElementDerivative(
-          _gw_level, frequency);
-      value.first += (_offset - frequency);
-      value.second -= 1.0;
-      return value;
+      std::pair<double, double> result;
+      result.first = value(frequency);
+      result.second = deriv(frequency);
+
+      return result;
     }
     double value(double frequency) const {
       return _sigma_c_func.CalcCorrelationDiagElement(_gw_level, frequency) +
@@ -129,7 +127,8 @@ class GW {
     }
     double deriv(double frequency) const {
       return _sigma_c_func.CalcCorrelationDiagElementDerivative(_gw_level,
-                                                                frequency) -1.0;
+                                                                frequency) -
+             1.0;
     }
 
    private:
