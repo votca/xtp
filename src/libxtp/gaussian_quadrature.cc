@@ -73,10 +73,14 @@ void GaussianQuadrature::CalcDielInvVector(const RPA& rpa) {
                                     // the matrix here
   double halfpi = 0.5 * votca::tools::conv::Pi;
   double newpoint = 0.0;
+
+
    // I add this part for the smooth tail
     eps_inv_j_alpha =
         rpa.calculate_epsilon_r(std::complex<double>(0.0, 0.0)).inverse();
     eps_inv_j_alpha.diagonal().array() -= 1.0;
+
+    
   std::cout << "\n... ... Preparing RPA for Gaussian quadrature along "
                "imaginary axis with "
             << _opt.order << " points" << std::endl;
@@ -106,7 +110,8 @@ double GaussianQuadrature::SigmaGQDiag(double frequency, Index gw_level,
   Index lumo = _opt.homo + 1;
   const Index occ = lumo - _opt.rpamin;
   const Index unocc = _opt.rpamax - _opt.homo;
-  const Eigen::MatrixXd& Imx = _Mmn[gw_level];
+  Index gw_level_offset = gw_level + _opt.qpmin - _opt.rpamin;
+  const Eigen::MatrixXd& Imx = _Mmn[gw_level_offset];
   Eigen::ArrayXcd DeltaE = frequency - _energies.array();
   DeltaE.head(occ).imag() = eta;
   DeltaE.tail(unocc).imag() = -eta;
