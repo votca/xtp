@@ -428,63 +428,98 @@ std::vector<boost::optional<double> >  GW::SolveQP_FixedPoint_Anderson(double in
   newf2[0] = boost::none;
   newf2[1] = boost::none;
   QPFunc f(gw_level, *_sigma.get(), intercept0);
-  bool converged;
-  bool stable;
+  
+  boost::optional<double> QPfound;
+  
+  double weight;
+  double energy;
+  
+  QPfound = AndersonSearch(f, frequency0);
 
+  // if converged, check if this is stable
+  if (QPfound) {
+    energy = QPfound.value();
+    weight = -1.0/f.deriv(energy);
+    if ( weight > 0.2 ){
+      newf2[0] = energy;
+      newf2[1] = weight;
+    } else {
+      // if converged, but not stable, try searching around the unstable QP
+      double step = (energy - frequency0)/4.0;
+      for (Index i_try = 1; i_try < 4; ++i_try){
+        std::cout << "QP " << energy << " with weight " << weight << " is unstable, resetting... " << std::endl;
+
+        // try to the right of unstable point
+        double x_try = energy + double(i_try)*step;
+        // restart Anderson procedure 
+        QPfound = boost::none;
+        QPfound = AndersonSearch(f,x_try);
+        if (QPfound){
+          weight = -1.0/f.deriv(QPfound.value());
+          if ( weight > 0.2 ){
+            newf2[0] = QPfound.value();
+            newf2[1] = weight;
+            break;
+          }
+        }
+
+        // try to the left
+        x_try = energy - double(i_try)*step;
+        // restart Anderson procedure 
+        QPfound = boost::none;
+        QPfound = AndersonSearch(f,x_try);
+        if (QPfound){
+          weight = -1.0/f.deriv(QPfound.value());
+          if ( weight > 0.2 ){
+            newf2[0] = QPfound.value();
+            newf2[1] = weight;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return newf2;
+}
+
+boost::optional<double> GW::AndersonSearch(const QPFunc& f, const double x0) const {
+
+  boost::optional<double> newx = boost::none;
   Anderson mixing;
   mixing.Configure(_opt.gw_mixing_order, _opt.gw_mixing_alpha);
 
   // Initial energy to input
   Eigen::VectorXd x_in(1); // Anderson implemented for vectors...
   Eigen::VectorXd x_out(1);
-  double weight;
-  double energy;
-  double lastfound = frequency0;
-  x_in(0) = f.value(frequency0)+frequency0;
-  
-  stable = false;
-  while (!stable){
 
-    // Iterating
-    converged = false;
-    for ( Index iter = 0; iter < _opt.g_sc_max_iterations; iter++) {
+  x_in(0) = f.value(x0)+x0;
 
-      mixing.UpdateInput(x_in);
-      x_out(0) = f.value(x_in(0))+x_in(0);     // this is solving f(x)=x, but f.value is f(x)-x
-      mixing.UpdateOutput(x_out);
-      Eigen::VectorXd x_mixed = mixing.MixHistory();
+  // Iterating
+  bool converged = false;
+  for ( Index iter = 0; iter < _opt.g_sc_max_iterations; iter++) {
 
-      //std::cout << " Anderson " << x_mixed(0) << std::endl;
+    mixing.UpdateInput(x_in);
+    x_out(0) = f.value(x_in(0))+x_in(0);     // this is solving f(x)=x, but f.value is f(x)-x
+    mixing.UpdateOutput(x_out);
+    Eigen::VectorXd x_mixed = mixing.MixHistory();
 
-      if ( std::abs(x_mixed(0) - x_in(0)) < _opt.g_sc_limit) {
-        converged = true;
-        break;
-      }
+    std::cout << " Anderson " << x_mixed(0) << std::endl;
 
-      x_in = x_mixed;
+    if ( std::abs(x_mixed(0) - x_in(0)) < _opt.g_sc_limit) {
+      converged = true;
+      break;
     }
+    x_in = x_mixed;
+  }
 
-    // check if this is stable
-    energy = x_in(0);
-    weight = -1.0/f.deriv(energy);
-    if ( weight > 0.2 ){
-      stable = true;
-    } else {
-      std::cout << "QP " <<x_in(0) << " is unstable, resetting... " << std::endl;
-      x_in(0) = energy + _opt.gw_mixing_alpha*(energy-lastfound);
-      lastfound = energy;
-      mixing.Reset();
-    }
+  if (converged){
+    newx = x_in(0);
   }
-  
-  if (converged && stable ) {
-    newf2[0] = energy;
-    newf2[1] = weight;
-  }
-  return newf2;
+
+  return newx;
+
 }
-
-
 
 // https://en.wikipedia.org/wiki/Bisection_method
 double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,

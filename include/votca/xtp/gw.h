@@ -161,6 +161,9 @@ class GW {
                                              double frequency0,
                                              Index gw_level) const;
 
+
+  boost::optional<double> AndersonSearch(const QPFunc& f, const double x0) const;
+
   boost::optional<double> SolveQP_Linearisation(double intercept0,
                                                 double frequency0,
                                                 Index gw_level) const;
