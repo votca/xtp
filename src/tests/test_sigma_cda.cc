@@ -28,16 +28,14 @@
 
 // Local VOTCA includes
 #include <votca/xtp/aobasis.h>
-#include <votca/xtp/gaussian_quadrature.h>
 #include <votca/xtp/orbitals.h>
-#include <votca/xtp/rpa.h>
 #include <votca/xtp/sigma_cda.h>
 #include <votca/xtp/threecenter.h>
 
 using namespace votca::xtp;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(sigma_test)
+BOOST_AUTO_TEST_SUITE(sigma_cda_test)
 
 BOOST_AUTO_TEST_CASE(sigma_full) {
 
@@ -67,7 +65,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   rpa.setRPAInputEnergies(mo_energy);
   rpa.configure(4, 0, 16);
 
-  Sigma_CDA sigma = Sigma_CDA(Mmn, rpa);
+  Sigma_CDA sigma(Mmn, rpa);
   Sigma_CDA::options opt;
   opt.homo = 4;
   opt.qpmin = 0;
@@ -76,6 +74,7 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   opt.rpamax = 16;
   opt.quadrature_scheme = "legendre";
   opt.order = 100;
+  opt.alpha = 1e-3;
   sigma.configure(opt);
 
   Eigen::MatrixXd x = sigma.CalcExchangeMatrix();
@@ -95,10 +94,10 @@ BOOST_AUTO_TEST_CASE(sigma_full) {
   Eigen::MatrixXd c = sigma.CalcCorrelationOffDiag(mo_energy);
   c.diagonal() = sigma.CalcCorrelationDiag(mo_energy);
 
-  Eigen::MatrixXd c_ref_diag = votca::tools::EigenIO_MatrixMarket::ReadVector(
+  Eigen::MatrixXd c_ref_diag = votca::tools::EigenIO_MatrixMarket::ReadMatrix(
       std::string(XTP_TEST_DATA_FOLDER) + "/sigma_cda/c_ref.mm");
 
-  bool check_c_diag = c.diagonal().isApprox(c_ref_diag, 1e-5);
+  bool check_c_diag = c.diagonal().isApprox(c_ref_diag.diagonal(), 1e-5);
   if (!check_c_diag) {
     cout << "Sigma C" << endl;
     cout << c.diagonal() << endl;
