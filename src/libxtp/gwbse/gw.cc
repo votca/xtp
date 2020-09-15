@@ -264,17 +264,7 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double intercept = intercepts[gw_level];
     boost::optional<double> newf;
     std::vector<boost::optional<double> > newf2;
-    // Go to the linearized solution first
-    /*newf = SolveQP_Linearisation(intercept, initial_f, gw_level);
-    if (newf) {
-      initial_f = newf.value();
-      frequencies_new[gw_level] = newf.value();
-    }
-    newf = boost::none;
-    std::cout << frequencies[gw_level] << " vs lin " << initial_f << std::endl;*/
 
-
-    // search for better solution 
     if (_opt.qp_solver == "fixedpoint") {
       newf2 = SolveQP_FixedPoint_Anderson(intercept, initial_f, gw_level);
       if (newf2[0]){
@@ -361,6 +351,16 @@ boost::optional<double> GW::SolveQP_Grid(double intercept0, double frequency0,
         qp_energy = f;
         pole_found = true;
       }
+
+      /*if (qp_weight > 0.2){
+        roots.push_back(std::make_pair(f, qp_weight));
+        qp_energy = f;
+        std::cout << "at gridpoint " << i_node << " of " <<  _opt.qp_grid_steps << std::endl;
+        pole_found = true;
+        break;
+      }*/
+
+
     }
     freq_prev = freq;
     targ_prev = targ;
