@@ -37,7 +37,7 @@
           <alpha help="parameter to smooth residue and integral calculation for the contour deformation technique" default="1e-3" choices="float"/>
           <quadrature_scheme help="If CDA is used for sigma integration this set the quadrature scheme to use" default="legendre" choices="hermite,laguerre,legendre"/>
           <quadrature_order help="Quadrature order if CDA is used for sigma integration" default="12" choices="8,10,12,14,16,18,20,40,100"/>
-          <qp_solver help="QP equation solve method" default="grid" choices="fixedpoint,grid"/>
+          <qp_solver help="QP equation solve method" default="grid" choices="fixedpoint,grid,kernelregression"/>
           <qp_grid_steps help="number of QP grid points" default="1001" choices="int+"/>
           <qp_grid_spacing help="spacing of QP grid points" unit="Hartree" default="0.001" choices="float+"/>
           <exctotal help="maximum number of BSE states to calculate" default="30" choices="int+"/>
@@ -69,6 +69,11 @@
           <rebuild_threecenter_freq help="how often the 3c integrals in iterate should be rebuilt" default="5" choices="int+"/>
           <exctotal help="number of eigenvectors to calculate" default="5" choices="int+"/>
           <ignore_corelevels help="" default="none" choices="none,RPA,BSE,GW"/>
+          <qp_mae_tol help="mean average error tolerance for kernel regression fitting" default="1e-4" choices="float"/>
+          <qp_grid_hartree help = "How many hartree on the left and right of pre-calulated solution of the linearisation problem" default="0.25" choices="float+"/>
+          <qp_fixedpoint_tol help="Tolerance fixed-point finder kernel regression" default="1e-4" choices="float"/>
+          <qp_spread help="Spread of kernel function" default="1" choices="float"/>
+          <qp_test_points help="" default="both" choices="both,even,odd"/>
         </gwbse>
       </gwbse_options>
       <redirect_logger help="Redirect Logger" default="false" choices="bool"/>

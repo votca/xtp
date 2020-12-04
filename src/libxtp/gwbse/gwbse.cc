@@ -415,6 +415,30 @@ void GWBSE::Initialize(tools::Property& options) {
 
   _gwopt.gw_mixing_alpha = options.get(key + ".gw_mixing_alpha").as<double>();
 
+  if (_gwopt.qp_solver == "kernelregression") {
+    
+  _gwopt.qp_grid_hartree = options.get(
+      key + ".qp_grid_hartree").as<double>();
+  _gwopt.qp_spread = options.get(
+      key + ".qp_spread").as<double>();
+  _gwopt.qp_mae_tol = options.get(
+      key + ".qp_mae_tol").as<double>();
+  _gwopt.qp_fixedpoint_tol = options.get(
+      key + ".qp_fixedpoint_tol").as<double>();
+  _gwopt.qp_test_points = options.get(
+      key + ".qp_test_points").as<std::string>();    
+  
+   XTP_LOG(Log::error, *_pLog)
+        << " Hartree on the left and on the right of starting linearisation-solution : " << _gwopt.qp_grid_hartree << flush;
+    XTP_LOG(Log::error, *_pLog) << " QP Spread: " << _gwopt.qp_spread << flush;
+    XTP_LOG(Log::error, *_pLog)
+        << " QP MAE tolerance: " << _gwopt.qp_mae_tol << flush;
+    XTP_LOG(Log::error, *_pLog)
+        << " QP Fixed point tolerance: " << _gwopt.qp_fixedpoint_tol << flush;
+    XTP_LOG(Log::error, *_pLog)
+        << " QP Testing points: " << _gwopt.qp_test_points << flush;  
+  }
+
   if (mode == "evGW") {
     if (_gwopt.gw_mixing_order == 0) {
       XTP_LOG(Log::error, *_pLog) << " evGW with plain update " << std::flush;

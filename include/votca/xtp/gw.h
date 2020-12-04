@@ -66,6 +66,13 @@ class GW {
     std::string quadrature_scheme;  // Kind of Gaussian-quadrature scheme to use
     Index order;   // only needed for complex integration sigma CDA
     double alpha;  // smooth tail in complex integration sigma CDA
+    double qp_mae_tol; //To prove that we learn the curve we use the MAE 
+    double qp_fixedpoint_tol; // Tolerance to be reach when usign Atkin method for fixed point solver
+    Index qp_training_points = 5;  // Number of starting training point to use for Kernel Regression method
+    double qp_spread;  // Spread of laplacian kernel for Kernel Regression method
+     std::string qp_test_points; //Other options are even and odd 
+     double qp_grid_hartree;  // How many hartree on the left and right of
+                                   // the pre-shooted center of the grid
   };
 
   void configure(const options& opt);
@@ -138,6 +145,14 @@ class GW {
   double SolveQP_Bisection(double lowerbound, double f_lowerbound,
                            double upperbound, double f_upperbound,
                            const QPFunc& f) const;
+  
+
+  Eigen::VectorXd Laplacian_Kernel(double x1, Eigen::VectorXd x2,
+                                   double sigma) const;
+    
+  boost::optional<double> SolveQP_KernelRegression(double intercept0,
+                                             double frequency0,
+                                             Index gw_level) const;
   double CalcHomoLumoShift(Eigen::VectorXd frequencies) const;
   Eigen::VectorXd ScissorShift_DFTlevel(
       const Eigen::VectorXd& dft_energies) const;

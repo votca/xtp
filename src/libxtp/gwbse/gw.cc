@@ -259,6 +259,9 @@ Eigen::VectorXd GW::SolveQP(const Eigen::VectorXd& frequencies) const {
     double initial_f = frequencies[gw_level];
     double intercept = intercepts[gw_level];
     boost::optional<double> newf;
+    if (_opt.qp_solver == "kernelregression") {
+      newf = SolveQP_KernelRegression(intercept, initial_f, gw_level);
+    }
     if (_opt.qp_solver == "fixedpoint") {
       newf = SolveQP_FixedPoint(intercept, initial_f, gw_level);
     }
@@ -377,6 +380,188 @@ boost::optional<double> GW::SolveQP_FixedPoint(double intercept0,
   return newf;
 }
 
+boost::optional<double> GW::SolveQP_KernelRegression(double intercept0,
+                                                     double frequency0,
+                                                     Index gw_level) const {
+
+  boost::optional<double> newf = boost::none;
+  QPFunc fqp(gw_level, *_sigma.get(), intercept0);
+
+  // To reduce the frequency window where to find the fixed point we compute
+  // the interesection between the linearization of fqp =
+  // sigma_c+intercept0-frequency0 around the frequency0 and the line fqp = 0.
+  // In other words this is the solution of the linearization problem. We use
+  // this as starting point. We shift +- 0.5 Hartree from that as default
+
+  double initial_targ_prev = fqp.value(frequency0);
+  double initial_targ_prev_div = fqp.deriv(frequency0);
+
+  const double range = _opt.qp_grid_hartree;
+  double initial_f = frequency0;
+  frequency0 = initial_f + (initial_targ_prev) / (1.0 - initial_targ_prev_div);
+
+  double freq_prev = frequency0 - range;
+  double targ_prev = fqp.value(freq_prev);
+
+  double qp_energy = 0.0;
+
+  bool pole_found = false;
+  bool mae_test_pass = false;
+  double mae_final = 0;
+  Eigen::VectorXd alphas;
+  // This just sets the number of initial training points
+  Index num_max = _opt.qp_training_points;
+  Eigen::VectorXd frequencies;
+
+  double delta = (2.0 * range) / ((1.0 * num_max - 1.0));
+
+  Eigen::VectorXd freq_training_i(num_max);
+  Eigen::VectorXd sigma_training_i(num_max);
+
+  std::vector<Eigen::VectorXd> sigma;
+  std::vector<Eigen::VectorXd> freq;
+
+  for (Index j = 0; j < freq_training_i.size(); ++j) {
+    freq_training_i(j) = freq_prev + j * delta;
+    // sigma_training = |Self_energy(omega) + omega - intercept| +
+    // |der(Self_energy)(omega)|
+    sigma_training_i(j) = std::abs(fqp.value(freq_training_i(j)) +
+                                   freq_training_i(j) - intercept0) +
+                          std::abs(fqp.deriv(freq_training_i(j)));
+  }
+
+  freq.push_back(freq_training_i);
+  sigma.push_back(sigma_training_i);
+
+  Index step = 1;
+  double error_fp = 0;
+  double nc_en = 0;
+  Index test_size = freq_training_i.size() - 1;
+  while (step < 20) {
+
+    double mae = 0;
+
+    Eigen::VectorXd freq_training = freq[step - 1];
+
+    Eigen::VectorXd sigma_training = sigma[step - 1];
+
+    Eigen::MatrixXd kernel(freq_training.size(), sigma_training.size());
+
+    if (_opt.qp_test_points == "both") {
+      test_size = freq_training.size() - 1;
+    } else {
+      test_size = (freq_training.size() - 1) / 2;
+    }
+
+    Eigen::VectorXd freq_test((freq_training.size() - 1) / 2);
+    Eigen::VectorXd sigma_test((sigma_training.size() - 1) / 2);
+
+    delta *= 0.5;
+
+    for (Index j = 0; j < freq_test.size(); ++j) {
+      if (_opt.qp_test_points == "odd") {
+        freq_test(j) = freq_training(2 * j + 1) - delta;
+      } else if (_opt.qp_test_points == "even") {
+        freq_test(j) = freq_training(2 * j) + delta;
+      } else {
+        freq_test(j) = freq_training(j) + delta;
+      }
+      // sigma_test = |Self_energy(omega) + omega - intercept| +
+      // |der(Self_energy)(omega)|
+      sigma_test(j) =
+          std::abs(fqp.value(freq_test(j)) + freq_test(j) - intercept0) +
+          std::abs(fqp.deriv(freq_test(j)));
+    }
+
+    for (Index i = 0; i < freq_training.size(); ++i) {
+      kernel.row(i) =
+          Laplacian_Kernel(freq_training(i), freq_training, _opt.qp_spread);
+    }
+    kernel.diagonal().array() += 1e-8;
+    alphas = kernel.colPivHouseholderQr().solve(sigma_training);
+
+    Index num_test = freq_test.size();
+    for (Index t = 0; t < freq_test.size() - 1; t++) {
+      mae +=
+          std::abs(Laplacian_Kernel(freq_test(t), freq_training, _opt.qp_spread)
+                       .dot(alphas) -
+                   sigma_test(t));
+    }
+
+    mae /= (double)num_test;
+    mae_final = mae;
+    if (mae < _opt.qp_mae_tol) {
+      frequencies = freq_training;
+      mae_test_pass = true;
+      break;
+    } else {
+
+      Eigen::VectorXd temp_f(freq_training.size() + freq_test.size());
+
+      Eigen::VectorXd temp_s(sigma_training.size() + sigma_test.size());
+
+      temp_f << freq_training, freq_test;
+
+      temp_s << sigma_training, sigma_test;
+
+      freq.push_back(temp_f);
+      sigma.push_back(temp_s);
+
+      step++;
+    }
+  }
+  if (mae_test_pass == false) {
+    XTP_LOG(Log::error, _log) << " MAE test failed for Level: " << gw_level
+                              << " Number of points increased" << std::flush;
+  } else {
+    XTP_LOG(Log::debug, _log) << " MAE test passed for Level: " << gw_level
+                              << " Step needed: " << step << "\n"
+                              << std::flush;
+
+    // Stupid bisection to find the minimum
+    XTP_LOG(Log::error, _log)
+        << " Doing stupid bisection for level " << gw_level << std::flush;
+    double lowerbound = frequencies(0);
+    double upperbound = frequencies(frequencies.size() - 1);
+    double f_lowerbound =
+        Laplacian_Kernel(lowerbound, frequencies, _opt.qp_spread).dot(alphas);
+    double f_upperbound =
+        Laplacian_Kernel(upperbound, frequencies, _opt.qp_spread).dot(alphas);
+    while (true) {
+      double c = 0.5 * (lowerbound + upperbound);
+      if (std::abs(upperbound - lowerbound) < _opt.g_sc_limit) {
+        qp_energy = c;
+        pole_found = true;
+        break;
+      }
+      double y_c = Laplacian_Kernel(c, frequencies, _opt.qp_spread).dot(alphas);
+      if (std::abs(y_c) < _opt.g_sc_limit) {
+        qp_energy = c;
+        pole_found = true;
+        break;
+      }
+      if (y_c * f_lowerbound > 0) {
+        lowerbound = c;
+        f_lowerbound = y_c;
+      } else {
+        upperbound = c;
+        f_upperbound = y_c;
+      }
+    }
+  }
+  if (pole_found) {
+    newf = qp_energy;
+  } else {
+
+    XTP_LOG(Log::error, _log) << " Fixed point not found for " << gw_level
+                              << " going to grid evaluation. "
+                              << "Error: " << error_fp
+                              << "Not converged energy " << nc_en << std::flush;
+  }
+
+  return newf;
+}
+
 // https://en.wikipedia.org/wiki/Bisection_method
 double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
                              double upperbound, double f_upperbound,
@@ -407,6 +592,15 @@ double GW::SolveQP_Bisection(double lowerbound, double f_lowerbound,
     }
   }
   return zero;
+}
+
+Eigen::VectorXd GW::Laplacian_Kernel(double x1, Eigen::VectorXd x2,
+                                     double sigma) const {
+  Eigen::VectorXd kernel(x2.size());
+  for (Index j = 0; j < x2.size(); ++j) {
+    kernel(j) = std::exp(std::abs(x1 - x2(j)) / sigma);
+  }
+  return kernel;
 }
 
 bool GW::Converged(const Eigen::VectorXd& e1, const Eigen::VectorXd& e2,
