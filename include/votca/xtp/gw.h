@@ -66,6 +66,20 @@ class GW {
     std::string quadrature_scheme;  // Kind of Gaussian-quadrature scheme to use
     Index order;   // only needed for complex integration sigma CDA
     double alpha;  // smooth tail in complex integration sigma CDA
+
+    double omegain = 0.0;  // eV
+    double omegafin = 30;  // eV
+    Index step = 10;
+    double imshift = 0;
+    Index resolution = 1000;  // Frequency grid points output (polarizability
+                              // and gw-sternheimer)
+    double do_precalc_fxc = false;  // Not recommended for large molecules
+    std::string calculation =
+        "gwsternheimer";  // Type of calculation for Sternheimer
+    std::string spatialgridtype = "coarse";
+    // Index level=0;
+    // Index quadrature_order = 8; //Order of the quadrature for self energy
+    // integration
   };
 
   void configure(const options& opt);

@@ -70,8 +70,8 @@ double Symmetric_Matrix::TraceofProd(const Symmetric_Matrix& a) const {
   return result;
 }
 
-void Symmetric_Matrix::AddtoEigenMatrix(Eigen::MatrixXd& full,
-                                        double factor) const {
+void Symmetric_Matrix::AddtoEigenMatrix(Eigen::MatrixXcd& full,
+                                        std::complex<double> factor) const {
   for (Index j = 0; j < full.cols(); ++j) {
     const Index start = (j * (j + 1)) / 2;
     for (Index i = 0; i <= j; ++i) {

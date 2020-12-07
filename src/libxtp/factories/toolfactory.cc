@@ -34,6 +34,7 @@
 #include "tools/partialcharges.h"
 #include "tools/qmsandbox.h"
 #include "tools/spectrum.h"
+#include "tools/sternheimerframe.h"
 
 namespace votca {
 namespace xtp {
@@ -51,6 +52,7 @@ void QMToolFactory::RegisterAll(void) {
   QMTools().Register<Coupling>("coupling");
   QMTools().Register<MolPol>("molpol");
   QMTools().Register<APDFT>("apdft");
+  QMTools().Register<SternheimerFrame>("sternheimer");
   QMTools().Register<Mol2Orb>("mol2orb");
   QMTools().Register<Orb2Mol>("orb2mol");
 }

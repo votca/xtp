@@ -47,6 +47,26 @@ void ERIs::Initialize_4c(const AOBasis& dftbasis) {
   return;
 }
 
+Eigen::MatrixXcd ERIs::ContractRightIndecesWithMatrix(
+    const Eigen::MatrixXcd& mat) const {
+  Index nthreads = OPENMP::getMaxThreads();
+  std::vector<Eigen::MatrixXcd> ERIS_thread = std::vector<Eigen::MatrixXcd>(
+      nthreads, Eigen::MatrixXcd::Zero(mat.rows(), mat.cols()));
+#pragma omp parallel for schedule(dynamic)
+  for (Index i = 0; i < _threecenter.size(); i++) {
+    const Symmetric_Matrix& threecenter = _threecenter[i];
+    // Trace over prod::DMAT,I(l)=componentwise product over
+    const std::complex<double> factor =
+        (threecenter.FullMatrix().cwiseProduct(mat)).sum();
+    threecenter.AddtoEigenMatrix(ERIS_thread[OPENMP::getThreadId()], factor);
+  }
+
+  Eigen::MatrixXcd ERIs =
+      std::accumulate(ERIS_thread.begin(), ERIS_thread.end(),
+                      Eigen::MatrixXcd::Zero(mat.rows(), mat.cols()).eval());
+  return ERIs;
+}
+
 Eigen::MatrixXd ERIs::ComputeSchwarzShells(const AOBasis& basis) const {
 
   Index noshells = basis.getNumofShells();
@@ -137,8 +157,8 @@ std::array<Eigen::MatrixXd, 2> ERIs::Compute4c(const Eigen::MatrixXd& dmat,
   }
   Eigen::MatrixXd dnorm_block = ComputeShellBlockNorm(dmat);
   double fock_precision = error;
-  // engine precision controls primitive truncation, assume worst-case scenario
-  // (all primitive combinations add up constructively)
+  // engine precision controls primitive truncation, assume worst-case
+  // scenario (all primitive combinations add up constructively)
   Index max_nprim4 = maxnprim_ * maxnprim_ * maxnprim_ * maxnprim_;
   double engine_precision = std::min(fock_precision / dnorm_block.maxCoeff(),
                                      std::numeric_limits<double>::epsilon()) /
@@ -149,7 +169,8 @@ std::array<Eigen::MatrixXd, 2> ERIs::Compute4c(const Eigen::MatrixXd& dmat,
   engines[0].set_precision(engine_precision);  // shellset-dependent precision
                                                // control will likely break
                                                // positive definiteness
-                                               // stick with this simple recipe
+                                               // stick with this simple
+                                               // recipe
   for (Index i = 1; i < nthreads; ++i) {
     engines[i] = engines[0];
   }

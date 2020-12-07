@@ -676,8 +676,8 @@ bool GWBSE::Evaluate() {
                    _sigma_plot_states);
     }
 
-    // store perturbative QP energy data in orbitals object (DFT, S_x,S_c, V_xc,
-    // E_qp)
+    // store perturbative QP energy data in orbitals object (DFT, S_x,S_c,
+    // V_xc, E_qp)
     _orbitals.QPpertEnergies() = gw.getGWAResults();
     _orbitals.RPAInputEnergies() = gw.RPAInputEnergies();
 

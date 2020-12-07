@@ -74,7 +74,8 @@ class GWBSE {
   Orbitals& _orbitals;
 
   // program tasks
-
+  bool _do_Sternheimer = false;
+  bool _do_SGW = false;
   bool _do_gw = false;
   bool _do_bse_singlets = false;
   bool _do_bse_triplets = false;

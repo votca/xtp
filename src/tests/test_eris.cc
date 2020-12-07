@@ -138,6 +138,9 @@ BOOST_AUTO_TEST_CASE(threecenter) {
       std::string(XTP_TEST_DATA_FOLDER) + "/eris/eris_ref2.mm");
 
   bool compare_eris = eris_ref.isApprox(eri, 1e-5);
+  bool compare_eris2 =
+      eris_ref.isApprox(eris.ContractRightIndecesWithMatrix(dmat), 1e-5);
+
   if (!compare_eris) {
     std::cout << "result eris" << std::endl;
     std::cout << eri << std::endl;
@@ -145,6 +148,7 @@ BOOST_AUTO_TEST_CASE(threecenter) {
     std::cout << eris_ref << std::endl;
   }
   BOOST_CHECK_EQUAL(compare_eris, true);
+  BOOST_CHECK_EQUAL(compare_eris2, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

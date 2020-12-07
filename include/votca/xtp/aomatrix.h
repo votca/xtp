@@ -104,6 +104,25 @@ class AODipole : public AOMatrix {
   std::array<libint2::Shell::real_t, 3> _r = {0, 0, 0};
 };
 
+class AO3ddipole : public AOMatrix {
+ public:
+  void Fill(const AOBasis& aobasis) final;
+
+  const std::array<Eigen::MatrixXd, 3>& Matrix() const { return _aomatrix; }
+  Index Dimension() final { return _aomatrix[0].rows(); }
+  void setCenter(const Eigen::Vector3d& r) {
+    _r = r;
+  }  // definition of a center around which the moment should be calculated
+
+ protected:
+  void FillBlock(std::vector<Eigen::Block<Eigen::MatrixXd>>& matrix,
+                 const AOShell& shell_row, const AOShell& shell_col) const;
+
+ private:
+  Eigen::Vector3d _r = Eigen::Vector3d::Zero();
+  std::array<Eigen::MatrixXd, 3> _aomatrix;
+};
+
 }  // namespace xtp
 }  // namespace votca
 
