@@ -197,8 +197,8 @@ void QMRegion::Reset() {
 
   std::string dft_package_name =
       _dftoptions.get("package.name").as<std::string>();
-  _qmpackage = std::unique_ptr<QMPackage>(
-      QMPackageFactory::QMPackages().Create(dft_package_name));
+  QMPackageFactory factory;
+  _qmpackage = factory.Create(dft_package_name);
   _qmpackage->setLog(&_log);
   _qmpackage->Initialize(_dftoptions);
   Index charge = 0;

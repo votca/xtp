@@ -30,9 +30,9 @@ void StateTracker::Initialize(const tools::Property& options) {
   std::vector<std::string> list_filters =
       options.get("filters").as<std::vector<std::string>>();
 
-  FilterFactory::RegisterAll();
+  FilterFactory factory;
   for (const std::string& filtername : list_filters) {
-    _filters.push_back(Filter().Create(filtername));
+    _filters.push_back(factory.Create(filtername));
   }
 
   for (auto& filter : _filters) {

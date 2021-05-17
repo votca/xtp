@@ -69,8 +69,6 @@ void Coupling::ParseOptions(const tools::Property &options) {
   _package_options = options.get(".dftpackage");
   _package = _package_options.get("package.name").as<std::string>();
   _dftcoupling_options = options.get(".dftcoupling_options");
-
-  QMPackageFactory::RegisterAll();
 }
 
 bool Coupling::Run() {
@@ -81,8 +79,8 @@ bool Coupling::Run() {
   _log.setCommonPreface("\n... ...");
 
   // get the corresponding object from the QMPackageFactory
-  std::unique_ptr<QMPackage> qmpackage = std::unique_ptr<QMPackage>(
-      QMPackageFactory::QMPackages().Create(_package));
+  QMPackageFactory factory;
+  std::unique_ptr<QMPackage> qmpackage = factory.Create(_package);
   qmpackage->setLog(&_log);
   qmpackage->Initialize(_package_options);
   qmpackage->setRunDir(".");
