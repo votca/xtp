@@ -336,6 +336,13 @@ class Orbitals {
   bool GetFlagUseHqpOffdiag() const { return use_Hqp_offdiag_; };
   void SetFlagUseHqpOffdiag(bool flag) { use_Hqp_offdiag_ = flag; };
 
+  const Eigen::MatrixXd &getPMLocalizedOrbitals() {
+    return pm_localized_orbitals_;
+  };
+  void setPMLocalizedOrbitals(const Eigen::MatrixXd &matrix) {
+    pm_localized_orbitals_ = matrix;
+  }
+
  private:
   std::array<Eigen::MatrixXd, 3> CalcFreeTransition_Dipoles() const;
 
@@ -373,6 +380,8 @@ class Orbitals {
   bool useTDA_;
 
   tools::EigenSystem mos_;
+
+  Eigen::MatrixXd pm_localized_orbitals_;
 
   QMMolecule atoms_;
 
