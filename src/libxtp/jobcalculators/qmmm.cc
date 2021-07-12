@@ -20,7 +20,7 @@
 // Standard includes
 #include <algorithm>
 #include <chrono>
-#include <sstream> 
+#include <sstream>
 
 // Third party includes
 #include <boost/filesystem.hpp>
@@ -40,6 +40,7 @@ namespace xtp {
 void QMMM::ParseSpecificOptions(const tools::Property& options) {
 
   print_regions_pdb_ = options.get(".print_regions_pdb").as<bool>();
+  use_gs_for_ex_ = options.get(".use_gs_for_ex").as<bool>();
   max_iterations_ = options.get(".max_iterations").as<Index>();
   regions_def_ = options.get(".regions");
 
@@ -54,7 +55,7 @@ void QMMM::ParseSpecificOptions(const tools::Property& options) {
     all_segments_ = false;
     std::stringstream ss(whichSegments_);
     Index segID;
-    while(ss >> segID){
+    while (ss >> segID) {
       segments_.push_back(segID);
     }
   }
@@ -277,7 +278,12 @@ Job QMMM::createJob(const Segment& seg, const QMState& state, Index jobid) {
   if (hasQMRegion()) {
     region.add("state", state.ToString());
   }
-  region.add("segments", marker);
+  if (use_gs_for_ex_ && (state.Type() == QMStateType::Singlet ||
+                         state.Type() == QMStateType::Triplet)) {
+    region.add("segments", std::to_string(seg.getId()) + ":n");
+  } else {
+    region.add("segments", marker);
+  }
   Job job(jobid, tag, Input, Job::AVAILABLE);
   return job;
 }

@@ -9,5 +9,6 @@
       <states help="states to write jobs for and which to parse from jobfile" default="n e h"/>
       <segments help="segments to write jobs for and which to parse from jobfile put either the word all or a list of numbers i.e. 0 4 5 etc." default="all"/>
     </write_parse>
+    <use_gs_for_ex help="If true uses the ground state geometry for excited states" default="false"/>
   </qmmm>
 </options>
