@@ -20,6 +20,7 @@
 // Standard includes
 #include <algorithm>
 #include <chrono>
+#include <sstream> 
 
 // Third party includes
 #include <boost/filesystem.hpp>
@@ -51,7 +52,11 @@ void QMMM::ParseSpecificOptions(const tools::Property& options) {
     all_segments_ = true;
   } else {
     all_segments_ = false;
-    segments_ = options.get("write_parse.segments").as<std::vector<Index>>();
+    std::stringstream ss(whichSegments_);
+    Index segID;
+    while(ss >> segID){
+      segments_.push_back(segID);
+    }
   }
 
   bool groundstate_found = std::any_of(
@@ -242,20 +247,20 @@ void QMMM::WriteJobFile(const Topology& top) {
       }
     }
   } else {
-    for( Index segID : segments_){
-     const Segment& seg = top.Segments()[segID];
-     for (const QMState& state : states_){
-       Job job = createJob(seg, state, jobid);
-       job.ToStream(ofs);
-       jobid++;
-     } 
+    for (Index segID : segments_) {
+      const Segment& seg = top.Segments()[segID];
+      for (const QMState& state : states_) {
+        Job job = createJob(seg, state, jobid);
+        job.ToStream(ofs);
+        jobid++;
+      }
     }
   }
 
   ofs << "</jobs>" << std::endl;
   ofs.close();
   std::cout << std::endl
-            << "... ... In total " << jobid + 1 << " jobs" << std::flush;
+            << "... ... In total " << jobid << " jobs" << std::flush;
   return;
 }
 
