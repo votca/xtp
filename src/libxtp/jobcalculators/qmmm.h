@@ -47,6 +47,7 @@ class QMMM final : public ParallelXJobCalc<std::vector<Job> > {
 
  private:
   bool hasQMRegion() const;
+  Job createJob(const Segment& seg, const QMState& state, Index jobid);
   tools::Property regions_def_;
 
   Index max_iterations_;
@@ -54,6 +55,9 @@ class QMMM final : public ParallelXJobCalc<std::vector<Job> > {
 
   bool write_parse_ = true;
   std::vector<QMState> states_;
+  std::string whichSegments_;
+  std::vector<Index> segments_;
+  bool all_segments_ = true;
 };
 
 }  // namespace xtp
