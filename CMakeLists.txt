@@ -30,6 +30,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) #...without compiler extensions like gnu++11
 
+#intel compiler bug for c++17 fix https://github.com/evaleev/libint/issues/118
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel" AND CMAKE_CXX_COMPILER_VERSION VERSION_SMALLER 2021)
+message(STATUS "disabling constexpr statics")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} LIBINT2_CONSTEXPR_STATICS=0")
+endif()
+
 ########################################################################
 # User input options                                                   #
 ########################################################################
